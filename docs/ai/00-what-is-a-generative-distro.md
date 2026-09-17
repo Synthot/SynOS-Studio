@@ -68,19 +68,44 @@ generated ones; a chat window as the primary interface.
   generated panels and memory. The demo is "open my documents next to the
   terminal" working on a live session.
 - **Track C, the interface.** The visual and motion language of the
-  science-fiction interface, a running prototype of the generative
-  surface (a full-screen scene, not widgets in a sidebar), and the first
-  spike of our own compositor. This track sets what the other two must
+  science-fiction interface, a running prototype of the infinite canvas
+  (a full-screen scene, not widgets in a sidebar), the 3D objects and the
+  timeline, and the first spike of our own compositor. This track sets what the other two must
   look like, and it starts in wave 1.
+
+## The interface is a collaborative 4D canvas
+
+The surface is an **infinite canvas** shared by the person and the
+assistant. Both act on the same scene; neither owns it. On it:
+
+- **Existing applications run as objects.** "Play the video in the Atlas
+  folder, over there" places a playing video at that spot; a terminal, a
+  browser, a spreadsheet are objects with a position and a size, not
+  windows in a stack. The assistant launches, places and arranges them.
+- **The assistant draws.** "Draw me what a heat pump looks like" produces a
+  3D object on the canvas, editable in place: the person moves a part,
+  changes a dimension, adds a label. The assistant sees every change as a
+  scene event and proposes updates ("you moved the compressor outside; do
+  you want the pipes to follow?"). Drawings, notes, ink, charts, forms and
+  generated panels are objects of the same kind.
+- **The fourth dimension is time.** Every object carries its timeline
+  (created, changed, seen, by whom). The canvas adapts to time: what was
+  used this morning is near, last week is far; the layout at 9:00 is not
+  the layout at 21:00; the person can scrub the canvas back to any moment
+  and see it as it was, and bring an object forward from there. Time is a
+  place you can go, not a log you read.
+- **Infinite in both directions.** Pan and zoom without limits; zooming
+  out shows the shape of the work over months; zooming in reaches the
+  pixel of an application or the vertex of a model.
 
 ## What "science-fiction grade" means, concretely
 
 So that tasks can be judged, the interface target is written down:
 
-- **One continuous surface.** No chrome, no title bars, no fixed panel.
-  Applications, generated views and the assistant's own output live on the
-  same scene, arranged by intent, with depth (near, working, far) rather
-  than a stack of rectangles.
+- **One continuous canvas.** No chrome, no title bars, no fixed panel.
+  Applications, generated views, 3D objects and the assistant's own output
+  are objects on the same infinite scene, arranged by intent and by time,
+  with depth (near, working, far) rather than a stack of rectangles.
 - **Voice-reactive.** Speaking produces an immediate visible response: a
   listening field that follows the voice, partial words appearing as they
   are recognised, the plan drawn as it forms, each step lighting up as it
@@ -88,9 +113,13 @@ So that tasks can be judged, the interface target is written down:
 - **Generated, not pre-drawn.** Panels, charts, forms, controls are laid out
   by the machine from data and intent, with a single motion system so that
   everything that appears, moves or leaves obeys the same physics.
-- **Spatial memory.** Things the person used stay where they were, at a
-  distance that reflects age; "the thing from this morning" is a place,
-  not a search.
+- **Spatial and temporal memory.** Things the person used stay where they
+  were, at a distance that reflects age; "the thing from this morning" is a
+  place, not a search; the timeline can be scrubbed and any past state of
+  the canvas revisited.
+- **Two hands on the same object.** The person edits what the assistant
+  made, the assistant reacts to what the person changed; the canvas shows
+  who did what and when.
 - **Legible thought.** When the assistant works, the person sees what it is
   doing and can stop it with a word or a gesture. Nothing runs invisibly.
 - **Beautiful at rest.** With nothing happening, the surface is a calm,

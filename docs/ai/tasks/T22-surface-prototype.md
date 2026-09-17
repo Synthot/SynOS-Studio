@@ -9,7 +9,7 @@ Tier: mid · Depends on: T02, T21 · Branch: `ai-desktop/t22-surface-prototype`
 - The task(s) this depends on: `docs/ai/tasks/T02-*.md`, `docs/ai/tasks/T21-*.md`
 
 ## Do
-Write `prototypes/surface/`: a full-screen GTK4 window hosting a WebKitGTK view with no network (or a GTK4 + Cairo/GL scene; say which and why) that renders the INTERFACE.md language: the resting scene, the listening field driven by microphone level (PipeWire, or a `--fake-audio` sine for tests), partial transcript text, a plan drawn as connected steps, and C4 panels appearing on the surface with the motion system. Input: a local WebSocket or stdin JSON stream of C7 signals (`Transcript`, `Plan`, `Step`, `Done`) so it runs without the service. Ship `prototypes/surface/play.sh` that replays `fixtures/surface/*.jsonl`.
+Write `prototypes/surface/`: a full-screen GTK4 window hosting a WebKitGTK view with no network (or a GTK4 + Cairo/GL scene; say which and why) that renders the INTERFACE.md language: the resting scene, the listening field driven by microphone level (PipeWire, or a `--fake-audio` sine for tests), partial transcript text, a plan drawn as connected steps, and C4 panels appearing on the surface with the motion system. This is the assistant's own presence on the canvas; T28 is the canvas itself and T22 must be built as a layer T28 can host. Input: a local WebSocket or stdin JSON stream of C7 signals (`Transcript`, `Plan`, `Step`, `Done`) so it runs without the service. Ship `prototypes/surface/play.sh` that replays `fixtures/surface/*.jsonl`.
 
 ## Do not
 - Change any contract; if one is wrong, stop and write the problem in the pull request.

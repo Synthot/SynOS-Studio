@@ -9,7 +9,7 @@ Tier: mid · Depends on: T12, T22 · Branch: `ai-desktop/t24-surface-on-gnome`
 - The task(s) this depends on: `docs/ai/tasks/T12-*.md`, `docs/ai/tasks/T22-*.md`
 
 ## Do
-Bring the T22 scene into the GNOME Shell extension as a full-screen layer under the windows (resting scene, listening field, plan drawing) and above them for panels, driven by the real C7 signals from syn-core instead of the replay stream. Windows arranged by `Tile` animate with the motion system rather than jumping. The shell's own panel and overview are hidden while the surface is active and come back on Escape.
+Bring the T22 layer and the T28 canvas into the GNOME Shell extension as a full-screen layer under the windows (resting scene, listening field, plan drawing) and above them for panels, driven by the real C7 signals from syn-core instead of the replay stream. Windows arranged by `Tile` animate with the motion system rather than jumping. The shell's own panel and overview are hidden while the surface is active and come back on Escape.
 
 ## Do not
 - Change any contract; if one is wrong, stop and write the problem in the pull request.

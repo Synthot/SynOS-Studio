@@ -1,7 +1,8 @@
 # The AI-driven desktop
 
-Work in progress on the `ai-desktop` branch. This document is the design;
-code follows it, milestone by milestone. Working name for the assistant:
+Work in progress on the `ai-desktop` branch. This document is the original
+design; `docs/ai/` holds the current vision (the collaborative 4D canvas),
+the contracts and the task list, and wins where they differ. Working name for the assistant:
 **Syn** (the user may rename it; the name is one string in the brand kit).
 
 ## What is different

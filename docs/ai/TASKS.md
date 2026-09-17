@@ -64,16 +64,23 @@ on schemas and fixtures is spent on the interface.
 | T23 | [Our compositor: first spike implementing the desktop actions interface](tasks/T23-compositor-spike.md) | mid | T03 |
 | T24 | [The surface inside the GNOME session](tasks/T24-surface-on-gnome.md) | mid | T12, T22 |
 | T25 | [Listening field: the audio-reactive component](tasks/T25-voice-visualiser.md) | cheap | T21 |
+| T26 | [Canvas scene schema, validator and diff](tasks/T26-canvas-scene-schema.md) | cheap | T02 |
+| T27 | [Parametric 3D: spec to mesh](tasks/T27-parametric-3d.md) | mid | T26 |
+| T28 | [The infinite canvas engine](tasks/T28-canvas-engine.md) | mid | T21, T26 |
+| T29 | [3D objects on the canvas, editable by hand](tasks/T29-canvas-3d-editing.md) | mid | T27, T28 |
+| T30 | [The assistant sees changes and proposes](tasks/T30-ai-sees-and-proposes.md) | mid | T06, T26 |
+| T31 | [Time: timeline store, scrubbing, time-adaptive layout](tasks/T31-time-dimension.md) | mid | T08, T26, T28 |
+| T32 | [Live applications as canvas objects](tasks/T32-apps-on-canvas.md) | mid | T23, T28 |
 
 Waves (tasks in a wave are independent of each other):
 
 1. T01 T02 T03 T05 T08 T13 T14 T21 — contracts made concrete, and the interface language written.
 2. T04 T07 T11 T17 T23 T25 — validators, first behaviour, the compositor spike, the listening field.
-3. T06 T09 T12 T19 T22 — planner, executor, panels, languages, the surface prototype.
-4. T10 T18 T20 T24 — service, settings, documentation, the surface inside the session.
-5. T15 T16 — packaging and the milestone-1 acceptance run, judged on the surface, not on a sidebar.
+3. T06 T09 T12 T19 T22 T26 — planner, executor, panels, languages, the assistant's layer, the scene model.
+4. T10 T18 T20 T24 T27 T28 — service, settings, documentation, the surface in the session, parametric 3D, the canvas engine.
+5. T15 T16 T29 T30 T31 T32 — packaging, milestone-1 acceptance, 3D editing, proposals, time, applications on the canvas.
 
-Tracks: A (Studio) = T17. B (session) = T01–T16, T18–T20. C (interface) = T21–T25.
+Tracks: A (Studio) = T17. B (session) = T01–T16, T18–T20, T30. C (interface, the canvas) = T21–T29, T31, T32.
 T21 is ours to write first; every visual task is measured against it.
 
 ## Review checklist (what we check on every pull request)
@@ -86,6 +93,13 @@ T21 is ours to write first; every visual task is measured against it.
 - Commit messages and code carry no attribution to assistance, tools or models.
 - Visual work is judged against `INTERFACE.md`: same motion parameters, same depth model, and it looks like nothing that ships today.
 - The contract was not changed; if the author found it wrong, the pull request says so and we open a contract task.
+
+## Milestone 2 acceptance (review tier): the canvas
+
+On a live image: "play the site video from Atlas over there" places a playing video where
+the person pointed; "draw me a heat pump" produces an editable 3D object; moving its
+compressor by hand makes the assistant propose to move the pipes, applied only on accept;
+scrubbing the timeline to the morning shows the morning canvas; zooming out shows the week.
 
 ## Milestone 1 acceptance (review tier)
 
