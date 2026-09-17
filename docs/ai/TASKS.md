@@ -28,8 +28,12 @@ for the why and `01-contracts.md` for the interfaces; each task is a file in
 - **mid**: modules with behaviour (planner, executor, extension, services).
   A stronger model, or a person; we review design against the contract and
   run the tests.
-- **review**: us. Contract changes, milestone acceptance, anything touching
-  privacy or policy.
+- **review**: us. Contract changes, the interface language, milestone
+  acceptance, anything touching privacy or policy.
+
+Cost is not a criterion for any tier. A task that needs a stronger model or
+a rewrite of an existing component gets it; what we save with cheap models
+on schemas and fixtures is spent on the interface.
 
 ## Task list and order
 
@@ -55,14 +59,22 @@ for the why and `01-contracts.md` for the interfaces; each task is a file in
 | T18 | [Settings page: providers, memory, indicator](tasks/T18-settings-page.md) | mid | T08, T14 |
 | T19 | [Prompts and transcripts in French, German, Dutch, Spanish](tasks/T19-i18n.md) | cheap | T06 |
 | T20 | [User documentation](tasks/T20-user-docs.md) | cheap | T10 |
+| T21 | [Interface language: visual, motion and sound system](tasks/T21-interface-language.md) | review | — |
+| T22 | [The generative surface: standalone prototype](tasks/T22-surface-prototype.md) | mid | T02, T21 |
+| T23 | [Our compositor: first spike implementing the desktop actions interface](tasks/T23-compositor-spike.md) | mid | T03 |
+| T24 | [The surface inside the GNOME session](tasks/T24-surface-on-gnome.md) | mid | T12, T22 |
+| T25 | [Listening field: the audio-reactive component](tasks/T25-voice-visualiser.md) | cheap | T21 |
 
 Waves (tasks in a wave are independent of each other):
 
-1. T01 T02 T03 T05 T08 T13 T14 — contracts made concrete; all cheap or self-contained.
-2. T04 T07 T11 T17 — validators and the first behaviour.
-3. T06 T09 T12 T19 — planner, executor, panels, languages.
-4. T10 T18 T20 — service, settings, documentation.
-5. T15 T16 — packaging and the milestone-1 acceptance run.
+1. T01 T02 T03 T05 T08 T13 T14 T21 — contracts made concrete, and the interface language written.
+2. T04 T07 T11 T17 T23 T25 — validators, first behaviour, the compositor spike, the listening field.
+3. T06 T09 T12 T19 T22 — planner, executor, panels, languages, the surface prototype.
+4. T10 T18 T20 T24 — service, settings, documentation, the surface inside the session.
+5. T15 T16 — packaging and the milestone-1 acceptance run, judged on the surface, not on a sidebar.
+
+Tracks: A (Studio) = T17. B (session) = T01–T16, T18–T20. C (interface) = T21–T25.
+T21 is ours to write first; every visual task is measured against it.
 
 ## Review checklist (what we check on every pull request)
 
@@ -72,6 +84,7 @@ Waves (tasks in a wave are independent of each other):
 - Nothing leaves the machine by default; cloud paths are opt-in and visible.
 - Privacy and policy behaviour matches `00-what-is-a-generative-distro.md`.
 - Commit messages and code carry no attribution to assistance, tools or models.
+- Visual work is judged against `INTERFACE.md`: same motion parameters, same depth model, and it looks like nothing that ships today.
 - The contract was not changed; if the author found it wrong, the pull request says so and we open a contract task.
 
 ## Milestone 1 acceptance (review tier)
