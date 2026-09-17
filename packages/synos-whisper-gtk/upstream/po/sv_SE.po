@@ -1,0 +1,519 @@
+# synos-whisper-gtk translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-whisper-gtk.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-whisper-gtk\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-31 15:23+0000\n"
+"PO-Revision-Date: 2026-08-31 15:23+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: sv_SE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos_whisper_gtk/app.py:29
+msgid "Automatic detection"
+msgstr "Automatisk språkidentifiering"
+
+#: src/synos_whisper_gtk/app.py:30
+#: data/voice-typing@synos.com/extension.js:77
+#: data/voice-typing@synos.com/extension.js:78
+msgid "Simplified Chinese"
+msgstr "Förenklad kinesiska"
+
+#: src/synos_whisper_gtk/app.py:31
+#: data/voice-typing@synos.com/extension.js:78
+msgid "Traditional Chinese"
+msgstr "Traditionell kinesiska"
+
+#: src/synos_whisper_gtk/app.py:32
+#: data/voice-typing@synos.com/extension.js:79
+msgid "English"
+msgstr "engelska"
+
+#: src/synos_whisper_gtk/app.py:33
+#: data/voice-typing@synos.com/extension.js:79
+msgid "Spanish"
+msgstr "spanska"
+
+#: src/synos_whisper_gtk/app.py:34
+#: data/voice-typing@synos.com/extension.js:80
+msgid "French"
+msgstr "franska"
+
+#: src/synos_whisper_gtk/app.py:35
+#: data/voice-typing@synos.com/extension.js:80
+msgid "German"
+msgstr "tyska"
+
+#: src/synos_whisper_gtk/app.py:36
+#: data/voice-typing@synos.com/extension.js:80
+msgid "Japanese"
+msgstr "japanska"
+
+#: src/synos_whisper_gtk/app.py:37
+#: data/voice-typing@synos.com/extension.js:80
+msgid "Korean"
+msgstr "koreanska"
+
+#: src/synos_whisper_gtk/app.py:38
+#: data/voice-typing@synos.com/extension.js:81
+msgid "Russian"
+msgstr "ryska"
+
+#: src/synos_whisper_gtk/app.py:39
+#: data/voice-typing@synos.com/extension.js:81
+msgid "Portuguese"
+msgstr "portugisiska"
+
+#: src/synos_whisper_gtk/app.py:43 src/synos_whisper_gtk/app.py:66
+#: src/synos_whisper_gtk/app.py:96 src/synos_whisper_gtk/app.py:313
+#: data/com.synos.VoiceTyping.Settings.desktop:2
+msgid "Voice Typing"
+msgstr "Röstinmatning"
+
+#: src/synos_whisper_gtk/app.py:44
+#: data/voice-typing@synos.com/extension.js:68
+#: data/voice-typing@synos.com/extension.js:92
+#: data/voice-typing@synos.com/extension.js:147
+#: data/voice-typing@synos.com/extension.js:296
+#: data/voice-typing@synos.com/extension.js:361
+#: data/voice-typing@synos.com/extension.js:399
+#: data/voice-typing@synos.com/extension.js:434
+#: data/voice-typing@synos.com/extension.js:459
+msgid "Ready"
+msgstr "Redo"
+
+#: src/synos_whisper_gtk/app.py:45
+#: data/voice-typing@synos.com/extension.js:69
+#: data/voice-typing@synos.com/extension.js:354
+#: data/voice-typing@synos.com/extension.js:436
+#: data/voice-typing@synos.com/extension.js:437
+msgid "Listening…"
+msgstr "Lyssnar…"
+
+#: src/synos_whisper_gtk/app.py:46
+msgid "Sign out required"
+msgstr "Utloggning krävs"
+
+#: src/synos_whisper_gtk/app.py:47
+msgid "Needs attention"
+msgstr "Kräver åtgärd"
+
+#: src/synos_whisper_gtk/app.py:51
+msgid "Sign out and back in to finish enabling Voice Typing."
+msgstr "Logga ut och in igen för att slutföra aktiveringen av röstinmatning."
+
+#: src/synos_whisper_gtk/app.py:91
+msgid "Settings"
+msgstr "Inställningar"
+
+#: src/synos_whisper_gtk/app.py:98
+msgid ""
+"Use the keyboard shortcut to dictate into the focused application. Speech is"
+" processed locally and is never uploaded."
+msgstr ""
+"Använd genvägen för att diktera i det aktiva programmet. Talet bearbetas på "
+"den här datorn och laddas aldrig upp."
+
+#: src/synos_whisper_gtk/app.py:103
+msgid "Status"
+msgstr "Status"
+
+#: src/synos_whisper_gtk/app.py:103
+msgid "Checking the local service…"
+msgstr "Kontrollerar den lokala tjänsten…"
+
+#: src/synos_whisper_gtk/app.py:107 src/synos_whisper_gtk/app.py:307
+msgid "Start"
+msgstr "Starta"
+
+#: src/synos_whisper_gtk/app.py:116
+msgid "Input"
+msgstr "Inmatning"
+
+#: src/synos_whisper_gtk/app.py:117
+msgid "System default"
+msgstr "Systemets standardmikrofon"
+
+#: src/synos_whisper_gtk/app.py:120
+msgid "Microphone"
+msgstr "Mikrofon"
+
+#: src/synos_whisper_gtk/app.py:131
+msgid "Language"
+msgstr "Språk"
+
+#: src/synos_whisper_gtk/app.py:142
+msgid "Behavior"
+msgstr "Beteende"
+
+#: src/synos_whisper_gtk/app.py:144
+msgid "Keyboard shortcut"
+msgstr "Kortkommando"
+
+#: src/synos_whisper_gtk/app.py:145
+msgid "Activate voice typing from anywhere"
+msgstr "Aktivera röstinmatning var som helst"
+
+#: src/synos_whisper_gtk/app.py:149
+msgid "Disabled"
+msgstr "Inaktiverad"
+
+#: src/synos_whisper_gtk/app.py:153
+msgid "Change…"
+msgstr "Ändra…"
+
+#: src/synos_whisper_gtk/app.py:164
+msgid "Automatic punctuation"
+msgstr "Automatisk interpunktion"
+
+#: src/synos_whisper_gtk/app.py:165
+msgid "Keep punctuation recognized from speech"
+msgstr "Behåll interpunktionen som känns igen från talet"
+
+#: src/synos_whisper_gtk/app.py:169
+msgid "Voice commands"
+msgstr "Röstkommandon"
+
+#: src/synos_whisper_gtk/app.py:170
+msgid "Recognize commands such as “new line” and “comma”"
+msgstr "Identifiera kommandon som ”ny rad” och ”komma”"
+
+#: src/synos_whisper_gtk/app.py:174
+msgid "Live transcription"
+msgstr "Transkription i realtid"
+
+#: src/synos_whisper_gtk/app.py:175
+msgid "Show words in the microphone bar while you speak"
+msgstr "Visa ord i mikrofonfältet medan du pratar"
+
+#: src/synos_whisper_gtk/app.py:179
+msgid "Final result preview"
+msgstr "Förhandsvisning av slutresultat"
+
+#: src/synos_whisper_gtk/app.py:180
+msgid "Pause briefly before inserting the completed phrase"
+msgstr "Pausa kort innan den slutliga texten infogas"
+
+#: src/synos_whisper_gtk/app.py:184
+msgid "Start and stop sounds"
+msgstr "Start- och stoppljud"
+
+#: src/synos_whisper_gtk/app.py:185
+msgid "Play a subtle microphone cue"
+msgstr "Spela upp en diskret ljudsignal för mikrofonen"
+
+#: src/synos_whisper_gtk/app.py:195
+msgid "Models"
+msgstr "Modeller"
+
+#: src/synos_whisper_gtk/app.py:198
+msgid "Offline speech models"
+msgstr "Taligenkänningsmodeller för offlinebruk"
+
+#: src/synos_whisper_gtk/app.py:200
+msgid ""
+"The Base multilingual model is installed with Voice Typing. Optional models "
+"are verified before use."
+msgstr ""
+"Den flerspråkiga Base-modellen är installerad med röstinmatning. Valfria "
+"modeller verifieras innan de används."
+
+#: src/synos_whisper_gtk/app.py:213
+msgid "Remove downloaded model"
+msgstr "Ta bort nedladdad modell"
+
+#: src/synos_whisper_gtk/app.py:216
+#, python-format
+msgid "Remove %s"
+msgstr "Ta bort %s"
+
+#: src/synos_whisper_gtk/app.py:230
+msgid "Microphone Training"
+msgstr "Mikrofonkalibrering"
+
+#: src/synos_whisper_gtk/app.py:234
+msgid "Calibrate your speaking setup"
+msgstr "Kalibrera din inspelningsmiljö"
+
+#: src/synos_whisper_gtk/app.py:236
+msgid ""
+"Whisper does not need a personal voice profile. Use this page to check "
+"microphone level, distance, and background noise."
+msgstr ""
+"Whisper behöver ingen personlig röstprofil. Använd den här sidan för att "
+"kontrollera mikrofonens ingångsnivå, avståndet till mikrofonen och "
+"bakgrundsljudet."
+
+#: src/synos_whisper_gtk/app.py:242
+msgid "Practice phrase"
+msgstr "Övningsfras"
+
+#: src/synos_whisper_gtk/app.py:243
+msgid "“Voice typing makes writing faster and more accessible.”"
+msgstr "”Röstinmatning gör skrivandet snabbare och mer tillgängligt.”"
+
+#: src/synos_whisper_gtk/app.py:249
+msgid "Input level"
+msgstr "Ingångsnivå"
+
+#: src/synos_whisper_gtk/app.py:250
+msgid "Speak normally; aim for the middle of the meter"
+msgstr "Tala normalt; försök hålla ingångsnivån kring mitten av mätaren"
+
+#: src/synos_whisper_gtk/app.py:254
+msgid "Microphone input level"
+msgstr "Mikrofoninsignalnivå"
+
+#: src/synos_whisper_gtk/app.py:260
+msgid "Microphone test"
+msgstr "Mikrofontest"
+
+#: src/synos_whisper_gtk/app.py:261
+msgid "No audio is saved during this test"
+msgstr "Inget ljud sparas under testet"
+
+#: src/synos_whisper_gtk/app.py:263 src/synos_whisper_gtk/app.py:559
+msgid "Start Test"
+msgstr "Starta testet"
+
+#: src/synos_whisper_gtk/app.py:268
+msgid "Tips for better recognition"
+msgstr "Tips för bättre taligenkänning"
+
+#: src/synos_whisper_gtk/app.py:271
+msgid "Speak naturally"
+msgstr "Tala naturligt"
+
+#: src/synos_whisper_gtk/app.py:272
+msgid "Use short phrases and pause briefly between sentences"
+msgstr "Använd korta fraser och pausa kort mellan meningarna"
+
+#: src/synos_whisper_gtk/app.py:276
+msgid "Reduce background noise"
+msgstr "Minska bakgrundsljudet"
+
+#: src/synos_whisper_gtk/app.py:277
+msgid "Keep the microphone close without speaking directly into it"
+msgstr "Håll mikrofonen nära utan att tala direkt i den"
+
+#: src/synos_whisper_gtk/app.py:281
+msgid "Choose the language"
+msgstr "Välj språk"
+
+#: src/synos_whisper_gtk/app.py:282
+msgid "A fixed language is faster than automatic detection"
+msgstr "Ett valt språk är snabbare än automatisk språkidentifiering"
+
+#: src/synos_whisper_gtk/app.py:305
+msgid "Stop"
+msgstr "Stoppa"
+
+#: src/synos_whisper_gtk/app.py:343
+msgid "Set Keyboard Shortcut"
+msgstr "Ställ in kortkommando"
+
+#: src/synos_whisper_gtk/app.py:365
+msgid "Press the new shortcut"
+msgstr "Tryck på den nya genvägen"
+
+#: src/synos_whisper_gtk/app.py:369
+msgid "The keys you press will be used to start or stop Voice Typing."
+msgstr ""
+"De tangenter du trycker på används för att starta eller stoppa "
+"röstinmatning."
+
+#: src/synos_whisper_gtk/app.py:377
+msgid "Waiting for input…"
+msgstr "Väntar på en tangenttryckning…"
+
+#: src/synos_whisper_gtk/app.py:383
+msgid "Esc cancels · Backspace disables the shortcut"
+msgstr "Esc avbryter · Backspace inaktiverar genvägen"
+
+#: src/synos_whisper_gtk/app.py:445
+#, python-format
+msgid "Download %s from Hugging Face?"
+msgstr "Ladda ner %s från Hugging Face?"
+
+#: src/synos_whisper_gtk/app.py:447
+msgid ""
+"This optional model is hosted by Hugging Face, a third-party service. SynOS is not affiliated with, sponsored by, or partnered with Hugging Face.\n"
+"\n"
+"If you continue, your computer will connect directly to huggingface.co. Hugging Face will receive your public IP address and that address may reveal your approximate location.\n"
+"\n"
+"Privacy policy: https://huggingface.co/privacy"
+msgstr ""
+"Den här valfria modellen lagras hos Hugging Face, en tredjepartstjänst. SynOS är inte knutet till eller sponsrat av Hugging Face och har inget partnerskap med tjänsten.\n"
+"\n"
+"Om du fortsätter ansluter din dator direkt till huggingface.co. Hugging Face får då din offentliga IP-adress, som kan avslöja din ungefärliga plats.\n"
+"\n"
+"Integritetspolicy: https://huggingface.co/privacy"
+
+#: src/synos_whisper_gtk/app.py:456 src/synos_whisper_gtk/app.py:510
+msgid "Cancel"
+msgstr "Avbryt"
+
+#: src/synos_whisper_gtk/app.py:457
+msgid "Continue Download"
+msgstr "Fortsätt ladda ner"
+
+#: src/synos_whisper_gtk/app.py:479 src/synos_whisper_gtk/app.py:538
+msgid "Downloading…"
+msgstr "Laddar ner…"
+
+#: src/synos_whisper_gtk/app.py:497
+msgid "Retry"
+msgstr "Försök igen"
+
+#: src/synos_whisper_gtk/app.py:498
+msgid "Model download failed"
+msgstr "Modellnedladdningen misslyckades"
+
+#: src/synos_whisper_gtk/app.py:499
+msgid "Close"
+msgstr "Stäng"
+
+#: src/synos_whisper_gtk/app.py:507
+#, python-format
+msgid "Remove %s model?"
+msgstr "Ta bort %s-modellen?"
+
+#: src/synos_whisper_gtk/app.py:508
+msgid "The model can be downloaded again later."
+msgstr "Modellen kan laddas ner igen senare."
+
+#: src/synos_whisper_gtk/app.py:511
+msgid "Remove"
+msgstr "Ta bort"
+
+#: src/synos_whisper_gtk/app.py:547
+msgid "In Use"
+msgstr "I bruk"
+
+#: src/synos_whisper_gtk/app.py:550
+msgid "Use"
+msgstr "Använd"
+
+#: src/synos_whisper_gtk/app.py:553
+msgid "Download"
+msgstr "Ladda ner"
+
+#: src/synos_whisper_gtk/app.py:559
+msgid "Stop Test"
+msgstr "Stoppa testet"
+
+#: src/synos_whisper_gtk/app.py:593
+msgid "SynOS Voice Typing"
+msgstr "Röstinmatning i SynOS"
+
+#: src/synos_whisper_gtk/app.py:595
+msgid "SynOS Team"
+msgstr "SynOS-teamet"
+
+#: src/synos_whisper_gtk/app.py:597
+msgid "Private, offline speech-to-text for the whole desktop."
+msgstr "Privat och offline taligenkänning för hela skrivbordet."
+
+#: src/synos_whisper_gtk/app.py:605
+#, python-format
+msgid "%.0f MB"
+msgstr "%.0f MB"
+
+#: data/voice-typing@synos.com/extension.js:70
+msgid "Recognizing…"
+msgstr "Taligenkänning pågår…"
+
+#: data/voice-typing@synos.com/extension.js:71
+msgid "Testing microphone…"
+msgstr "Testar mikrofonen…"
+
+#: data/voice-typing@synos.com/extension.js:72
+msgid "No speech detected"
+msgstr "Inget tal upptäckt"
+
+#: data/voice-typing@synos.com/extension.js:73
+msgid "Microphone unavailable"
+msgstr "Mikrofonen är inte tillgänglig"
+
+#: data/voice-typing@synos.com/extension.js:77
+#: data/voice-typing@synos.com/extension.js:314
+msgid "Auto"
+msgstr "Automatisk"
+
+#: data/voice-typing@synos.com/extension.js:371
+#: data/voice-typing@synos.com/extension.js:432
+msgid "Off"
+msgstr "Avstängd"
+
+#: data/voice-typing@synos.com/extension.js:544
+msgid "Voice typing is disabled in password fields"
+msgstr "Röstinmatning är inaktiverad i lösenordsfält"
+
+#: data/voice-typing@synos.com/extension.js:549
+msgid "Select a text field before dictating"
+msgstr "Välj ett textfält innan du dikterar"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:34
+msgid "Briefly preview recognized text before inserting it"
+msgstr ""
+"Visa en kort förhandsvisning av den igenkända texten innan den infogas"
+
+#: data/com.synos.VoiceTyping.Settings.desktop:3
+msgid "Configure offline system-wide dictation"
+msgstr "Konfigurera systemomfattande offline-röstinmatning"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:26
+msgid "Enable exact-match punctuation and layout commands"
+msgstr "Aktivera interpunktions- och layoutkommandon med exakt matchning"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:6
+msgid "Global voice typing shortcut"
+msgstr "Globalt kortkommando för röstinmatning"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:52
+msgid "Horizontal offset from the centered overlay position"
+msgstr "Horisontell förskjutning från det centrerade läget för överlagringen"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:22
+msgid "Keep punctuation recognized by Whisper"
+msgstr "Behåll interpunktionen som känns igen av Whisper"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:10
+msgid "PipeWire node name, or empty for the system default"
+msgstr "PipeWire-nodnamn, eller lämna tomt för systemets standardvärde"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:30
+msgid "Play a subtle sound when listening starts or stops"
+msgstr ""
+"Spela upp en diskret ljudsignal när appen börjar eller slutar lyssna på "
+"mikrofonen"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:43
+msgid "Preview duration in milliseconds"
+msgstr "Förhandsvisningstid i millisekunder"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:14
+msgid "Recognition language and Chinese output script"
+msgstr "Taligenkänningsspråk och kinesiskt skriftsystem för utdata"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:38
+msgid "Show periodically refreshed partial transcripts while speaking"
+msgstr "Visa deltranskriptioner som uppdateras löpande medan du talar"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:18
+msgid "Speech recognition model"
+msgstr "Taligenkänningsmodell"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:48
+msgid "Voice activity threshold in decibels"
+msgstr "Röstaktivitetsspärr i decibel"
+
+#: data/com.synos.VoiceTyping.Settings.desktop:9
+msgid "voice;typing;dictation;speech;microphone;accessibility;"
+msgstr "röst;inmatning;diktering;tal;mikrofon;tillgänglighet;"

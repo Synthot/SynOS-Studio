@@ -1,0 +1,13 @@
+Package: gnome-shell-extension-appindicator-synos
+Version: 2.0.2-1+synos1
+Section: gnome
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-dconf-runtime, gnome-shell (>= 45~), gjs, dconf-gsettings-backend | gsettings-backend, gir1.2-dbusglib-1.0 | gir1.2-gio-2.0
+Recommends: gnome-shell-extension-prefs | gnome-shell-extension-manager
+Provides: gnome-shell-extension-appindicator
+Conflicts: gnome-shell-extension-appindicator
+Replaces: gnome-shell-extension-appindicator
+Homepage: ${BRAND_URL_HOME}
+Description: AppIndicator and KStatusNotifierItem Support extension (3v1n0) — packaged for ${BRAND_NAME}

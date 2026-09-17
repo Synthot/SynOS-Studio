@@ -1,0 +1,511 @@
+# SynOS Appearance — Finnish translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: Finnish\n"
+"Language: fi_FI\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "Tietoja SynOS-ulkonäöstä"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "Edistynyt"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "SynOS-ulkonäkö"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "SynOS-tiimi"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "Ulkonäkö"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "Käytä kirjautumisruudussa"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "Alas"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "Peruuta"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "Valitse kuva GDM-kirjautumisruudun taustaksi."
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "Valitse tehtäväpalkin visuaalinen tyyli."
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "Valitse…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "Klassinen"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr "Yhdistä yhden sovelluksen useat ikkunat yhdeksi kuvakkeeksi"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "Vaaravyöhyke"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "Näytä Toiminnot-painike tehtäväpalkissa"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "Ota ryhmitys käyttöön"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "Laajennusten asetukset"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "GDM-taustakuva"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "Ryhmitä sovellukset"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "Kuvat"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "Erota käynnistimet käynnissä olevista sovelluksista"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "Ulkoasu"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "Vasen"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "Kirjautumisruudun taustakuva"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "Avaa"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "Avaa tehtäväpalkin laajennusten asetukset."
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "Palkin ilmoitukset"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "Palkin widgetit"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "Esikatselu"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "Nollaa"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "Nollaa työpöydän asetukset"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "Nollataanko työpöydän asetukset?"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "Palauta työpöydän ulkoasun, haun, sovelluskansioiden ja yksityisyyden tehdasasetukset"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "Oikea"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "Valitse kuva"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "Erillinen"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "Näytä Toiminnot-painike"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "Näytä työpöytäkuvakkeet"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "Näytä verkko"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "Näytä sää"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "Näytä tai piilota sisäänrakennetut paneelielementit."
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "Tehtäväpalkin elementit"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "Tehtäväpalkin tyyli"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr "Ota palkin ilmoituswidgetit käyttöön tai poista ne käytöstä."
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "Ylös"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "Hienosäädöt"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "Vista-tehtäväpalkin toiminta"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "Taustakuva"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "Keskitetty"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ Sovellettu — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ Työpöydän asetukset on palautettu. Ota kaikki muutokset käyttöön kirjautumalla ulos ja takaisin sisään."
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ GDM-taustakuva käytössä"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ Sijainnin käyttöönotto epäonnistui"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ Tyylin käyttöönotto epäonnistui"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ Nollaus epäonnistui"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ GDM-taustakuvan asettaminen epäonnistui"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ Toiminnot-painikkeen vaihto epäonnistui"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ Valitse ensin kuva"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "Tämä palauttaa laajennusten, paneelin asettelun, haun, sovelluskansioiden, taustakuvan, käyttöliittymän ja yksityisyyden tehdasasetukset."
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "Network Stats"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Simple Weather"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr "Päivitä säätoiminnon käyttämä likimääräinen sijainti"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "Sääpalveluiden tietosuojasopimus"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. Likimääräinen sijainti (ipapi.co)\n"
+"SynOS lähettää yhden HTTPS-pyynnön ipapi.co-palveluun. Palvelun ylläpitäjä Kloudend, Inc. näkee julkisen IP-osoitteesi ja voi käyttää sitä kaupunkisi, maasi ja likimääräisten koordinaattiesi määrittämiseen.\n"
+"\n"
+"2. Säätiedot (Open-Meteo)\n"
+"Säälaajennus lähettää valitut likimääräiset koordinaatit Open-Meteo-palveluun, jota ylläpitää OpenMeteo GmbH. Palvelu näkee myös julkisen IP-osoitteesi ja voi säilyttää API-lokeja enintään 90 päivää.\n"
+"\n"
+"SynOS ei ole sidoksissa kumpaankaan kolmannen osapuolen palveluun, eikä kumpikaan niistä sponsoroi tai suosittele SynOSia. Jos sijainnin tunnistaminen epäonnistuu, SynOS käyttää järjestelmäsi aikavyöhykkeeseen perustuvaa arviota, joka tehdään ilman verkkoyhteyttä.\n"
+"\n"
+"Tietosuojakäytännöt:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "Hylkää"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "Hyväksy kaikki"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr "Säätoimintoa ei otettu käyttöön, koska lupaa ei myönnetty."
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "Säätoiminnon luvan tallentaminen epäonnistui."
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "Määritetään likimääräinen sijaintisi…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "Säälaajennuksen määrittäminen epäonnistui."
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "Sääsijainniksi asetettiin {location}."
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr ""
+"Sijaintipalvelu ei ole käytettävissä; käytetään sijaintia {location} "
+"aikavyöhykkeesi perusteella."
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr ""
+"Säätoiminto poistettiin käytöstä, mutta tallennettua lupaa ei voitu poistaa."
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"Varmuuskopioi GNOME-asetukset, asettelut ja laajennusten asetukset. "
+"Henkilökohtaisia tiedostoja ei sisällytetä."
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "Varmuuskopiointi ja palautus"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "Vie GNOME-asetukset"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "Vie GNOME-asetukset"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "Vie…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "Miten nämä asetukset tuodaan?"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "INI-asetustiedostot"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "Tuo GNOME-asetukset"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "Tuo GNOME-asetukset"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "Tuo…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "Tuo yhdistämällä"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"Yhdistämällä tuotaessa säilytetään nykyiset arvot, joita tiedostossa ei ole.\n"
+"\n"
+"Täysi palautus nollaa ensin kaikki /org/gnome/ -asetukset; tiedostosta puuttuvat arvot palautuvat oletusarvoihinsa. Ennen kumpaakin toimintoa tallennetaan varmuuskopio."
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "Palauta asetukset dconf INI-tiedostosta"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr "Tallenna nykyiset asetukset luettavaksi INI-tiedostoksi"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "Täysi palautus"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ GNOME-asetukset viety"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ Asetukset tuotu. Kirjaudu ulos ja takaisin sisään, jotta kaikki muutokset "
+"tulevat voimaan."
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ GNOME-asetusten vienti epäonnistui"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ GNOME-asetusten tuonti epäonnistui"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ Asetustiedoston lukeminen epäonnistui"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr "✗ Tuonti ja automaattinen palautus epäonnistuivat"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr "✗ Tuonti epäonnistui; aiemmat asetukset palautettiin"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ Valittu tiedosto ei ole kelvollinen dconf INI-tiedosto"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "tehtäväpalkki;paneeli;asettelu;tyyli;ikkunat;ulkoasu;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr "Vaihda tehtäväpalkin keskitetyn ja klassisen asettelun välillä"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ Toiminnot-painike piilotettu"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ Toiminnot-painike näytössä"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ {label} poistettu käytöstä"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ {label} käytössä"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ {label}: poisto käytöstä epäonnistui"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ {label}: käyttöönotto epäonnistui"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ Toiminnot-painike — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action}ettu"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ {action} {label} epäonnistui"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "Tehtäväpalkin sijainti"
+
+#~ msgid "Panel Position"
+#~ msgstr "Palkin sijainti"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "Valitse, missä tehtäväpalkki sijaitsee näytöllä."

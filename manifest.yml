@@ -1,0 +1,28 @@
+# SynOS build manifest — validated against schema/manifest.schema.json
+schema_version: 1
+name: synos-workstation
+version: 1.0.0
+
+base: ubuntu            # bases/<base>/base.env
+suite: resolute         # 26.04 LTS; the upstream package server publishes <suite>-addon
+arch: amd64             # amd64 | arm64
+
+profile: workstation    # profiles/<profile>.yml
+regions: [fr, de, nl, be, ca, us]
+# regions/<code>.yml; the first one is the default Live region and the one
+# the acceptance matrix boots. Suites that need a region the image does not
+# carry (Chinese input method, Chinese UI contracts) are reported as skipped.
+brand: synos            # branding/<brand>/brand.yml
+
+mirrors:
+  snapshot: 2026-09-01  # date-pinned mirror snapshot for reproducible builds
+
+packages:
+  # Published SynOS repository installed systems update from; the build checks
+  # it answers. Empty ships the source disabled. For a test build:
+  #   make serve-repo   ->   repository: http://<build host>:8080/
+  repository: ""
+  # Roles from packages/stack.yml served from packages/ instead of upstream.
+  takeover: all
+
+overrides: {}           # inline profile overrides using the profile schema

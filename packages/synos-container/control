@@ -1,0 +1,10 @@
+Package: synos-container
+Version: 2.0.2-1+synos1
+Section: metapackages
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: coreutils, bash-completion, iproute2, iputils-ping, curl, ca-certificates, tar, unzip, zip, xz-utils, zstd, sudo, locales, vim-tiny, nano, lsof, psmisc
+Recommends: sudo-rs, wget, file, procps
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} container base — minimal shell, networking, and admin tools. This is the absolute minimum layer for ${BRAND_NAME} container images.

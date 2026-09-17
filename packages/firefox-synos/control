@@ -1,0 +1,10 @@
+Package: firefox-synos
+Version: 1:2.0.2+${UPSTREAM_VERSION}-1+synos1
+Section: web
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Conflicts: firefox
+Replaces: firefox
+Homepage: ${BRAND_URL_HOME}
+Description: Firefox browser from Mozilla (repackaged for ${BRAND_NAME}, without snapd)

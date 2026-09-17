@@ -1,0 +1,14 @@
+[Unit]
+Description=Migrate SynOS to the pure Dracut boot stack
+Documentation=https://www.synos.example
+ConditionPathExists=!/run/synos-live/environment
+ConditionPathExists=!/var/lib/synos-dracut-migration/complete
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemd-inhibit --what=shutdown:sleep --who=SynOS --why=Dracut-migration-is-writing-boot-files --mode=block /usr/lib/synos-dracut-migration/synos-dracut-migrate
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

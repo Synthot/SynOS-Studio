@@ -1,0 +1,1368 @@
+# synos-driver-center translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-driver-center.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-driver-center\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-11 16:11+0800\n"
+"PO-Revision-Date: 2026-08-06 07:08+0000\n"
+"Last-Translator: AnduinOS Team <anduin@aiursoft.com>\n"
+"Language-Team: sv\n"
+"Language: sv_SE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: src/synos_driver_center/app.py:123 src/synos_driver_center/app.py:221
+#: src/synos_driver_center/app.py:295
+#: src/synos_driver_center/app.py:2278
+#: data/com.synos.DriverCenter.desktop:2
+msgid "SynOS Driver Center"
+msgstr "SynOS drivrutinscenter"
+
+#: src/synos_driver_center/app.py:242 src/synos_driver_center/app.py:340
+#: src/synos_driver_center/app.py:342
+msgid "Home"
+msgstr "Hem"
+
+#: src/synos_driver_center/app.py:245 src/synos_driver_center/app.py:802
+#: src/synos_driver_center/app.py:1073
+#: src/synos_driver_center/app.py:1641
+#: src/synos_driver_center/app.py:1803
+msgid "Scan again"
+msgstr "Skanna igen"
+
+#: src/synos_driver_center/app.py:250
+msgid "About Driver Center"
+msgstr "Om Driver Center"
+
+#: src/synos_driver_center/app.py:252
+msgid "Main Menu"
+msgstr "Huvudmeny"
+
+#: src/synos_driver_center/app.py:297
+msgid "Scanning for drivers"
+msgstr "Söker efter drivrutiner"
+
+#: src/synos_driver_center/app.py:298
+msgid "Checking hardware and Secure Boot status…"
+msgstr "Kontrollerar hårdvara och Secure Boot-status..."
+
+#: src/synos_driver_center/app.py:340 src/synos_driver_center/app.py:878
+#: src/synos_driver_center/app.py:1218
+#: src/synos_driver_center/app.py:1951
+msgid "System status"
+msgstr "Systemstatus"
+
+#: src/synos_driver_center/app.py:359 src/synos_driver_center/app.py:363
+msgid "Audio"
+msgstr "Ljud"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:942
+msgid "Audio support ready"
+msgstr "Ljudstöd redo"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:375
+#: src/synos_driver_center/app.py:402 src/synos_driver_center/app.py:496
+#: src/synos_driver_center/app.py:845 src/synos_driver_center/app.py:848
+#: src/synos_driver_center/app.py:912 src/synos_driver_center/app.py:942
+#: src/synos_driver_center/app.py:972 src/synos_driver_center/app.py:997
+#: src/synos_driver_center/app.py:1013
+msgid "Support needs attention"
+msgstr "Support behöver uppmärksamhet"
+
+#: src/synos_driver_center/app.py:370
+msgid "Printing service stopped"
+msgstr "Utskriftstjänst stoppad"
+
+#: src/synos_driver_center/app.py:372 src/synos_driver_center/app.py:956
+#: src/synos_driver_center/app.py:2118
+msgid "Printing support disabled."
+msgstr "Utskriftsstöd inaktiverat."
+
+#: src/synos_driver_center/app.py:377
+msgid "Some queues are paused"
+msgstr "Vissa köer är pausade"
+
+#: src/synos_driver_center/app.py:379 src/synos_driver_center/app.py:967
+msgid "No printers configured"
+msgstr "Inga skrivare konfigurerade"
+
+#: src/synos_driver_center/app.py:382 src/synos_driver_center/app.py:962
+#, python-format
+msgid "%d printer configured"
+msgid_plural "%d printers configured"
+msgstr[0] "%d skrivare konfigurerad"
+msgstr[1] "%d skrivare konfigurerade"
+
+#: src/synos_driver_center/app.py:387 src/synos_driver_center/app.py:390
+msgid "Printers"
+msgstr "Skrivare"
+
+#: src/synos_driver_center/app.py:395 src/synos_driver_center/app.py:407
+msgid "Xbox Controller"
+msgstr "Xbox Styrenhet"
+
+#: src/synos_driver_center/app.py:397 src/synos_driver_center/app.py:995
+msgid "xpadneo installed"
+msgstr "xpadneo installerad"
+
+#: src/synos_driver_center/app.py:400 src/synos_driver_center/app.py:996
+msgid "Optional Bluetooth driver"
+msgstr "Valfri Bluetooth-drivrutin"
+
+#: src/synos_driver_center/app.py:413 src/synos_driver_center/app.py:417
+#: src/synos_driver_center/app.py:807 src/synos_driver_center/app.py:811
+#: src/synos_driver_center/app.py:1011
+#: src/synos_driver_center/app.py:1105
+#: src/synos_driver_center/app.py:1570
+#: src/synos_driver_center/app.py:1761
+#: src/synos_driver_center/app.py:1766
+#: src/synos_driver_center/app.py:1771
+#: src/synos_driver_center/app.py:1782
+msgid "Secure Boot"
+msgstr "Secure Boot"
+
+#: src/synos_driver_center/app.py:414
+#: src/synos_driver_center/app.py:1013
+msgid "Trust established"
+msgstr "Förtroende etablerat"
+
+#: src/synos_driver_center/app.py:414 src/synos_driver_center/app.py:798
+#: src/synos_driver_center/app.py:805 src/synos_driver_center/app.py:892
+#: src/synos_driver_center/app.py:1012
+msgid "Action required"
+msgstr "Åtgärd krävs"
+
+#: src/synos_driver_center/app.py:424 src/synos_driver_center/app.py:428
+#: src/synos_driver_center/app.py:1025
+#: src/synos_driver_center/app.py:1172
+msgid "Device Firmware"
+msgstr "Enhetens firmware"
+
+#: src/synos_driver_center/app.py:494
+#: src/synos_driver_center/app.py:1203
+msgid "Checking for updates…"
+msgstr "Söker efter uppdateringar..."
+
+#: src/synos_driver_center/app.py:498 src/synos_driver_center/app.py:520
+#: src/synos_driver_center/app.py:644
+msgid "Shutdown Required"
+msgstr "Avstängning krävs"
+
+#: src/synos_driver_center/app.py:500 src/synos_driver_center/app.py:522
+#: src/synos_driver_center/app.py:840 src/synos_driver_center/app.py:907
+#: src/synos_driver_center/app.py:1052
+#: src/synos_driver_center/app.py:1471
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:429
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:443
+msgid "Reboot Required"
+msgstr "Omstart krävs"
+
+#: src/synos_driver_center/app.py:504 src/synos_driver_center/app.py:526
+#: src/synos_driver_center/app.py:627
+#, python-format
+msgid "%d firmware update available"
+msgid_plural "%d firmware updates available"
+msgstr[0] "%d firmwareuppdatering tillgänglig"
+msgstr[1] "%d firmwareuppdateringar tillgängliga"
+
+#: src/synos_driver_center/app.py:509
+msgid "No supported devices"
+msgstr "Inga enheter som stöds"
+
+#: src/synos_driver_center/app.py:510
+msgid "Firmware is up to date"
+msgstr "Firmware är uppdaterad"
+
+#: src/synos_driver_center/app.py:516
+msgid "Checking…"
+msgstr "Kontrollerar..."
+
+#: src/synos_driver_center/app.py:516
+msgid "Contacting the firmware service"
+msgstr "Kontakta firmware-tjänsten"
+
+#: src/synos_driver_center/app.py:518 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:971 src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1440
+msgid "Needs attention"
+msgstr "Kräver uppmärksamhet"
+
+#: src/synos_driver_center/app.py:520 src/synos_driver_center/app.py:601
+#: src/synos_driver_center/app.py:1453
+msgid "Shutdown required after installation"
+msgstr "Avstängning krävs efter installation"
+
+#: src/synos_driver_center/app.py:522
+msgid "Restart to finish the firmware update"
+msgstr "Starta om för att avsluta firmwareuppdateringen"
+
+#: src/synos_driver_center/app.py:530 src/synos_driver_center/app.py:828
+#: src/synos_driver_center/app.py:902
+#: src/synos_driver_center/app.py:1049
+#: src/synos_driver_center/app.py:1269
+#: src/synos_driver_center/app.py:1404
+msgid "Update available"
+msgstr "Uppdatering tillgänglig"
+
+#: src/synos_driver_center/app.py:532 src/synos_driver_center/app.py:893
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1757
+#: src/synos_driver_center/app.py:1801
+#: src/synos_driver_center/app.py:1910
+msgid "Not detected"
+msgstr "Inte upptäckt"
+
+#: src/synos_driver_center/app.py:532
+#: src/synos_driver_center/app.py:1341
+msgid "No supported firmware devices"
+msgstr "Inga enheter med fast programvara som stöds"
+
+#: src/synos_driver_center/app.py:535
+#, python-format
+msgid "%d device is up to date"
+msgid_plural "%d devices are up to date"
+msgstr[0] "%d enhet är uppdaterad"
+msgstr[1] "%d enheter är uppdaterade"
+
+#: src/synos_driver_center/app.py:539 src/synos_driver_center/app.py:853
+#: src/synos_driver_center/app.py:917 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:959 src/synos_driver_center/app.py:992
+#: src/synos_driver_center/app.py:1055
+#: src/synos_driver_center/app.py:1269
+msgid "Ready"
+msgstr "Klar"
+
+#: src/synos_driver_center/app.py:568
+msgid "Scheduling firmware update…"
+msgstr "Schemalägger firmwareuppdatering..."
+
+#: src/synos_driver_center/app.py:569
+msgid "Downloading firmware…"
+msgstr "Laddar ner firmware..."
+
+#: src/synos_driver_center/app.py:570
+msgid "Installing firmware…"
+msgstr "Installerar firmware..."
+
+#: src/synos_driver_center/app.py:571
+msgid "Verifying firmware…"
+msgstr "Verifierar firmware..."
+
+#: src/synos_driver_center/app.py:572
+msgid "Waiting for authentication…"
+msgstr "Väntar på autentisering..."
+
+#: src/synos_driver_center/app.py:573
+msgid "Waiting for user action…"
+msgstr "Väntar på användaråtgärd..."
+
+#: src/synos_driver_center/app.py:577
+msgid "Updating firmware…"
+msgstr "Uppdaterar firmware..."
+
+#: src/synos_driver_center/app.py:598
+#: src/synos_driver_center/app.py:2123
+#: src/synos_driver_center/app.py:2252
+msgid "unknown error"
+msgstr "okänt fel"
+
+#: src/synos_driver_center/app.py:603
+#: src/synos_driver_center/app.py:1455
+msgid "Restart required after installation"
+msgstr "Omstart krävs efter installationen"
+
+#: src/synos_driver_center/app.py:607 src/synos_driver_center/app.py:680
+#: src/synos_driver_center/app.py:686
+msgid "Firmware operation failed"
+msgstr "Den fasta programvaran misslyckades"
+
+#: src/synos_driver_center/app.py:610
+#: src/synos_driver_center/app.py:2260
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:478
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:526
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:544
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:552
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:560
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:576
+msgid "OK"
+msgstr "OK"
+
+#: src/synos_driver_center/app.py:621
+msgid "Firmware metadata refreshed."
+msgstr "Firmware-metadata har uppdaterats."
+
+#: src/synos_driver_center/app.py:632
+msgid "No firmware updates are available."
+msgstr "Inga firmwareuppdateringar är tillgängliga."
+
+#: src/synos_driver_center/app.py:639
+msgid "Firmware update completed."
+msgstr "Firmware-uppdateringen slutförd."
+
+#: src/synos_driver_center/app.py:644
+msgid "Restart Required"
+msgstr "Omstart krävs"
+
+#: src/synos_driver_center/app.py:647
+msgid ""
+"The firmware update has been prepared. Save your work and shut down the "
+"computer to finish installing it."
+msgstr ""
+"Uppdateringen av den fasta programvaran har förberetts. Spara ditt arbete "
+"och stäng av datorn för att slutföra installationen."
+
+#: src/synos_driver_center/app.py:652
+msgid ""
+"The firmware update has been prepared. Save your work and restart the "
+"computer to finish installing it."
+msgstr ""
+"Firmwareuppdateringen har förberetts. Spara ditt arbete och starta om datorn"
+" för att slutföra installationen."
+
+#: src/synos_driver_center/app.py:657
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:494
+msgid "Later"
+msgstr "Senare"
+
+#: src/synos_driver_center/app.py:660
+msgid "Shut Down Now"
+msgstr "Stäng av nu"
+
+#: src/synos_driver_center/app.py:660
+msgid "Restart Now"
+msgstr "Starta om nu"
+
+#: src/synos_driver_center/app.py:766
+#: src/synos_driver_center/app.py:1361
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1616
+#: src/synos_driver_center/app.py:1741
+msgid "Installed"
+msgstr "Installerad"
+
+#: src/synos_driver_center/app.py:768
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Available"
+msgstr "Tillgänglig"
+
+#: src/synos_driver_center/app.py:800 src/synos_driver_center/app.py:858
+#: src/synos_driver_center/app.py:1063
+#: src/synos_driver_center/app.py:1736
+msgid "Driver status"
+msgstr "Drivrutinsstatus"
+
+#: src/synos_driver_center/app.py:801
+#: src/synos_driver_center/app.py:1652
+#: src/synos_driver_center/app.py:2252
+msgid "Driver operation failed: "
+msgstr "Drift av drivrutinen misslyckades: "
+
+#: src/synos_driver_center/app.py:809
+#: src/synos_driver_center/app.py:1568
+msgid ""
+"Secure Boot status or trust must be resolved before installing a third-party"
+" driver."
+msgstr ""
+"Secure Boot status eller förtroende måste lösas innan du installerar en "
+"drivrutin från tredje part."
+
+#: src/synos_driver_center/app.py:814 src/synos_driver_center/app.py:897
+#: src/synos_driver_center/app.py:1046
+#: src/synos_driver_center/app.py:1618
+msgid "Recommended"
+msgstr "Rekommenderas"
+
+#: src/synos_driver_center/app.py:818
+#: src/synos_driver_center/app.py:1557
+msgid ""
+"Choose the driver used by this device. SynOS marks the hardware-tested "
+"recommendation."
+msgstr ""
+"Välj den drivrutin som används av den här enheten. SynOS markerar den "
+"hårdvarutestade rekommendationen."
+
+#: src/synos_driver_center/app.py:820 src/synos_driver_center/app.py:832
+#: src/synos_driver_center/app.py:1097
+#: src/synos_driver_center/app.py:1533
+#: src/synos_driver_center/app.py:1578
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1667
+#: src/synos_driver_center/app.py:2007
+msgid "Apply Changes"
+msgstr "Tillämpa ändringar"
+
+#: src/synos_driver_center/app.py:843
+#: src/synos_driver_center/app.py:2250
+msgid "Driver changes completed. Restart may be required."
+msgstr "Ändringar av drivrutinen har slutförts. Omstart kan krävas."
+
+#: src/synos_driver_center/app.py:849 src/synos_driver_center/app.py:928
+#: src/synos_driver_center/app.py:1036
+#: src/synos_driver_center/app.py:1563
+msgid "Available drivers"
+msgstr "Tillgängliga drivrutiner"
+
+#: src/synos_driver_center/app.py:860 src/synos_driver_center/app.py:921
+msgid "No additional drivers are needed."
+msgstr "Inga ytterligare drivrutiner behövs."
+
+#: src/synos_driver_center/app.py:940
+#: src/synos_driver_center/app.py:1846
+msgid "Audio Support"
+msgstr "Ljudstöd"
+
+#: src/synos_driver_center/app.py:955
+#: src/synos_driver_center/app.py:1969
+msgid "Disabled"
+msgstr "Inaktiverad"
+
+#: src/synos_driver_center/app.py:977
+#: src/synos_driver_center/app.py:1918
+msgid "Printing Support"
+msgstr "Utskriftssupport"
+
+#: src/synos_driver_center/app.py:991
+#: src/synos_driver_center/app.py:1732
+msgid "Xbox Controller Support"
+msgstr "Stöd för Xbox-kontroller"
+
+#: src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1741
+#: src/synos_driver_center/app.py:1825
+#: src/synos_driver_center/app.py:1869
+#: src/synos_driver_center/app.py:1877
+#: src/synos_driver_center/app.py:2059
+msgid "Not installed"
+msgstr "Ej installerat"
+
+#: src/synos_driver_center/app.py:1012
+#: src/synos_driver_center/app.py:1749
+msgid "Trusted"
+msgstr "Pålitlig"
+
+#: src/synos_driver_center/app.py:1065
+msgid "Check for Driver Updates"
+msgstr "Sök efter drivrutinsuppdateringar"
+
+#: src/synos_driver_center/app.py:1067
+msgid "Refresh software sources and compare the recommended driver version."
+msgstr ""
+"Uppdatera programvarukällorna och jämför den rekommenderade "
+"drivrutinsversionen."
+
+#: src/synos_driver_center/app.py:1079
+msgid "Driver information updated."
+msgstr "Drivrutinsinformationen har uppdaterats."
+
+#: src/synos_driver_center/app.py:1088
+#: src/synos_driver_center/app.py:1535
+msgid ""
+"SynOS will update software sources and install the drivers recommended "
+"for this hardware."
+msgstr ""
+"SynOS kommer att uppdatera programvarukällorna och installera de "
+"drivrutiner som rekommenderas för den här maskinvaran."
+
+#: src/synos_driver_center/app.py:1174
+msgid ""
+"Keep system firmware and supported hardware up to date through the Linux "
+"Vendor Firmware Service."
+msgstr ""
+"Håll systemets fasta programvara och hårdvara som stöds uppdaterad genom "
+"Linux Vendor Firmware Service."
+
+#: src/synos_driver_center/app.py:1186
+msgid "Firmware operation failed: "
+msgstr "Firmware operation misslyckades: "
+
+#: src/synos_driver_center/app.py:1187
+#: src/synos_driver_center/app.py:1296
+msgid "Check Again"
+msgstr "Kontrollera igen"
+
+#: src/synos_driver_center/app.py:1193
+msgid "Firmware operation"
+msgstr "Firmware-drift"
+
+#: src/synos_driver_center/app.py:1220
+msgid "Firmware service"
+msgstr "Firmware-tjänst"
+
+#: src/synos_driver_center/app.py:1224
+msgid "Not available"
+msgstr "Ej tillgängligt"
+
+#: src/synos_driver_center/app.py:1238
+msgid "Not refreshed in this session"
+msgstr "Inte uppdaterad i denna session"
+
+#: src/synos_driver_center/app.py:1241
+msgid "Firmware metadata"
+msgstr "Firmware-metadata"
+
+#: src/synos_driver_center/app.py:1250
+msgid "Supported devices"
+msgstr "Enheter som stöds"
+
+#: src/synos_driver_center/app.py:1252
+#, python-format
+msgid "%d device detected"
+msgid_plural "%d devices detected"
+msgstr[0] "%d enhet upptäckt"
+msgstr[1] "%d enheter upptäckta"
+
+#: src/synos_driver_center/app.py:1262
+msgid "Available firmware updates"
+msgstr "Tillgängliga firmwareuppdateringar"
+
+#: src/synos_driver_center/app.py:1264
+#, python-format
+msgid "%d update available"
+msgid_plural "%d updates available"
+msgstr[0] "%d uppdatering tillgänglig"
+msgstr[1] "%d uppdateringar tillgängliga"
+
+#: src/synos_driver_center/app.py:1276
+msgid "Firmware actions"
+msgstr "Firmware-åtgärder"
+
+#: src/synos_driver_center/app.py:1278
+msgid "Refresh Firmware Metadata"
+msgstr "Uppdatera firmware-metadata"
+
+#: src/synos_driver_center/app.py:1279
+msgid "Download the latest metadata from enabled firmware sources."
+msgstr "Ladda ner den senaste metadatan från aktiverade firmwarekällor."
+
+#: src/synos_driver_center/app.py:1282
+msgid "Refresh"
+msgstr "Uppdatera"
+
+#: src/synos_driver_center/app.py:1292
+msgid "Check for Firmware Updates"
+msgstr "Sök efter firmwareuppdateringar"
+
+#: src/synos_driver_center/app.py:1293
+msgid "Compare connected devices with the available metadata."
+msgstr "Jämför anslutna enheter med tillgänglig metadata."
+
+#: src/synos_driver_center/app.py:1307
+msgid "Update All Firmware"
+msgstr "Uppdatera all firmware"
+
+#: src/synos_driver_center/app.py:1309
+#, python-format
+msgid "Install %d available update."
+msgid_plural "Install all %d available updates."
+msgstr[0] "Installera %d tillgänglig uppdatering."
+msgstr[1] "Installera alla %d tillgängliga uppdateringar."
+
+#: src/synos_driver_center/app.py:1315
+msgid "Update All"
+msgstr "Uppdatera alla"
+
+#: src/synos_driver_center/app.py:1330
+msgid "Firmware Devices"
+msgstr "Firmware-enheter"
+
+#: src/synos_driver_center/app.py:1332
+msgid "Expand a device to inspect installed and available firmware versions."
+msgstr ""
+"Expandera en enhet för att inspektera installerade och tillgängliga "
+"firmwareversioner."
+
+#: src/synos_driver_center/app.py:1342
+msgid "The firmware service did not report any manageable devices."
+msgstr "Firmwaretjänsten rapporterade inga hanterbara enheter."
+
+#: src/synos_driver_center/app.py:1348
+msgid "Firmware Update History"
+msgstr "Firmwareuppdateringshistorik"
+
+#: src/synos_driver_center/app.py:1349
+msgid "Results reported by the fwupd service."
+msgstr "Resultat rapporterade av tjänsten fwupd."
+
+#: src/synos_driver_center/app.py:1357
+msgid "Unknown time"
+msgstr "Okänd tid"
+
+#: src/synos_driver_center/app.py:1373
+msgid "No firmware update history"
+msgstr "Ingen firmwareuppdateringshistorik"
+
+#: src/synos_driver_center/app.py:1374
+msgid "Completed firmware operations will appear here."
+msgstr "Slutförda firmware-operationer visas här."
+
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1399
+#: src/synos_driver_center/app.py:1415
+#: src/synos_driver_center/app.py:1426
+#: src/synos_driver_center/app.py:1473
+#: src/synos_driver_center/app.py:1489
+#: src/synos_driver_center/app.py:1490
+msgid "Unknown"
+msgstr "Okänd"
+
+#: src/synos_driver_center/app.py:1398
+msgid "Current version"
+msgstr "Aktuell version"
+
+#: src/synos_driver_center/app.py:1405
+#: src/synos_driver_center/app.py:1518
+msgid "Update"
+msgstr "Uppdatering"
+
+#: src/synos_driver_center/app.py:1414
+msgid "Available version"
+msgstr "Tillgänglig version"
+
+#: src/synos_driver_center/app.py:1419
+msgid "Low"
+msgstr "Låg"
+
+#: src/synos_driver_center/app.py:1420
+msgid "Medium"
+msgstr "Medium"
+
+#: src/synos_driver_center/app.py:1421
+msgid "High"
+msgstr "Hög"
+
+#: src/synos_driver_center/app.py:1422
+msgid "Critical"
+msgstr "Kritisk"
+
+#: src/synos_driver_center/app.py:1425
+msgid "Update urgency"
+msgstr "Uppdatering brådskande"
+
+#: src/synos_driver_center/app.py:1436
+msgid "Release notes"
+msgstr "Versionsinformation"
+
+#: src/synos_driver_center/app.py:1443
+msgid "Firmware status"
+msgstr "Firmware-status"
+
+#: src/synos_driver_center/app.py:1447
+msgid "Up to date"
+msgstr "Upp till datum"
+
+#: src/synos_driver_center/app.py:1451
+msgid "Connect the computer to AC power"
+msgstr "Anslut datorn till nätström"
+
+#: src/synos_driver_center/app.py:1459
+msgid "Installation requirements"
+msgstr "Installationskrav"
+
+#: src/synos_driver_center/app.py:1468
+msgid "Pending"
+msgstr "Väntar"
+
+#: src/synos_driver_center/app.py:1469
+msgid "Success"
+msgstr "Framgång"
+
+#: src/synos_driver_center/app.py:1470
+#: src/synos_driver_center/app.py:1472
+msgid "Failed"
+msgstr "Misslyckades"
+
+#: src/synos_driver_center/app.py:1486
+#, python-format
+msgid "Install firmware for %(device)s from %(current)s to %(available)s?"
+msgstr ""
+"Installera firmware för %(device)s från %(current)s till %(available)s?"
+
+#: src/synos_driver_center/app.py:1494
+#, python-format
+msgid "Install %d available firmware update?"
+msgid_plural "Install all %d available firmware updates?"
+msgstr[0] "Installera %d tillgänglig firmwareuppdatering?"
+msgstr[1] "Installera alla %d tillgängliga firmwareuppdateringar?"
+
+#: src/synos_driver_center/app.py:1500
+msgid "Keep the computer connected to AC power."
+msgstr "Håll datorn ansluten till nätström."
+
+#: src/synos_driver_center/app.py:1504
+msgid ""
+"This update may invalidate full-disk encryption secrets. Make sure you have "
+"the volume recovery key before continuing."
+msgstr ""
+"Den här uppdateringen kan ogiltigförklara hemligheter för fullständig "
+"diskkryptering. Kontrollera att du har volymens återställningsnyckel innan "
+"du fortsätter."
+
+#: src/synos_driver_center/app.py:1509
+msgid "A restart may be required to finish installation."
+msgstr "En omstart kan krävas för att slutföra installationen."
+
+#: src/synos_driver_center/app.py:1510
+msgid "Do not disconnect devices or turn off the computer."
+msgstr "Koppla inte bort enheter och stäng inte av datorn."
+
+#: src/synos_driver_center/app.py:1514
+msgid "Install Firmware Update"
+msgstr "Installera Firmware Update"
+
+#: src/synos_driver_center/app.py:1517
+#: src/synos_driver_center/app.py:1539
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:432
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:446
+msgid "Cancel"
+msgstr "Avbryt"
+
+#: src/synos_driver_center/app.py:1540
+#: src/synos_driver_center/app.py:2210
+msgid "Apply"
+msgstr "Ansök"
+
+#: src/synos_driver_center/app.py:1587
+msgid "open source"
+msgstr "öppen källkod"
+
+#: src/synos_driver_center/app.py:1587
+msgid "proprietary"
+msgstr "egendom"
+
+#: src/synos_driver_center/app.py:1589
+msgid "built in"
+msgstr "inbyggd"
+
+#: src/synos_driver_center/app.py:1613
+msgid "In use"
+msgstr "Används"
+
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1651
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1831
+msgid "Kernel module"
+msgstr "Kärnmodul"
+
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1777
+#: src/synos_driver_center/app.py:1796
+#: src/synos_driver_center/app.py:1860
+#: src/synos_driver_center/app.py:1890
+#: src/synos_driver_center/app.py:1898
+msgid "Repair & Reinstall"
+msgstr "Reparera och installera om"
+
+#: src/synos_driver_center/app.py:1675
+msgid "Advanced driver versions"
+msgstr "Avancerade drivrutinsversioner"
+
+#: src/synos_driver_center/app.py:1676
+msgid "Older, newer, and server-oriented packages"
+msgstr "Äldre, nyare och serverorienterade paket"
+
+#: src/synos_driver_center/app.py:1697
+msgid "Select another driver to apply changes."
+msgstr "Välj en annan drivrutin för att tillämpa ändringarna."
+
+#: src/synos_driver_center/app.py:1733
+msgid ""
+"xpadneo improves Bluetooth mapping, rumble, battery reporting and "
+"compatibility for modern Xbox controllers."
+msgstr ""
+"xpadneo förbättrar Bluetooth-mappning, rumble, batterirapportering och "
+"kompatibilitet för moderna Xbox-kontroller."
+
+#: src/synos_driver_center/app.py:1740
+msgid "Driver package"
+msgstr "Drivrutinspaket"
+
+#: src/synos_driver_center/app.py:1743
+msgid "Install Driver"
+msgstr "Installera drivrutinen"
+
+#: src/synos_driver_center/app.py:1760
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:242
+msgid "Secure Boot state could not be determined"
+msgstr "Secure Boot tillstånd kunde inte fastställas"
+
+#: src/synos_driver_center/app.py:1765
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:285
+msgid "Pending enrollment in blue screen (MOKManager)"
+msgstr "Väntar på registrering i blå skärm (MOKManager)"
+
+#: src/synos_driver_center/app.py:1770
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:290
+msgid "Certificate is not trusted by motherboard"
+msgstr "Certifikatet är inte pålitligt av moderkortet"
+
+#: src/synos_driver_center/app.py:1775
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:318
+msgid "Some DKMS modules need to be re-signed"
+msgstr "Vissa DKMS-moduler måste signeras om"
+
+#: src/synos_driver_center/app.py:1786
+msgid "Module signature"
+msgstr "Modulsignatur"
+
+#: src/synos_driver_center/app.py:1794
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Missing"
+msgstr "Saknas"
+
+#: src/synos_driver_center/app.py:1806
+msgid "Loaded"
+msgstr "Lastad"
+
+#: src/synos_driver_center/app.py:1811
+msgid "Standing by"
+msgstr "Stand by"
+
+#: src/synos_driver_center/app.py:1838
+msgid "Bluetooth Settings"
+msgstr "Bluetooth-inställningar"
+
+#: src/synos_driver_center/app.py:1847
+msgid ""
+"SynOS provides Intel SOF firmware and ALSA UCM profiles for reliable "
+"audio initialization and routing."
+msgstr ""
+"SynOS tillhandahåller Intel SOF-firmware och ALSA UCM-profiler för "
+"pålitlig ljudinitiering och routing."
+
+#: src/synos_driver_center/app.py:1850
+msgid "Support packages"
+msgstr "Supportpaket"
+
+#: src/synos_driver_center/app.py:1858
+msgid "Install Audio Support"
+msgstr "Installera ljudstöd"
+
+#: src/synos_driver_center/app.py:1868
+msgid "Intel SOF firmware"
+msgstr "Intel SOF-firmware"
+
+#: src/synos_driver_center/app.py:1876
+msgid "ALSA UCM profiles"
+msgstr "ALSA UCM-profiler"
+
+#: src/synos_driver_center/app.py:1883
+msgid "Runtime status"
+msgstr "Körtidsstatus"
+
+#: src/synos_driver_center/app.py:1887
+msgid "SOF firmware files"
+msgstr "SOF-firmware-filer"
+
+#: src/synos_driver_center/app.py:1895
+msgid "UCM configuration files"
+msgstr "UCM-konfigurationsfiler"
+
+#: src/synos_driver_center/app.py:1903
+msgid "SOF kernel modules"
+msgstr "SOF-kärnmoduler"
+
+#: src/synos_driver_center/app.py:1904
+msgid "Not currently loaded"
+msgstr "Inte laddad för närvarande"
+
+#: src/synos_driver_center/app.py:1909
+msgid "Active audio drivers"
+msgstr "Aktiva ljuddrivrutiner"
+
+#: src/synos_driver_center/app.py:1919
+msgid ""
+"Inspect the local print service, configured queues, and the packages that "
+"provide modern and legacy printer support."
+msgstr ""
+"Inspektera den lokala utskriftstjänsten, konfigurerade köer och paketen som "
+"ger modernt och äldre skrivarstöd."
+
+#: src/synos_driver_center/app.py:1924
+#: src/synos_driver_center/app.py:1958
+msgid "Enable Printing Support"
+msgstr "Aktivera utskriftsstöd"
+
+#: src/synos_driver_center/app.py:1925
+msgid "Allow local, network, and USB printing services to run."
+msgstr ""
+"Tillåt att lokala utskriftstjänster, nätverks- och USB-utskriftstjänster "
+"körs."
+
+#: src/synos_driver_center/app.py:1955
+msgid "CUPS service"
+msgstr "CUPS-tjänst"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Running"
+msgstr "Kör"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Stopped"
+msgstr "Stoppad"
+
+#: src/synos_driver_center/app.py:1968
+msgid "Start at boot"
+msgstr "Börja vid uppstart"
+
+#: src/synos_driver_center/app.py:1969
+msgid "Enabled"
+msgstr "Aktiverad"
+
+#: src/synos_driver_center/app.py:1974
+#, python-format
+msgid "%d configured printer"
+msgid_plural "%d configured printers"
+msgstr[0] "%d konfigurerad skrivare"
+msgstr[1] "%d konfigurerade skrivare"
+
+#: src/synos_driver_center/app.py:1980
+msgid "Configured printers"
+msgstr "Konfigurerade skrivare"
+
+#: src/synos_driver_center/app.py:1986
+msgid "Default printer"
+msgstr "Standardskrivare"
+
+#: src/synos_driver_center/app.py:1987
+msgid "Not set"
+msgstr "Ej inställt"
+
+#: src/synos_driver_center/app.py:1991
+msgid "No configured queues"
+msgstr "Inga konfigurerade köer"
+
+#: src/synos_driver_center/app.py:1996
+#, python-format
+msgid "%d queue paused"
+msgid_plural "%d queues paused"
+msgstr[0] "%d kö pausad"
+msgstr[1] "%d köer pausade"
+
+#: src/synos_driver_center/app.py:2000
+msgid "All queues enabled"
+msgstr "Alla köer aktiverade"
+
+#: src/synos_driver_center/app.py:2004
+msgid "Print queues"
+msgstr "Utskriftsköer"
+
+#: src/synos_driver_center/app.py:2015
+msgid "Core printing"
+msgstr "Kärnutskrift"
+
+#: src/synos_driver_center/app.py:2016
+msgid "Required for the local print service and command-line clients."
+msgstr "Krävs för den lokala utskriftstjänsten och kommandoradsklienter."
+
+#: src/synos_driver_center/app.py:2023
+msgid "Driverless printing"
+msgstr "Drivrutinlös utskrift"
+
+#: src/synos_driver_center/app.py:2024
+msgid "Modern IPP drivers, document filters, and capability tools."
+msgstr "Moderna IPP-drivrutiner, dokumentfilter och kapacitetsverktyg."
+
+#: src/synos_driver_center/app.py:2031
+msgid "Network discovery"
+msgstr "Nätverksupptäckt"
+
+#: src/synos_driver_center/app.py:2032
+msgid "Automatic discovery of printers advertised on the local network."
+msgstr ""
+"Automatisk upptäckt av skrivare som annonseras i det lokala nätverket."
+
+#: src/synos_driver_center/app.py:2039
+msgid "Optional compatibility"
+msgstr "Valfri kompatibilitet"
+
+#: src/synos_driver_center/app.py:2040
+msgid ""
+"USB IPP, administrative authorization, legacy drivers, and network scanning."
+msgstr ""
+"USB IPP, administrativ auktorisering, äldre drivrutiner och "
+"nätverksskanning."
+
+#: src/synos_driver_center/app.py:2063
+msgid "Install Missing Packages"
+msgstr "Installera saknade paket"
+
+#: src/synos_driver_center/app.py:2116
+msgid "Printing support enabled."
+msgstr "Utskriftsstöd aktiverat."
+
+#: src/synos_driver_center/app.py:2122
+msgid "Printing operation failed: "
+msgstr "Utskrift misslyckades: "
+
+#: src/synos_driver_center/app.py:2211
+msgid "Working…"
+msgstr "Fungerar..."
+
+#: src/synos_driver_center/app.py:2280
+msgid "SynOS Team"
+msgstr "SynOS-teamet"
+
+#: src/synos_driver_center/app.py:2283
+msgid "Install, inspect, and repair hardware drivers on SynOS."
+msgstr "Installera, inspektera och reparera hårdvarudrivrutiner på SynOS."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:121
+msgid "Secure Boot Configuration"
+msgstr "Konfiguration av Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:129
+msgid ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+msgstr ""
+"Secure Boot är en moderbords säkerhetsstandard som säkerställer att endast "
+"betrodd programvara laddas vid uppstart."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:132
+msgid "It protects your system from low-level malware and rootkits."
+msgstr "Det skyddar ditt system mot lågnivåmalware och rotkits."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:141
+msgid "System Trust Status"
+msgstr "Status för systemtillit"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:183
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:325
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:509
+msgid "Create & Enroll Certificate"
+msgstr "Skapa & registrera certifikat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:189
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:338
+msgid "Repair Module Signatures"
+msgstr "Reparationsmodulsignaturer"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:197
+msgid "Note: Use password <b>123456</b> after rebooting."
+msgstr "Observera: Använd lösenordet <b>123456</b> efter omstart."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:202
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:495
+msgid "Reboot & Configure Secure Boot"
+msgstr "Omstart & konfigurera Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:210
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:419
+msgid "  Check Again  "
+msgstr "  Kontrollera igen  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:236
+msgid "Motherboard hardware protection is active"
+msgstr "Hårdvaruskydd på moderkortet är aktivt"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:239
+msgid "Firmware does not support Secure Boot"
+msgstr "Firmware stöder inte Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:245
+msgid "Secure Boot is disabled"
+msgstr "Secure Boot är inaktiverad"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:251
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:253
+msgid "Not required without firmware enforcement"
+msgstr "Krävs inte utan upprätthållande av firmware"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:257
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:261
+msgid "Not checked because Secure Boot state is unknown"
+msgstr "Ej markerad eftersom Secure Boot tillstånd är okänd"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:266
+msgid "Certificate generated locally"
+msgstr "Certifikat genererat lokalt"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:268
+msgid "Missing local certificate"
+msgstr "Saknar lokalt certifikat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:281
+msgid "Certificate is trusted by motherboard"
+msgstr "Certifikatet är betrott av moderkortet"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:296
+msgid "Kernel signature enforcement is inactive"
+msgstr "Upprätthållande av kärnsignatur är inaktiv"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:299
+msgid "Driver trust cannot be verified"
+msgstr "Förtroende för drivrutiner kan inte verifieras"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:303
+msgid ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+msgstr ""
+"Secure Boot förtroende är redo. Inga kärnmoduler från tredje part är för "
+"närvarande installerade."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:307
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:550
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:558
+msgid "Drivers are signed and ready to load"
+msgstr "Divrutiner är signerade och redo att laddas"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:311
+msgid "Drivers are trusted, but automatic DKMS signing needs repair"
+msgstr ""
+"Drivrutiner är pålitliga, men automatisk DKMS-signering behöver repareras"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:315
+msgid "No signed third-party drivers detected"
+msgstr "Ingen signerad tredjepartsdrivrutin upptäckt"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:323
+msgid "Enroll Existing Certificate"
+msgstr "Registrera befintligt certifikat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:336
+msgid "Repair Automatic DKMS Signing"
+msgstr "Reparera automatisk DKMS Signering"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:356
+msgid ""
+"This firmware does not provide Secure Boot. No certificate is required."
+msgstr ""
+"Denna firmware tillhandahåller inte Secure Boot. Inget certifikat krävs."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:363
+msgid ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+msgstr ""
+"Secure Boot status kunde inte läsas. Drivertrust-operationer blockeras tills"
+" upptäckten lyckas."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:369
+msgid "No certificate is required while Secure Boot is disabled."
+msgstr "Inget certifikat krävs när Secure Boot är inaktiverat."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:375
+msgid "System Trust Established. Third-party drivers will load securely."
+msgstr ""
+"Systemtillit etablerad. Tredjepartsdrivrutiner kommer att laddas säkert."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:379
+msgid "The certificate is enrolled and current drivers are trusted."
+msgstr "Certifikatet är registrerat och nuvarande drivrutiner är betrodda."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:381
+msgid "Repair automatic DKMS signing before future driver updates."
+msgstr ""
+"Reparera automatisk DKMS-signering innan framtida drivrutinsuppdateringar."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:386
+msgid "The certificate is enrolled, but some modules are not signed with it."
+msgstr ""
+"Certifikatet är registrerat, men vissa moduler är inte signerade med det."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:391
+msgid "A certificate is waiting for enrollment."
+msgstr "Ett certifikat väntar på registrering."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:393
+msgid "Restart and enter password 123456 in MOKManager."
+msgstr "Starta om och ange lösenordet 123456 i MOKManager."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:398
+msgid "The local trust certificate is not yet enrolled."
+msgstr "Det lokala förtroendecertifikatet är ännu inte registrerat."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:400
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:407
+msgid "You must configure this to use third-party drivers like NVIDIA."
+msgstr ""
+"Du måste konfigurera detta för att använda tredjepartsdrivrutiner som "
+"NVIDIA."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:405
+msgid "The local trust certificate is missing."
+msgstr "Det lokala förtroendecertifikatet saknas."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:423
+msgid "  Checking...  "
+msgstr "  Kontrollerar...  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:430
+msgid "Please trust the certificate upon reboot using password 123456."
+msgstr "Betroa certifikatet vid omstart med lösenord 123456."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:447
+msgid "Reboot"
+msgstr "Omstart"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:483
+msgid "Success! When you reboot, a blue screen will appear."
+msgstr "Sucess! När du startar om kommer en blå skärm att visas."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:487
+msgid "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+msgstr "Välj 'Registrera MOK' → 'Fortsätt' → 'Ja', och ange lösenord: 123456"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:491
+msgid "Certificate Created"
+msgstr "Certifikat skapat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:523
+msgid "Secure Boot Trust Not Required"
+msgstr "Secure Boot Förtroende krävs inte"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:524
+msgid "Firmware signature enforcement is not active."
+msgstr "Signaturtillämpning av firmware är inte aktiv."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:534
+msgid ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt."
+" You can repair them after enrollment."
+msgstr ""
+"Certifikatet är klart, men en eller flera DKMS-moduler kunde inte byggas om."
+" Du kan reparera dem efter registreringen."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:542
+msgid "Configuration needs attention"
+msgstr "Konfiguration kräver uppmärksamhet"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:549
+msgid "System Trust Established"
+msgstr "Systemförtroende etablerat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:557
+msgid "Driver Signature Trusted"
+msgstr "Drivrutins signatur pålitlig"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:573
+msgid "Configuration failed. Please try again."
+msgstr "Konfigurationen misslyckades. Försök igen."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:574
+msgid "Please check the advanced output."
+msgstr "Kontrollera den avancerade utmatningen."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:585
+msgid "Generating & Signing..."
+msgstr "Genererar & signerar..."
+
+#: src/synos_driver_center/app.py:1940
+msgid "Add Printer"
+msgstr "Lägg till skrivare"
+
+#: src/synos_driver_center/app.py:1365
+#: src/synos_driver_center/app.py:1390
+#: src/synos_driver_center/app.py:1488
+msgid "Firmware device"
+msgstr "Firmware-enhet"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:156
+msgid "Local MOK Certificate"
+msgstr "Lokalt MOK-certifikat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:155
+msgid "Secure Boot Enabled"
+msgstr "Secure Boot aktiverad"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:158
+msgid "Third-party Drivers"
+msgstr "Tredjepartsdrivrutiner"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:157
+msgid "UEFI Firmware Trust"
+msgstr "UEFI-firmwaretillit"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:10
+msgid "Authentication is required to change hardware drivers"
+msgstr "Autentisering krävs för att ändra hårdvarudrivrutiner"
+
+#: data/com.synos.DriverCenter.desktop:12
+msgid "driver;firmware;fwupd;nvidia;graphics;xbox;secure boot;hardware;"
+msgstr "drivrutin;firmware;fwupd;nvidia;grafik;xbox;Secure Boot;hårdvara;"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:8
+msgid "Install and repair hardware drivers"
+msgstr "Installera och reparera hårdvarudrivrutiner"
+
+#: data/com.synos.DriverCenter.desktop:4
+msgid "Manage hardware drivers and device firmware"
+msgstr "Hantera hårdvarudrivrutiner och enhetsfirmware"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:8
+msgid "Configure Secure Boot trust and repair DKMS signatures"
+msgstr "Konfigurera Secure Boot-förtroende och reparera DKMS-signaturer"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:10
+msgid "Authentication is required to configure Secure Boot trust"
+msgstr "Autentisering krävs för att konfigurera Secure Boot-förtroende"
+
+#~ msgid "Download the latest metadata from enabled firmware remotes."
+#~ msgstr ""
+#~ "Ladda ner den senaste metadatan från aktiverade firmware-fjärrkontroller."
+
+#~ msgid "Driver Center"
+#~ msgstr "Om Driver Center"
+
+#~ msgid "Secure Boot needs attention"
+#~ msgstr "Support behöver uppmärksamhet"
+
+#~ msgid "Establish system trust before installing a third-party driver."
+#~ msgstr ""
+#~ "Secure Boot status eller förtroende måste lösas innan du installerar en "
+#~ "drivrutin från tredje part."
+
+#, python-format
+#~ msgid "%d recommended driver is available"
+#~ msgid_plural "%d recommended drivers are available"
+#~ msgstr[0] "Uppdagande av FIDO-enhet är inte tillgängligt"
+#~ msgstr[1] "Uppdagande av FIDO-enhet är inte tillgängligt"
+
+#~ msgid "Install Recommended Drivers"
+#~ msgstr "Installera drivrutinen"
+
+#~ msgid "Driver changes are ready"
+#~ msgstr "Drivrutins signatur pålitlig"
+
+#~ msgid "A graphics driver needs attention"
+#~ msgstr "Konfiguration kräver uppmärksamhet"
+
+#~ msgid "Your drivers are ready"
+#~ msgstr "Drivrutins signatur pålitlig"
+
+#~ msgid "Recommended changes"
+#~ msgstr "Rekommenderas"
+
+#~ msgid "Install Recommended Drivers?"
+#~ msgstr "Installera drivrutinen"
+
+#~ msgid "Install"
+#~ msgstr "Installerad"
+
+#~ msgid "Hardware"
+#~ msgstr "Hårdvara"
+
+#~ msgid "Blocked by Secure Boot"
+#~ msgstr "Blockerad av Secure Boot"
+
+#~ msgid "Complete printing support"
+#~ msgstr "Komplett utskriftsstöd"
+
+#~ msgid "Install missing printing packages"
+#~ msgstr "Installera saknade utskriftspaket"
+
+#, python-format
+#~ msgid "%d package is missing"
+#~ msgid_plural "%d packages are missing"
+#~ msgstr[0] "%d-paketet saknas"
+#~ msgstr[1] "%d-paket saknas"

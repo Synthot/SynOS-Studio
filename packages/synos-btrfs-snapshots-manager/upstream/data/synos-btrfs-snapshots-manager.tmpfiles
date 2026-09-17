@@ -1,0 +1,3 @@
+d /var/lib/synos-btrfs-snapshots-manager 0755 root root -
+d /var/lib/btrfs 0755 root root -
+d /etc/synos-btrfs-snapshots-manager 0755 root root -

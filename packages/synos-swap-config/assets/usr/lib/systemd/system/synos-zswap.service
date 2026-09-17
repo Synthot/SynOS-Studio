@@ -1,0 +1,17 @@
+# SynOS Zswap vendor default.
+# Reads /etc/default/synos-zswap (written by synos-swapcontrol-gtk).
+# If no config exists, zswap remains disabled until the user opts in.
+[Unit]
+Description=SynOS Zswap Configuration
+DefaultDependencies=no
+After=systemd-journald.socket
+Before=swap.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=-/usr/sbin/modprobe zswap
+ExecStart=/usr/lib/synos-swap-config/setup-zswap.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,873 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-swapcontrol-gtk\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-14 09:51+0000\n"
+"Language: el_GR\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/window.rs:76
+msgid "About"
+msgstr "Σχετικά"
+
+#: src/views/swap_view.rs:305
+msgid "Accept threshold percent"
+msgstr "Όριο αποδοχής (%)"
+
+#: src/views/zram_view.rs:252
+msgid "Advanced options"
+msgstr "Επεκτειμένες επιλογές"
+
+#: src/views/stress_test_view.rs:230 src/views/swap_view.rs:230
+msgid "Advanced settings"
+msgstr "Επεκτειμένες ρυθμίσεις"
+
+#: src/views/zram_view.rs:353
+msgid "Algorithm"
+msgstr "Αλγόριθμος"
+
+#: src/views/swap_view.rs:339
+msgid "Apply Settings"
+msgstr "Εφαρμογή ρυθμίσεων"
+
+#: src/views/swap_view.rs:672
+msgid "Applying settings…"
+msgstr "Εφαρμογή ρυθμίσεων…"
+
+#: src/views/dashboard_view.rs:392
+msgid "Auth needed"
+msgstr "Απαιτείται επιβεβαίωση ταυτότητας"
+
+#: src/views/dashboard_view.rs:435
+msgid "Buf"
+msgstr "Προσχέδια"
+
+#: src/views/dashboard_view.rs:412
+msgid "Buffers"
+msgstr "Προσχέδια"
+
+#: src/views/dashboard_view.rs:436
+msgid "Cache"
+msgstr "Μεταφόρτωση"
+
+#: src/views/dashboard_view.rs:417
+msgid "Cached"
+msgstr "Σε μεταφόρτωση"
+
+#: src/views/zram_view.rs:383
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+#: src/views/stress_test_view.rs:323
+msgid "Cancel Test"
+msgstr "Ακύρωση δοκιμής"
+
+#: src/views/stress_test_view.rs:606
+msgid "Cancelled by user."
+msgstr "Ακύρωση από τον χρήστη."
+
+#: src/views/dashboard_view.rs:209
+msgid "Channels"
+msgstr "Κανάλια"
+
+#: src/views/stress_test_view.rs:618
+msgid "Completed successfully — memory pressure test passed."
+msgstr "Ολοκληρώθηκε με επιτυχία — η δοκιμή πίεσης μνήμης περάσε."
+
+#: src/views/swap_view.rs:188
+msgid ""
+"Compress swap pages in a RAM pool — faster than disk swap. Use Zram or "
+"Zswap, not both."
+msgstr ""
+"Συμπίεση σελίδων εικονικής μνήμης σε pool RAM — πιο γρήγορη από την εικονική"
+" μνήμη δίσκου. Χρησιμοποιήστε Zram ή Zswap, όχι και τα δύο."
+
+#: src/views/zram_view.rs:73
+msgid "Compressed RAM block device — fast in-memory swap"
+msgstr "Συμπιεσμένη συσκευή μπλοκ RAM — ταχύς μετασχηματισμός στη μνήμη"
+
+#: src/views/swap_view.rs:271
+msgid "Compression algorithm"
+msgstr "Αλγόριθμος συμπίεσης"
+
+#: src/views/zram_view.rs:384
+msgid "Create"
+msgstr "Δημιουργία"
+
+#: src/views/zram_view.rs:110 src/views/zram_view.rs:195
+msgid "Create Zram Device"
+msgstr "Δημιουργία συσκευής Zram"
+
+#: src/window.rs:110
+msgid "Dashboard"
+msgstr "Πίνακας ελέγχου"
+
+#: src/views/zram_view.rs:576
+msgid "Destroy Zram Device"
+msgstr "Καταστροφή συσκευής Zram"
+
+#: src/views/zram_view.rs:444
+msgid "Device Created"
+msgstr "Η συσκευή δημιουργήθηκε"
+
+#: src/views/dashboard_view.rs:525
+msgid "Disabled"
+msgstr "Απενεργοποιημένο"
+
+#: src/views/swap_view.rs:526
+msgid "Disabling Zswap..."
+msgstr "Απενεργοποίηση Zswap…"
+
+#: src/views/swap_view.rs:582
+msgid "Disabling swap…"
+msgstr "Απενεργοποίηση swap…"
+
+#: src/views/swap_view.rs:102
+msgid "Disk Swap Configuration"
+msgstr "Ρύθμιση εικονικής μνήμης δίσκου"
+
+#: src/views/dashboard_view.rs:636
+msgid ""
+"Disk swap is active with memory compression — your system is well-protected "
+"against memory pressure."
+msgstr ""
+"Η εικονική μνήμη δίσκου είναι ενεργή με συμπίεση μνήμης — το σύστημά σας "
+"προστατεύεται καλά από την πίεση μνήμης."
+
+#: src/views/stress_test_view.rs:610 src/views/stress_test_view.rs:622
+msgid "Duration:"
+msgstr "Διάρκεια:"
+
+#: src/views/dashboard_view.rs:631
+msgid ""
+"Enable Zram for snappy compressed swap in RAM — it's 10× faster than disk "
+"swap and dramatically reduces I/O under memory pressure."
+msgstr ""
+"Ενεργοποιήστε το Zram για γρήγορη συμπιεσμένη εικονική μνήμη στη RAM — είναι"
+" 10× πιο γρήγορη από την εικονική μνήμη δίσκου και μειώνει δραματικά την I/O"
+" υπό πίεση μνήμης."
+
+#: src/views/swap_view.rs:524
+msgid "Enabling Zswap..."
+msgstr "Ενεργοποίηση Zswap…"
+
+#: src/views/swap_view.rs:584
+msgid "Enabling swap…"
+msgstr "Ενεργοποίηση swap…"
+
+#: src/views/stress_test_view.rs:614 src/views/swap_view.rs:510
+#: src/views/zram_view.rs:187
+msgid "Error"
+msgstr "Σφάλμα"
+
+#: src/views/dashboard_view.rs:422 src/views/dashboard_view.rs:437
+msgid "Free"
+msgstr "Ελεύθερο"
+
+#: src/views/stress_test_view.rs:255 src/views/stress_test_view.rs:256
+#: src/views/stress_test_view.rs:406
+msgid "Growth speed"
+msgstr "Ταχύτητα ανάπτυξης"
+
+#: src/views/dashboard_view.rs:291
+msgid "Hibernation"
+msgstr "Υπνωσία"
+
+#: src/views/swap_view.rs:602 src/views/swap_view.rs:709
+msgid "Hibernation Warning"
+msgstr "Προειδοποίηση κρυπτοσύνης"
+
+#: src/views/dashboard_view.rs:539 src/views/swap_view.rs:815
+msgid "Inactive"
+msgstr "Ανενεργό"
+
+#: src/views/swap_view.rs:161 src/views/swap_view.rs:175
+msgid "Loading..."
+msgstr "Φόρτωση..."
+
+#: src/views/stress_test_view.rs:237
+msgid "Maximum hold time"
+msgstr "Μέγιστος χρόνος κράτησης"
+
+#: src/views/swap_view.rs:287
+msgid "Maximum pool percent"
+msgstr "Μέγιστο ποσοστό pool"
+
+#: src/views/dashboard_view.rs:147
+msgid "Memory Overview"
+msgstr "Επισκόπηση μνήμης"
+
+#: src/views/zram_view.rs:119
+msgid "No Zram Devices"
+msgstr "Δεν υπάρχουν συσκευές Zram"
+
+#: src/views/dashboard_view.rs:478
+msgid "No device"
+msgstr "Κανenhς συσκευής"
+
+#: src/views/dashboard_view.rs:614
+msgid "No disk swap detected"
+msgstr "Δεν εντοπίστηκε εναλλαγή δίσκου"
+
+#: src/views/dashboard_view.rs:630
+msgid "No memory acceleration enabled"
+msgstr "Δεν ενεργοποιήθηκε επιτάχυνση μνήμης"
+
+#: src/views/dashboard_view.rs:568
+msgid "None"
+msgstr "Κανένα"
+
+#: src/views/dashboard_view.rs:552 src/views/dashboard_view.rs:560
+msgid "Off"
+msgstr "Κλειστό"
+
+#: src/views/dashboard_view.rs:559
+msgid "On"
+msgstr "Ενεργό"
+
+#: src/views/swap_view.rs:306
+msgid ""
+"Only store pages that compress to ≤ this % of original. Higher = more pages "
+"cached. Recommended: 90%"
+msgstr ""
+"Αποθηκεύστε μόνο σελίδες που συμπιέζονται σε ≤ από αυτό το % του αρχικού "
+"μεγέθους. Υψηλότερη τιμή = περισσότερες σελίδες σε αποθήκευση. Συνιστάται: "
+"90%"
+
+#: src/views/dashboard_view.rs:635
+msgid "Optimal memory configuration"
+msgstr "Βέλτιστη διαμόρφωση μνήμης"
+
+#: src/views/stress_test_view.rs:607 src/views/stress_test_view.rs:619
+msgid "Peak allocated:"
+msgstr "Κορυφαία κατανομή:"
+
+#: src/views/zram_view.rs:372
+msgid "Priority"
+msgstr "Προτεραιότητα"
+
+#: src/views/stress_test_view.rs:214
+msgid "RAM"
+msgstr "RAM"
+
+#: src/views/zram_view.rs:559
+msgid "Remove"
+msgstr "Αφαίρεση"
+
+#: src/views/stress_test_view.rs:365
+msgid "Run Again"
+msgstr "Εκτέλεση ξανά"
+
+#: src/views/stress_test_view.rs:284
+msgid "Run Stress Test"
+msgstr "Εκτέλεση δοκιμής φόρτισης"
+
+#: src/views/swap_view.rs:312
+msgid "Shrinker"
+msgstr "Μείωση μνήμης"
+
+#: src/views/zram_view.rs:274
+msgid "Size (MiB)"
+msgstr "Μέγεθος (MiB)"
+
+#: src/views/dashboard_view.rs:208
+msgid "Speed"
+msgstr "Ταχύτητα"
+
+#: src/views/stress_test_view.rs:105 src/window.rs:114
+msgid "Stress Test"
+msgstr "Δοκιμή φόρτισης"
+
+#: src/views/dashboard_view.rs:271 src/views/dashboard_view.rs:288
+#: src/window.rs:112
+msgid "Swap"
+msgstr "Swap"
+
+#: src/progress_dialog.rs:24 src/window.rs:59
+#: data/com.synos.swapcontrol.desktop:24
+msgid "Swap Control"
+msgstr "Έλεγχος εικονικής μνήμης"
+
+#: src/views/swap_view.rs:152
+msgid "Swap usage"
+msgstr "Χρήση εικονικής μνήμης"
+
+#: src/views/dashboard_view.rs:292 src/views/swap_view.rs:262
+#: src/views/swap_view.rs:682
+msgid "Swappiness"
+msgstr "Swappiness"
+
+#: src/views/dashboard_view.rs:625
+msgid "Swappiness not optimized for Zram"
+msgstr "Η τιμή swappiness δεν έχει βελτιστοποιηθεί για Zram"
+
+#: src/views/stress_test_view.rs:211
+msgid "Target Pressure"
+msgstr "Πίεση στόχου"
+
+#: src/views/stress_test_view.rs:350
+msgid "Test Complete"
+msgstr "Ολοκληρώθηκε η δοκιμή"
+
+#: src/views/dashboard_view.rs:206
+msgid "Total RAM"
+msgstr "Σύνολο RAM"
+
+#: src/views/dashboard_view.rs:207
+msgid "Type"
+msgstr "Τύπος"
+
+#: src/views/dashboard_view.rs:407 src/views/dashboard_view.rs:434
+msgid "Used"
+msgstr "Χρησιμοποιηθείσα"
+
+#: src/views/dashboard_view.rs:615
+msgid ""
+"When RAM is full the kernel may kill applications. Enable disk swap for a "
+"reliable safety net."
+msgstr ""
+"Όταν η RAM γεμίσει, ο πυρήνας μπορεί να τερματίσει εφαρμογές. Ενεργοποιήστε "
+"την εικονική μνήμη δίσκου για αξιόπιστο δίκτυο ασφαλείας."
+
+#: src/views/dashboard_view.rs:263 src/views/dashboard_view.rs:290
+#: src/window.rs:111
+msgid "Zram"
+msgstr "Zram"
+
+#: src/views/zram_view.rs:66
+msgid "Zram Devices"
+msgstr "Συσκευές Zram"
+
+#: src/views/dashboard_view.rs:619
+msgid "Zram and Zswap are both active"
+msgstr "Το Zram και το Zswap είναι και τα δύο ενεργά"
+
+#: src/views/dashboard_view.rs:620
+msgid ""
+"Zram and Zswap are mutually exclusive — each creates its own compressed RAM "
+"pool. Running both wastes CPU and can cause severe memory thrashing. Disable"
+" one of them."
+msgstr ""
+"Το Zram και το Zswap είναι αμοιβαίως αποκλειόμενα — καθένα δημιουργεί το "
+"δικό του συμπιεσμένο pool RAM. Η ταυτόχρονη χρήση τους χάνει CPU και μπορεί "
+"να προκαλέσει σοβαρή ανακάμψη μνήμης (thrashing). Απενεργοποιήστε το ένα από"
+" τα δύο."
+
+#: src/views/dashboard_view.rs:267 src/views/dashboard_view.rs:289
+#: src/views/swap_view.rs:190 src/views/swap_view.rs:691
+msgid "Zswap"
+msgstr "Ζουάπ"
+
+#: src/views/stress_test_view.rs:217
+msgid "default"
+msgstr "προεπιλογή"
+
+#: src/views/swap_view.rs:272
+msgid ""
+"lz4 = fast (recommended), zstd = best ratio, lzo = legacy. Changing requires"
+" zswap restart."
+msgstr ""
+"lz4 = γρήγορο (συνιστάται), zstd = καλύτερη αναλογία συμπίεσης, lzo = "
+"παλαιό. Η αλλαγή απαιτεί επανεκκίνηση του zswap."
+
+#: src/views/stress_test_view.rs:216
+msgid "range"
+msgstr "εύρος"
+
+#: src/views/stress_test_view.rs:238
+msgid "seconds"
+msgstr "δευτερόλεπτα"
+
+#: src/views/swap_view.rs:123
+msgid "with Zram"
+msgstr "με Zram"
+
+#: src/views/dashboard_view.rs:167
+msgid "with Zram active — prefer fast compressed RAM over disk cache"
+msgstr ""
+"με ενεργό Zram — προτίμηση γρήγορης συμπιεσμένης RAM έναντι του buffer "
+"δίσκου"
+
+#: src/views/dashboard_view.rs:574
+msgid "Ready"
+msgstr "Έτοιμο"
+
+#: src/views/dashboard_view.rs:576
+msgid "Unsupported"
+msgstr "Μη υποστηριζόμενο"
+
+#: src/views/dashboard_view.rs:578
+msgid "Not configured"
+msgstr "Δεν έχει ρυθμιστεί"
+
+#: src/views/dashboard_view.rs:580
+msgid "Resume target missing"
+msgstr "Λείπει ο στόχος επαναφοράς κρυπτοσύνης"
+
+#: src/views/dashboard_view.rs:582
+msgid "Resume target inactive"
+msgstr "Ανενεργός στόχος επαναφοράς κρυπτοσύνης"
+
+#: src/views/dashboard_view.rs:584
+msgid "Swap too small"
+msgstr "Η εικονική μνήμη είναι πολύ μικρή"
+
+#: src/views/dashboard_view.rs:586
+msgid "Not ready"
+msgstr "Μη έτοιμο"
+
+#: src/views/swap_view.rs:109
+msgid ""
+"Review installer-managed swap partitions and manage the legacy supplementary"
+" swap file"
+msgstr ""
+"Επισκόπηση των διαμερισμάτων εικονικής μνήμης που διαχειρίζεται ο "
+"εγκαταστάτης και διαχείριση του παλαιού συμπληρωματικού αρχείου εικονικής "
+"μνήμης"
+
+#: src/views/swap_view.rs:160
+msgid "Swap partition"
+msgstr "Διαμέρισμα εικονικής μνήμης"
+
+#: src/views/swap_view.rs:174
+msgid "Additional swap file"
+msgstr "Επιπλέον αρχείο εικονικής μνήμης"
+
+#: src/views/swap_view.rs:200
+msgid "Additional swap file size"
+msgstr "Μέγεθος επιπλέον αρχείου εικονικής μνήμης"
+
+#: src/views/swap_view.rs:201
+msgid "0 GiB means no supplementary swap file"
+msgstr "0 GiB σημαίνει ότι δεν υπάρχει επιπλέον αρχείο εικονικής μνήμης"
+
+#: src/views/swap_view.rs:603
+msgid ""
+"This swap file is the configured resume target. Disabling it will break "
+"hibernation. Continue?"
+msgstr ""
+"Αυτό το αρχείο εικονικής μνήμης είναι ο ρυθμισμένος στόχος επαναφοράς "
+"κρυπτοσύνης. Η απενεργοποίησή του θα καταστρέψει την κρυπτοσύνη. Συνέχεια;"
+
+#: src/views/swap_view.rs:710
+msgid ""
+"This swap file is the configured resume target. Its physical offset would "
+"change, so resize is blocked until hibernation is disabled."
+msgstr ""
+"Αυτό το αρχείο εικονικής μνήμης είναι ο ρυθμισμένος στόχος επαναφοράς "
+"κρυπτοσύνης. Το φυσικό του offset θα άλλαζε, οπότε η αλλαγή μεγέθους "
+"αποκλείεται μέχρι να απενεργοποιηθεί η κρυπτοσύνη."
+
+#: src/views/swap_view.rs:727
+msgid "unknown"
+msgstr "άγνωστο"
+
+#: src/views/swap_view.rs:743
+msgid "No swap partition — a legacy swap file can be managed below"
+msgstr ""
+"Δεν υπάρχει διαμέρισμα εικονικής μνήμης — το παλαιό αρχείο εικονικής μνήμης "
+"μπορεί να διαχειριστεί παρακάτω"
+
+#: src/views/swap_view.rs:212
+msgid "Remove incompatible file"
+msgstr "Αφαίρεση μη συμβατού αρχείου"
+
+#: src/views/swap_view.rs:382
+msgid "Removing incompatible swap file…"
+msgstr "Αφαίρεση μη συμβατού αρχείου εικονικής μνήμης…"
+
+#: src/views/swap_view.rs:795
+msgid "Present but inactive"
+msgstr "Υπάρχει αλλά είναι ανενεργό"
+
+#: src/views/swap_view.rs:797
+msgid "Not created — choose a size below to add one"
+msgstr ""
+"Δεν έχει δημιουργηθεί — επιλέξτε ένα μέγεθος παρακάτω για να προσθέσετε ένα"
+
+#: src/views/swap_view.rs:799
+msgid "Not created — at least 20 GiB must remain free"
+msgstr ""
+"Δεν έχει δημιουργηθεί — πρέπει να παραμένουν τουλάχιστον 20 GiB ελεύθεροι "
+"χώροι"
+
+#: src/views/swap_view.rs:835
+msgid ""
+"Resize is locked because this file is the configured hibernation resume "
+"target"
+msgstr ""
+"Η αλλαγή μεγέθους είναι κλειδωμένη, καθώς αυτό το αρχείο είναι ο ρυθμισμένος"
+" στόχος επαναφοράς κρυπτοσύνης"
+
+#: src/views/swap_view.rs:837
+msgid ""
+"Optional compatibility file; 0 GiB removes it and 20 GiB remains reserved "
+"for the system"
+msgstr ""
+"Επιλογικό αρχείο συμβατότητας; 0 GiB το αφαιρεί και 20 GiB παραμένουν "
+"εφεδρεύοντα για το σύστημα"
+
+#: src/views/swap_view.rs:839
+msgid ""
+"Disabled on Btrfs because a root-subvolume swap file would prevent Disk "
+"Snapshots Manager recovery points"
+msgstr ""
+"Απενεργοποιημένο στο Btrfs επειδή ένα αρχείο εικονικής μνήμης στο κύριο "
+"υποόγκο θα εμπόδιζε τους σημείους αποκατάστασης του Διαχειριστή Στιγμιότυπων"
+" Δίσκου"
+
+#: src/views/zram_view.rs:120
+msgid ""
+"Create a compressed RAM swap device for faster memory pressure handling."
+msgstr ""
+"Δημιουργήστε μια συμπιεσμένη συσκευή εικονικής μνήμης στη RAM για πιο "
+"γρήγορη διαχείριση της πίεσης μνήμης."
+
+#: src/views/stress_test_view.rs:176
+msgid "Ensure important work is saved before running this test."
+msgstr ""
+"Βεβαιωθείτε ότι οι σημαντικές εργασίες είναι αποθηκευμένες πριν εκτελέσετε "
+"αυτόν τον έλεγχο."
+
+#: src/views/swap_view.rs:288
+msgid "Max % of RAM the compressed pool may occupy. Recommended: 20%"
+msgstr ""
+"Μέγιστο % της RAM που μπορεί να καταλάβει η συμπίεση. Προτεινόμενη τιμή: 20%"
+
+#: src/views/dashboard_view.rs:154
+msgid "Real-time RAM, swap, and compression subsystem status"
+msgstr "Κατάσταση υποσυστημάτων RAM, swap και συμπίεσης σε πραγματικό χρόνο"
+
+#: src/views/swap_view.rs:313
+msgid "Reclaim pool pages under memory pressure. Recommended: ON"
+msgstr "Ανάκτηση σελίδων pool υπό πίεση μνήμης. Συνιστάται: ΕΝΕΡΓΟ"
+
+#: src/views/stress_test_view.rs:112
+msgid "Simulate memory pressure to test swap and OOM behavior"
+msgstr "Προσομοίωση πίεσης μνήμης για δοκιμή συμπεριφοράς ανταλλαγής και OOM"
+
+#: src/views/stress_test_view.rs:166
+msgid "Warning: This will consume system memory and may cause instability"
+msgstr ""
+"Προειδοποίηση: Αυτό θα καταναλώσει μνήμη συστήματος και μπορεί να προκαλέσει"
+" αστάθεια"
+
+#: src/views/zram_view.rs:445
+msgid "Zram configuration saved. The device will be created shortly."
+msgstr "Η διαμόρφωση Zram αποθηκεύτηκε. Η συσκευή θα δημιουργηθεί σύντομα."
+
+#: src/views/dashboard_view.rs:178 src/views/swap_view.rs:133
+msgid "<i>Recommended swappiness: {0} ({1})</i>"
+msgstr "<i>Συνιστώμενη τιμή swappiness: {0} ({1})</i>"
+
+#: src/views/zram_view.rs:90
+msgid "<i>Recommended: {0} MiB, lz4, priority 100 (for {1} GiB RAM)</i>"
+msgstr "<i>Συνιστώμενο: {0} MiB, lz4, προτεραιότητα 100 (για {1} GiB RAM)</i>"
+
+#: src/views/swap_view.rs:777
+msgid "Active — {0} GiB used / {1} GiB total"
+msgstr "Ενεργό — {0} GiB χρησιμοποιούνται / {1} GiB συνολικά"
+
+#: src/swap/exec.rs:26 src/swap/exec.rs:68
+msgid "Authentication cancelled"
+msgstr "Ο έλεγχος ταυτότητας ακυρώθηκε"
+
+#: src/swap/swapfile.rs:113
+msgid "Cannot inspect the root filesystem"
+msgstr "Αδυναμία επιθεώρησης του ριζικού συστήματος αρχείων"
+
+#: src/swap/swapfile.rs:108
+msgid "Cannot inspect the root filesystem: {0}"
+msgstr "Δεν είναι δυνατή η εξέταση του ριζικού συστήματος αρχείων: {0}"
+
+#: src/swap/sysctl.rs:79
+msgid "Cannot parse MemTotal: {0}"
+msgstr "Αδυναμία ανάλυσης MemTotal: {0}"
+
+#: src/swap/sysctl.rs:43
+msgid "Cannot parse swappiness: {0}"
+msgstr "Αδυναμία ανάλυσης τιμής swappiness: {0}"
+
+#: src/swap/zswap.rs:59
+msgid "Cannot parse {0} as u8: {1}"
+msgstr "Δεν είναι δυνατή η ανάλυση του {0} ως u8: {1}"
+
+#: src/swap/sysctl.rs:70
+msgid "Cannot read /proc/meminfo: {0}"
+msgstr "Δεν είναι δυνατή η ανάγνωση του /proc/meminfo: {0}"
+
+#: src/swap/swapfile.rs:39
+msgid "Cannot read /proc/swaps: {0}"
+msgstr "Δεν είναι δυνατή η ανάγνωση /proc/swaps: {0}"
+
+#: src/swap/sysctl.rs:36 src/swap/zswap.rs:47
+msgid "Cannot read {0}: {1}"
+msgstr "Δεν είναι δυνατή η ανάγνωση {0}: {1}"
+
+#: src/swap/exec.rs:18 src/swap/exec.rs:52
+msgid "Failed to execute pkexec: {0}"
+msgstr "Αποτυχία εκτέλεσης του pkexec: {0}"
+
+#: src/swap/persist.rs:31
+msgid "Failed to remove legacy unit {0}: {1}"
+msgstr "Αποτυχία αφαίρεσης παλαιού μονάδας {0}: {1}"
+
+#: src/swap/sysctl.rs:129
+msgid "Failed to set swappiness: {0} / {1}"
+msgstr "Αποτυχία ρύθμισης τιμής swappiness: {0} / {1}"
+
+#: src/swap/exec.rs:61
+msgid "Failed to wait on pkexec: {0}"
+msgstr "Αποτυχία αναμονής για το pkexec: {0}"
+
+#: src/i18n.rs:24
+msgid "Hello {0}, you have {1} messages"
+msgstr "Γεια σας {0}, έχετε {1} μηνύματα"
+
+#: src/views/swap_view.rs:239
+msgid ""
+"How aggressively the kernel swaps — lower = stay in RAM longer (recommended:"
+" {0})"
+msgstr ""
+"Το πόσο επιθετικά το kernel χρησιμοποιεί το swap — χαμηλότερη τιμή = "
+"παραμονή στη RAM για μεγαλύτερο χρονικό διάστημα (συνιστάται: {0})"
+
+#: src/views/swap_view.rs:236
+msgid ""
+"How aggressively the kernel swaps — with Zram active, set to {0} to prefer "
+"fast compressed RAM over disk cache (recommended: {0})"
+msgstr ""
+"Το πόσο επιθετικά η kernel εναλλάσσεται στη μνήμη — με ενεργό Zram, ορίστε "
+"το σε {0} για να προτιμάται η γρήγορη συμπιεσμένη RAM έναντι του buffer "
+"δίσκου (συνιστάται: {0})"
+
+#: src/views/dashboard_view.rs:505
+msgid "Idle ({0} GiB available)"
+msgstr "Αδρανής ({0} GiB διαθέσιμο)"
+
+#: src/views/zram_view.rs:536
+msgid "Idle — {0} MiB available"
+msgstr "Αδρανής — {0} MiB διαθέσιμο"
+
+#: src/swap/sysctl.rs:83
+msgid "MemTotal not found"
+msgstr "Δεν βρέθηκε MemTotal"
+
+#: src/views/swap_view.rs:791
+msgid "Present but inactive — activation is disabled on {0}"
+msgstr "Παρόν αλλά ανενεργό — η ενεργοποίηση είναι απενεργοποιημένη στο {0}"
+
+#: src/views/stress_test_view.rs:681
+msgid ""
+"RAM: {0} GiB total · {1} GiB used · {2} GiB avail\n"
+"Swap used: {3} GiB"
+msgstr ""
+"RAM: {0} GiB συνολικά · {1} GiB χρησιμοποιημένα · {2} GiB διαθέσιμα\n"
+"Εικονική μνήμη χρησιμοποιημένη: {3} GiB"
+
+#: src/views/swap_view.rs:678
+msgid "Resize"
+msgstr "Μεταμερσμός"
+
+#: src/views/swap_view.rs:842
+msgid "Swap file resizing is unsupported on {0}"
+msgstr "Η αλλαγή μεγέθους του αρχείου swap δεν υποστηρίζεται στο {0}"
+
+#: src/progress_dialog.rs:58
+msgid "Task panicked: {0}"
+msgstr "Η εργασία είχε πανικό: {0}"
+
+#: src/swap/persist.rs:74
+msgid ""
+"The package 'synos-swap-config' is not installed.\n"
+"\n"
+"Zram changes cannot be applied or persisted without it.\n"
+"Install 'synos-swap-config' to manage zram from this GUI."
+msgstr ""
+"Το πακέτο 'synos-swap-config' δεν είναι εγκατεστημένο.\n"
+"\n"
+"Οι αλλαγές στο Zram δεν μπορούν να εφαρμοστούν ή να διατηρηθούν χωρίς αυτό.\n"
+"Εγκαταστήστε το 'synos-swap-config' για να διαχειρίζεστε το zram από αυτό το GUI."
+
+#: src/swap/persist.rs:133
+msgid ""
+"The package 'synos-swap-config' is not installed.\n"
+"\n"
+"Zswap changes cannot be applied or persisted without it.\n"
+"Install 'synos-swap-config' to manage zswap from this GUI."
+msgstr ""
+"Το πακέτο 'synos-swap-config' δεν είναι εγκατεστημένο.\n"
+"\n"
+"Οι αλλαγές στο Zswap δεν μπορούν να εφαρμοστούν ή να διατηρηθούν χωρίς αυτό.\n"
+"Εγκαταστήστε το 'synos-swap-config' για να διαχειρίζεστε το zswap από αυτό το GUI."
+
+#: src/views/zram_view.rs:578
+msgid ""
+"This will immediately remove {0} and flush its contents to disk swap. "
+"Continue?"
+msgstr ""
+"Αυτό θα αφαιρέσει αμέσως το {0} και θα εκκαθαρίσει το περιεχόμενο του στην "
+"εικονική μνήμη δίσκου. Συνέχεια;"
+
+#: src/views/swap_view.rs:802
+msgid "Unavailable on {0}; the swap partition remains active"
+msgstr ""
+"Δεν είναι διαθέσιμο στο {0}· ο τομέας εικονικής μνήμης παραμένει ενεργός"
+
+#: src/views/dashboard_view.rs:626
+msgid ""
+"Zram is active but swappiness is {0} instead of {1}. Set it to {1} to prefer"
+" fast compressed RAM swap — dropping file cache when zram is available "
+"wastes I/O performance."
+msgstr ""
+"Το Zram είναι ενεργό αλλά η τιμή swappiness είναι {0} αντί για {1}. Ορίστε "
+"την σε {1} για να προτιμάται η γρήγορη συμπιεσμένη RAM για εικονική μνήμη — "
+"η απώλεια του cache αρχείων όταν υπάρχει διαθέσιμο Zram υποβαθμίζει την "
+"απόδοση I/O."
+
+#: src/swap/persist.rs:88
+msgid "Zram persistence disabled"
+msgstr "Επιδιόρθωση Zram απενεργοποιήθηκε"
+
+#: src/swap/persist.rs:90
+msgid "Zram persistence enabled"
+msgstr "Επιδιόρθωση Zram ενεργοποιήθηκε"
+
+#: src/swap/persist.rs:148
+msgid "Zswap persistence disabled"
+msgstr "Η διατήρηση του Zswap απενεργοποιήθηκε"
+
+#: src/swap/persist.rs:146
+msgid "Zswap persistence enabled"
+msgstr "Η διατήρηση των ρυθμίσεων Zswap είναι ενεργοποιημένη"
+
+#: src/views/dashboard_view.rs:172 src/views/swap_view.rs:127
+msgid "for {0} GiB RAM"
+msgstr "για {0} GiB RAM"
+
+#: src/swap/sysctl.rs:133
+msgid "swappiness updated"
+msgstr "Η τιμή swappiness ενημερώθηκε"
+
+#: src/swap/persist.rs:37
+msgid "systemctl {0} failed: {1}"
+msgstr "Αποτυχία εκτέλεσης systemctl {0}: {1}"
+
+#: src/views/zram_view.rs:530
+msgid "{0} MiB used (stats reset)"
+msgstr "Χρησιμοποιήθηκαν {0} MiB (η στατιστική επαναρροφίστηκε)"
+
+#: src/views/zram_view.rs:525
+msgid "{0} MiB used · saved {1}%"
+msgstr "Χρησιμοποιήθηκαν {0} MiB · εξοικονομήθηκε {1}%"
+
+#: src/views/dashboard_view.rs:520
+msgid "{0} · pool {1}%"
+msgstr "{0} · δεξαμενή {1}%"
+
+#: src/views/dashboard_view.rs:496
+msgid "{0} · saved {1}%"
+msgstr "{0} · αποθηκεύτηκε {1}%"
+
+#: src/views/swap_view.rs:759
+msgid ""
+"{0} — installer-managed; size cannot be changed while the system is running"
+msgstr ""
+"{0} — διαχειρίζεται από τον εγκαταστάτη· το μέγεθος δεν μπορεί να αλλάξει "
+"ενώ το σύστημα είναι σε λειτουργία"
+
+#: data/com.synos.swapcontrol.desktop:99
+msgid "swap;memory;zswap;zram;swappiness;virtual memory;compression;RAM;"
+msgstr "swap;μνήμη;zswap;zram;swappiness;εικονική μνήμη;συμπίεση;RAM;"
+
+#: data/com.synos.swapcontrol.desktop:70
+msgid "Manage virtual memory, compression, and swap settings"
+msgstr "Διαχείριση ρυθμίσεων εικονικής μνήμης, συμπίεσης και χώρου εναλλαγής"
+
+#: data/com.synos.swapcontrol.desktop:47
+msgid "Virtual Memory Settings"
+msgstr "Ρυθμίσεις εικονικής μνήμης"
+
+#: synos-swapcontrol-gtk/data/com.synos.swapcontrol.policy:39
+msgid "Authentication is required to modify swap, zswap, and zram settings"
+msgstr ""
+"Απαιτείται έλεγχος ταυτότητας για την τροποποίηση των ρυθμίσεων swap, zswap "
+"και zram"
+
+#: synos-swapcontrol-gtk/data/com.synos.swapcontrol.policy:9
+msgid "Manage virtual memory settings"
+msgstr "Διαχείριση ρυθμίσεων εικονικής μνήμης"
+
+#~ msgid "Disabling swap will break hibernation. Continue?"
+#~ msgstr "Η απενεργοποίηση του swap θα σπάσει την ηibernation. Συνέχεια;"
+
+#~ msgid "Disk Swap"
+#~ msgstr "Εναλλαγή Δίσκου"
+
+#~ msgid "Swap file size"
+#~ msgstr "Μέγεθος εικονικής μνήμης"
+
+#~ msgid "<i>Recommended: {0} GiB swap, swappiness {1} ({2})</i>"
+#~ msgstr ""
+#~ "<i>Συνιστάται: {0} GiB εικονικής μνήμης, τιμή swappiness {1} ({2})</i>"
+
+#~ msgid "Creating Zram device…"
+#~ msgstr "Δημιουργία συσκευής Zram…"
+
+#~ msgid "Destroying Zram device…"
+#~ msgstr "Καταστροφή συσκευής Zram…"
+
+#~ msgid "Disk-based swap file — the last line of defense when RAM is full"
+#~ msgstr ""
+#~ "Αρχείο εικονικής μνήμης στον δίσκο — η τελευταία γραμμή άμυνας όταν η RAM "
+#~ "είναι γεμάτη"
+
+#~ msgid "Hibernation not detected — recommended: {0} GiB"
+#~ msgstr "Η αναστολή λειτουργίας δεν εντοπίστηκε — προτεινόμενη τιμή: {0} GiB"
+
+#~ msgid "Active"
+#~ msgstr "Ενεργό"
+
+#~ msgid "Compressed write-back cache for swap"
+#~ msgstr "Συμπίεση συστήματος cache write-back για swap"
+
+#~ msgid "Compressed write-back cache — intercepts pages before disk swap"
+#~ msgstr ""
+#~ "Μνήμη cache συσταλμένης ανάγνωσης/εγγραφής — αναλαμβάνει σελίδες πριν την "
+#~ "εικονική μνήμη δίσκου"
+
+#~ msgid "How much RAM zswap can use for compressed pages"
+#~ msgstr "Πόση RAM μπορεί να χρησιμοποιήσει ο zswap για συμπιεσμένες σελίδες"
+
+#~ msgid "Max pool (% of RAM)"
+#~ msgstr "Μέγιστο pool (% της RAM)"
+
+#~ msgid "No zram devices. Create one to enable compressed RAM swap."
+#~ msgstr ""
+#~ "Δεν υπάρχουν συσκευές zram. Δημιουργήστε μία για να ενεργοποιήσετε τη "
+#~ "συσταλμένη εικονική μνήμη RAM."
+
+#~ msgid "Reclaim pool memory when system is under pressure"
+#~ msgstr "Ανακτήστε μνήμη δεξαμενής swap όταν το σύστημα υφίσταται φόρτο"
+
+#~ msgid "Resizing swap file…"
+#~ msgstr "Αλλαγή μεγέθους αρχείου εικονικής μνήμης…"
+
+#~ msgid "Zswap Configuration"
+#~ msgstr "Διαμόρφωση Zswap"
+
+#~ msgid "lzo-rle is fastest, zstd saves more space"
+#~ msgstr "Το lzo-rle είναι το ταχύτερο, το zstd εξοικονομεί περισσότερο χώρο"
+
+#~ msgid ""
+#~ "<i>Recommended: {0}–{1} MiB, lzo-rle, priority 100 (for {2} GiB RAM)</i>"
+#~ msgstr ""
+#~ "<i>Recommended: {0}–{1} MiB, lzo-rle, priority 100 (for {2} GiB RAM)</i>"
+
+#~ msgid ""
+#~ "Hibernation active — minimum {0} GiB (RAM + 1 GiB). Recommended: {1} GiB"
+#~ msgstr ""
+#~ "Hibernation active — minimum {0} GiB (RAM + 1 GiB). Recommended: {1} GiB"

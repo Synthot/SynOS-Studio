@@ -1,0 +1,13 @@
+Package: plymouth-synos
+Version: 2.0.2+${UPSTREAM_VERSION}-4+synos1
+Section: misc
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-core-system, dracut
+Recommends: plymouth-theme-ubuntu-text
+Provides: plymouth-theme-spinner
+Conflicts: plymouth-theme-spinner
+Replaces: plymouth-theme-spinner
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} boot splash theme

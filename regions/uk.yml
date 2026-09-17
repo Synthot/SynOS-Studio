@@ -1,0 +1,9 @@
+id: uk
+name: United Kingdom
+locales: [en_GB.UTF-8]
+keyboard: gb
+timezone: Europe/London
+mirror: http://ftp.uk.debian.org/debian/
+compliance: ncsc-eud
+eid: []
+paper: a4

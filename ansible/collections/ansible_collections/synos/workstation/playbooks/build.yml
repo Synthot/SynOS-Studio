@@ -1,0 +1,34 @@
+# Build a SynOS image on a runner you control.
+#   ansible-playbook synos.workstation.build -e manifest=manifests/acme.yml [-e repo=/path/to/synos]
+- name: Build a SynOS image
+  hosts: "{{ build_host | default('localhost') }}"
+  connection: "{{ 'local' if (build_host | default('localhost')) == 'localhost' else 'ssh' }}"
+  vars:
+    repo: "{{ playbook_dir }}/../../../../.."
+    manifest: manifest.yml
+    container: true
+  tasks:
+    - name: Validate the manifest
+      ansible.builtin.command: python3 tools/render_manifest.py --manifest "{{ manifest }}" --check
+      args: { chdir: "{{ repo }}" }
+      changed_when: false
+
+    - name: Build in a container
+      ansible.builtin.command: make container-build MANIFEST="{{ manifest }}"
+      args: { chdir: "{{ repo }}" }
+      when: container
+
+    - name: Build on this host
+      ansible.builtin.command: make MANIFEST="{{ manifest }}"
+      args: { chdir: "{{ repo }}" }
+      when: not container
+
+    - name: Collect the artifacts
+      ansible.builtin.find:
+        paths: "{{ repo }}/dist"
+        patterns: ["*.iso", "*.sha256", "*.sbom.cdx.json", "*.packages.lock", "*.resolved.json"]
+      register: build_artifacts
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: "{{ build_artifacts.files | map(attribute='path') | list }}"

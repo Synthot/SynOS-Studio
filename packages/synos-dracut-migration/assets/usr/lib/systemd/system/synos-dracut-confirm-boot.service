@@ -1,0 +1,13 @@
+[Unit]
+Description=Confirm the first successful boot after the SynOS Dracut migration
+Documentation=https://www.synos.example
+ConditionPathExists=/var/lib/synos-dracut-migration/complete
+ConditionPathExists=!/var/lib/synos-dracut-migration/boot-confirmed
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/synos-dracut-migration/synos-dracut-confirm-boot
+
+[Install]
+WantedBy=multi-user.target

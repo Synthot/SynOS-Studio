@@ -1,0 +1,24 @@
+# Debian edition of the default workstation.
+#   make container-build MANIFEST=manifests/debian-workstation.yml 2>&1 | tee debian-build.log
+schema_version: 1
+name: synos-workstation-debian
+version: 1.0.0
+
+base: debian
+suite: trixie
+arch: amd64
+
+profile: workstation
+regions: [fr, de, nl, be, ca, us]
+brand: synos
+
+mirrors: {}
+
+packages:
+  repository: ""
+  takeover: all
+
+image:
+  squashfs_level: 12   # faster test builds; releases use the default 19
+
+overrides: {}

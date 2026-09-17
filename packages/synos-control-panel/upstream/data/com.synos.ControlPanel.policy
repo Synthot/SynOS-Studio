@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>SynOS</vendor>
+  <vendor_url>https://www.synos.example</vendor_url>
+  <action id="com.synos.ControlPanel.manage-boot-settings">
+    <description>Read and change boot menu settings</description>
+    <description xml:lang="id_ID">Baca dan ubah pengaturan menu boot</description>
+    <description xml:lang="nl_NL">Opstartmenu-instellingen lezen en wijzigen</description>
+    <description xml:lang="ru_RU">Чтение и изменение настроек меню загрузки</description>
+    <description xml:lang="zh_CN">读取和更改启动菜单设置</description>
+    <message>Authentication is required to read or change boot menu settings</message>
+    <message xml:lang="da_DK">Godkendelse er påkrævet for at læse eller ændre bootmenuens indstillinger</message>
+    <message xml:lang="fi_FI">Käynnistysvalikon asetusten lukeminen tai muuttaminen vaatii todennuksen</message>
+    <message xml:lang="it_IT">È richiesta l'autenticazione per leggere o modificare le impostazioni del menu di avvio</message>
+    <message xml:lang="ko_KR">부팅 메뉴 설정을 읽거나 변경하려면 인증이 필요합니다</message>
+    <message xml:lang="pt_BR">É necessária autenticação para ler ou alterar as configurações do menu de inicialização</message>
+    <message xml:lang="ru_RU">Требуется аутентификация для чтения или изменения настроек меню загрузки</message>
+    <message xml:lang="tr_TR">Önyükleme menüsü ayarlarını okumak veya değiştirmek için kimlik doğrulaması gereklidir</message>
+    <message xml:lang="uk_UA">Потрібна автентифікація для читання або зміни налаштувань меню завантаження</message>
+    <message xml:lang="zh_CN">读取和更改启动菜单设置需要身份验证</message>
+    <icon_name>com.synos.ControlPanel</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/synos-control-panel/boot-settings-helper</annotate>
+  </action>
+</policyconfig>

@@ -1,0 +1,17 @@
+{
+  "package": "firmware-sof-signed",
+  "distro": "ubuntu",
+  "url": "https://mirror.aiursoft.com/ubuntu",
+  "suite": "$(Suite)",
+  "suite_mapping": "noble-addon=noble,, resolute-addon=resolute",
+  "component": "$(Component)",
+  "arch": "all",
+  "signed_by": "",
+  "suppress_scripts": false,
+  "by_base": {
+    "debian": {
+      "package": "firmware-sof-signed",
+      "component": "non-free-firmware"
+    }
+  }
+}

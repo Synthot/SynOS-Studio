@@ -1,0 +1,25 @@
+[package]
+name = "synos-quiet-engine"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Deterministic offline intent engine for SynOS Bash suggestions"
+
+[lib]
+name = "synos_quiet_engine"
+path = "src/lib.rs"
+
+[[bin]]
+name = "synos-quiet-sim"
+path = "src/sim_main.rs"
+
+[[bin]]
+name = "synos-quietd"
+path = "src/quietd_main.rs"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

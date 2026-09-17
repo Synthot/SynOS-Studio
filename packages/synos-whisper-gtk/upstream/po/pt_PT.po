@@ -1,0 +1,525 @@
+# synos-whisper-gtk translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-whisper-gtk.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-whisper-gtk\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-31 15:23+0000\n"
+"PO-Revision-Date: 2026-08-31 15:23+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: pt_PT\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos_whisper_gtk/app.py:29
+msgid "Automatic detection"
+msgstr "Deteção automática"
+
+#: src/synos_whisper_gtk/app.py:30
+#: data/voice-typing@synos.com/extension.js:77
+#: data/voice-typing@synos.com/extension.js:78
+msgid "Simplified Chinese"
+msgstr "Chinês simplificado"
+
+#: src/synos_whisper_gtk/app.py:31
+#: data/voice-typing@synos.com/extension.js:78
+msgid "Traditional Chinese"
+msgstr "Chinês tradicional"
+
+#: src/synos_whisper_gtk/app.py:32
+#: data/voice-typing@synos.com/extension.js:79
+msgid "English"
+msgstr "Inglês"
+
+#: src/synos_whisper_gtk/app.py:33
+#: data/voice-typing@synos.com/extension.js:79
+msgid "Spanish"
+msgstr "Espanhol"
+
+#: src/synos_whisper_gtk/app.py:34
+#: data/voice-typing@synos.com/extension.js:80
+msgid "French"
+msgstr "Francês"
+
+#: src/synos_whisper_gtk/app.py:35
+#: data/voice-typing@synos.com/extension.js:80
+msgid "German"
+msgstr "Alemão"
+
+#: src/synos_whisper_gtk/app.py:36
+#: data/voice-typing@synos.com/extension.js:80
+msgid "Japanese"
+msgstr "Japonês"
+
+#: src/synos_whisper_gtk/app.py:37
+#: data/voice-typing@synos.com/extension.js:80
+msgid "Korean"
+msgstr "Coreano"
+
+#: src/synos_whisper_gtk/app.py:38
+#: data/voice-typing@synos.com/extension.js:81
+msgid "Russian"
+msgstr "Russo"
+
+#: src/synos_whisper_gtk/app.py:39
+#: data/voice-typing@synos.com/extension.js:81
+msgid "Portuguese"
+msgstr "Português"
+
+#: src/synos_whisper_gtk/app.py:43 src/synos_whisper_gtk/app.py:66
+#: src/synos_whisper_gtk/app.py:96 src/synos_whisper_gtk/app.py:313
+#: data/com.synos.VoiceTyping.Settings.desktop:2
+msgid "Voice Typing"
+msgstr "Escrita por voz"
+
+#: src/synos_whisper_gtk/app.py:44
+#: data/voice-typing@synos.com/extension.js:68
+#: data/voice-typing@synos.com/extension.js:92
+#: data/voice-typing@synos.com/extension.js:147
+#: data/voice-typing@synos.com/extension.js:296
+#: data/voice-typing@synos.com/extension.js:361
+#: data/voice-typing@synos.com/extension.js:399
+#: data/voice-typing@synos.com/extension.js:434
+#: data/voice-typing@synos.com/extension.js:459
+msgid "Ready"
+msgstr "Pronto"
+
+#: src/synos_whisper_gtk/app.py:45
+#: data/voice-typing@synos.com/extension.js:69
+#: data/voice-typing@synos.com/extension.js:354
+#: data/voice-typing@synos.com/extension.js:436
+#: data/voice-typing@synos.com/extension.js:437
+msgid "Listening…"
+msgstr "A ouvir…"
+
+#: src/synos_whisper_gtk/app.py:46
+msgid "Sign out required"
+msgstr "É necessário terminar a sessão"
+
+#: src/synos_whisper_gtk/app.py:47
+msgid "Needs attention"
+msgstr "Necessita de atenção"
+
+#: src/synos_whisper_gtk/app.py:51
+msgid "Sign out and back in to finish enabling Voice Typing."
+msgstr ""
+"Termine a sessão e inicie sessão novamente para concluir a ativação da "
+"escrita por voz."
+
+#: src/synos_whisper_gtk/app.py:91
+msgid "Settings"
+msgstr "Definições"
+
+#: src/synos_whisper_gtk/app.py:98
+msgid ""
+"Use the keyboard shortcut to dictate into the focused application. Speech is"
+" processed locally and is never uploaded."
+msgstr ""
+"Utilize o atalho de teclado para ditar na aplicação em foco. A fala é "
+"processada neste computador e nunca é enviada."
+
+#: src/synos_whisper_gtk/app.py:103
+msgid "Status"
+msgstr "Estado"
+
+#: src/synos_whisper_gtk/app.py:103
+msgid "Checking the local service…"
+msgstr "A verificar o serviço local…"
+
+#: src/synos_whisper_gtk/app.py:107 src/synos_whisper_gtk/app.py:307
+msgid "Start"
+msgstr "Iniciar"
+
+#: src/synos_whisper_gtk/app.py:116
+msgid "Input"
+msgstr "Entrada"
+
+#: src/synos_whisper_gtk/app.py:117
+msgid "System default"
+msgstr "Predefinição do sistema"
+
+#: src/synos_whisper_gtk/app.py:120
+msgid "Microphone"
+msgstr "Microfone"
+
+#: src/synos_whisper_gtk/app.py:131
+msgid "Language"
+msgstr "Idioma"
+
+#: src/synos_whisper_gtk/app.py:142
+msgid "Behavior"
+msgstr "Comportamento"
+
+#: src/synos_whisper_gtk/app.py:144
+msgid "Keyboard shortcut"
+msgstr "Atalho de teclado"
+
+#: src/synos_whisper_gtk/app.py:145
+msgid "Activate voice typing from anywhere"
+msgstr "Ativar a escrita por voz em qualquer aplicação"
+
+#: src/synos_whisper_gtk/app.py:149
+msgid "Disabled"
+msgstr "Desativado"
+
+#: src/synos_whisper_gtk/app.py:153
+msgid "Change…"
+msgstr "Alterar…"
+
+#: src/synos_whisper_gtk/app.py:164
+msgid "Automatic punctuation"
+msgstr "Pontuação automática"
+
+#: src/synos_whisper_gtk/app.py:165
+msgid "Keep punctuation recognized from speech"
+msgstr "Manter a pontuação reconhecida na fala"
+
+#: src/synos_whisper_gtk/app.py:169
+msgid "Voice commands"
+msgstr "Comandos de voz"
+
+#: src/synos_whisper_gtk/app.py:170
+msgid "Recognize commands such as “new line” and “comma”"
+msgstr "Reconhecer comandos como “nova linha” e “vírgula”"
+
+#: src/synos_whisper_gtk/app.py:174
+msgid "Live transcription"
+msgstr "Transcrição em direto"
+
+#: src/synos_whisper_gtk/app.py:175
+msgid "Show words in the microphone bar while you speak"
+msgstr "Mostrar as palavras na barra do microfone enquanto fala"
+
+#: src/synos_whisper_gtk/app.py:179
+msgid "Final result preview"
+msgstr "Pré-visualização do resultado final"
+
+#: src/synos_whisper_gtk/app.py:180
+msgid "Pause briefly before inserting the completed phrase"
+msgstr "Faça uma breve pausa antes de inserir o texto final"
+
+#: src/synos_whisper_gtk/app.py:184
+msgid "Start and stop sounds"
+msgstr "Sons de início e de paragem"
+
+#: src/synos_whisper_gtk/app.py:185
+msgid "Play a subtle microphone cue"
+msgstr ""
+"Reproduzir um sinal sonoro discreto para indicar o estado do microfone"
+
+#: src/synos_whisper_gtk/app.py:195
+msgid "Models"
+msgstr "Modelos"
+
+#: src/synos_whisper_gtk/app.py:198
+msgid "Offline speech models"
+msgstr "Modelos offline de reconhecimento de voz"
+
+#: src/synos_whisper_gtk/app.py:200
+msgid ""
+"The Base multilingual model is installed with Voice Typing. Optional models "
+"are verified before use."
+msgstr ""
+"O modelo Base multilíngue é instalado com a escrita por voz. Os modelos "
+"opcionais são verificados antes de serem utilizados."
+
+#: src/synos_whisper_gtk/app.py:213
+msgid "Remove downloaded model"
+msgstr "Remover modelo transferido"
+
+#: src/synos_whisper_gtk/app.py:216
+#, python-format
+msgid "Remove %s"
+msgstr "Remover %s"
+
+#: src/synos_whisper_gtk/app.py:230
+msgid "Microphone Training"
+msgstr "Calibração do microfone"
+
+#: src/synos_whisper_gtk/app.py:234
+msgid "Calibrate your speaking setup"
+msgstr "Calibrar o ambiente de fala"
+
+#: src/synos_whisper_gtk/app.py:236
+msgid ""
+"Whisper does not need a personal voice profile. Use this page to check "
+"microphone level, distance, and background noise."
+msgstr ""
+"O Whisper não necessita de um perfil de voz pessoal. Utilize esta página "
+"para verificar o nível do microfone, a distância e o ruído de fundo."
+
+#: src/synos_whisper_gtk/app.py:242
+msgid "Practice phrase"
+msgstr "Expressão de treino"
+
+#: src/synos_whisper_gtk/app.py:243
+msgid "“Voice typing makes writing faster and more accessible.”"
+msgstr ""
+"“A escrita por voz permite escrever mais depressa e facilita a escrita a "
+"mais pessoas.”"
+
+#: src/synos_whisper_gtk/app.py:249
+msgid "Input level"
+msgstr "Nível de entrada"
+
+#: src/synos_whisper_gtk/app.py:250
+msgid "Speak normally; aim for the middle of the meter"
+msgstr ""
+"Fale normalmente; mantenha o nível de entrada perto do centro do medidor"
+
+#: src/synos_whisper_gtk/app.py:254
+msgid "Microphone input level"
+msgstr "Nível de entrada do microfone"
+
+#: src/synos_whisper_gtk/app.py:260
+msgid "Microphone test"
+msgstr "Teste do microfone"
+
+#: src/synos_whisper_gtk/app.py:261
+msgid "No audio is saved during this test"
+msgstr "O áudio não é guardado durante este teste"
+
+#: src/synos_whisper_gtk/app.py:263 src/synos_whisper_gtk/app.py:559
+msgid "Start Test"
+msgstr "Iniciar teste"
+
+#: src/synos_whisper_gtk/app.py:268
+msgid "Tips for better recognition"
+msgstr "Dicas para um melhor reconhecimento"
+
+#: src/synos_whisper_gtk/app.py:271
+msgid "Speak naturally"
+msgstr "Fale de forma natural"
+
+#: src/synos_whisper_gtk/app.py:272
+msgid "Use short phrases and pause briefly between sentences"
+msgstr "Utilize expressões curtas e faça uma breve pausa entre as frases"
+
+#: src/synos_whisper_gtk/app.py:276
+msgid "Reduce background noise"
+msgstr "Reduzir o ruído de fundo"
+
+#: src/synos_whisper_gtk/app.py:277
+msgid "Keep the microphone close without speaking directly into it"
+msgstr "Mantenha o microfone perto da boca, mas não fale diretamente para ele"
+
+#: src/synos_whisper_gtk/app.py:281
+msgid "Choose the language"
+msgstr "Escolha o idioma"
+
+#: src/synos_whisper_gtk/app.py:282
+msgid "A fixed language is faster than automatic detection"
+msgstr "Definir um idioma fixo é mais rápido do que a deteção automática"
+
+#: src/synos_whisper_gtk/app.py:305
+msgid "Stop"
+msgstr "Parar"
+
+#: src/synos_whisper_gtk/app.py:343
+msgid "Set Keyboard Shortcut"
+msgstr "Definir atalho de teclado"
+
+#: src/synos_whisper_gtk/app.py:365
+msgid "Press the new shortcut"
+msgstr "Prima o novo atalho"
+
+#: src/synos_whisper_gtk/app.py:369
+msgid "The keys you press will be used to start or stop Voice Typing."
+msgstr ""
+"As teclas que premir serão usadas para iniciar ou parar a escrita por voz."
+
+#: src/synos_whisper_gtk/app.py:377
+msgid "Waiting for input…"
+msgstr "A aguardar que prima uma tecla…"
+
+#: src/synos_whisper_gtk/app.py:383
+msgid "Esc cancels · Backspace disables the shortcut"
+msgstr "Esc cancela · Backspace desativa o atalho"
+
+#: src/synos_whisper_gtk/app.py:445
+#, python-format
+msgid "Download %s from Hugging Face?"
+msgstr "Transferir %s do Hugging Face?"
+
+#: src/synos_whisper_gtk/app.py:447
+msgid ""
+"This optional model is hosted by Hugging Face, a third-party service. SynOS is not affiliated with, sponsored by, or partnered with Hugging Face.\n"
+"\n"
+"If you continue, your computer will connect directly to huggingface.co. Hugging Face will receive your public IP address and that address may reveal your approximate location.\n"
+"\n"
+"Privacy policy: https://huggingface.co/privacy"
+msgstr ""
+"Este modelo opcional é alojado pela Hugging Face, um serviço de terceiros. O SynOS não é afiliado à Hugging Face, não é patrocinado por ela nem tem qualquer parceria com ela.\n"
+"\n"
+"Se continuar, o seu computador ligar-se-á diretamente a huggingface.co. A Hugging Face receberá o seu endereço IP público e esse endereço pode revelar a sua localização aproximada.\n"
+"\n"
+"Política de privacidade: https://huggingface.co/privacy"
+
+#: src/synos_whisper_gtk/app.py:456 src/synos_whisper_gtk/app.py:510
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: src/synos_whisper_gtk/app.py:457
+msgid "Continue Download"
+msgstr "Continuar a transferência"
+
+#: src/synos_whisper_gtk/app.py:479 src/synos_whisper_gtk/app.py:538
+msgid "Downloading…"
+msgstr "A transferir…"
+
+#: src/synos_whisper_gtk/app.py:497
+msgid "Retry"
+msgstr "Tentar novamente"
+
+#: src/synos_whisper_gtk/app.py:498
+msgid "Model download failed"
+msgstr "Falha na transferência do modelo"
+
+#: src/synos_whisper_gtk/app.py:499
+msgid "Close"
+msgstr "Fechar"
+
+#: src/synos_whisper_gtk/app.py:507
+#, python-format
+msgid "Remove %s model?"
+msgstr "Remover o modelo %s?"
+
+#: src/synos_whisper_gtk/app.py:508
+msgid "The model can be downloaded again later."
+msgstr "O modelo pode ser transferido novamente mais tarde."
+
+#: src/synos_whisper_gtk/app.py:511
+msgid "Remove"
+msgstr "Remover"
+
+#: src/synos_whisper_gtk/app.py:547
+msgid "In Use"
+msgstr "Em utilização"
+
+#: src/synos_whisper_gtk/app.py:550
+msgid "Use"
+msgstr "Utilizar"
+
+#: src/synos_whisper_gtk/app.py:553
+msgid "Download"
+msgstr "Transferir"
+
+#: src/synos_whisper_gtk/app.py:559
+msgid "Stop Test"
+msgstr "Parar teste"
+
+#: src/synos_whisper_gtk/app.py:593
+msgid "SynOS Voice Typing"
+msgstr "Escrita por voz do SynOS"
+
+#: src/synos_whisper_gtk/app.py:595
+msgid "SynOS Team"
+msgstr "Equipa SynOS"
+
+#: src/synos_whisper_gtk/app.py:597
+msgid "Private, offline speech-to-text for the whole desktop."
+msgstr ""
+"Conversão privada e offline de fala em texto para todo o ambiente de "
+"trabalho."
+
+#: src/synos_whisper_gtk/app.py:605
+#, python-format
+msgid "%.0f MB"
+msgstr "%.0f MB"
+
+#: data/voice-typing@synos.com/extension.js:70
+msgid "Recognizing…"
+msgstr "A reconhecer…"
+
+#: data/voice-typing@synos.com/extension.js:71
+msgid "Testing microphone…"
+msgstr "A testar o microfone…"
+
+#: data/voice-typing@synos.com/extension.js:72
+msgid "No speech detected"
+msgstr "Nenhuma fala detetada"
+
+#: data/voice-typing@synos.com/extension.js:73
+msgid "Microphone unavailable"
+msgstr "Microfone indisponível"
+
+#: data/voice-typing@synos.com/extension.js:77
+#: data/voice-typing@synos.com/extension.js:314
+msgid "Auto"
+msgstr "Automático"
+
+#: data/voice-typing@synos.com/extension.js:371
+#: data/voice-typing@synos.com/extension.js:432
+msgid "Off"
+msgstr "Desligado"
+
+#: data/voice-typing@synos.com/extension.js:544
+msgid "Voice typing is disabled in password fields"
+msgstr "A escrita por voz está desativada nos campos de palavra-passe"
+
+#: data/voice-typing@synos.com/extension.js:549
+msgid "Select a text field before dictating"
+msgstr "Selecione um campo de texto antes de ditar"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:34
+msgid "Briefly preview recognized text before inserting it"
+msgstr "Pré-visualizar brevemente o texto reconhecido antes de o inserir"
+
+#: data/com.synos.VoiceTyping.Settings.desktop:3
+msgid "Configure offline system-wide dictation"
+msgstr "Configurar a escrita por voz offline em todo o sistema"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:26
+msgid "Enable exact-match punctuation and layout commands"
+msgstr ""
+"Ativar comandos de pontuação e de formatação por correspondência exata"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:6
+msgid "Global voice typing shortcut"
+msgstr "Atalho global para escrita por voz"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:52
+msgid "Horizontal offset from the centered overlay position"
+msgstr ""
+"Deslocamento horizontal a partir da posição centralizada da sobreposição"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:22
+msgid "Keep punctuation recognized by Whisper"
+msgstr "Manter a pontuação reconhecida pelo Whisper"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:10
+msgid "PipeWire node name, or empty for the system default"
+msgstr "Nome do nó PipeWire, ou vazio para a predefinição do sistema"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:30
+msgid "Play a subtle sound when listening starts or stops"
+msgstr "Reproduzir um sinal sonoro discreto quando a escuta começa ou termina"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:43
+msgid "Preview duration in milliseconds"
+msgstr "Duração da pré-visualização em milissegundos"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:14
+msgid "Recognition language and Chinese output script"
+msgstr "Idioma de reconhecimento e sistema de escrita para a saída em chinês"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:38
+msgid "Show periodically refreshed partial transcripts while speaking"
+msgstr ""
+"Mostrar transcrições parciais atualizadas periodicamente enquanto fala"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:18
+msgid "Speech recognition model"
+msgstr "Modelo de reconhecimento de voz"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:48
+msgid "Voice activity threshold in decibels"
+msgstr "Limiar de atividade de voz em decibéis"
+
+#: data/com.synos.VoiceTyping.Settings.desktop:9
+msgid "voice;typing;dictation;speech;microphone;accessibility;"
+msgstr "voz;escrita;ditado;fala;microfone;acessibilidade;"

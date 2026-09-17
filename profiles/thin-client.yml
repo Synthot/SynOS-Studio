@@ -1,0 +1,9 @@
+id: thin-client
+extends: minimal
+description: Boots straight into a VDI or RDP session.
+software:
+  bundles: [remote-access]
+installer:
+  automatic_login: true
+policy:
+  kiosk_app: rdp-client

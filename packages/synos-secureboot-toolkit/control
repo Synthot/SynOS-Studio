@@ -1,0 +1,10 @@
+Package: synos-secureboot-toolkit
+Version: 2.0.2-4+synos1
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: python3, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, mokutil, openssl, shim-signed, kmod, pkexec
+Suggests: dkms
+Homepage: ${BRAND_URL_HOME}
+Description: Shared Secure Boot, MOK, and DKMS signing toolkit for ${BRAND_NAME} applications

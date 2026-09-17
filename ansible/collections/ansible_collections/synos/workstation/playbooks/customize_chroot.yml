@@ -1,0 +1,44 @@
+# Executed by build.sh inside the build chroot when the profile lists
+# ansible.playbooks. The resolved profile is passed as `profile` and the
+# rendered brand as `brand`; customer playbooks listed in the profile run after.
+- name: Apply the profile to the image
+  hosts: all
+  gather_facts: false
+  become: false
+  vars:
+    profile: "{{ synos_profile }}"
+  tasks:
+    - name: Hardening from the profile
+      ansible.builtin.include_role:
+        name: synos.workstation.base_hardening
+      vars:
+        base_hardening_firewall: "{{ profile.security.firewall | default('default-deny-inbound') }}"
+        base_hardening_usbguard: "{{ profile.security.usbguard | default(false) }}"
+        base_hardening_compliance: "{{ profile.security.compliance | default('none') }}"
+        base_hardening_ssh: "{{ profile.installer.ssh | default('disabled') }}"
+        base_hardening_open_ports: "{{ profile.security.open_ports | default([]) }}"
+        base_hardening_in_chroot: true
+
+    - name: Desktop policy from the profile
+      ansible.builtin.include_role:
+        name: synos.workstation.desktop_policy
+      vars:
+        desktop_policy_dconf: "{{ profile.policy.dconf | default({}) | dict2items | rejectattr('value', 'equalto', 'locked') | items2dict }}"
+        desktop_policy_locks: "{{ profile.policy.dconf | default({}) | dict2items | selectattr('value', 'equalto', 'locked') | map(attribute='key') | map('regex_replace', '^', '/') | map('regex_replace', '\\.', '/') | list }}"
+        desktop_policy_browser_homepage: "{{ profile.policy.browser.homepage | default('') }}"
+
+    - name: Container services and GPU access from the profile
+      ansible.builtin.include_role:
+        name: synos.workstation.container_services
+      vars:
+        container_services: "{{ profile.software.services | default([]) }}"
+        container_services_gpu: "{{ profile.hardware.gpu | default('none') }}"
+      when: (profile.software.services | default([])) | length > 0 or (profile.hardware.gpu | default('none')) != 'none'
+
+    - name: Fleet enrollment from the profile
+      ansible.builtin.include_role:
+        name: synos.workstation.fleet_enrollment
+      vars:
+        fleet_enrollment_pull_url: "{{ profile.ansible.pull_url | default('') }}"
+        fleet_enrollment_roles: "{{ profile.ansible.first_boot_roles | default([]) }}"
+      when: profile.ansible is defined and (profile.ansible.pull_url is defined or profile.ansible.first_boot_roles is defined)

@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.synos.VoiceTyping
+Exec=/usr/libexec/synos-whisper-framework
+

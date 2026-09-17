@@ -1,0 +1,2 @@
+# kind	source (relative to upstream/)	target	mode
+folder	deploy/themes/	/usr/share/themes/	644

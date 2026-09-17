@@ -1,0 +1,13 @@
+[Unit]
+Description=Prepare the SynOS Live desktop session
+ConditionPathExists=/run/synos-live/environment
+After=local-fs.target systemd-remount-fs.service
+Before=display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/synos-live-session-setup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical.target

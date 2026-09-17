@@ -1,0 +1,2 @@
+# kind	source (relative to upstream/)	target	mode
+folder	deploy/${SUITE}/accent-gtk-theme@brgvos	/usr/share/gnome-shell/extensions/accent-gtk-theme@brgvos	644

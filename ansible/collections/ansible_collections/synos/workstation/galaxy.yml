@@ -1,0 +1,11 @@
+namespace: synos
+name: workstation
+version: 0.1.0
+readme: README.md
+authors: [SynOS Project]
+description: Build SynOS images and manage SynOS workstations with the same roles at build time (chroot) and at run time.
+license: [GPL-3.0-or-later]
+tags: [linux, desktop, image, enterprise]
+repository: https://synos.example/git/synos
+dependencies:
+  community.general: ">=8.0.0"

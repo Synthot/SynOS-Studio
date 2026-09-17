@@ -1,0 +1,8 @@
+# ${BRAND_NAME} package repository (installed by synos-apt-config).
+# Layout: one flat repository per suite under the repository URL.
+Types: deb
+URIs: ${REPO_URL}${SUITE}/
+Suites: ./
+Architectures: ${ARCH} all
+Signed-By: /usr/share/keyrings/synos-archive-keyring.gpg
+Enabled: ${REPO_ENABLED}

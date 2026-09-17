@@ -1,0 +1,1713 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-09 15:16+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: en_US <LL@li.org>\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: synos-oobe/assets/synos-oobe:371
+msgid "Disk Snapshots Manager"
+msgstr "Disk Snapshots Manager"
+
+#: synos-oobe/assets/synos-oobe:373
+msgid "Protect your system with automatic Btrfs snapshots and smart cleanup."
+msgstr "Protect your system with automatic Btrfs snapshots and smart cleanup."
+
+#: synos-oobe/assets/synos-oobe:375
+msgid "Configure Automatic Snapshots"
+msgstr "Configure Automatic Snapshots"
+
+#: synos-oobe/assets/synos-oobe:380
+msgid "System Backup"
+msgstr "System Backup"
+
+#: synos-oobe/assets/synos-oobe:382
+msgid "Use Deja Dup to protect your"
+msgstr "Use Deja Dup to protect your"
+
+#: synos-oobe/assets/synos-oobe:383
+msgid "important files with automated,"
+msgstr "important files with automated,"
+
+#: synos-oobe/assets/synos-oobe:384
+msgid "secure local or remote backups."
+msgstr "secure local or remote backups."
+
+#: synos-oobe/assets/synos-oobe:386
+msgid "Get Deja Dup"
+msgstr "Get Deja Dup"
+
+#: synos-oobe/assets/synos-oobe:457
+msgid "NetworkManager could not scan Wi-Fi."
+msgstr "NetworkManager could not scan Wi-Fi."
+
+#: synos-oobe/assets/synos-oobe:520
+msgid "Could not inspect network adapters."
+msgstr "Could not inspect network adapters."
+
+#: synos-oobe/assets/synos-oobe:530
+msgid "Could not read the Wi-Fi radio state."
+msgstr "Could not read the Wi-Fi radio state."
+
+#: synos-oobe/assets/synos-oobe:536
+msgid "Unknown Wi-Fi radio state: {}"
+msgstr "Unknown Wi-Fi radio state: {}"
+
+#: synos-oobe/assets/synos-oobe:537
+msgid "empty"
+msgstr "empty"
+
+#: synos-oobe/assets/synos-oobe:546
+msgid "Could not change the Wi-Fi radio state."
+msgstr "Could not change the Wi-Fi radio state."
+
+#: synos-oobe/assets/synos-oobe:648
+msgid "Welcome Home."
+msgstr "Welcome Home."
+
+#: synos-oobe/assets/synos-oobe:658
+msgid "SynOS is ready. Just a few steps to shape it"
+msgstr "SynOS is ready. Just a few steps to shape it"
+
+#: synos-oobe/assets/synos-oobe:658
+msgid "into the perfect system tailored to your habits."
+msgstr "into the perfect system tailored to your habits."
+
+#: synos-oobe/assets/synos-oobe:668
+msgid "  Start Setup  "
+msgstr "  Start Setup  "
+
+
+#: synos-oobe/assets/synos-oobe:715
+msgid "Connect to the Internet"
+msgstr "Connect to the Internet"
+
+#: synos-oobe/assets/synos-oobe:723
+msgid ""
+"Connect now so SynOS can safely check for updates, drivers, and apps."
+msgstr ""
+"Connect now so SynOS can safely check for updates, drivers, and apps."
+
+#: synos-oobe/assets/synos-oobe:731
+msgid "Internet Connection"
+msgstr "Internet Connection"
+
+#: synos-oobe/assets/synos-oobe:738
+msgid "Network Hardware"
+msgstr "Network Hardware"
+
+#: synos-oobe/assets/synos-oobe:746
+msgid "Available Wi-Fi Networks"
+msgstr "Available Wi-Fi Networks"
+
+#: synos-oobe/assets/synos-oobe:748
+msgid "Wi-Fi"
+msgstr "Wi-Fi"
+
+#: synos-oobe/assets/synos-oobe:751
+msgid "Scan Again"
+msgstr "Scan Again"
+
+#: synos-oobe/assets/synos-oobe:760
+#: synos-oobe/assets/synos-oobe:832
+#: synos-oobe/assets/synos-oobe:840
+#: synos-oobe/assets/synos-oobe:855
+msgid "Open Network Settings"
+msgstr "Open Network Settings"
+
+#: synos-oobe/assets/synos-oobe:769
+msgid "Could not open network settings: {}"
+msgstr "Could not open network settings: {}"
+
+#: synos-oobe/assets/synos-oobe:779
+msgid "Continue Offline"
+msgstr "Continue Offline"
+
+#: synos-oobe/assets/synos-oobe:783
+msgid "Skip updates, online drivers, apps, and account setup."
+msgstr "Skip updates, online drivers, apps, and account setup."
+
+#: synos-oobe/assets/synos-oobe:799
+msgid "Internet connection is ready. Choose Next to continue."
+msgstr "Internet connection is ready. Choose Next to continue."
+
+#: synos-oobe/assets/synos-oobe:806
+msgid "Connect to Wi-Fi or a wired network to continue."
+msgstr "Connect to Wi-Fi or a wired network to continue."
+
+#: synos-oobe/assets/synos-oobe:829
+msgid "No network adapters detected."
+msgstr "No network adapters detected."
+
+#: synos-oobe/assets/synos-oobe:831
+msgid "Connect a network adapter or continue offline."
+msgstr "Connect a network adapter or continue offline."
+
+#: synos-oobe/assets/synos-oobe:836
+msgid "Wired Network"
+msgstr "Wired Network"
+
+#: synos-oobe/assets/synos-oobe:838
+msgid "Cable connected."
+msgstr "Cable connected."
+
+#: synos-oobe/assets/synos-oobe:839
+msgid "Plug in a network cable to connect."
+msgstr "Plug in a network cable to connect."
+
+#: synos-oobe/assets/synos-oobe:844
+msgid "Wireless Network"
+msgstr "Wireless Network"
+
+#: synos-oobe/assets/synos-oobe:845
+msgid "Wi-Fi adapter detected."
+msgstr "Wi-Fi adapter detected."
+
+#: synos-oobe/assets/synos-oobe:846
+msgid "Open Wi-Fi Settings"
+msgstr "Open Wi-Fi Settings"
+
+#: synos-oobe/assets/synos-oobe:850
+msgid "Wired and Wireless Networks"
+msgstr "Wired and Wireless Networks"
+
+#: synos-oobe/assets/synos-oobe:852
+msgid "Cable connected and Wi-Fi available."
+msgstr "Cable connected and Wi-Fi available."
+
+#: synos-oobe/assets/synos-oobe:854
+msgid "Wi-Fi is available; the network cable is disconnected."
+msgstr "Wi-Fi is available; the network cable is disconnected."
+
+#: synos-oobe/assets/synos-oobe:866
+msgid "Wi-Fi is turned off."
+msgstr "Wi-Fi is turned off."
+
+#: synos-oobe/assets/synos-oobe:870
+msgid "No Wi-Fi networks found."
+msgstr "No Wi-Fi networks found."
+
+#: synos-oobe/assets/synos-oobe:899
+msgid "Wi-Fi unavailable: {}"
+msgstr "Wi-Fi unavailable: {}"
+
+#: synos-oobe/assets/synos-oobe:981
+msgid "Define Your Visual Order"
+msgstr "Define Your Visual Order"
+
+#: synos-oobe/assets/synos-oobe:991
+msgid "Light and Shadow"
+msgstr "Light and Shadow"
+
+#: synos-oobe/assets/synos-oobe:992
+msgid "Choose a crisp light theme, or an immersive dark experience."
+msgstr "Choose a crisp light theme, or an immersive dark experience."
+
+#: synos-oobe/assets/synos-oobe:1011
+msgid "Light"
+msgstr "Light"
+
+#: synos-oobe/assets/synos-oobe:1023
+msgid "Dark"
+msgstr "Dark"
+
+#: synos-oobe/assets/synos-oobe:1054
+msgid "Workflow Layout"
+msgstr "Workflow Layout"
+
+#: synos-oobe/assets/synos-oobe:1055
+msgid "Prefer modern centered alignment, or classic left-docked?"
+msgstr "Prefer modern centered alignment, or classic left-docked?"
+
+#: synos-oobe/assets/synos-oobe:1089
+msgid "Taskbar Layout"
+msgstr "Taskbar Layout"
+
+#: synos-oobe/assets/synos-oobe:1090
+msgid "Choose your workflow."
+msgstr "Choose your workflow."
+
+#: synos-oobe/assets/synos-oobe:1099
+msgid " Modern "
+msgstr " Modern "
+
+
+#: synos-oobe/assets/synos-oobe:1100
+msgid " Classic "
+msgstr " Classic "
+
+
+#: synos-oobe/assets/synos-oobe:1129
+msgid "Show Virtual Desktop Switch Button"
+msgstr "Show Virtual Desktop Switch Button"
+
+#: synos-oobe/assets/synos-oobe:1130
+msgid "Display the Activities button on the taskbar"
+msgstr "Display the Activities button on the taskbar"
+
+#: synos-oobe/assets/synos-oobe:1182
+msgid "Digital Sovereignty, Under Your Control"
+msgstr "Digital Sovereignty, Under Your Control"
+
+#: synos-oobe/assets/synos-oobe:1190
+msgid "We deeply value privacy. Here, you hold absolute authority."
+msgstr "We deeply value privacy. Here, you hold absolute authority."
+
+#: synos-oobe/assets/synos-oobe:1200
+msgid "Network Security"
+msgstr "Network Security"
+
+#: synos-oobe/assets/synos-oobe:1202
+msgid ""
+"Control inbound protection and whether this computer participates in local "
+"network discovery."
+msgstr ""
+"Control inbound protection and whether this computer participates in local "
+"network discovery."
+
+#: synos-oobe/assets/synos-oobe:1207
+msgid "Network Firewall (UFW)"
+msgstr "Network Firewall (UFW)"
+
+#: synos-oobe/assets/synos-oobe:1260
+msgid "Local Network Discovery (mDNS)"
+msgstr "Local Network Discovery (mDNS)"
+
+#: synos-oobe/assets/synos-oobe:1262
+msgid ""
+"Find printers and nearby devices, and make .local names available on trusted "
+"networks."
+msgstr ""
+"Find printers and nearby devices, and make .local names available on trusted "
+"networks."
+
+#: synos-oobe/assets/synos-oobe:1274
+msgid "Local network discovery controls are not installed."
+msgstr "Local network discovery controls are not installed."
+
+#: synos-oobe/assets/synos-oobe:1309
+msgid "Location Services"
+msgstr "Location Services"
+
+#: synos-oobe/assets/synos-oobe:1311
+msgid ""
+"Allow apps like weather and clock to access your approximate geographic "
+"location."
+msgstr ""
+"Allow apps like weather and clock to access your approximate geographic "
+"location."
+
+#: synos-oobe/assets/synos-oobe:1315
+msgid "Location Access"
+msgstr "Location Access"
+
+#: synos-oobe/assets/synos-oobe:1333
+msgid "Power Settings"
+msgstr "Power Settings"
+
+#: synos-oobe/assets/synos-oobe:1334
+msgid "Manage idle behavior to balance energy saving and convenience."
+msgstr "Manage idle behavior to balance energy saving and convenience."
+
+#: synos-oobe/assets/synos-oobe:1338
+msgid "Auto Sleep"
+msgstr "Auto Sleep"
+
+#: synos-oobe/assets/synos-oobe:1367
+msgid "Command-line Assistance"
+msgstr "Command-line Assistance"
+
+#: synos-oobe/assets/synos-oobe:1368
+msgid "Control local bash predictions."
+msgstr "Control local bash predictions."
+
+#: synos-oobe/assets/synos-oobe:1372
+msgid "Bash Command Predictions"
+msgstr "Bash Command Predictions"
+
+#: synos-oobe/assets/synos-oobe:1373
+msgid "Show command suggestions in bash"
+msgstr "Show command suggestions in bash"
+
+#: synos-oobe/assets/synos-oobe:1390
+msgid ""
+"Could not update your Bash configuration. Your previous setting was kept."
+msgstr ""
+"Could not update your Bash configuration. Your previous setting was kept."
+
+#: synos-oobe/assets/synos-oobe:1428
+msgid "Keep Your System Up to Date"
+msgstr "Keep Your System Up to Date"
+
+#: synos-oobe/assets/synos-oobe:1437
+msgid "Security patches and the latest features are just a click away."
+msgstr "Security patches and the latest features are just a click away."
+
+#: synos-oobe/assets/synos-oobe:1447
+msgid "Terminal Output"
+msgstr "Terminal Output"
+
+#: synos-oobe/assets/synos-oobe:1483
+msgid "  Do It Later  "
+msgstr "  Do It Later  "
+
+
+#: synos-oobe/assets/synos-oobe:1486
+msgid "  Find Fastest Mirror  "
+msgstr "  Find Fastest Mirror  "
+
+
+#: synos-oobe/assets/synos-oobe:1489
+msgid "  Check for Updates  "
+msgstr "  Check for Updates  "
+
+
+#: synos-oobe/assets/synos-oobe:1523
+msgid "Checking for updates…"
+msgstr "Checking for updates…"
+
+#: synos-oobe/assets/synos-oobe:1555
+msgid "Updates are available."
+msgstr "Updates are available."
+
+#: synos-oobe/assets/synos-oobe:1556
+msgid "  Install Updates  "
+msgstr "  Install Updates  "
+
+
+#: synos-oobe/assets/synos-oobe:1563
+msgid "✓ System is up to date."
+msgstr "✓ System is up to date."
+
+#: synos-oobe/assets/synos-oobe:1565
+#: synos-oobe/assets/synos-oobe:1595
+msgid "  Continue  "
+msgstr "  Continue  "
+
+
+#: synos-oobe/assets/synos-oobe:1572
+msgid "✗ Check failed: "
+msgstr "✗ Check failed: "
+
+
+#: synos-oobe/assets/synos-oobe:1578
+msgid "Installing updates…"
+msgstr "Installing updates…"
+
+#: synos-oobe/assets/synos-oobe:1593
+msgid "✓ Updates installed successfully!"
+msgstr "✓ Updates installed successfully!"
+
+#: synos-oobe/assets/synos-oobe:1604
+msgid "✗ Installation failed: "
+msgstr "✗ Installation failed: "
+
+
+#: synos-oobe/assets/synos-oobe:1643
+msgid "Testing mirrors…"
+msgstr "Testing mirrors…"
+
+#: synos-oobe/assets/synos-oobe:1644
+msgid "=== Testing mirror speeds ==="
+msgstr "=== Testing mirror speeds ==="
+
+#: synos-oobe/assets/synos-oobe:1769
+#: synos-oobe/assets/synos-oobe:1777
+#, python-brace-format
+msgid "Testing mirrors… ({c}/{t})"
+msgstr "Testing mirrors… ({c}/{t})"
+
+#: synos-oobe/assets/synos-oobe:1785
+msgid "No mirrors reachable."
+msgstr "No mirrors reachable."
+
+#: synos-oobe/assets/synos-oobe:1787
+msgid "✗ No mirrors reachable. Check your connection."
+msgstr "✗ No mirrors reachable. Check your connection."
+
+#: synos-oobe/assets/synos-oobe:1795
+msgid "=== Testing bandwidth of top 5 mirrors "
+msgstr "=== Testing bandwidth of top 5 mirrors "
+
+#: synos-oobe/assets/synos-oobe:1796
+msgid "(3 s each) ==="
+msgstr "(3 s each) ==="
+
+#: synos-oobe/assets/synos-oobe:1850
+msgid "Best mirror by bandwidth"
+msgstr "Best mirror by bandwidth"
+
+#: synos-oobe/assets/synos-oobe:1852
+#: synos-oobe/assets/synos-oobe:1873
+#: synos-oobe/assets/synos-oobe:1880
+msgid "Latency"
+msgstr "Latency"
+
+#: synos-oobe/assets/synos-oobe:1853
+#: synos-oobe/assets/synos-oobe:1874
+#: synos-oobe/assets/synos-oobe:1881
+msgid "Bandwidth"
+msgstr "Bandwidth"
+
+#: synos-oobe/assets/synos-oobe:1875
+msgid "This is already your current mirror."
+msgstr "This is already your current mirror."
+
+#: synos-oobe/assets/synos-oobe:1885
+msgid "Current mirror"
+msgstr "Current mirror"
+
+#: synos-oobe/assets/synos-oobe:1889
+msgid "Switch to this mirror and run apt update?"
+msgstr "Switch to this mirror and run apt update?"
+
+#: synos-oobe/assets/synos-oobe:1894
+msgid "Fastest Mirror Found"
+msgstr "Fastest Mirror Found"
+
+#: synos-oobe/assets/synos-oobe:1897
+msgid "Keep Current"
+msgstr "Keep Current"
+
+#: synos-oobe/assets/synos-oobe:1898
+msgid "Switch"
+msgstr "Switch"
+
+#: synos-oobe/assets/synos-oobe:1920
+msgid "✗ Mirror test failed: "
+msgstr "✗ Mirror test failed: "
+
+
+#: synos-oobe/assets/synos-oobe:1926
+msgid "Switching mirror…"
+msgstr "Switching mirror…"
+
+#: synos-oobe/assets/synos-oobe:1927
+msgid "=== Applying mirror switch ==="
+msgstr "=== Applying mirror switch ==="
+
+#: synos-oobe/assets/synos-oobe:2002
+msgid "✓ Mirror switched and system updated."
+msgstr "✓ Mirror switched and system updated."
+
+#: synos-oobe/assets/synos-oobe:2005
+msgid "✓ Switched to "
+msgstr "✓ Switched to "
+
+
+#: synos-oobe/assets/synos-oobe:2018
+msgid "✗ Switch failed: "
+msgstr "✗ Switch failed: "
+
+
+#: synos-oobe/assets/synos-oobe:2058
+msgid "Could not open SynOS Driver Center: {}"
+msgstr "Could not open SynOS Driver Center: {}"
+
+#: synos-oobe/assets/synos-oobe:2092
+msgid "Configure Hardware Drivers?"
+msgstr "Configure Hardware Drivers?"
+
+#: synos-oobe/assets/synos-oobe:2102
+msgid ""
+"Open SynOS Driver Center now to manage graphics cards, Xbox controllers, "
+"and other hardware."
+msgstr ""
+"Open SynOS Driver Center now to manage graphics cards, Xbox controllers, "
+"and other hardware."
+
+#: synos-oobe/assets/synos-oobe:2125
+msgid "Skip"
+msgstr "Skip"
+
+#: synos-oobe/assets/synos-oobe:2130
+msgid "Open Driver Center"
+msgstr "Open Driver Center"
+
+#: synos-oobe/assets/synos-oobe:2166
+msgid "Run Windows Apps, with ease"
+msgstr "Run Windows Apps, with ease"
+
+#: synos-oobe/assets/synos-oobe:2175
+msgid ""
+"Powered by Wine and Bottles technology, running classic Windows applications"
+msgstr ""
+"Powered by Wine and Bottles technology, running classic Windows applications"
+
+#: synos-oobe/assets/synos-oobe:2175
+msgid "is now easier than ever."
+msgstr "is now easier than ever."
+
+#: synos-oobe/assets/synos-oobe:2191
+msgid "✓ Windows compatibility sandbox is already installed."
+msgstr "✓ Windows compatibility sandbox is already installed."
+
+#: synos-oobe/assets/synos-oobe:2207
+msgid "  Skip  "
+msgstr "  Skip  "
+
+
+#: synos-oobe/assets/synos-oobe:2211
+msgid "  Enable Windows Compatibility Sandbox  "
+msgstr "  Enable Windows Compatibility Sandbox  "
+
+
+#: synos-oobe/assets/synos-oobe:2221
+msgid "Configure Bottles"
+msgstr "Configure Bottles"
+
+#: synos-oobe/assets/synos-oobe:2236
+msgid "Advanced Output"
+msgstr "Advanced Output"
+
+#: synos-oobe/assets/synos-oobe:2264
+msgid "Deploying compatibility sandbox via Flatpak…"
+msgstr "Deploying compatibility sandbox via Flatpak…"
+
+#: synos-oobe/assets/synos-oobe:2264
+msgid "This may take a few minutes."
+msgstr "This may take a few minutes."
+
+#: synos-oobe/assets/synos-oobe:2299
+msgid "✓ Sandbox deployed successfully!"
+msgstr "✓ Sandbox deployed successfully!"
+
+#: synos-oobe/assets/synos-oobe:2299
+msgid "You can now double-click .exe files to run them."
+msgstr "You can now double-click .exe files to run them."
+
+#: synos-oobe/assets/synos-oobe:2308
+msgid "✗ Deployment failed."
+msgstr "✗ Deployment failed."
+
+#: synos-oobe/assets/synos-oobe:2308
+msgid "You can install Bottles later from the App Store."
+msgstr "You can install Bottles later from the App Store."
+
+#: synos-oobe/assets/synos-oobe:2316
+msgid "✗ Error: "
+msgstr "✗ Error: "
+
+
+#: synos-oobe/assets/synos-oobe:2347
+msgid "The Magic at Your Fingertips"
+msgstr "The Magic at Your Fingertips"
+
+#: synos-oobe/assets/synos-oobe:2355
+msgid "Skip tedious clicking. Capture inspiration with elegance."
+msgstr "Skip tedious clicking. Capture inspiration with elegance."
+
+#: synos-oobe/assets/synos-oobe:2377
+msgid "Screenshot"
+msgstr "Screenshot"
+
+#: synos-oobe/assets/synos-oobe:2378
+msgid "Select, annotate, copy — all in one motion"
+msgstr "Select, annotate, copy — all in one motion"
+
+#: synos-oobe/assets/synos-oobe:2396
+msgid "Screen Recording"
+msgstr "Screen Recording"
+
+#: synos-oobe/assets/synos-oobe:2397
+msgid "Seamless start, instant capture"
+msgstr "Seamless start, instant capture"
+
+#: synos-oobe/assets/synos-oobe:2417
+msgid "More Essential Shortcuts"
+msgstr "More Essential Shortcuts"
+
+#: synos-oobe/assets/synos-oobe:2420
+msgid "Open File Manager"
+msgstr "Open File Manager"
+
+#: synos-oobe/assets/synos-oobe:2421
+msgid "Open Terminal"
+msgstr "Open Terminal"
+
+#: synos-oobe/assets/synos-oobe:2422
+msgid "Task Manager"
+msgstr "Task Manager"
+
+#: synos-oobe/assets/synos-oobe:2423
+msgid "View Clipboard History"
+msgstr "View Clipboard History"
+
+#: synos-oobe/assets/synos-oobe:2424
+msgid "Lock Screen"
+msgstr "Lock Screen"
+
+#: synos-oobe/assets/synos-oobe:2425
+msgid "Action Center"
+msgstr "Action Center"
+
+#: synos-oobe/assets/synos-oobe:2426
+msgid "Notification Center"
+msgstr "Notification Center"
+
+#: synos-oobe/assets/synos-oobe:2427
+msgid "Toggle Network Stats Display"
+msgstr "Toggle Network Stats Display"
+
+#: synos-oobe/assets/synos-oobe:2428
+msgid "Switch Between Windows"
+msgstr "Switch Between Windows"
+
+#: synos-oobe/assets/synos-oobe:2429
+msgid "Close Current Window"
+msgstr "Close Current Window"
+
+#: synos-oobe/assets/synos-oobe:2430
+msgid "Snap Windows"
+msgstr "Snap Windows"
+
+#: synos-oobe/assets/synos-oobe:2431
+msgid "Switch Virtual Desktop"
+msgstr "Switch Virtual Desktop"
+
+#: synos-oobe/assets/synos-oobe:2432
+msgid "Show Desktop"
+msgstr "Show Desktop"
+
+#: synos-oobe/assets/synos-oobe:2433
+msgid "System Settings"
+msgstr "System Settings"
+
+#: synos-oobe/assets/synos-oobe:2434
+msgid "Emoji and Characters"
+msgstr "Emoji and Characters"
+
+#: synos-oobe/assets/synos-oobe:2435
+msgid "Minimize Window"
+msgstr "Minimize Window"
+
+#: synos-oobe/assets/synos-oobe:2453
+msgid ""
+"You can view and customize all shortcuts anytime in Settings → Keyboard."
+msgstr ""
+"You can view and customize all shortcuts anytime in Settings → Keyboard."
+
+#: synos-oobe/assets/synos-oobe:2490
+msgid "In China? Use USTC mirror for App Store!"
+msgstr "In China? Use USTC mirror for App Store!"
+
+#: synos-oobe/assets/synos-oobe:2496
+msgid ""
+"Flathub access can be slow from China. Switch to the USTC mirror for faster "
+"downloads."
+msgstr ""
+"Flathub access can be slow from China. Switch to the USTC mirror for faster "
+"downloads."
+
+#: synos-oobe/assets/synos-oobe:2603
+msgid "✓ Already using Chinese mirror — downloads are fast."
+msgstr "✓ Already using Chinese mirror — downloads are fast."
+
+#: synos-oobe/assets/synos-oobe:2606
+msgid "Switch Back to International"
+msgstr "Switch Back to International"
+
+#: synos-oobe/assets/synos-oobe:2609
+msgid "Flathub is using the international server."
+msgstr "Flathub is using the international server."
+
+#: synos-oobe/assets/synos-oobe:2612
+msgid "🚀 Switch to USTC Mirror"
+msgstr "🚀 Switch to USTC Mirror"
+
+#: synos-oobe/assets/synos-oobe:2625
+msgid "Testing USTC mirror..."
+msgstr "Testing USTC mirror..."
+
+#: synos-oobe/assets/synos-oobe:2669
+msgid "Switching back..."
+msgstr "Switching back..."
+
+#: synos-oobe/assets/synos-oobe:2696
+msgid "✗ Failed: "
+msgstr "✗ Failed: "
+
+#: synos-oobe/assets/synos-oobe:2699
+msgid "Retry"
+msgstr "Retry"
+
+#: synos-oobe/assets/synos-oobe:2725
+msgid "Productive From Day One"
+msgstr "Productive From Day One"
+
+#: synos-oobe/assets/synos-oobe:2734
+msgid "Essential productivity and entertainment tools, hand-picked for you."
+msgstr "Essential productivity and entertainment tools, hand-picked for you."
+
+#: synos-oobe/assets/synos-oobe:2734
+msgid "Click any app to open its details in the App Store."
+msgstr "Click any app to open its details in the App Store."
+
+#: synos-oobe/assets/synos-oobe:2746
+msgid "WeChat"
+msgstr "WeChat"
+
+#: synos-oobe/assets/synos-oobe:2747
+msgid "Most popular messaging app in China"
+msgstr "Most popular messaging app in China"
+
+#: synos-oobe/assets/synos-oobe:2748
+msgid "QQ"
+msgstr "QQ"
+
+#: synos-oobe/assets/synos-oobe:2749
+msgid "Tencent QQ instant messenger"
+msgstr "Tencent QQ instant messenger"
+
+#: synos-oobe/assets/synos-oobe:2750
+msgid "WPS Office"
+msgstr "WPS Office"
+
+#: synos-oobe/assets/synos-oobe:2751
+msgid "Best office suite for Chinese documents"
+msgstr "Best office suite for Chinese documents"
+
+#: synos-oobe/assets/synos-oobe:2756
+msgid "Google Chrome"
+msgstr "Google Chrome"
+
+#: synos-oobe/assets/synos-oobe:2757
+msgid "The world's most popular web browser"
+msgstr "The world's most popular web browser"
+
+#: synos-oobe/assets/synos-oobe:2758
+msgid "Visual Studio Code"
+msgstr "Visual Studio Code"
+
+#: synos-oobe/assets/synos-oobe:2759
+msgid "Code editing. Redefined."
+msgstr "Code editing. Redefined."
+
+#: synos-oobe/assets/synos-oobe:2760
+msgid "Steam"
+msgstr "Steam"
+
+#: synos-oobe/assets/synos-oobe:2761
+msgid "Your portal to the gaming universe"
+msgstr "Your portal to the gaming universe"
+
+#: synos-oobe/assets/synos-oobe:2762
+msgid "Discord"
+msgstr "Discord"
+
+#: synos-oobe/assets/synos-oobe:2763
+msgid "Chat, voice, and video for communities"
+msgstr "Chat, voice, and video for communities"
+
+#: synos-oobe/assets/synos-oobe:2764
+msgid "Spotify"
+msgstr "Spotify"
+
+#: synos-oobe/assets/synos-oobe:2765
+msgid "Music for everyone"
+msgstr "Music for everyone"
+
+#: synos-oobe/assets/synos-oobe:2766
+msgid "OnlyOffice"
+msgstr "OnlyOffice"
+
+#: synos-oobe/assets/synos-oobe:2767
+msgid "Best Microsoft Office-compatible suite"
+msgstr "Best Microsoft Office-compatible suite"
+
+#: synos-oobe/assets/synos-oobe:2768
+msgid "Thunderbird"
+msgstr "Thunderbird"
+
+#: synos-oobe/assets/synos-oobe:2769
+msgid "Secure, fast, and easy email client"
+msgstr "Secure, fast, and easy email client"
+
+#: synos-oobe/assets/synos-oobe:2770
+msgid "Nextcloud"
+msgstr "Nextcloud"
+
+#: synos-oobe/assets/synos-oobe:2771
+msgid "Sync and collaborate on your desktop or laptop"
+msgstr "Sync and collaborate on your desktop or laptop"
+
+#: synos-oobe/assets/synos-oobe:2772
+msgid "Blender"
+msgstr "Blender"
+
+#: synos-oobe/assets/synos-oobe:2773
+msgid "Professional 3D creation suite"
+msgstr "Professional 3D creation suite"
+
+#: synos-oobe/assets/synos-oobe:2774
+msgid "GNOME Boxes"
+msgstr "GNOME Boxes"
+
+#: synos-oobe/assets/synos-oobe:2775
+msgid "Virtualization made simple"
+msgstr "Virtualization made simple"
+
+#: synos-oobe/assets/synos-oobe:2776
+msgid "VLC"
+msgstr "VLC"
+
+#: synos-oobe/assets/synos-oobe:2777
+msgid "The versatile media player that plays everything"
+msgstr "The versatile media player that plays everything"
+
+#: synos-oobe/assets/synos-oobe:2778
+msgid "Krita"
+msgstr "Krita"
+
+#: synos-oobe/assets/synos-oobe:2779
+msgid "Professional free and open source painting program"
+msgstr "Professional free and open source painting program"
+
+#: synos-oobe/assets/synos-oobe:2780
+msgid "OBS Studio"
+msgstr "OBS Studio"
+
+#: synos-oobe/assets/synos-oobe:2781
+msgid "Free and open source software for video recording and live streaming"
+msgstr "Free and open source software for video recording and live streaming"
+
+#: synos-oobe/assets/synos-oobe:2843
+msgid "Installed"
+msgstr "Installed"
+
+#: synos-oobe/assets/synos-oobe:2845
+msgid "Click to open in App Store"
+msgstr "Click to open in App Store"
+
+#: synos-oobe/assets/synos-oobe:2853
+msgid "Opening…"
+msgstr "Opening…"
+
+#: synos-oobe/assets/synos-oobe:2871
+msgid "Pro tip: You can explore these apps in the App Store,"
+msgstr "Pro tip: You can explore these apps in the App Store,"
+
+#: synos-oobe/assets/synos-oobe:2871
+msgid "and continue with the system setup while they download."
+msgstr "and continue with the system setup while they download."
+
+#: synos-oobe/assets/synos-oobe:2881
+msgid "  Browse Store  "
+msgstr "  Browse Store  "
+
+
+#: synos-oobe/assets/synos-oobe:2913
+msgid "Connect & Protect Your Data"
+msgstr "Connect & Protect Your Data"
+
+#: synos-oobe/assets/synos-oobe:2937
+msgid "Online Accounts"
+msgstr "Online Accounts"
+
+#: synos-oobe/assets/synos-oobe:2943
+msgid "Connect your Google, Microsoft,"
+msgstr "Connect your Google, Microsoft,"
+
+#: synos-oobe/assets/synos-oobe:2943
+msgid "or Nextcloud accounts to sync"
+msgstr "or Nextcloud accounts to sync"
+
+#: synos-oobe/assets/synos-oobe:2944
+msgid "files, contacts, and calendar."
+msgstr "files, contacts, and calendar."
+
+#: synos-oobe/assets/synos-oobe:2954
+msgid "Connect Accounts"
+msgstr "Connect Accounts"
+
+#: synos-oobe/assets/synos-oobe:3024
+msgid "Your Data. Your Rules. Period."
+msgstr "Your Data. Your Rules. Period."
+
+#: synos-oobe/assets/synos-oobe:3033
+msgid "SynOS disables all system-level telemetry by default."
+msgstr "SynOS disables all system-level telemetry by default."
+
+#: synos-oobe/assets/synos-oobe:3033
+msgid "We do not collect your usage habits."
+msgstr "We do not collect your usage habits."
+
+#: synos-oobe/assets/synos-oobe:3034
+msgid "We do not upload your search history."
+msgstr "We do not upload your search history."
+
+#: synos-oobe/assets/synos-oobe:3034
+msgid "There are no pervasive advertisements."
+msgstr "There are no pervasive advertisements."
+
+#: synos-oobe/assets/synos-oobe:3045
+msgid "In an era ruled by algorithms and surveillance,"
+msgstr "In an era ruled by algorithms and surveillance,"
+
+#: synos-oobe/assets/synos-oobe:3045
+msgid "this is our firmest commitment to you."
+msgstr "this is our firmest commitment to you."
+
+#: synos-oobe/assets/synos-oobe:3063
+msgid "✓ Zero telemetry — your activity is yours alone"
+msgstr "✓ Zero telemetry — your activity is yours alone"
+
+#: synos-oobe/assets/synos-oobe:3064
+msgid "✓ No data collection — your files stay on your device"
+msgstr "✓ No data collection — your files stay on your device"
+
+#: synos-oobe/assets/synos-oobe:3065
+msgid "✓ No ads in your operating system"
+msgstr "✓ No ads in your operating system"
+
+#: synos-oobe/assets/synos-oobe:3066
+msgid "✓ Full root access — you truly own your machine"
+msgstr "✓ Full root access — you truly own your machine"
+
+#: synos-oobe/assets/synos-oobe:3067
+msgid "✓ UFW firewall — your digital perimeter, defended"
+msgstr "✓ UFW firewall — your digital perimeter, defended"
+
+#: synos-oobe/assets/synos-oobe:3068
+msgid "✓ Open source — the code is yours to inspect and modify"
+msgstr "✓ Open source — the code is yours to inspect and modify"
+
+#: synos-oobe/assets/synos-oobe:3109
+msgid "Welcome to the SynOS Community"
+msgstr "Welcome to the SynOS Community"
+
+#: synos-oobe/assets/synos-oobe:3118
+msgid "Whether you're a Windows refugee seeking shelter,"
+msgstr "Whether you're a Windows refugee seeking shelter,"
+
+#: synos-oobe/assets/synos-oobe:3119
+msgid "or a hardcore geek developer — you'll find your tribe here."
+msgstr "or a hardcore geek developer — you'll find your tribe here."
+
+#: synos-oobe/assets/synos-oobe:3120
+msgid "Found a bug? Want a feature? Tell us anytime."
+msgstr "Found a bug? Want a feature? Tell us anytime."
+
+#: synos-oobe/assets/synos-oobe:3132
+msgid "Official Documentation"
+msgstr "Official Documentation"
+
+#: synos-oobe/assets/synos-oobe:3133
+msgid "Comprehensive guides and troubleshooting — covers everything you need"
+msgstr "Comprehensive guides and troubleshooting — covers everything you need"
+
+#: synos-oobe/assets/synos-oobe:3135
+msgid "Community Forums"
+msgstr "Community Forums"
+
+#: synos-oobe/assets/synos-oobe:3136
+msgid "Discuss with other SynOS users and developers"
+msgstr "Discuss with other SynOS users and developers"
+
+#: synos-oobe/assets/synos-oobe:3138
+msgid "Discord Server"
+msgstr "Discord Server"
+
+#: synos-oobe/assets/synos-oobe:3139
+msgid "Join our official Discord server for real-time chat and support"
+msgstr "Join our official Discord server for real-time chat and support"
+
+#: synos-oobe/assets/synos-oobe:3141
+msgid "Report an Issue"
+msgstr "Report an Issue"
+
+#: synos-oobe/assets/synos-oobe:3142
+msgid "Found a bug or have a feature request? Let us know!"
+msgstr "Found a bug or have a feature request? Let us know!"
+
+#: synos-oobe/assets/synos-oobe:3144
+msgid "Buy SynOS Enterprise Edition"
+msgstr "Buy SynOS Enterprise Edition"
+
+#: synos-oobe/assets/synos-oobe:3145
+msgid ""
+"Get enterprise-grade support and advanced features for your organization"
+msgstr ""
+"Get enterprise-grade support and advanced features for your organization"
+
+#: synos-oobe/assets/synos-oobe:3147
+msgid "Ask Ubuntu"
+msgstr "Ask Ubuntu"
+
+#: synos-oobe/assets/synos-oobe:3148
+msgid "Almost all Ubuntu solutions apply directly to SynOS"
+msgstr "Almost all Ubuntu solutions apply directly to SynOS"
+
+#: synos-oobe/assets/synos-oobe:3150
+msgid "Source Code"
+msgstr "Source Code"
+
+#: synos-oobe/assets/synos-oobe:3151
+msgid "SynOS is open-source. Explore the code and contribute!"
+msgstr "SynOS is open-source. Explore the code and contribute!"
+
+#: synos-oobe/assets/synos-oobe:3163
+msgid "Open"
+msgstr "Open"
+
+#: synos-oobe/assets/synos-oobe:3173
+msgid "💡 SynOS is compatible with Ubuntu's entire ecosystem."
+msgstr "💡 SynOS is compatible with Ubuntu's entire ecosystem."
+
+#: synos-oobe/assets/synos-oobe:3174
+msgid "You can rely on Ubuntu's vast documentation and expertise."
+msgstr "You can rely on Ubuntu's vast documentation and expertise."
+
+#: synos-oobe/assets/synos-oobe:3207
+msgid "All Set."
+msgstr "All Set."
+
+#: synos-oobe/assets/synos-oobe:3216
+msgid "  Start Your SynOS Journey  "
+msgstr "  Start Your SynOS Journey  "
+
+
+#: synos-oobe/assets/synos-oobe:3250
+msgid "SynOS Setup"
+msgstr "SynOS Setup"
+
+#: synos-oobe/assets/synos-oobe:3253
+msgid "SynOS Welcome Center"
+msgstr "SynOS Welcome Center"
+
+#: synos-oobe/assets/synos-oobe:3305
+msgid "← Back"
+msgstr "← Back"
+
+#: synos-oobe/assets/synos-oobe:3314
+#: synos-oobe/assets/synos-oobe:3433
+msgid "Next →"
+msgstr "Next →"
+
+#: synos-oobe/assets/synos-oobe:3431
+msgid "Finish"
+msgstr "Finish"
+
+#: synos-oobe/assets/synos-oobe:3498
+msgid "SynOS Welcome"
+msgstr "SynOS Welcome"
+
+#: synos-oobe/assets/synos-oobe:3500
+msgid "SynOS Team"
+msgstr "SynOS Team"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:75
+msgid "Secure Boot Configuration"
+msgstr "Secure Boot Configuration"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:83
+msgid ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+msgstr ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:86
+msgid "It protects your system from low-level malware and rootkits."
+msgstr "It protects your system from low-level malware and rootkits."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:95
+msgid "System Trust Status"
+msgstr "System Trust Status"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:132
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:274
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:406
+msgid "Create & Enroll Certificate"
+msgstr "Create & Enroll Certificate"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:138
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:284
+msgid "Repair Module Signatures"
+msgstr "Repair Module Signatures"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:146
+msgid "Note: Use password <b>123456</b> after rebooting."
+msgstr "Note: Use password <b>123456</b> after rebooting."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:151
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:392
+msgid "Reboot & Configure Secure Boot"
+msgstr "Reboot & Configure Secure Boot"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:159
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:358
+msgid "  Check Again  "
+msgstr "  Check Again  "
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:185
+msgid "Motherboard hardware protection is active"
+msgstr "Motherboard hardware protection is active"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:188
+msgid "Firmware does not support Secure Boot"
+msgstr "Firmware does not support Secure Boot"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:191
+msgid "Secure Boot state could not be determined"
+msgstr "Secure Boot state could not be determined"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:194
+msgid "Secure Boot is disabled"
+msgstr "Secure Boot is disabled"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:200
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:202
+msgid "Not required without firmware enforcement"
+msgstr "Not required without firmware enforcement"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:206
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:210
+msgid "Not checked because Secure Boot state is unknown"
+msgstr "Not checked because Secure Boot state is unknown"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:215
+msgid "Certificate generated locally"
+msgstr "Certificate generated locally"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:217
+msgid "Missing local certificate"
+msgstr "Missing local certificate"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:230
+msgid "Certificate is trusted by motherboard"
+msgstr "Certificate is trusted by motherboard"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:234
+msgid "Pending enrollment in blue screen (MOKManager)"
+msgstr "Pending enrollment in blue screen (MOKManager)"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:239
+msgid "Certificate is not trusted by motherboard"
+msgstr "Certificate is not trusted by motherboard"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:245
+msgid "Kernel signature enforcement is inactive"
+msgstr "Kernel signature enforcement is inactive"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:248
+msgid "Driver trust cannot be verified"
+msgstr "Driver trust cannot be verified"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:252
+msgid ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+msgstr ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:256
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:447
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:455
+msgid "Drivers are signed and ready to load"
+msgstr "Drivers are signed and ready to load"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:260
+msgid "Drivers are trusted, but automatic DKMS signing needs repair"
+msgstr "Drivers are trusted, but automatic DKMS signing needs repair"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:264
+msgid "No signed third-party drivers detected"
+msgstr "No signed third-party drivers detected"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:267
+msgid "Some DKMS modules need to be re-signed"
+msgstr "Some DKMS modules need to be re-signed"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:272
+msgid "Enroll Existing Certificate"
+msgstr "Enroll Existing Certificate"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:282
+msgid "Repair Automatic DKMS Signing"
+msgstr "Repair Automatic DKMS Signing"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:299
+msgid "This firmware does not provide Secure Boot. No certificate is required."
+msgstr ""
+"This firmware does not provide Secure Boot. No certificate is required."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:306
+msgid ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+msgstr ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:311
+msgid "No certificate is required while Secure Boot is disabled."
+msgstr "No certificate is required while Secure Boot is disabled."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:314
+msgid "System Trust Established. Third-party drivers will load securely."
+msgstr "System Trust Established. Third-party drivers will load securely."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:318
+msgid "The certificate is enrolled and current drivers are trusted."
+msgstr "The certificate is enrolled and current drivers are trusted."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:320
+msgid "Repair automatic DKMS signing before future driver updates."
+msgstr "Repair automatic DKMS signing before future driver updates."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:325
+msgid "The certificate is enrolled, but some modules are not signed with it."
+msgstr "The certificate is enrolled, but some modules are not signed with it."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:330
+msgid "A certificate is waiting for enrollment."
+msgstr "A certificate is waiting for enrollment."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:332
+msgid "Restart and enter password 123456 in MOKManager."
+msgstr "Restart and enter password 123456 in MOKManager."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:337
+msgid "The local trust certificate is not yet enrolled."
+msgstr "The local trust certificate is not yet enrolled."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:339
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:346
+msgid "You must configure this to use third-party drivers like NVIDIA."
+msgstr "You must configure this to use third-party drivers like NVIDIA."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:344
+msgid "The local trust certificate is missing."
+msgstr "The local trust certificate is missing."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:362
+msgid "  Checking...  "
+msgstr "  Checking...  "
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:368
+msgid "Reboot Required"
+msgstr "Reboot Required"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:369
+msgid "Please trust the certificate upon reboot using password 123456."
+msgstr "Please trust the certificate upon reboot using password 123456."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:371
+msgid "Cancel"
+msgstr "Cancel"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:372
+msgid "Reboot"
+msgstr "Reboot"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:380
+msgid "Success! When you reboot, a blue screen will appear."
+msgstr "Success! When you reboot, a blue screen will appear."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:384
+msgid "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+msgstr "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:388
+msgid "Certificate Created"
+msgstr "Certificate Created"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:391
+msgid "Later"
+msgstr "Later"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:420
+msgid "Secure Boot Trust Not Required"
+msgstr "Secure Boot Trust Not Required"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:421
+msgid "Firmware signature enforcement is not active."
+msgstr "Firmware signature enforcement is not active."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:423
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:441
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:449
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:457
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:473
+msgid "OK"
+msgstr "OK"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:431
+msgid ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt. "
+"You can repair them after enrollment."
+msgstr ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt. "
+"You can repair them after enrollment."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:439
+msgid "Configuration needs attention"
+msgstr "Configuration needs attention"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:446
+msgid "System Trust Established"
+msgstr "System Trust Established"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:454
+msgid "Driver Signature Trusted"
+msgstr "Driver Signature Trusted"
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:470
+msgid "Configuration failed. Please try again."
+msgstr "Configuration failed. Please try again."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:471
+msgid "Please check the advanced output."
+msgstr "Please check the advanced output."
+
+#: synos-secureboot-toolkit/src/synos_secureboot/ui.py:482
+msgid "Generating & Signing..."
+msgstr "Generating & Signing..."
+
+#~ msgid "Unleash Your Graphics Hardware"
+#~ msgstr "Unleash Your Graphics Hardware"
+
+#, python-brace-format
+#~ msgid "NVIDIA proprietary driver is already installed. (Version: {})"
+#~ msgstr "NVIDIA proprietary driver is already installed. (Version: {})"
+
+#~ msgid "✗ Installation encountered an issue."
+#~ msgstr "✗ Installation encountered an issue."
+
+#~ msgid "An NVIDIA dedicated graphics card was detected in your system."
+#~ msgstr "An NVIDIA dedicated graphics card was detected in your system."
+
+#~ msgid ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate "
+#~ "desktop"
+#~ msgstr ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate "
+#~ "desktop"
+
+#~ msgid "experiences, we recommend installing the proprietary driver."
+#~ msgstr "experiences, we recommend installing the proprietary driver."
+
+#~ msgid "  Check for Driver Updates  "
+#~ msgstr "Check for Driver Updates"
+
+#~ msgid "Repair & Reinstall"
+#~ msgstr "Repair & Reinstall"
+
+#~ msgid "  One-Click NVIDIA Driver Install  "
+#~ msgstr "One-Click NVIDIA Driver Install"
+
+#~ msgid "Installing NVIDIA driver…"
+#~ msgstr "Installing NVIDIA driver…"
+
+#~ msgid "This may take several minutes."
+#~ msgstr "This may take several minutes."
+
+#~ msgid "✓ Driver installed successfully!"
+#~ msgstr "✓ Driver installed successfully!"
+
+#~ msgid "You can install drivers later from Settings."
+#~ msgstr "You can install drivers later from Settings."
+
+#~ msgid "Xbox Controller Support"
+#~ msgstr "Xbox Controller Support"
+
+#~ msgid "Xbox controller driver (xpadneo) is already installed."
+#~ msgstr "Xbox controller driver (xpadneo) is already installed."
+
+#~ msgid ""
+#~ "Enjoy seamless Xbox controller support with rumble and accurate inputs."
+#~ msgstr ""
+#~ "Enjoy seamless Xbox controller support with rumble and accurate inputs."
+
+#~ msgid "SynOS provides native support for Xbox controllers via Bluetooth."
+#~ msgstr ""
+#~ "SynOS provides native support for Xbox controllers via Bluetooth."
+
+#~ msgid "The advanced xpadneo driver is already set up and ready for gaming."
+#~ msgstr "The advanced xpadneo driver is already set up and ready for gaming."
+
+#~ msgid ""
+#~ "For advanced features like rumble and accurate mapping, we recommend "
+#~ "installing the xpadneo driver."
+#~ msgstr ""
+#~ "For advanced features like rumble and accurate mapping, we recommend "
+#~ "installing the xpadneo driver."
+
+#~ msgid "Xbox Controller Driver Installed"
+#~ msgstr "Xbox Controller Driver Installed"
+
+#~ msgid "The xpadneo driver is currently installed"
+#~ msgstr "The xpadneo driver is currently installed"
+
+#~ msgid "The driver is not installed"
+#~ msgstr "The driver is not installed"
+
+#~ msgid "Driver not installed, signature missing"
+#~ msgstr "Driver not installed, signature missing"
+
+#~ msgid "Kernel module"
+#~ msgstr "Kernel module"
+
+#~ msgid "Not detected"
+#~ msgstr "Not detected"
+
+#~ msgid "Driver is NOT signed"
+#~ msgstr "Driver is NOT signed"
+
+#~ msgid "Signed with current trusted certificate"
+#~ msgstr "Signed with current trusted certificate"
+
+#~ msgid "Signed with current certificate, but not enrolled"
+#~ msgstr "Signed with current certificate, but not enrolled"
+
+#~ msgid "Signed with an unknown or outdated certificate"
+#~ msgstr "Signed with an unknown or outdated certificate"
+
+#~ msgid "Controller Status"
+#~ msgstr "Controller Status"
+
+#~ msgid "Driver loaded and active. Ready to play!"
+#~ msgstr "Driver loaded and active. Ready to play!"
+
+#~ msgid "Driver standing by. Waiting for controller connection..."
+#~ msgstr "Driver standing by. Waiting for controller connection..."
+
+#~ msgid "Driver cannot load due to missing signature trust"
+#~ msgstr "Driver cannot load due to missing signature trust"
+
+#~ msgid "Pair your controller"
+#~ msgstr "Pair your controller"
+
+#~ msgid "Test your controller"
+#~ msgstr "Test your controller"
+
+#~ msgid "  Install Xbox Driver  "
+#~ msgstr "  Install Xbox Driver  "
+
+#~ msgid ""
+#~ "⚠️ The driver signature does not match your system certificate. Click Fix "
+#~ "& Reinstall to repair the driver."
+#~ msgstr ""
+#~ "⚠️ The driver signature does not match your system certificate. Click Fix "
+#~ "& Reinstall to repair the driver."
+
+#~ msgid "Installing Xbox controller driver…"
+#~ msgstr "Installing Xbox controller driver…"
+
+#~ msgid "This may take a minute."
+#~ msgstr "This may take a minute."
+
+#~ msgid "Repairing driver signature…"
+#~ msgstr "Repairing driver signature…"
+
+#~ msgid "A reboot is recommended to apply changes."
+#~ msgstr ""
+#~ "✓ Driver installed successfully!\n"
+#~ "A reboot is recommended to apply changes."
+
+#~ msgid ""
+#~ "Enable low-level network protection — silently blocks all unauthorized "
+#~ "inbound connections."
+#~ msgstr ""
+#~ "Enable low-level network protection — silently blocks all unauthorized "
+#~ "inbound connections."
+
+#~ msgid "Firewall"
+#~ msgstr "Firewall"
+
+#~ msgid "✗ Repair failed."
+#~ msgstr "✗ Check failed:"
+
+#~ msgid "Spark Store"
+#~ msgstr "Spark Store"
+
+#~ msgid "Community app store for Chinese Linux users"
+#~ msgstr "Community app store for Chinese Linux users"
+
+#~ msgid ""
+#~ "SynOS is ready. Just a few steps to shape it\n"
+#~ "into the perfect system tailored to your habits."
+#~ msgstr ""
+#~ "SynOS is ready. Just a few steps to shape it\n"
+#~ "into the perfect system tailored to your habits."
+
+#~ msgid "=== Testing mirror speeds ===\n"
+#~ msgstr "=== Testing mirror speeds ==="
+
+#~ msgid ""
+#~ "\n"
+#~ "No mirrors reachable.\n"
+#~ msgstr ""
+#~ "\n"
+#~ "No mirrors reachable.\n"
+
+#~ msgid ""
+#~ "\n"
+#~ "=== Applying mirror switch ===\n"
+#~ msgstr ""
+#~ "\n"
+#~ "=== Applying mirror switch ===\n"
+
+#~ msgid ""
+#~ "\n"
+#~ "✓ Mirror switched and system updated.\n"
+#~ msgstr ""
+#~ "\n"
+#~ "✓ Mirror switched and system updated.\n"
+
+#~ msgid ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate "
+#~ "desktop\n"
+#~ "experiences, we recommend installing the proprietary driver."
+#~ msgstr ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate "
+#~ "desktop\n"
+#~ "experiences, we recommend installing the proprietary driver."
+
+#~ msgid ""
+#~ "Installing NVIDIA driver…\n"
+#~ "This may take several minutes."
+#~ msgstr ""
+#~ "Installing NVIDIA driver…\n"
+#~ "This may take several minutes."
+
+#~ msgid ""
+#~ "✗ Installation encountered an issue.\n"
+#~ "You can install drivers later from Settings."
+#~ msgstr ""
+#~ "✗ Installation encountered an issue.\n"
+#~ "You can install drivers later from Settings."
+
+#~ msgid ""
+#~ "Powered by Wine and Bottles technology, running classic Windows "
+#~ "applications\n"
+#~ "is now easier than ever."
+#~ msgstr ""
+#~ "Powered by Wine and Bottles technology, running classic Windows "
+#~ "applications\n"
+#~ "is now easier than ever."
+
+#~ msgid ""
+#~ "Deploying compatibility sandbox via Flatpak…\n"
+#~ "This may take a few minutes."
+#~ msgstr ""
+#~ "Deploying compatibility sandbox via Flatpak…\n"
+#~ "This may take a few minutes."
+
+#~ msgid ""
+#~ "✓ Sandbox deployed successfully!\n"
+#~ "You can now double-click .exe files to run them."
+#~ msgstr ""
+#~ "✓ Sandbox deployed successfully!\n"
+#~ "You can now double-click .exe files to run them."
+
+#~ msgid ""
+#~ "✗ Deployment failed.\n"
+#~ "You can install Bottles later from the App Store."
+#~ msgstr ""
+#~ "✗ Deployment failed.\n"
+#~ "You can install Bottles later from the App Store."
+
+#~ msgid ""
+#~ "Essential productivity and entertainment tools, hand-picked for you.\n"
+#~ "Click any app to open its details in the App Store."
+#~ msgstr ""
+#~ "Essential productivity and entertainment tools, hand-picked for you.\n"
+#~ "Click any app to open its details in the App Store."
+
+#~ msgid ""
+#~ "⚡ The following apps are provided by the Spark Store community.\n"
+#~ "Great for connecting to local services."
+#~ msgstr ""
+#~ "⚡ The following apps are provided by the Spark Store community.\n"
+#~ "Great for connecting to local services."
+
+#~ msgid ""
+#~ "Pro tip: You can explore these apps in the App Store,\n"
+#~ "and continue with the system setup while they download."
+#~ msgstr ""
+#~ "Pro tip: You can explore these apps in the App Store,\n"
+#~ "and continue with the system setup while they download."
+
+#~ msgid ""
+#~ "Note: These apps link to their official or community download pages. "
+#~ "SynOS is not affiliated with these vendors."
+#~ msgstr ""
+#~ "Note: These apps link to their official or community download pages. "
+#~ "SynOS is not affiliated with these vendors."
+
+#~ msgid ""
+#~ "Connect your Google, Microsoft,\n"
+#~ "or Nextcloud accounts to sync\n"
+#~ "files, contacts, and calendar."
+#~ msgstr ""
+#~ "Connect your Google, Microsoft,\n"
+#~ "or Nextcloud accounts to sync\n"
+#~ "files, contacts, and calendar."
+
+#~ msgid ""
+#~ "Use Deja Dup to protect your\n"
+#~ "important files with automated,\n"
+#~ "secure local or remote backups."
+#~ msgstr ""
+#~ "Use Deja Dup to protect your\n"
+#~ "important files with automated,\n"
+#~ "secure local or remote backups."
+
+#~ msgid ""
+#~ "SynOS disables all system-level telemetry by default.\n"
+#~ "We do not collect your usage habits.\n"
+#~ "We do not upload your search history.\n"
+#~ "There are no pervasive advertisements."
+#~ msgstr ""
+#~ "SynOS disables all system-level telemetry by default.\n"
+#~ "We do not collect your usage habits.\n"
+#~ "We do not upload your search history.\n"
+#~ "There are no pervasive advertisements."
+
+#~ msgid ""
+#~ "In an era ruled by algorithms and surveillance,\n"
+#~ "this is our firmest commitment to you."
+#~ msgstr ""
+#~ "In an era ruled by algorithms and surveillance,\n"
+#~ "this is our firmest commitment to you."
+
+#~ msgid ""
+#~ "Whether you're a Windows refugee seeking shelter,\n"
+#~ "or a hardcore geek developer — you'll find your tribe here.\n"
+#~ "Found a bug? Want a feature? Tell us anytime."
+#~ msgstr ""
+#~ "Whether you're a Windows refugee seeking shelter,\n"
+#~ "or a hardcore geek developer — you'll find your tribe here.\n"
+#~ "Found a bug? Want a feature? Tell us anytime."
+
+#~ msgid ""
+#~ "💡 SynOS is compatible with Ubuntu's entire ecosystem.\n"
+#~ "You can rely on Ubuntu's vast documentation and expertise."
+#~ msgstr ""
+#~ "💡 SynOS is compatible with Ubuntu's entire ecosystem.\n"
+#~ "You can rely on Ubuntu's vast documentation and expertise."
+
+#~ msgid ""
+#~ "\n"
+#~ "=== Testing bandwidth of top 3 mirrors (3 s each) ===\n"
+#~ msgstr ""
+#~ "\n"
+#~ "=== Testing bandwidth of top 3 mirrors (3 s each) ===\n"

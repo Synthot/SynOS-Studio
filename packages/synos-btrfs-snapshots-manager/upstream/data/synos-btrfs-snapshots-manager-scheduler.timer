@@ -1,0 +1,13 @@
+[Unit]
+Description=Run Disk Snapshots Manager automatic snapshots hourly
+Documentation=file:/usr/share/doc/synos-btrfs-snapshots-manager/README.md
+
+[Timer]
+OnBootSec=2min
+OnCalendar=hourly
+Persistent=true
+AccuracySec=1min
+Unit=synos-btrfs-snapshots-manager-scheduler.service
+
+[Install]
+WantedBy=timers.target

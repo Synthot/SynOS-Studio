@@ -1,0 +1,79 @@
+# GitLab CI template for SynOS image builds. Include it from your own repository:
+#
+#   include:
+#     - project: 'it/synos'
+#       file: '/ci/gitlab-ci.yml'
+#   variables:
+#     MANIFEST: manifests/acme.yml
+#
+# The build job needs a privileged runner (chroot, mounts, loop devices),
+# tagged `synos-builder`. Signing keys come from CI variables, never from the
+# repository: SYNOS_SIGNING_KEY (armored secret key) signs the package
+# repository, SIGNING_KEY signs the ISO.
+stages: [validate, build, test, release]
+
+variables:
+  MANIFEST: manifest.yml
+  GIT_DEPTH: "1"
+
+validate:
+  stage: validate
+  image: python:3.12-slim
+  script:
+    - pip install --quiet pyyaml jsonschema
+    - python3 tools/render_manifest.py --manifest "$MANIFEST" --check
+    - python3 tools/render_manifest.py --manifest "$MANIFEST"
+    - apt-get update -qq && apt-get install -y -qq dpkg fakeroot imagemagick librsvg2-bin python3-yaml python3-jsonschema python3-pil python3-jinja2 python3-gi gir1.2-atspi-2.0 gnupg dpkg-dev apt-utils >/dev/null
+    - python3 tools/render_brand.py --manifest "$MANIFEST"
+  artifacts:
+    paths: [args.sh, .build/]
+    expire_in: 1 week
+
+unit-tests:
+  stage: validate
+  image: python:3.12-slim
+  script:
+    - pip install --quiet pyyaml jsonschema pillow
+    - apt-get update -qq && apt-get install -y -qq dpkg fakeroot imagemagick librsvg2-bin xorriso mtools ffmpeg python3-yaml python3-jsonschema python3-pil python3-jinja2 python3-gi gir1.2-atspi-2.0 gnupg dpkg-dev apt-utils grub-common fonts-dejavu-core >/dev/null
+    - python3 tools/render_manifest.py --manifest "$MANIFEST"
+    - PYTHONPATH=tests python3 -m unittest discover -s tests/unit -p 'test_*.py'
+
+build-iso:
+  stage: build
+  tags: [synos-builder]
+  needs: [validate]
+  script:
+    # SYNOS_SIGNING_KEY is read by tools/build_packages.py; without it a
+    # development key would be generated on the runner, which is not what a
+    # release wants.
+    - test -n "$SYNOS_SIGNING_KEY" || { echo "SYNOS_SIGNING_KEY is not set"; exit 1; }
+    - make container-build MANIFEST="$MANIFEST"
+    - if [ -n "$SIGNING_KEY" ]; then
+        printf '%s' "$SIGNING_KEY" | gpg --batch --import;
+        for iso in dist/*.iso; do gpg --batch --yes --detach-sign --armor -o "$iso.asc" "$iso"; done;
+      fi
+  artifacts:
+    paths: [dist/]
+    expire_in: 30 days
+
+acceptance:
+  stage: test
+  tags: [synos-builder, kvm]
+  needs: [build-iso]
+  script:
+    - make test TEST_ARGS=--no-tui
+  artifacts:
+    when: always
+    paths: [test-results/]
+    reports:
+      junit: test-results/*/junit.xml
+
+release:
+  stage: release
+  image: alpine:3.20
+  needs: [build-iso, acceptance]
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - ls -l dist/
+    - echo "Publish dist/ to your artifact store (S3, Nexus, Artifactory) here."

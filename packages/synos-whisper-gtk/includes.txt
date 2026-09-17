@@ -1,0 +1,8 @@
+# kind	source (relative to upstream/)	target	mode
+file	src/synos-whisper-gtk	/usr/bin/synos-whisper-gtk	755
+folder	src/synos_whisper_gtk	/usr/lib/python3/dist-packages/synos_whisper_gtk	644
+folder	data/voice-typing@synos.com	/usr/share/gnome-shell/extensions/voice-typing@synos.com	644
+folder	locale/	/usr/share/locale/	644
+file	resources/com.synos.VoiceTyping.Settings.svg	/usr/share/icons/hicolor/scalable/apps/com.synos.VoiceTyping.Settings.svg	644
+file	data/com.synos.VoiceTyping.Settings.desktop	/usr/share/applications/com.synos.VoiceTyping.Settings.desktop	644
+file	resources/com.synos.VoiceTyping.Settings.svg	/usr/share/icons/hicolor/scalable/apps/com.synos.VoiceTyping.Settings.svg	644

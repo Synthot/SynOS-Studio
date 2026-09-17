@@ -1,0 +1,58 @@
+# Containers as system services (podman quadlet). Images are pulled on first
+# start, so the image build stays small and reproducible; GPU access follows
+# the profile's hardware.gpu choice.
+- name: podman for the container services
+  ansible.builtin.apt:
+    name: [podman, netavark, aardvark-dns]
+    state: present
+    install_recommends: false
+  when: container_services | length > 0
+
+- name: Quadlet directory
+  ansible.builtin.file:
+    path: /etc/containers/systemd
+    state: directory
+    mode: "0755"
+  when: container_services | length > 0
+
+- name: Quadlet units from the profile
+  ansible.builtin.template:
+    src: service.container.j2
+    dest: "/etc/containers/systemd/{{ item.name }}.container"
+    mode: "0644"
+  loop: "{{ container_services }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: NVIDIA container runtime hook (the toolkit comes from the profile's repository)
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/synos-nvidia-cdi.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=SynOS: generate the NVIDIA CDI specification for containers
+      ConditionPathExists=/usr/bin/nvidia-ctk
+      After=systemd-modules-load.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+  when: container_services_gpu == 'nvidia'
+
+- name: Enable the NVIDIA CDI unit (symlink works in the chroot)
+  ansible.builtin.file:
+    src: /etc/systemd/system/synos-nvidia-cdi.service
+    dest: /etc/systemd/system/multi-user.target.wants/synos-nvidia-cdi.service
+    state: link
+  when: container_services_gpu == 'nvidia'
+
+- name: GPU device access for the first user (render and video groups, applied by the installer's user step)
+  ansible.builtin.copy:
+    dest: /etc/synos/gpu
+    mode: "0644"
+    content: "{{ container_services_gpu }}\n"
+  when: container_services_gpu != 'none'

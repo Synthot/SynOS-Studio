@@ -1,0 +1,512 @@
+# SynOS Appearance — Ukrainian translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: Ukrainian\n"
+"Language: uk_UA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "Про оформлення SynOS"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "Додатково"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "Оформлення SynOS"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "Команда SynOS"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "Оформлення"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "Застосувати до екрана входу"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "Внизу"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "Скасувати"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "Виберіть зображення для фону екрана входу GDM."
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "Виберіть візуальний стиль вашої панелі завдань."
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "Вибрати…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "Класичний"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr "Обʼєднання кількох вікон однієї програми в одну піктограму"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "Зона небезпеки"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "Відображати кнопку «Огляд» на панелі завдань"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "Увімкнути групування"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "Налаштування розширень"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "Шпалери GDM"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "Групування програм"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "Зображення"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "Відокремити засоби запуску від запущених програм"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "Макет"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "Зліва"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "Шпалери екрана входу"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "Відкрити"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "Відкрийте вікна налаштувань для розширень панелі."
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "Індикатори панелі"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "Віджети панелі"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "Перегляд"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "Скинути"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "Скинути налаштування робочого столу"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "Скинути налаштування робочого столу?"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "Відновити заводські налаштування вигляду стільниці, пошуку, тек застосунків і конфіденційності"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "Справа"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "Вибрати зображення"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "Розділений"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "Показати кнопку «Огляд»"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "Показати піктограми на стільниці"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "Показати мережу"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "Показати погоду"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "Показати або приховати вбудовані елементи панелі."
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "Елементи панелі завдань"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "Стиль панелі завдань"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr "Увімкнути або вимкнути віджети індикаторів панелі."
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "Вгорі"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "Твіки"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "Поведінка панелі завдань Vista"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "Шпалери"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "По центру"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ Застосовано — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ Налаштування стільниці скинуто. Вийдіть із сеансу й увійдіть знову, щоб застосувати всі зміни."
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ Шпалери GDM застосовано"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ Не вдалося застосувати позицію"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ Не вдалося застосувати стиль"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ Не вдалося скинути"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ Не вдалося встановити шпалери GDM"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ Не вдалося перемкнути кнопку «Огляд»"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ Спочатку виберіть зображення"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "Буде відновлено заводські налаштування розширень, розташування панелі, пошуку, тек застосунків, шпалер, інтерфейсу та конфіденційності."
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "Статистика мережі"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Проста погода"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr "Оновити приблизне місцезнаходження для погоди"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "Угода про конфіденційність погодних служб"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. Приблизне місцезнаходження (ipapi.co)\n"
+"SynOS надішле один запит HTTPS до ipapi.co. Його оператор, Kloudend, Inc., побачить вашу публічну IP-адресу та може використати її для визначення вашого міста, країни та приблизних координат.\n"
+"\n"
+"2. Дані про погоду (Open-Meteo)\n"
+"Розширення погоди надішле вибрані приблизні координати до Open-Meteo, яким керує OpenMeteo GmbH. Ця служба також побачить вашу публічну IP-адресу та може зберігати журнали API протягом 90 днів.\n"
+"\n"
+"SynOS не пов’язана з жодною з цих сторонніх служб, не спонсорується ними й не має їхнього схвалення. Якщо визначення місцезнаходження не вдасться, SynOS використовуватиме офлайн-оцінку на основі вашого системного часового поясу.\n"
+"\n"
+"Політики конфіденційності:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "Відхилити"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "Погодитися з усім"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr "Функцію погоди не ввімкнено, оскільки запит на дозвіл було відхилено."
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "Не вдалося зберегти дозвіл для функції погоди."
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "Визначення вашого приблизного місцезнаходження…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "Не вдалося налаштувати розширення погоди."
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "Місцезнаходження для погоди встановлено: {location}."
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr ""
+"Служба визначення місцезнаходження недоступна; використовується {location} "
+"на основі вашого часового поясу."
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr "Функцію погоди вимкнено, але збережений дозвіл не вдалося відкликати."
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"Створіть резервну копію налаштувань GNOME, макетів і параметрів розширень. "
+"Особисті файли до неї не входять."
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "Резервне копіювання та відновлення"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "Експортувати налаштування GNOME"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "Експортувати налаштування GNOME"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "Експортувати…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "Яким чином слід імпортувати ці налаштування?"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "Файли налаштувань INI"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "Імпортувати налаштування GNOME"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "Імпортувати налаштування GNOME"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "Імпортувати…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "Імпортувати з об’єднанням"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"Імпорт з об’єднанням зберігає поточні значення, яких немає у файлі.\n"
+"\n"
+"Повне відновлення спочатку скидає всі налаштування /org/gnome/; значення, яких немає у файлі, повертаються до значень за замовчуванням. Перед виконанням будь-якої з цих операцій створюється резервна копія."
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "Відновити налаштування з файлу dconf у форматі INI"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr "Зберегти поточні налаштування у файлі INI, зручному для читання"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "Повне відновлення"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ Налаштування GNOME експортовано"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ Налаштування імпортовано. Вийдіть із системи та знову увійдіть, щоб "
+"застосувати всі зміни."
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ Не вдалося експортувати налаштування GNOME"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ Не вдалося імпортувати налаштування GNOME"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ Не вдалося прочитати файл налаштувань"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr ""
+"✗ Не вдалося ні імпортувати налаштування, ні автоматично відновити попередні"
+" значення"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr "✗ Імпорт не вдався; попередні налаштування відновлено"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ Вибраний файл не є коректним файлом dconf у форматі INI"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "панель завдань;панель;компонування;стиль;вікна;вигляд;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr "Перемикання між макетами панелі завдань «По центру» і класичним"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ Кнопку «Огляд» приховано"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ Кнопку «Огляд» показано"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ {label} вимкнено"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ {label} увімкнено"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ Не вдалося вимкнути {label}"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ Не вдалося увімкнути {label}"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ Кнопка «Огляд» — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action}но"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ Не вдалося {action} {label}"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "Позиція панелі завдань"
+
+#~ msgid "Panel Position"
+#~ msgstr "Позиція панелі"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "Виберіть розташування вашої панелі завдань на екрані."

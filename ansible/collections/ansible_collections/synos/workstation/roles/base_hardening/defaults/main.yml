@@ -1,0 +1,7 @@
+base_hardening_firewall: default-deny-inbound   # default-deny-inbound | off
+base_hardening_usbguard: false
+base_hardening_compliance: none                 # e.g. anssi-bp028-enhanced, cis-level1, bsi-sys-1-3
+base_hardening_unattended_upgrades: true
+base_hardening_in_chroot: "{{ ansible_connection == 'community.general.chroot' or ansible_connection == 'chroot' }}"
+base_hardening_ssh: disabled                    # enabled | disabled: OpenSSH on installed systems (never in the live session)
+base_hardening_open_ports: []                   # inbound ports opened at first boot, e.g. ["22/tcp", "9090/tcp"]

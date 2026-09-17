@@ -1,0 +1,10 @@
+Package: synos-theme
+Version: 2.0.2-1+synos1
+Section: metapackages
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-dconf-defaults
+Recommends: synos-fluent-icon-theme, synos-fluent-gtk-theme, synos-gnome-shell-locale, synos-appearance, synos-gnome-extensions, plymouth-synos, synos-wallpapers, synos-gdm3-wallpaper, synos-fonts
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} complete visual theme — icons, GTK theme, wallpapers, and extensions

@@ -1,0 +1,1807 @@
+# synos-oobe translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-oobe.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-oobe\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-09 15:16+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: id <LL@li.org>\n"
+"Language: id_ID\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: assets/synos-oobe:371
+msgid "Disk Snapshots Manager"
+msgstr "Manajer Snapshot Disk"
+
+#: assets/synos-oobe:373
+msgid "Protect your system with automatic Btrfs snapshots and smart cleanup."
+msgstr ""
+"Lindungi sistem Anda dengan snapshot Btrfs otomatis dan pembersihan cerdas."
+
+#: assets/synos-oobe:375
+msgid "Configure Automatic Snapshots"
+msgstr "Konfigurasikan Snapshot Otomatis"
+
+#: assets/synos-oobe:380
+msgid "System Backup"
+msgstr "Backup Sistem"
+
+#: assets/synos-oobe:382
+msgid "Use Deja Dup to protect your"
+msgstr "Gunakan Deja Dup untuk melindungi"
+
+#: assets/synos-oobe:383
+msgid "important files with automated,"
+msgstr "file penting dengan otomatis,"
+
+#: assets/synos-oobe:384
+msgid "secure local or remote backups."
+msgstr "pencadangan lokal atau jarak jauh yang aman."
+
+#: assets/synos-oobe:386
+msgid "Get Deja Dup"
+msgstr "Dapatkan Deja Dup"
+
+#: assets/synos-oobe:443
+msgid "NetworkManager could not scan Wi-Fi."
+msgstr "NetworkManager tidak dapat memindai Wi-Fi."
+
+#: assets/synos-oobe:506
+msgid "Could not inspect network adapters."
+msgstr "Tidak dapat memeriksa adaptor jaringan."
+
+#: assets/synos-oobe:516
+msgid "Could not read the Wi-Fi radio state."
+msgstr "Tidak dapat membaca status radio Wi-Fi."
+
+#: assets/synos-oobe:522
+msgid "Unknown Wi-Fi radio state: {}"
+msgstr "Status radio Wi-Fi tidak diketahui: {}"
+
+#: assets/synos-oobe:523
+msgid "empty"
+msgstr "kosong"
+
+#: assets/synos-oobe:532
+msgid "Could not change the Wi-Fi radio state."
+msgstr "Tidak dapat mengubah status radio Wi-Fi."
+
+#: assets/synos-oobe:634
+msgid "Welcome Home."
+msgstr "Selamat Datang di Rumah."
+
+#: assets/synos-oobe:644
+msgid "SynOS is ready. Just a few steps to shape it"
+msgstr "SynOS siap. Hanya beberapa langkah lagi untuk menyesuaikannya"
+
+#: assets/synos-oobe:644
+msgid "into the perfect system tailored to your habits."
+msgstr "menjadi sistem sempurna yang disesuaikan dengan kebiasaan Anda."
+
+#: assets/synos-oobe:654
+msgid "  Start Setup  "
+msgstr "  Mulai Setup  "
+
+#: assets/synos-oobe:701
+msgid "Connect to the Internet"
+msgstr "Hubungkan ke Internet"
+
+#: assets/synos-oobe:709
+msgid ""
+"Connect now so SynOS can safely check for updates, drivers, and apps."
+msgstr ""
+"Hubungkan sekarang agar SynOS dapat memeriksa pembaruan, driver, dan "
+"aplikasi dengan aman."
+
+#: assets/synos-oobe:717
+msgid "Internet Connection"
+msgstr "Koneksi Internet"
+
+#: assets/synos-oobe:724
+msgid "Network Hardware"
+msgstr "Perangkat Keras Jaringan"
+
+#: assets/synos-oobe:732
+msgid "Available Wi-Fi Networks"
+msgstr "Jaringan Wi-Fi yang Tersedia"
+
+#: assets/synos-oobe:734
+msgid "Wi-Fi"
+msgstr "Wi-Fi"
+
+#: assets/synos-oobe:737
+msgid "Scan Again"
+msgstr "Pindai Lagi"
+
+#: assets/synos-oobe:746 assets/synos-oobe:818 assets/synos-oobe:826
+#: assets/synos-oobe:841
+msgid "Open Network Settings"
+msgstr "Buka Pengaturan Jaringan"
+
+#: assets/synos-oobe:755
+msgid "Could not open network settings: {}"
+msgstr "Tidak dapat membuka pengaturan jaringan: {}"
+
+#: assets/synos-oobe:765
+msgid "Continue Offline"
+msgstr "Lanjutkan Offline"
+
+#: assets/synos-oobe:769
+msgid "Skip updates, online drivers, apps, and account setup."
+msgstr "Lewati pembaruan, driver online, aplikasi, dan pengaturan akun."
+
+#: assets/synos-oobe:785
+msgid "Internet connection is ready. Choose Next to continue."
+msgstr "Koneksi internet sudah siap. Pilih Berikutnya untuk melanjutkan."
+
+#: assets/synos-oobe:792
+msgid "Connect to Wi-Fi or a wired network to continue."
+msgstr "Hubungkan ke Wi-Fi atau jaringan kabel untuk melanjutkan."
+
+#: assets/synos-oobe:815
+msgid "No network adapters detected."
+msgstr "Tidak ada adaptor jaringan yang terdeteksi."
+
+#: assets/synos-oobe:817
+msgid "Connect a network adapter or continue offline."
+msgstr "Hubungkan adaptor jaringan atau lanjutkan offline."
+
+#: assets/synos-oobe:822
+msgid "Wired Network"
+msgstr "Jaringan Kabel"
+
+#: assets/synos-oobe:824
+msgid "Cable connected."
+msgstr "Kabel terhubung."
+
+#: assets/synos-oobe:825
+msgid "Plug in a network cable to connect."
+msgstr "Colokkan kabel jaringan untuk menyambung."
+
+#: assets/synos-oobe:830
+msgid "Wireless Network"
+msgstr "Jaringan Nirkabel"
+
+#: assets/synos-oobe:831
+msgid "Wi-Fi adapter detected."
+msgstr "Adaptor Wi-Fi terdeteksi."
+
+#: assets/synos-oobe:832
+msgid "Open Wi-Fi Settings"
+msgstr "Buka Pengaturan Wi-Fi"
+
+#: assets/synos-oobe:836
+msgid "Wired and Wireless Networks"
+msgstr "Jaringan Kabel dan Nirkabel"
+
+#: assets/synos-oobe:838
+msgid "Cable connected and Wi-Fi available."
+msgstr "Kabel tersambung dan Wi-Fi tersedia."
+
+#: assets/synos-oobe:840
+msgid "Wi-Fi is available; the network cable is disconnected."
+msgstr "Wi-Fi tersedia; kabel jaringan terputus."
+
+#: assets/synos-oobe:852
+msgid "Wi-Fi is turned off."
+msgstr "Wi-Fi dimatikan."
+
+#: assets/synos-oobe:856
+msgid "No Wi-Fi networks found."
+msgstr "Tidak ada jaringan Wi-Fi yang ditemukan."
+
+#: assets/synos-oobe:885
+msgid "Wi-Fi unavailable: {}"
+msgstr "Wi-Fi tidak tersedia: {}"
+
+#: assets/synos-oobe:967
+msgid "Define Your Visual Order"
+msgstr "Tentukan Tampilan Visual Anda"
+
+#: assets/synos-oobe:977
+msgid "Light and Shadow"
+msgstr "Cahaya dan Bayangan"
+
+#: assets/synos-oobe:978
+msgid "Choose a crisp light theme, or an immersive dark experience."
+msgstr "Pilih tema cahaya yang bersih, atau pengalaman gelap yang imersif."
+
+#: assets/synos-oobe:997
+msgid "Light"
+msgstr "Cahaya"
+
+#: assets/synos-oobe:1009
+msgid "Dark"
+msgstr "Gelap"
+
+#: assets/synos-oobe:1040
+msgid "Workflow Layout"
+msgstr "Tata Letak Alur Kerja"
+
+#: assets/synos-oobe:1041
+msgid "Prefer modern centered alignment, or classic left-docked?"
+msgstr ""
+"Lebih suka perataan tengah modern atau gaya klasik yang ditambatkan di kiri?"
+
+#: assets/synos-oobe:1075
+msgid "Taskbar Layout"
+msgstr "Tata Letak Taskbar"
+
+#: assets/synos-oobe:1076
+msgid "Choose your workflow."
+msgstr "Pilih alur kerja Anda."
+
+#: assets/synos-oobe:1085
+msgid " Modern "
+msgstr " Modern "
+
+#: assets/synos-oobe:1086
+msgid " Classic "
+msgstr " Klasik "
+
+#: assets/synos-oobe:1115
+msgid "Show Virtual Desktop Switch Button"
+msgstr "Tampilkan Tombol Beralih Desktop Virtual"
+
+#: assets/synos-oobe:1116
+msgid "Display the Activities button on the taskbar"
+msgstr "Tampilkan tombol Aktivitas pada taskbar"
+
+#: assets/synos-oobe:1168
+msgid "Digital Sovereignty, Under Your Control"
+msgstr "Suverasi Digital, Dalam Kendali Anda"
+
+#: assets/synos-oobe:1176
+msgid "We deeply value privacy. Here, you hold absolute authority."
+msgstr ""
+"Kami sangat menghargai privasi. Di sini, Anda memegang otoritas penuh."
+
+#: assets/synos-oobe:1186
+msgid "Network Security"
+msgstr "Keamanan Jaringan"
+
+#: assets/synos-oobe:1188
+msgid ""
+"Control inbound protection and whether this computer participates in local "
+"network discovery."
+msgstr ""
+"Kontrol perlindungan masuk dan apakah komputer ini berpartisipasi dalam "
+"penemuan jaringan lokal."
+
+#: assets/synos-oobe:1193
+msgid "Network Firewall (UFW)"
+msgstr "Firewall Jaringan (UFW)"
+
+#: assets/synos-oobe:1246
+msgid "Local Network Discovery (mDNS)"
+msgstr "Penemuan Jaringan Lokal (mDNS)"
+
+#: assets/synos-oobe:1248
+msgid ""
+"Find printers and nearby devices, and make .local names available on trusted"
+" networks."
+msgstr ""
+"Temukan printer dan perangkat terdekat, dan buat nama .local tersedia di "
+"jaringan tepercaya."
+
+#: assets/synos-oobe:1260
+msgid "Local network discovery controls are not installed."
+msgstr "Kontrol penemuan jaringan lokal tidak diinstal."
+
+#: assets/synos-oobe:1295
+msgid "Location Services"
+msgstr "Layanan Lokasi"
+
+#: assets/synos-oobe:1297
+msgid ""
+"Allow apps like weather and clock to access your approximate geographic "
+"location."
+msgstr ""
+"Izinkan aplikasi seperti cuaca dan jam mengakses lokasi geografis perkiraan "
+"Anda."
+
+#: assets/synos-oobe:1301
+msgid "Location Access"
+msgstr "Akses Lokasi"
+
+#: assets/synos-oobe:1319
+msgid "Power Settings"
+msgstr "Pengaturan Daya"
+
+#: assets/synos-oobe:1320
+msgid "Manage idle behavior to balance energy saving and convenience."
+msgstr ""
+"Kelola perilaku idle untuk menyeimbangkan penghematan energi dan kenyamanan."
+
+#: assets/synos-oobe:1324
+msgid "Auto Sleep"
+msgstr "Tidur Otomatis"
+
+#: assets/synos-oobe:1353
+msgid "Command-line Assistance"
+msgstr "Bantuan Baris Perintah"
+
+#: assets/synos-oobe:1354
+msgid "Control local bash predictions."
+msgstr "Kendalikan prediksi bash lokal."
+
+#: assets/synos-oobe:1358
+msgid "Bash Command Predictions"
+msgstr "Prediksi Perintah Bash"
+
+#: assets/synos-oobe:1359
+msgid "Show command suggestions in bash"
+msgstr "Tampilkan saran perintah di bash"
+
+#: assets/synos-oobe:1376
+msgid ""
+"Could not update your Bash configuration. Your previous setting was kept."
+msgstr ""
+"Konfigurasi Bash Anda tidak dapat diperbarui. Pengaturan sebelumnya tetap "
+"dipertahankan."
+
+#: assets/synos-oobe:1414
+msgid "Keep Your System Up to Date"
+msgstr "Pastikan Sistem Anda Selalu Terbaru"
+
+#: assets/synos-oobe:1423
+msgid "Security patches and the latest features are just a click away."
+msgstr "Patch keamanan dan fitur terbaru hanya dalam satu klik."
+
+#: assets/synos-oobe:1433
+msgid "Terminal Output"
+msgstr "Output Terminal"
+
+#: assets/synos-oobe:1470
+msgid "  Do It Later  "
+msgstr "  Lakukan Nanti  "
+
+#: assets/synos-oobe:1473
+msgid "  Find Fastest Mirror  "
+msgstr "  Cari Cermin Tercepat  "
+
+#: assets/synos-oobe:1476
+msgid "  Check for Updates  "
+msgstr "  Cek Pembaruan  "
+
+#: assets/synos-oobe:1510
+msgid "Checking for updates…"
+msgstr "Memeriksa pembaruan…"
+
+#: assets/synos-oobe:1542
+msgid "Updates are available."
+msgstr "Pembaruan tersedia."
+
+#: assets/synos-oobe:1543
+msgid "  Install Updates  "
+msgstr "  Instal Pembaruan  "
+
+#: assets/synos-oobe:1550
+msgid "✓ System is up to date."
+msgstr "✓ Sistem sudah diperbarui."
+
+#: assets/synos-oobe:1552 assets/synos-oobe:1582
+msgid "  Continue  "
+msgstr "  Lanjutkan  "
+
+#: assets/synos-oobe:1559
+msgid "✗ Check failed: "
+msgstr "✗ Pemeriksaan gagal: "
+
+#: assets/synos-oobe:1565
+msgid "Installing updates…"
+msgstr "Menginstal pembaruan…"
+
+#: assets/synos-oobe:1580
+msgid "✓ Updates installed successfully!"
+msgstr "✓ Pembaruan berhasil diinstal!"
+
+#: assets/synos-oobe:1591
+msgid "✗ Installation failed: "
+msgstr "✗ Instalasi gagal: "
+
+#: assets/synos-oobe:1630
+msgid "Testing mirrors…"
+msgstr "Menguji cermin…"
+
+#: assets/synos-oobe:1631
+msgid "=== Testing mirror speeds ==="
+msgstr "=== Menguji kecepatan cermin ==="
+
+#: assets/synos-oobe:1756 assets/synos-oobe:1764
+#, python-brace-format
+msgid "Testing mirrors… ({c}/{t})"
+msgstr "Menguji cermin... ({c}/{t})"
+
+#: assets/synos-oobe:1772
+msgid "No mirrors reachable."
+msgstr "Tidak ada cermin yang terjangkau."
+
+#: assets/synos-oobe:1774
+msgid "✗ No mirrors reachable. Check your connection."
+msgstr "✗ Tidak ada cermin yang terjangkau. Periksa koneksi Anda."
+
+#: assets/synos-oobe:1782
+msgid "=== Testing bandwidth of top 5 mirrors "
+msgstr "=== Menguji bandwidth 5 cermin teratas === "
+
+#: assets/synos-oobe:1783
+msgid "(3 s each) ==="
+msgstr "(3 s masing-masing) ==="
+
+#: assets/synos-oobe:1837
+msgid "Best mirror by bandwidth"
+msgstr "Cermin terbaik berdasarkan bandwidth"
+
+#: assets/synos-oobe:1839 assets/synos-oobe:1860
+#: assets/synos-oobe:1867
+msgid "Latency"
+msgstr "Latensi"
+
+#: assets/synos-oobe:1840 assets/synos-oobe:1861
+#: assets/synos-oobe:1868
+msgid "Bandwidth"
+msgstr "Bandwidth"
+
+#: assets/synos-oobe:1862
+msgid "This is already your current mirror."
+msgstr "Ini sudah menjadi mirror saat ini Anda."
+
+#: assets/synos-oobe:1872
+msgid "Current mirror"
+msgstr "Mirror Saat Ini"
+
+#: assets/synos-oobe:1876
+msgid "Switch to this mirror and run apt update?"
+msgstr "Beralih ke mirror ini dan jalankan apt update?"
+
+#: assets/synos-oobe:1881
+msgid "Fastest Mirror Found"
+msgstr "Mirror Tercepat Ditemukan"
+
+#: assets/synos-oobe:1884
+msgid "Keep Current"
+msgstr "Pertahankan Mirror Saat Ini"
+
+#: assets/synos-oobe:1885
+msgid "Switch"
+msgstr "Beralih"
+
+#: assets/synos-oobe:1907
+msgid "✗ Mirror test failed: "
+msgstr "✗ Uji mirror gagal: "
+
+#: assets/synos-oobe:1913
+msgid "Switching mirror…"
+msgstr "Mengalihkan mirror…"
+
+#: assets/synos-oobe:1914
+msgid "=== Applying mirror switch ==="
+msgstr "=== Beralih cermin sedang diterapkan ==="
+
+#: assets/synos-oobe:1989
+msgid "✓ Mirror switched and system updated."
+msgstr "✓ Cermin beralih dan sistem diperbarui."
+
+#: assets/synos-oobe:1992
+msgid "✓ Switched to "
+msgstr "✓ Beralih ke "
+
+#: assets/synos-oobe:2005
+msgid "✗ Switch failed: "
+msgstr "✗ Pengalihan gagal: "
+
+#: assets/synos-oobe:2045
+msgid "Could not open SynOS Driver Center: {}"
+msgstr "Tidak dapat membuka Pusat Driver SynOS: {}"
+
+#: assets/synos-oobe:2078
+msgid "Configure Hardware Drivers?"
+msgstr "Konfigurasikan Driver Perangkat Keras?"
+
+#: assets/synos-oobe:2088
+msgid ""
+"Open SynOS Driver Center now to manage graphics cards, Xbox controllers, "
+"and other hardware."
+msgstr ""
+"Buka Pusat Driver SynOS sekarang untuk mengelola kartu grafis, pengontrol"
+" Xbox, dan perangkat keras lainnya."
+
+#: assets/synos-oobe:2111
+msgid "Skip"
+msgstr "Lewati"
+
+#: assets/synos-oobe:2116
+msgid "Open Driver Center"
+msgstr "Buka Pusat Driver"
+
+#: assets/synos-oobe:2152
+msgid "Run Windows Apps, with ease"
+msgstr "Jalankan Aplikasi Windows, dengan mudah"
+
+#: assets/synos-oobe:2161
+msgid ""
+"Powered by Wine and Bottles technology, running classic Windows applications"
+msgstr ""
+"Didukung oleh teknologi Wine dan Bottles, menjalankan aplikasi Windows "
+"klasik"
+
+#: assets/synos-oobe:2161
+msgid "is now easier than ever."
+msgstr "lebih mudah dari sebelumnya."
+
+#: assets/synos-oobe:2177
+msgid "✓ Windows compatibility sandbox is already installed."
+msgstr "✓ Sandbox kompatibilitas Windows sudah terpasang."
+
+#: assets/synos-oobe:2193
+msgid "  Skip  "
+msgstr "  Lewati  "
+
+#: assets/synos-oobe:2197
+msgid "  Enable Windows Compatibility Sandbox  "
+msgstr "  Aktifkan Kotak Pasang Kompatibilitas Windows  "
+
+#: assets/synos-oobe:2207
+msgid "Configure Bottles"
+msgstr "Konfigurasi Bottles"
+
+#: assets/synos-oobe:2222
+msgid "Advanced Output"
+msgstr "Output Lanjutan"
+
+#: assets/synos-oobe:2251
+msgid "Deploying compatibility sandbox via Flatpak…"
+msgstr "Menerapkan sandbox kompatibilitas melalui Flatpak…"
+
+#: assets/synos-oobe:2251
+msgid "This may take a few minutes."
+msgstr "Ini mungkin memakan waktu beberapa menit."
+
+#: assets/synos-oobe:2286
+msgid "✓ Sandbox deployed successfully!"
+msgstr "✓ Sandbox berhasil diterapkan!"
+
+#: assets/synos-oobe:2286
+msgid "You can now double-click .exe files to run them."
+msgstr ""
+"Sekarang Anda dapat mengeklik dua kali file .exe untuk menjalankannya."
+
+#: assets/synos-oobe:2295
+msgid "✗ Deployment failed."
+msgstr "✗ Penerapan gagal."
+
+#: assets/synos-oobe:2295
+msgid "You can install Bottles later from the App Store."
+msgstr "Anda dapat menginstal Bottles nanti dari Toko Aplikasi."
+
+#: assets/synos-oobe:2303
+msgid "✗ Error: "
+msgstr "✗ Kesalahan: "
+
+#: assets/synos-oobe:2334
+msgid "The Magic at Your Fingertips"
+msgstr "Sihir di Ujung Jari Anda"
+
+#: assets/synos-oobe:2342
+msgid "Skip tedious clicking. Capture inspiration with elegance."
+msgstr "Hindari klik membosankan. Tangkap inspirasi dengan elegan."
+
+#: assets/synos-oobe:2365
+msgid "Screenshot"
+msgstr "Screenshot"
+
+#: assets/synos-oobe:2366
+msgid "Select, annotate, copy — all in one motion"
+msgstr "Pilih, anotasi, salin — semuanya dalam satu gerakan"
+
+#: assets/synos-oobe:2384
+msgid "Screen Recording"
+msgstr "Perekaman Layar"
+
+#: assets/synos-oobe:2385
+msgid "Seamless start, instant capture"
+msgstr "Mulai mulus, tangkapan instan"
+
+#: assets/synos-oobe:2405
+msgid "More Essential Shortcuts"
+msgstr "Pintasan penting lainnya"
+
+#: assets/synos-oobe:2408
+msgid "Open File Manager"
+msgstr "Buka Pengelola Berkas"
+
+#: assets/synos-oobe:2409
+msgid "Open Terminal"
+msgstr "Buka Terminal"
+
+#: assets/synos-oobe:2410
+msgid "Task Manager"
+msgstr "Pengelola tugas"
+
+#: assets/synos-oobe:2411
+msgid "View Clipboard History"
+msgstr "Lihat riwayat papan klip"
+
+#: assets/synos-oobe:2412
+msgid "Lock Screen"
+msgstr "Kunci layar"
+
+#: assets/synos-oobe:2413
+msgid "Action Center"
+msgstr "Pusat tindakan"
+
+#: assets/synos-oobe:2414
+msgid "Notification Center"
+msgstr "Pusat notifikasi"
+
+#: assets/synos-oobe:2415
+msgid "Toggle Network Stats Display"
+msgstr "Tampilkan/Sembunyikan Statistik Jaringan"
+
+#: assets/synos-oobe:2416
+msgid "Switch Between Windows"
+msgstr "Beralih antarjendela"
+
+#: assets/synos-oobe:2417
+msgid "Close Current Window"
+msgstr "Tutup jendela saat ini"
+
+#: assets/synos-oobe:2418
+msgid "Snap Windows"
+msgstr "Tata jendela"
+
+#: assets/synos-oobe:2419
+msgid "Switch Virtual Desktop"
+msgstr "Beralih ke Desktop Virtual"
+
+#: assets/synos-oobe:2420
+msgid "Show Desktop"
+msgstr "Tampilkan Desktop"
+
+#: assets/synos-oobe:2421
+msgid "System Settings"
+msgstr "Pengaturan Sistem"
+
+#: assets/synos-oobe:2422
+msgid "Emoji and Characters"
+msgstr "Emoji & Karakter"
+
+#: assets/synos-oobe:2423
+msgid "Minimize Window"
+msgstr "Minimalkan Jendela"
+
+#: assets/synos-oobe:2441
+msgid ""
+"You can view and customize all shortcuts anytime in Settings → Keyboard."
+msgstr ""
+"Anda dapat melihat dan menyesuaikan semua pintasan kapan saja di Pengaturan "
+"→ Keyboard."
+
+#: assets/synos-oobe:2478
+msgid "In China? Use USTC mirror for App Store!"
+msgstr "Di Tiongkok? Gunakan cermin USTC untuk App Store!"
+
+#: assets/synos-oobe:2484
+msgid ""
+"Flathub access can be slow from China. Switch to the USTC mirror for faster "
+"downloads."
+msgstr ""
+"Akses Flathub bisa lambat dari Tiongkok. Beralih ke cermin USTC untuk "
+"unduhan lebih cepat."
+
+#: assets/synos-oobe:2591
+msgid "✓ Already using Chinese mirror — downloads are fast."
+msgstr "✓ Sudah menggunakan cermin Tiongkok — unduhan cepat."
+
+#: assets/synos-oobe:2594
+msgid "Switch Back to International"
+msgstr "Beralih Kembali ke Internasional"
+
+#: assets/synos-oobe:2597
+msgid "Flathub is using the international server."
+msgstr "Flathub menggunakan server internasional."
+
+#: assets/synos-oobe:2600
+msgid "🚀 Switch to USTC Mirror"
+msgstr "🚀 Beralih ke Cermin USTC"
+
+#: assets/synos-oobe:2613
+msgid "Testing USTC mirror..."
+msgstr "Menguji cermin USTC..."
+
+#: assets/synos-oobe:2657
+msgid "Switching back..."
+msgstr "Sedang beralih kembali..."
+
+#: assets/synos-oobe:2684
+msgid "✗ Failed: "
+msgstr "✗ Gagal: "
+
+#: assets/synos-oobe:2687
+msgid "Retry"
+msgstr "Coba Lagi"
+
+#: assets/synos-oobe:2713
+msgid "Productive From Day One"
+msgstr "Produktif Sejak Hari Pertama"
+
+#: assets/synos-oobe:2722
+msgid "Essential productivity and entertainment tools, hand-picked for you."
+msgstr "Alat produktivitas dan hiburan esensial, dipilih khusus untuk Anda."
+
+#: assets/synos-oobe:2722
+msgid "Click any app to open its details in the App Store."
+msgstr "Klik aplikasi mana saja untuk membuka detailnya di Toko Aplikasi."
+
+#: assets/synos-oobe:2734
+msgid "WeChat"
+msgstr "WeChat"
+
+#: assets/synos-oobe:2735
+msgid "Most popular messaging app in China"
+msgstr "Aplikasi pesan populer di Tiongkok"
+
+#: assets/synos-oobe:2736
+msgid "QQ"
+msgstr "QQ"
+
+#: assets/synos-oobe:2737
+msgid "Tencent QQ instant messenger"
+msgstr "Pesan instan Tencent QQ"
+
+#: assets/synos-oobe:2738
+msgid "WPS Office"
+msgstr "WPS Office"
+
+#: assets/synos-oobe:2739
+msgid "Best office suite for Chinese documents"
+msgstr "Suite kantor terbaik untuk dokumen Tiongkok"
+
+#: assets/synos-oobe:2744
+msgid "Google Chrome"
+msgstr "Google Chrome"
+
+#: assets/synos-oobe:2745
+msgid "The world's most popular web browser"
+msgstr "Jelajah web paling populer di dunia"
+
+#: assets/synos-oobe:2746
+msgid "Visual Studio Code"
+msgstr "Visual Studio Code"
+
+#: assets/synos-oobe:2747
+msgid "Code editing. Redefined."
+msgstr "Mengedit kode. Didefinisikan ulang."
+
+#: assets/synos-oobe:2748
+msgid "Steam"
+msgstr "Steam"
+
+#: assets/synos-oobe:2749
+msgid "Your portal to the gaming universe"
+msgstr "Pintu gerbang Anda ke alam semesta permainan"
+
+#: assets/synos-oobe:2750
+msgid "Discord"
+msgstr "Discord"
+
+#: assets/synos-oobe:2751
+msgid "Chat, voice, and video for communities"
+msgstr "Pesan, suara, dan video untuk komunitas"
+
+#: assets/synos-oobe:2752
+msgid "Spotify"
+msgstr "Spotify"
+
+#: assets/synos-oobe:2753
+msgid "Music for everyone"
+msgstr "Musik untuk semua orang"
+
+#: assets/synos-oobe:2754
+msgid "OnlyOffice"
+msgstr "OnlyOffice"
+
+#: assets/synos-oobe:2755
+msgid "Best Microsoft Office-compatible suite"
+msgstr "Suite paling kompatibel dengan Microsoft Office"
+
+#: assets/synos-oobe:2756
+msgid "Thunderbird"
+msgstr "Thunderbird"
+
+#: assets/synos-oobe:2757
+msgid "Secure, fast, and easy email client"
+msgstr "Klien email yang aman, cepat, dan mudah"
+
+#: assets/synos-oobe:2758
+msgid "Nextcloud"
+msgstr "Nextcloud"
+
+#: assets/synos-oobe:2759
+msgid "Sync and collaborate on your desktop or laptop"
+msgstr "Sinkronkan dan berkolaborasi di desktop atau laptop Anda"
+
+#: assets/synos-oobe:2760
+msgid "Blender"
+msgstr "Blender"
+
+#: assets/synos-oobe:2761
+msgid "Professional 3D creation suite"
+msgstr "Suite pembuatan 3D profesional"
+
+#: assets/synos-oobe:2762
+msgid "GNOME Boxes"
+msgstr "GNOME Boxes"
+
+#: assets/synos-oobe:2763
+msgid "Virtualization made simple"
+msgstr "Virtualisasi yang disederhanakan"
+
+#: assets/synos-oobe:2764
+msgid "VLC"
+msgstr "VLC"
+
+#: assets/synos-oobe:2765
+msgid "The versatile media player that plays everything"
+msgstr "Pemutar media serbaguna yang dapat memutar segala sesuatu"
+
+#: assets/synos-oobe:2766
+msgid "Krita"
+msgstr "Krita"
+
+#: assets/synos-oobe:2767
+msgid "Professional free and open source painting program"
+msgstr "Program melukis gratis dan sumber terbuka profesional"
+
+#: assets/synos-oobe:2768
+msgid "OBS Studio"
+msgstr "OBS Studio"
+
+#: assets/synos-oobe:2769
+msgid "Free and open source software for video recording and live streaming"
+msgstr ""
+"Perangkat lunak gratis dan sumber terbuka untuk rekaman video dan streaming "
+"langsung"
+
+#: assets/synos-oobe:2831
+msgid "Installed"
+msgstr "Terinstal"
+
+#: assets/synos-oobe:2833
+msgid "Click to open in App Store"
+msgstr "Klik untuk membuka di App Store"
+
+#: assets/synos-oobe:2841
+msgid "Opening…"
+msgstr "Membuka…"
+
+#: assets/synos-oobe:2860
+msgid "Pro tip: You can explore these apps in the App Store,"
+msgstr ""
+"Tips profesional: Anda dapat menjelajahi aplikasi ini di Toko Aplikasi,"
+
+#: assets/synos-oobe:2860
+msgid "and continue with the system setup while they download."
+msgstr "dan lanjutkan dengan pengaturan sistem sambil mengunduhnya."
+
+#: assets/synos-oobe:2870
+msgid "  Browse Store  "
+msgstr "  Jelajahi Toko  "
+
+#: assets/synos-oobe:2902
+msgid "Connect & Protect Your Data"
+msgstr "Sambungkan & Lindungi Data Anda"
+
+#: assets/synos-oobe:2926
+msgid "Online Accounts"
+msgstr "Akun Online"
+
+#: assets/synos-oobe:2932
+msgid "Connect your Google, Microsoft,"
+msgstr "Hubungkan Google, Microsoft, Anda"
+
+#: assets/synos-oobe:2932
+msgid "or Nextcloud accounts to sync"
+msgstr "atu akun Nextcloud untuk sinkronisasi"
+
+#: assets/synos-oobe:2933
+msgid "files, contacts, and calendar."
+msgstr "file, kontak, dan kalender."
+
+#: assets/synos-oobe:2943
+msgid "Connect Accounts"
+msgstr "Sambungkan Akun"
+
+#: assets/synos-oobe:3013
+msgid "Your Data. Your Rules. Period."
+msgstr "Data Anda. Aturan Anda. Titik."
+
+#: assets/synos-oobe:3022
+msgid "SynOS disables all system-level telemetry by default."
+msgstr "SynOS menonaktifkan semua telemetri tingkat sistem secara default."
+
+#: assets/synos-oobe:3022
+msgid "We do not collect your usage habits."
+msgstr "Kami tidak mengumpulkan kebiasaan penggunaan Anda."
+
+#: assets/synos-oobe:3023
+msgid "We do not upload your search history."
+msgstr "Kami tidak mengunggah riwayat pencarian Anda."
+
+#: assets/synos-oobe:3023
+msgid "There are no pervasive advertisements."
+msgstr "Tidak ada iklan yang pervasif."
+
+#: assets/synos-oobe:3034
+msgid "In an era ruled by algorithms and surveillance,"
+msgstr "Di era yang dikuasai oleh algoritma dan pengawasan,"
+
+#: assets/synos-oobe:3034
+msgid "this is our firmest commitment to you."
+msgstr "inilah komitmen terkuat kami kepada Anda."
+
+#: assets/synos-oobe:3052
+msgid "✓ Zero telemetry — your activity is yours alone"
+msgstr "✓ Nol telemetri — aktivitas Anda hanya milik Anda sendiri"
+
+#: assets/synos-oobe:3053
+msgid "✓ No data collection — your files stay on your device"
+msgstr ""
+"✓ Tidak ada pengumpulan data — file Anda tetap berada di perangkat Anda"
+
+#: assets/synos-oobe:3054
+msgid "✓ No ads in your operating system"
+msgstr "✓ Tidak ada iklan di sistem operasi Anda"
+
+#: assets/synos-oobe:3055
+msgid "✓ Full root access — you truly own your machine"
+msgstr "✓ Akses root penuh — Anda benar-benar memiliki mesin Anda"
+
+#: assets/synos-oobe:3056
+msgid "✓ UFW firewall — your digital perimeter, defended"
+msgstr "✓ UFW firewall — perimeter digital Anda, terjaga"
+
+#: assets/synos-oobe:3057
+msgid "✓ Open source — the code is yours to inspect and modify"
+msgstr "✓ Sumber terbuka — kode milik Anda untuk diperiksa dan dimodifikasi"
+
+#: assets/synos-oobe:3098
+msgid "Welcome to the SynOS Community"
+msgstr "Selamat datang di Komunitas SynOS"
+
+#: assets/synos-oobe:3107
+msgid "Whether you're a Windows refugee seeking shelter,"
+msgstr "Baik Anda seorang pengungsi Windows yang mencari perlindungan,"
+
+#: assets/synos-oobe:3108
+msgid "or a hardcore geek developer — you'll find your tribe here."
+msgstr ""
+"aaupun developer geek hardcore — Anda akan menemukan komunitas Anda di sini."
+
+#: assets/synos-oobe:3109
+msgid "Found a bug? Want a feature? Tell us anytime."
+msgstr "Menemukan bug? Ingin fitur? Beri tahu kami kapan saja."
+
+#: assets/synos-oobe:3121
+msgid "Official Documentation"
+msgstr "Dokumentasi Resmi"
+
+#: assets/synos-oobe:3122
+msgid "Comprehensive guides and troubleshooting — covers everything you need"
+msgstr ""
+"Panduan komprehensif dan pemecahan masalah — mencakup semua yang Anda "
+"butuhkan"
+
+#: assets/synos-oobe:3124
+msgid "Community Forums"
+msgstr "Forum Komunitas"
+
+#: assets/synos-oobe:3125
+msgid "Discuss with other SynOS users and developers"
+msgstr "Diskusikan dengan pengguna dan developer SynOS lainnya"
+
+#: assets/synos-oobe:3127
+msgid "Discord Server"
+msgstr "Server Discord"
+
+#: assets/synos-oobe:3128
+msgid "Join our official Discord server for real-time chat and support"
+msgstr ""
+"Bergabunglah dengan server Discord resmi kami untuk obrolan real-time dan "
+"dukungan"
+
+#: assets/synos-oobe:3130
+msgid "Report an Issue"
+msgstr "Laporkan Masalah"
+
+#: assets/synos-oobe:3131
+msgid "Found a bug or have a feature request? Let us know!"
+msgstr "Menemukan bug atau memiliki permintaan fitur? Beri tahu kami!"
+
+#: assets/synos-oobe:3133
+msgid "Buy SynOS Enterprise Edition"
+msgstr "Beli Edisi Enterprise SynOS"
+
+#: assets/synos-oobe:3134
+msgid ""
+"Get enterprise-grade support and advanced features for your organization"
+msgstr ""
+"Dapatkan dukungan tingkat enterprise dan fitur canggih untuk organisasi Anda"
+
+#: assets/synos-oobe:3136
+msgid "Ask Ubuntu"
+msgstr "Ask Ubuntu"
+
+#: assets/synos-oobe:3137
+msgid "Almost all Ubuntu solutions apply directly to SynOS"
+msgstr "Hampir semua solusi Ubuntu berlaku langsung untuk SynOS"
+
+#: assets/synos-oobe:3139
+msgid "Source Code"
+msgstr "Kode Sumber"
+
+#: assets/synos-oobe:3140
+msgid "SynOS is open-source. Explore the code and contribute!"
+msgstr "SynOS adalah sumber terbuka. Jelajahi kodenya dan berkontribusi!"
+
+#: assets/synos-oobe:3152
+msgid "Open"
+msgstr "Buka"
+
+#: assets/synos-oobe:3162
+msgid "💡 SynOS is compatible with Ubuntu's entire ecosystem."
+msgstr "💡 SynOS kompatibel dengan seluruh ekosistem Ubuntu."
+
+#: assets/synos-oobe:3163
+msgid "You can rely on Ubuntu's vast documentation and expertise."
+msgstr "Anda dapat mengandalkan dokumentasi dan keahlian luas dari Ubuntu."
+
+#: assets/synos-oobe:3196
+msgid "All Set."
+msgstr "Semua Selesai."
+
+#: assets/synos-oobe:3205
+msgid "  Start Your SynOS Journey  "
+msgstr "  Mulailah Perjalanan SynOS Anda  "
+
+#: assets/synos-oobe:3239 assets/synos-oobe-autostart.desktop:28
+msgid "SynOS Setup"
+msgstr "Pengaturan SynOS"
+
+#: assets/synos-oobe:3242
+msgid "SynOS Welcome Center"
+msgstr "Pusat Sambutan SynOS"
+
+#: assets/synos-oobe:3295
+msgid "← Back"
+msgstr "← Kembali"
+
+#: assets/synos-oobe:3304 assets/synos-oobe:3423
+msgid "Next →"
+msgstr "Lanjut →"
+
+#: assets/synos-oobe:3421
+msgid "Finish"
+msgstr "Selesai"
+
+#: assets/synos-oobe:3488 data/synos-oobe.desktop:28
+msgid "SynOS Welcome"
+msgstr "Selamat Datang di SynOS"
+
+#: assets/synos-oobe:3490
+msgid "SynOS Team"
+msgstr "Tim SynOS"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:121
+msgid "Secure Boot Configuration"
+msgstr "Konfigurasi Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:129
+msgid ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+msgstr ""
+"Secure Boot adalah standar keamanan motherboard yang memastikan hanya "
+"perangkat lunak tepercaya yang dimuat saat startup."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:132
+msgid "It protects your system from low-level malware and rootkits."
+msgstr "Ia melindungi sistem Anda dari malware tingkat rendah dan rootkit."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:141
+msgid "System Trust Status"
+msgstr "Status Kepercayaan Sistem"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:183
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:325
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:509
+msgid "Create & Enroll Certificate"
+msgstr "Buat & Daftarkan Sertifikat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:189
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:338
+msgid "Repair Module Signatures"
+msgstr "Tanda Tangan Modul Perbaikan"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:197
+msgid "Note: Use password <b>123456</b> after rebooting."
+msgstr ""
+"Catatan: Gunakan kata sandi <b>123456</b> setelah melakukan pemutakhiran "
+"ulang."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:202
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:495
+msgid "Reboot & Configure Secure Boot"
+msgstr "Pemutakhiran ulang & Konfigurasikan Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:210
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:419
+msgid "  Check Again  "
+msgstr "  Periksa Lagi  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:236
+msgid "Motherboard hardware protection is active"
+msgstr "Perlindungan perangkat keras motherboard aktif"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:239
+msgid "Firmware does not support Secure Boot"
+msgstr "Firmware tidak mendukung Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:242
+msgid "Secure Boot state could not be determined"
+msgstr "Secure Boot tidak dapat ditentukan"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:245
+msgid "Secure Boot is disabled"
+msgstr "Secure Boot dinonaktifkan"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:251
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:253
+msgid "Not required without firmware enforcement"
+msgstr "Tidak diperlukan tanpa penegakan firmware"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:257
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:261
+msgid "Not checked because Secure Boot state is unknown"
+msgstr "Tidak dicentang karena status Secure Boot tidak diketahui"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:266
+msgid "Certificate generated locally"
+msgstr "Sertifikat dihasilkan secara lokal"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:268
+msgid "Missing local certificate"
+msgstr "Tidak ada sertifikat lokal"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:281
+msgid "Certificate is trusted by motherboard"
+msgstr "Sertifikat dipercaya oleh motherboard"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:285
+msgid "Pending enrollment in blue screen (MOKManager)"
+msgstr "Menunggu pendaftaran di layar biru (MOKManager)"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:290
+msgid "Certificate is not trusted by motherboard"
+msgstr "Sertifikat tidak dipercaya oleh motherboard"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:296
+msgid "Kernel signature enforcement is inactive"
+msgstr "Penegakan tanda tangan kernel tidak aktif"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:299
+msgid "Driver trust cannot be verified"
+msgstr "Kepercayaan pengemudi tidak dapat diverifikasi"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:303
+msgid ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+msgstr ""
+"Secure Boot kepercayaan sudah siap. Tidak ada modul kernel pihak ketiga yang"
+" diinstal saat ini."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:307
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:550
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:558
+msgid "Drivers are signed and ready to load"
+msgstr "Driver ditandatangani dan siap dimuat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:311
+msgid "Drivers are trusted, but automatic DKMS signing needs repair"
+msgstr ""
+"Driver dapat dipercaya, tetapi penandatanganan otomatis DKMS perlu "
+"diperbaiki"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:315
+msgid "No signed third-party drivers detected"
+msgstr "Driver pihak ketiga yang ditandatangani tidak terdeteksi"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:318
+msgid "Some DKMS modules need to be re-signed"
+msgstr "Beberapa modul DKMS perlu ditandatangani ulang"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:323
+msgid "Enroll Existing Certificate"
+msgstr "Daftarkan Sertifikat yang Ada"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:336
+msgid "Repair Automatic DKMS Signing"
+msgstr "Perbaiki Penandatanganan DKMS Otomatis"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:356
+msgid ""
+"This firmware does not provide Secure Boot. No certificate is required."
+msgstr ""
+"Firmware ini tidak menyediakan Secure Boot. Tidak diperlukan sertifikat."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:363
+msgid ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+msgstr ""
+"Status Secure Boot tidak dapat dibaca. Operasi kepercayaan pengemudi "
+"diblokir hingga deteksi berhasil."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:369
+msgid "No certificate is required while Secure Boot is disabled."
+msgstr "Tidak diperlukan sertifikat saat Secure Boot dinonaktifkan."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:375
+msgid "System Trust Established. Third-party drivers will load securely."
+msgstr ""
+"Kepercayaan Sistem Terbentuk. Driver pihak ketiga akan dimuat secara aman."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:379
+msgid "The certificate is enrolled and current drivers are trusted."
+msgstr "Sertifikat terdaftar dan driver saat ini dipercaya."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:381
+msgid "Repair automatic DKMS signing before future driver updates."
+msgstr ""
+"Perbaiki penandatanganan DKMS otomatis sebelum pembaruan driver di masa "
+"mendatang."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:386
+msgid "The certificate is enrolled, but some modules are not signed with it."
+msgstr ""
+"Sertifikat telah didaftarkan, namun beberapa modul tidak ditandatangani "
+"dengannya."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:391
+msgid "A certificate is waiting for enrollment."
+msgstr "Sertifikat sedang menunggu pendaftaran."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:393
+msgid "Restart and enter password 123456 in MOKManager."
+msgstr "Mulai ulang dan masukkan kata sandi 123456 di MOKManager."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:398
+msgid "The local trust certificate is not yet enrolled."
+msgstr "Sertifikat perwalian lokal belum terdaftar."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:400
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:407
+msgid "You must configure this to use third-party drivers like NVIDIA."
+msgstr ""
+"Anda harus mengonfigurasi ini untuk menggunakan driver pihak ketiga seperti "
+"NVIDIA."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:405
+msgid "The local trust certificate is missing."
+msgstr "Sertifikat kepercayaan lokal tidak ada."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:423
+msgid "  Checking...  "
+msgstr "  Memeriksa...  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:429
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:443
+msgid "Reboot Required"
+msgstr "Pemutakhiran Ulang Diperlukan"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:430
+msgid "Please trust the certificate upon reboot using password 123456."
+msgstr ""
+"Silakan percayai sertifikat saat booting ulang menggunakan kata sandi "
+"123456."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:432
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:446
+msgid "Cancel"
+msgstr "Batalkan"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:447
+msgid "Reboot"
+msgstr "Pemutakhiran ulang"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:483
+msgid "Success! When you reboot, a blue screen will appear."
+msgstr "Berhasil! Saat Anda booting ulang, layar biru akan muncul."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:487
+msgid "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+msgstr ""
+"Pilih 'Enroll MOK' → 'Lanjutkan' → 'Ya', dan masukkan kata sandi: 123456"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:491
+msgid "Certificate Created"
+msgstr "Sertifikat Dibuat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:494
+msgid "Later"
+msgstr "Nanti"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:523
+msgid "Secure Boot Trust Not Required"
+msgstr "Secure Boot Kepercayaan Tidak Diperlukan"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:524
+msgid "Firmware signature enforcement is not active."
+msgstr "Penegakan tanda tangan firmware tidak aktif."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:478
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:526
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:544
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:552
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:560
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:576
+msgid "OK"
+msgstr "OK"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:534
+msgid ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt."
+" You can repair them after enrollment."
+msgstr ""
+"Sertifikat sudah siap, tetapi satu atau lebih modul DKMS tidak dapat dibuat "
+"ulang. Anda dapat memperbaikinya setelah pendaftaran."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:542
+msgid "Configuration needs attention"
+msgstr "Konfigurasi perlu diperhatikan"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:549
+msgid "System Trust Established"
+msgstr "Kepercayaan Sistem Terbentuk"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:557
+msgid "Driver Signature Trusted"
+msgstr "Tanda Tangan Driver Terpercaya"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:573
+msgid "Configuration failed. Please try again."
+msgstr "Konfigurasi gagal. Silakan coba lagi."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:574
+msgid "Please check the advanced output."
+msgstr "Silakan periksa output lanjutan."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:585
+msgid "Generating & Signing..."
+msgstr "Menghasilkan & Menandatangani..."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:156
+msgid "Local MOK Certificate"
+msgstr "Sertifikat MOK Lokal"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:155
+msgid "Secure Boot Enabled"
+msgstr "Secure Boot Diaktifkan"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:158
+msgid "Third-party Drivers"
+msgstr "Driver Pihak Ketiga"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:157
+msgid "UEFI Firmware Trust"
+msgstr "Kepercayaan Firmware UEFI"
+
+#: data/synos-oobe.desktop:112
+msgid "welcome;oobe;setup;tutorial;first-run;"
+msgstr "selamat datang;oobe;setup;tutorial;penggunaan pertama;"
+
+#: synos-oobe/data/com.synos.oobe.policy:9
+msgid "Manage local network discovery"
+msgstr "Kelola penemuan jaringan lokal"
+
+#: synos-oobe/data/com.synos.oobe.policy:11
+msgid "Authentication is required to change local network discovery"
+msgstr "Otentikasi diperlukan untuk mengubah penemuan jaringan lokal"
+
+#: data/synos-oobe.desktop:55
+msgid "Welcome Center"
+msgstr "Pusat Sambutan"
+
+#: assets/synos-oobe-autostart.desktop:55
+msgid "Complete your SynOS setup"
+msgstr "Selesaikan pengaturan SynOS Anda"
+
+#: data/synos-oobe.desktop:82
+msgid "Explore and configure your SynOS system"
+msgstr "Jelajahi dan konfigurasi sistem SynOS Anda"
+
+#~ msgid "Unleash Your Graphics Hardware"
+#~ msgstr "Goncangkan Perangkat Keras Grafis Anda"
+
+#, python-brace-format
+#~ msgid "NVIDIA proprietary driver is already installed. (Version: {})"
+#~ msgstr "Driver NVIDIA proprietari sudah terpasang. (Versi: {})"
+
+#~ msgid "✗ Installation encountered an issue."
+#~ msgstr "✗ Instalasi mengalami masalah."
+
+#~ msgid "An NVIDIA dedicated graphics card was detected in your system."
+#~ msgstr "Kartu grafis NVIDIA dedicated terdeteksi di sistem Anda."
+
+#~ msgid ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate desktop"
+#~ msgstr ""
+#~ "Untuk kelancaran maksimal dalam gaming, rendering 3D, dan desktop "
+#~ "berkerangka tinggi"
+
+#~ msgid "experiences, we recommend installing the proprietary driver."
+#~ msgstr "pengalaman, kami merekomendasikan menginstal driver proprietary."
+
+#~ msgid "  Check for Driver Updates  "
+#~ msgstr "Perbarui Driver"
+
+#~ msgid "Repair & Reinstall"
+#~ msgstr "Perbaiki & Instal Ulang"
+
+#~ msgid "  One-Click NVIDIA Driver Install  "
+#~ msgstr "Pasang Driver NVIDIA Sekali Klik"
+
+#~ msgid "Installing NVIDIA driver…"
+#~ msgstr "Menginstal driver NVIDIA…"
+
+#~ msgid "This may take several minutes."
+#~ msgstr "Ini mungkin memakan waktu beberapa menit."
+
+#~ msgid "✓ Driver installed successfully!"
+#~ msgstr "✓ Driver berhasil diinstal!"
+
+#~ msgid "You can install drivers later from Settings."
+#~ msgstr "Anda dapat menginstal driver nanti dari Pengaturan."
+
+#~ msgid "Xbox Controller Support"
+#~ msgstr "Dukungan Kontroler Xbox"
+
+#~ msgid "Xbox controller driver (xpadneo) is already installed."
+#~ msgstr "Driver kontroler Xbox (xpadneo) sudah terinstal."
+
+#~ msgid ""
+#~ "Enjoy seamless Xbox controller support with rumble and accurate inputs."
+#~ msgstr ""
+#~ "Nikmati dukungan kontroler Xbox yang mulus dengan getaran dan input akurat."
+
+#~ msgid "SynOS provides native support for Xbox controllers via Bluetooth."
+#~ msgstr ""
+#~ "SynOS menyediakan dukungan native untuk kontroler Xbox melalui Bluetooth."
+
+#~ msgid "The advanced xpadneo driver is already set up and ready for gaming."
+#~ msgstr "Driver xpadneo canggih sudah disiapkan dan siap untuk gaming."
+
+#~ msgid ""
+#~ "For advanced features like rumble and accurate mapping, we recommend "
+#~ "installing the xpadneo driver."
+#~ msgstr ""
+#~ "Untuk fitur lanjutan seperti getaran dan pemetaan yang akurat, kami "
+#~ "menyarankan untuk menginstal driver xpadneo."
+
+#~ msgid "Xbox Controller Driver Installed"
+#~ msgstr "Driver Pengontrol Xbox Terinstal"
+
+#~ msgid "The xpadneo driver is currently installed"
+#~ msgstr "Driver xpadneo saat ini terinstal"
+
+#~ msgid "The driver is not installed"
+#~ msgstr "Driver belum terinstal"
+
+#~ msgid "Driver not installed, signature missing"
+#~ msgstr "Driver belum terinstal, tanda tangan hilang"
+
+#~ msgid "Kernel module"
+#~ msgstr "Modul kernel"
+
+#~ msgid "Not detected"
+#~ msgstr "Tidak terdeteksi"
+
+#~ msgid "Driver is NOT signed"
+#~ msgstr "Driver TIDAK ditandatangani"
+
+#~ msgid "Signed with current trusted certificate"
+#~ msgstr "Ditandatangani dengan sertifikat terpercaya saat ini"
+
+#~ msgid "Signed with current certificate, but not enrolled"
+#~ msgstr "Ditandatangani dengan sertifikat saat ini, tetapi belum didaftarkan"
+
+#~ msgid "Signed with an unknown or outdated certificate"
+#~ msgstr "Ditandatangani dengan sertifikat tidak dikenal atau usang"
+
+#~ msgid "Controller Status"
+#~ msgstr "Status Pengontrol"
+
+#~ msgid "Driver loaded and active. Ready to play!"
+#~ msgstr "Driver berhasil dimuat dan aktif. Siap digunakan!"
+
+#~ msgid "Driver standing by. Waiting for controller connection..."
+#~ msgstr "Driver siap siaga. Menunggu koneksi pengontrol..."
+
+#~ msgid "Driver cannot load due to missing signature trust"
+#~ msgstr "Driver tidak dapat dimuat karena kurangnya kepercayaan tanda tangan"
+
+#~ msgid "Pair your controller"
+#~ msgstr "Pasangkan pengontrol Anda"
+
+#~ msgid "Test your controller"
+#~ msgstr "Uji pengontrol Anda"
+
+#~ msgid "  Install Xbox Driver  "
+#~ msgstr "Instal Driver Xbox"
+
+#~ msgid ""
+#~ "⚠️ The driver signature does not match your system certificate. Click Fix & "
+#~ "Reinstall to repair the driver."
+#~ msgstr ""
+#~ "⚠️ Tanda tangan driver tidak cocok dengan sertifikat sistem Anda. Klik "
+#~ "Perbaiki & Instal Ulang untuk memperbaiki driver."
+
+#~ msgid "Installing Xbox controller driver…"
+#~ msgstr "Menginstal driver kontroler Xbox…"
+
+#~ msgid "This may take a minute."
+#~ msgstr "Ini mungkin memakan waktu sebentar."
+
+#~ msgid "Repairing driver signature…"
+#~ msgstr "Memperbaiki tanda tangan driver…"
+
+#~ msgid "A reboot is recommended to apply changes."
+#~ msgstr "Pemutakhiran ulang direkomendasikan untuk menerapkan perubahan."
+
+#~ msgid "  Fix & Reinstall Driver  "
+#~ msgstr "Instal Driver Xbox"
+
+#~ msgid "(Reboot recommended)"
+#~ msgstr "(Direkomendasikan untuk reboot)"
+
+#~ msgid "Cannot sign drivers without a certificate"
+#~ msgstr "Tidak dapat menandatangani driver tanpa sertifikat"
+
+#~ msgid ""
+#~ "Enable low-level network protection — silently blocks all unauthorized "
+#~ "inbound connections."
+#~ msgstr ""
+#~ "Aktifkan perlindungan jaringan tingkat rendah — secara diam-diam memblokir "
+#~ "semua koneksi masuk yang tidak sah."
+
+#~ msgid "Firewall"
+#~ msgstr "Firewall"
+
+#~ msgid ""
+#~ "Please configure Secure Boot in the previous step before installing this "
+#~ "driver."
+#~ msgstr ""
+#~ "Harap reboot untuk mendaftarkan sertifikat sebelum menginstal driver ini."
+
+#~ msgid "Please reboot to enroll the certificate before installing this driver."
+#~ msgstr ""
+#~ "Harap reboot untuk mendaftarkan sertifikat sebelum menginstal driver ini."
+
+#~ msgid "Scanning for installed drivers..."
+#~ msgstr "Memindai driver yang terinstal..."
+
+#~ msgid "The local trust certificate is missing or not yet enrolled."
+#~ msgstr "Sertifikat kepercayaan lokal hilang atau belum didaftarkan."
+
+#~ msgid ""
+#~ "⚠️ Secure Boot is enabled but the custom certificate is not yet enrolled."
+#~ msgstr "⚠️ Secure Boot diaktifkan tetapi sertifikat kustom belum didaftarkan."
+
+#~ msgid "✓ Xbox controller driver installed successfully!"
+#~ msgstr "✓ Driver kontroler Xbox berhasil diinstal!"
+
+#~ msgid "✗ Repair failed."
+#~ msgstr "✗ Penerapan gagal."
+
+#~ msgid "⚡ The following apps are provided by the Spark Store community."
+#~ msgstr "⚡ Aplikasi berikut disediakan oleh komunitas Spark Store."
+
+#~ msgid "Great for connecting to local services."
+#~ msgstr "Baik untuk menghubungkan ke layanan lokal."
+
+#~ msgid "Spark Store"
+#~ msgstr "Spark Store"
+
+#~ msgid "Community app store for Chinese Linux users"
+#~ msgstr "Toko aplikasi komunitas untuk pengguna Linux Tiongkok"
+
+#~ msgid "Note: These apps link to their official or community download pages."
+#~ msgstr ""
+#~ "Catatan: Aplikasi ini menautkan ke halaman unduhan resmi atau komunitas "
+#~ "mereka."
+
+#~ msgid " SynOS is not affiliated with these vendors."
+#~ msgstr "SynOS tidak berafiliasi dengan vendor-vendor ini."
+
+#~ msgid ""
+#~ "SynOS is ready. Just a few steps to shape it\n"
+#~ "into the perfect system tailored to your habits."
+#~ msgstr ""
+#~ "SynOS siap. Hanya beberapa langkah untuk membentuknya\n"
+#~ "menjadi sistem sempurna yang disesuaikan dengan kebiasaan Anda."
+
+#~ msgid "=== Testing mirror speeds ===\n"
+#~ msgstr "=== Menguji kecepatan cermin ==="
+
+#~ msgid ""
+#~ "\n"
+#~ "No mirrors reachable.\n"
+#~ msgstr ""
+#~ "\n"
+#~ "Tidak ada cermin yang terjangkau.\n"
+
+#~ msgid ""
+#~ "\n"
+#~ "=== Applying mirror switch ===\n"
+#~ msgstr ""
+#~ "\n"
+#~ "=== Menerapkan pengalihan mirror ===\n"
+
+#~ msgid ""
+#~ "\n"
+#~ "✓ Mirror switched and system updated.\n"
+#~ msgstr ""
+#~ "\n"
+#~ "✓ Mirror telah dialihkan dan sistem diperbarui.\n"
+
+#~ msgid ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate desktop\n"
+#~ "experiences, we recommend installing the proprietary driver."
+#~ msgstr ""
+#~ "Untuk pengalaman gaming, rendering 3D, dan desktop dengan frame rate tinggi "
+#~ "yang sangat mulus, kami menyarankan untuk memasang driver proprietari."
+
+#~ msgid ""
+#~ "Installing NVIDIA driver…\n"
+#~ "This may take several minutes."
+#~ msgstr ""
+#~ "Memasang driver NVIDIA…\n"
+#~ "Hal ini mungkin memakan waktu beberapa menit."
+
+#~ msgid ""
+#~ "✗ Installation encountered an issue.\n"
+#~ "You can install drivers later from Settings."
+#~ msgstr ""
+#~ "✗ Terjadi masalah selama instalasi.\n"
+#~ "Anda dapat memasang driver nanti dari Pengaturan."
+
+#~ msgid ""
+#~ "Powered by Wine and Bottles technology, running classic Windows applications\n"
+#~ "is now easier than ever."
+#~ msgstr ""
+#~ "Ditenagai oleh teknologi Wine dan Bottles, menjalankan aplikasi Windows "
+#~ "klasik kini lebih mudah dari sebelumnya."
+
+#~ msgid ""
+#~ "Deploying compatibility sandbox via Flatpak…\n"
+#~ "This may take a few minutes."
+#~ msgstr ""
+#~ "Menyebar kotak pasang kompatibilitas via Flatpak…\n"
+#~ "Hal ini mungkin memakan waktu beberapa menit."
+
+#~ msgid ""
+#~ "✓ Sandbox deployed successfully!\n"
+#~ "You can now double-click .exe files to run them."
+#~ msgstr ""
+#~ "✓ Kotak pasang berhasil disebar!\n"
+#~ "Anda sekarang dapat mengklik dua kali file .exe untuk menjalankannya."
+
+#~ msgid ""
+#~ "✗ Deployment failed.\n"
+#~ "You can install Bottles later from the App Store."
+#~ msgstr ""
+#~ "✗ Penyebaran gagal.\n"
+#~ "Anda dapat memasang Bottles nanti dari Toko Aplikasi."
+
+#~ msgid ""
+#~ "Essential productivity and entertainment tools, hand-picked for you.\n"
+#~ "Click any app to open its details in the App Store."
+#~ msgstr ""
+#~ "Peralatan produktivitas dan hiburan esensial, dipilih khusus untuk Anda.\n"
+#~ "Klik aplikasi apa pun untuk membuka detailnya di App Store."
+
+#~ msgid ""
+#~ "⚡ The following apps are provided by the Spark Store community.\n"
+#~ "Great for connecting to local services."
+#~ msgstr ""
+#~ "⚡ Aplikasi-aplikasi berikut disediakan oleh komunitas Spark Store.\n"
+#~ "Sangat cocok untuk terhubung ke layanan lokal."
+
+#~ msgid ""
+#~ "Pro tip: You can explore these apps in the App Store,\n"
+#~ "and continue with the system setup while they download."
+#~ msgstr ""
+#~ "Tips pro: Anda dapat menjelajahi aplikasi-aplikasi ini di App Store,\n"
+#~ "dan melanjutkan dengan pengaturan sistem saat mereka mengunduh."
+
+#~ msgid ""
+#~ "Note: These apps link to their official or community download pages. "
+#~ "SynOS is not affiliated with these vendors."
+#~ msgstr ""
+#~ "Catatan: Aplikasi-aplikasi ini menautkan ke halaman unduhan resmi atau "
+#~ "komunitas mereka. SynOS tidak berafiliasi dengan vendor-vendor tersebut."
+
+#~ msgid ""
+#~ "Connect your Google, Microsoft,\n"
+#~ "or Nextcloud accounts to sync\n"
+#~ "files, contacts, and calendar."
+#~ msgstr ""
+#~ "Sambungkan akun Google, Microsoft,\n"
+#~ "atau Nextcloud Anda untuk menyinkronkan\n"
+#~ "file, kontak, dan kalender."
+
+#~ msgid ""
+#~ "Use Deja Dup to protect your\n"
+#~ "important files with automated,\n"
+#~ "secure local or remote backups."
+#~ msgstr ""
+#~ "Gunakan Deja Dup untuk melindungi\n"
+#~ "file penting Anda dengan cadangan\n"
+#~ "lokal atau jarak jauh yang otomatis dan aman."
+
+#~ msgid ""
+#~ "SynOS disables all system-level telemetry by default.\n"
+#~ "We do not collect your usage habits.\n"
+#~ "We do not upload your search history.\n"
+#~ "There are no pervasive advertisements."
+#~ msgstr ""
+#~ "SynOS menonaktifkan semua telemetri tingkat sistem secara default.\n"
+#~ "Kami tidak mengumpulkan kebiasaan penggunaan Anda.\n"
+#~ "Kami tidak mengunggah riwayat pencarian Anda.\n"
+#~ "Tidak ada iklan yang merajalela."
+
+#~ msgid ""
+#~ "In an era ruled by algorithms and surveillance,\n"
+#~ "this is our firmest commitment to you."
+#~ msgstr ""
+#~ "Di era yang dikuasai oleh algoritma dan pengawasan,\n"
+#~ "inilah komitmen terkuat kami kepada Anda."
+
+#~ msgid ""
+#~ "Whether you're a Windows refugee seeking shelter,\n"
+#~ "or a hardcore geek developer — you'll find your tribe here.\n"
+#~ "Found a bug? Want a feature? Tell us anytime."
+#~ msgstr ""
+#~ "Baik Anda adalah pengungsi Windows yang mencari tempat berlindung,\n"
+#~ "maupun developer hardcore — Anda akan menemukan komunitas Anda di sini.\n"
+#~ "Menemukan bug? Ingin fitur? Beri tahu kami kapan saja."
+
+#~ msgid ""
+#~ "💡 SynOS is compatible with Ubuntu's entire ecosystem.\n"
+#~ "You can rely on Ubuntu's vast documentation and expertise."
+#~ msgstr ""
+#~ "💡 SynOS kompatibel dengan seluruh ekosistem Ubuntu.\n"
+#~ "Anda dapat mengandalkan dokumentasi dan keahlian luas Ubuntu."
+
+#~ msgid ""
+#~ "\n"
+#~ "=== Testing bandwidth of top 3 mirrors (3 s each) ===\n"
+#~ msgstr ""
+#~ "\n"
+#~ "=== Menguji bandwidth 3 cermin teratas (masing-masing 3 s) ===\n"
+
+#~ msgid ""
+#~ "✓ Driver installed successfully!\n"
+#~ "A reboot is recommended to apply changes."
+#~ msgstr ""
+#~ "✓ Driver berhasil dipasang!\n"
+#~ "Disarankan untuk me-reboot sistem agar perubahan diterapkan."

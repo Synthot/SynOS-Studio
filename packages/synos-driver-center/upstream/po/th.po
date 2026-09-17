@@ -1,0 +1,1341 @@
+# synos-driver-center translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-driver-center.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-driver-center\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-11 16:11+0800\n"
+"PO-Revision-Date: 2026-08-06 07:08+0000\n"
+"Last-Translator: AnduinOS Team <anduin@aiursoft.com>\n"
+"Language-Team: th\n"
+"Language: th_TH\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: src/synos_driver_center/app.py:123 src/synos_driver_center/app.py:221
+#: src/synos_driver_center/app.py:295
+#: src/synos_driver_center/app.py:2278
+#: data/com.synos.DriverCenter.desktop:2
+msgid "SynOS Driver Center"
+msgstr "ศูนย์ไดรเวอร์ SynOS"
+
+#: src/synos_driver_center/app.py:242 src/synos_driver_center/app.py:340
+#: src/synos_driver_center/app.py:342
+msgid "Home"
+msgstr "หน้าแรก"
+
+#: src/synos_driver_center/app.py:245 src/synos_driver_center/app.py:802
+#: src/synos_driver_center/app.py:1073
+#: src/synos_driver_center/app.py:1641
+#: src/synos_driver_center/app.py:1803
+msgid "Scan again"
+msgstr "สแกนอีกครั้ง"
+
+#: src/synos_driver_center/app.py:250
+msgid "About Driver Center"
+msgstr "เกี่ยวกับศูนย์ไดร์เวอร์"
+
+#: src/synos_driver_center/app.py:252
+msgid "Main Menu"
+msgstr "เมนูหลัก"
+
+#: src/synos_driver_center/app.py:297
+msgid "Scanning for drivers"
+msgstr "กำลังสแกนหาไดรเวอร์"
+
+#: src/synos_driver_center/app.py:298
+msgid "Checking hardware and Secure Boot status…"
+msgstr "กำลังตรวจสอบฮาร์ดแวร์และสถานะ Secure Boot..."
+
+#: src/synos_driver_center/app.py:340 src/synos_driver_center/app.py:878
+#: src/synos_driver_center/app.py:1218
+#: src/synos_driver_center/app.py:1951
+msgid "System status"
+msgstr "สถานะของระบบ"
+
+#: src/synos_driver_center/app.py:359 src/synos_driver_center/app.py:363
+msgid "Audio"
+msgstr "เสียง"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:942
+msgid "Audio support ready"
+msgstr "รองรับเสียงแล้ว"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:375
+#: src/synos_driver_center/app.py:402 src/synos_driver_center/app.py:496
+#: src/synos_driver_center/app.py:845 src/synos_driver_center/app.py:848
+#: src/synos_driver_center/app.py:912 src/synos_driver_center/app.py:942
+#: src/synos_driver_center/app.py:972 src/synos_driver_center/app.py:997
+#: src/synos_driver_center/app.py:1013
+msgid "Support needs attention"
+msgstr "ฝ่ายสนับสนุนจำเป็นต้องได้รับการดูแล"
+
+#: src/synos_driver_center/app.py:370
+msgid "Printing service stopped"
+msgstr "หยุดบริการการพิมพ์แล้ว"
+
+#: src/synos_driver_center/app.py:372 src/synos_driver_center/app.py:956
+#: src/synos_driver_center/app.py:2118
+msgid "Printing support disabled."
+msgstr "ปิดใช้งานการสนับสนุนการพิมพ์แล้ว"
+
+#: src/synos_driver_center/app.py:377
+msgid "Some queues are paused"
+msgstr "บางคิวถูกหยุดชั่วคราว"
+
+#: src/synos_driver_center/app.py:379 src/synos_driver_center/app.py:967
+msgid "No printers configured"
+msgstr "ไม่มีการกำหนดค่าเครื่องพิมพ์"
+
+#: src/synos_driver_center/app.py:382 src/synos_driver_center/app.py:962
+#, python-format
+msgid "%d printer configured"
+msgid_plural "%d printers configured"
+msgstr[0] "กำหนดค่าเครื่องพิมพ์ %d เครื่องแล้ว"
+
+#: src/synos_driver_center/app.py:387 src/synos_driver_center/app.py:390
+msgid "Printers"
+msgstr "เครื่องพิมพ์"
+
+#: src/synos_driver_center/app.py:395 src/synos_driver_center/app.py:407
+msgid "Xbox Controller"
+msgstr "ตัวควบคุม Xbox"
+
+#: src/synos_driver_center/app.py:397 src/synos_driver_center/app.py:995
+msgid "xpadneo installed"
+msgstr "ติดตั้ง xpadneo แล้ว"
+
+#: src/synos_driver_center/app.py:400 src/synos_driver_center/app.py:996
+msgid "Optional Bluetooth driver"
+msgstr "ไดรเวอร์บลูทูธเสริม"
+
+#: src/synos_driver_center/app.py:413 src/synos_driver_center/app.py:417
+#: src/synos_driver_center/app.py:807 src/synos_driver_center/app.py:811
+#: src/synos_driver_center/app.py:1011
+#: src/synos_driver_center/app.py:1105
+#: src/synos_driver_center/app.py:1570
+#: src/synos_driver_center/app.py:1761
+#: src/synos_driver_center/app.py:1766
+#: src/synos_driver_center/app.py:1771
+#: src/synos_driver_center/app.py:1782
+msgid "Secure Boot"
+msgstr "Secure Boot"
+
+#: src/synos_driver_center/app.py:414
+#: src/synos_driver_center/app.py:1013
+msgid "Trust established"
+msgstr "ก่อตั้งความน่าเชื่อถือแล้ว"
+
+#: src/synos_driver_center/app.py:414 src/synos_driver_center/app.py:798
+#: src/synos_driver_center/app.py:805 src/synos_driver_center/app.py:892
+#: src/synos_driver_center/app.py:1012
+msgid "Action required"
+msgstr "จำเป็นต้องดำเนินการ"
+
+#: src/synos_driver_center/app.py:424 src/synos_driver_center/app.py:428
+#: src/synos_driver_center/app.py:1025
+#: src/synos_driver_center/app.py:1172
+msgid "Device Firmware"
+msgstr "เฟิร์มแวร์ของอุปกรณ์"
+
+#: src/synos_driver_center/app.py:494
+#: src/synos_driver_center/app.py:1203
+msgid "Checking for updates…"
+msgstr "กำลังตรวจสอบการอัปเดต..."
+
+#: src/synos_driver_center/app.py:498 src/synos_driver_center/app.py:520
+#: src/synos_driver_center/app.py:644
+msgid "Shutdown Required"
+msgstr "จำเป็นต้องปิดระบบ"
+
+#: src/synos_driver_center/app.py:500 src/synos_driver_center/app.py:522
+#: src/synos_driver_center/app.py:840 src/synos_driver_center/app.py:907
+#: src/synos_driver_center/app.py:1052
+#: src/synos_driver_center/app.py:1471
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:429
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:443
+msgid "Reboot Required"
+msgstr "จำเป็นต้องรีสตาร์ท"
+
+#: src/synos_driver_center/app.py:504 src/synos_driver_center/app.py:526
+#: src/synos_driver_center/app.py:627
+#, python-format
+msgid "%d firmware update available"
+msgid_plural "%d firmware updates available"
+msgstr[0] "%d การอัปเดตเฟิร์มแวร์พร้อมใช้งาน"
+
+#: src/synos_driver_center/app.py:509
+msgid "No supported devices"
+msgstr "ไม่มีอุปกรณ์ที่รองรับ"
+
+#: src/synos_driver_center/app.py:510
+msgid "Firmware is up to date"
+msgstr "เฟิร์มแวร์เป็นเวอร์ชันล่าสุด"
+
+#: src/synos_driver_center/app.py:516
+msgid "Checking…"
+msgstr "กำลังตรวจสอบ..."
+
+#: src/synos_driver_center/app.py:516
+msgid "Contacting the firmware service"
+msgstr "การติดต่อบริการเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:518 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:971 src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1440
+msgid "Needs attention"
+msgstr "ต้องการความสนใจ"
+
+#: src/synos_driver_center/app.py:520 src/synos_driver_center/app.py:601
+#: src/synos_driver_center/app.py:1453
+msgid "Shutdown required after installation"
+msgstr "จำเป็นต้องปิดระบบหลังการติดตั้ง"
+
+#: src/synos_driver_center/app.py:522
+msgid "Restart to finish the firmware update"
+msgstr "รีสตาร์ทเพื่อสิ้นสุดการอัพเดตเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:530 src/synos_driver_center/app.py:828
+#: src/synos_driver_center/app.py:902
+#: src/synos_driver_center/app.py:1049
+#: src/synos_driver_center/app.py:1269
+#: src/synos_driver_center/app.py:1404
+msgid "Update available"
+msgstr "มีอัปเดต"
+
+#: src/synos_driver_center/app.py:532 src/synos_driver_center/app.py:893
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1757
+#: src/synos_driver_center/app.py:1801
+#: src/synos_driver_center/app.py:1910
+msgid "Not detected"
+msgstr "ตรวจไม่พบ"
+
+#: src/synos_driver_center/app.py:532
+#: src/synos_driver_center/app.py:1341
+msgid "No supported firmware devices"
+msgstr "ไม่มีอุปกรณ์เฟิร์มแวร์ที่รองรับ"
+
+#: src/synos_driver_center/app.py:535
+#, python-format
+msgid "%d device is up to date"
+msgid_plural "%d devices are up to date"
+msgstr[0] "%d อุปกรณ์เป็นเวอร์ชันล่าสุดแล้ว"
+
+#: src/synos_driver_center/app.py:539 src/synos_driver_center/app.py:853
+#: src/synos_driver_center/app.py:917 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:959 src/synos_driver_center/app.py:992
+#: src/synos_driver_center/app.py:1055
+#: src/synos_driver_center/app.py:1269
+msgid "Ready"
+msgstr "พร้อมใช้งาน"
+
+#: src/synos_driver_center/app.py:568
+msgid "Scheduling firmware update…"
+msgstr "กำลังกำหนดเวลาการอัปเดตเฟิร์มแวร์..."
+
+#: src/synos_driver_center/app.py:569
+msgid "Downloading firmware…"
+msgstr "กำลังดาวน์โหลดเฟิร์มแวร์..."
+
+#: src/synos_driver_center/app.py:570
+msgid "Installing firmware…"
+msgstr "กำลังติดตั้งเฟิร์มแวร์..."
+
+#: src/synos_driver_center/app.py:571
+msgid "Verifying firmware…"
+msgstr "กำลังตรวจสอบเฟิร์มแวร์..."
+
+#: src/synos_driver_center/app.py:572
+msgid "Waiting for authentication…"
+msgstr "กำลังรอการตรวจสอบสิทธิ์..."
+
+#: src/synos_driver_center/app.py:573
+msgid "Waiting for user action…"
+msgstr "กำลังรอการดำเนินการของผู้ใช้..."
+
+#: src/synos_driver_center/app.py:577
+msgid "Updating firmware…"
+msgstr "กำลังอัปเดตเฟิร์มแวร์..."
+
+#: src/synos_driver_center/app.py:598
+#: src/synos_driver_center/app.py:2123
+#: src/synos_driver_center/app.py:2252
+msgid "unknown error"
+msgstr "ข้อผิดพลาดที่ไม่รู้จัก"
+
+#: src/synos_driver_center/app.py:603
+#: src/synos_driver_center/app.py:1455
+msgid "Restart required after installation"
+msgstr "จำเป็นต้องรีสตาร์ทหลังการติดตั้ง"
+
+#: src/synos_driver_center/app.py:607 src/synos_driver_center/app.py:680
+#: src/synos_driver_center/app.py:686
+msgid "Firmware operation failed"
+msgstr "การทำงานของเฟิร์มแวร์ล้มเหลว"
+
+#: src/synos_driver_center/app.py:610
+#: src/synos_driver_center/app.py:2260
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:478
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:526
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:544
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:552
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:560
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:576
+msgid "OK"
+msgstr "ตกลง"
+
+#: src/synos_driver_center/app.py:621
+msgid "Firmware metadata refreshed."
+msgstr "รีเฟรชข้อมูลเมตาของเฟิร์มแวร์แล้ว"
+
+#: src/synos_driver_center/app.py:632
+msgid "No firmware updates are available."
+msgstr "ไม่มีการอัพเดตเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:639
+msgid "Firmware update completed."
+msgstr "การอัปเดตเฟิร์มแวร์เสร็จสมบูรณ์"
+
+#: src/synos_driver_center/app.py:644
+msgid "Restart Required"
+msgstr "จำเป็นต้องรีสตาร์ท"
+
+#: src/synos_driver_center/app.py:647
+msgid ""
+"The firmware update has been prepared. Save your work and shut down the "
+"computer to finish installing it."
+msgstr ""
+"เตรียมการอัปเดตเฟิร์มแวร์แล้ว "
+"โปรดบันทึกงานและปิดเครื่องคอมพิวเตอร์เพื่อให้การติดตั้งเสร็จสมบูรณ์"
+
+#: src/synos_driver_center/app.py:652
+msgid ""
+"The firmware update has been prepared. Save your work and restart the "
+"computer to finish installing it."
+msgstr ""
+"ได้มีการเตรียมการอัพเดตเฟิร์มแวร์ไว้แล้ว "
+"บันทึกงานของคุณและรีสตาร์ทคอมพิวเตอร์เพื่อติดตั้งให้เสร็จสิ้น"
+
+#: src/synos_driver_center/app.py:657
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:494
+msgid "Later"
+msgstr "ต่อมา"
+
+#: src/synos_driver_center/app.py:660
+msgid "Shut Down Now"
+msgstr "ปิดเครื่องตอนนี้"
+
+#: src/synos_driver_center/app.py:660
+msgid "Restart Now"
+msgstr "รีสตาร์ททันที"
+
+#: src/synos_driver_center/app.py:766
+#: src/synos_driver_center/app.py:1361
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1616
+#: src/synos_driver_center/app.py:1741
+msgid "Installed"
+msgstr "ติดตั้งแล้ว"
+
+#: src/synos_driver_center/app.py:768
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Available"
+msgstr "พร้อมใช้งาน"
+
+#: src/synos_driver_center/app.py:800 src/synos_driver_center/app.py:858
+#: src/synos_driver_center/app.py:1063
+#: src/synos_driver_center/app.py:1736
+msgid "Driver status"
+msgstr "สถานะของไดรเวอร์"
+
+#: src/synos_driver_center/app.py:801
+#: src/synos_driver_center/app.py:1652
+#: src/synos_driver_center/app.py:2252
+msgid "Driver operation failed: "
+msgstr "การทำงานของไดรเวอร์ล้มเหลว: "
+
+#: src/synos_driver_center/app.py:809
+#: src/synos_driver_center/app.py:1568
+msgid ""
+"Secure Boot status or trust must be resolved before installing a third-party"
+" driver."
+msgstr ""
+"สถานะหรือความน่าเชื่อถือของ Secure Boot "
+"ต้องได้รับการแก้ไขก่อนที่จะติดตั้งไดรเวอร์ของบริษัทอื่น"
+
+#: src/synos_driver_center/app.py:814 src/synos_driver_center/app.py:897
+#: src/synos_driver_center/app.py:1046
+#: src/synos_driver_center/app.py:1618
+msgid "Recommended"
+msgstr "แนะนำ"
+
+#: src/synos_driver_center/app.py:818
+#: src/synos_driver_center/app.py:1557
+msgid ""
+"Choose the driver used by this device. SynOS marks the hardware-tested "
+"recommendation."
+msgstr ""
+"เลือกไดรเวอร์ที่ใช้โดยอุปกรณ์นี้ SynOS "
+"ถือเป็นคำแนะนำที่ผ่านการทดสอบด้วยฮาร์ดแวร์"
+
+#: src/synos_driver_center/app.py:820 src/synos_driver_center/app.py:832
+#: src/synos_driver_center/app.py:1097
+#: src/synos_driver_center/app.py:1533
+#: src/synos_driver_center/app.py:1578
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1667
+#: src/synos_driver_center/app.py:2007
+msgid "Apply Changes"
+msgstr "ใช้การเปลี่ยนแปลง"
+
+#: src/synos_driver_center/app.py:843
+#: src/synos_driver_center/app.py:2250
+msgid "Driver changes completed. Restart may be required."
+msgstr "การเปลี่ยนแปลงไดรเวอร์เสร็จสมบูรณ์ อาจจำเป็นต้องรีสตาร์ท"
+
+#: src/synos_driver_center/app.py:849 src/synos_driver_center/app.py:928
+#: src/synos_driver_center/app.py:1036
+#: src/synos_driver_center/app.py:1563
+msgid "Available drivers"
+msgstr "ไดรเวอร์ที่มีอยู่"
+
+#: src/synos_driver_center/app.py:860 src/synos_driver_center/app.py:921
+msgid "No additional drivers are needed."
+msgstr "ไม่จำเป็นต้องใช้ไดรเวอร์เพิ่มเติม"
+
+#: src/synos_driver_center/app.py:940
+#: src/synos_driver_center/app.py:1846
+msgid "Audio Support"
+msgstr "รองรับระบบเสียง"
+
+#: src/synos_driver_center/app.py:955
+#: src/synos_driver_center/app.py:1969
+msgid "Disabled"
+msgstr "ปิดใช้งาน"
+
+#: src/synos_driver_center/app.py:977
+#: src/synos_driver_center/app.py:1918
+msgid "Printing Support"
+msgstr "รองรับการพิมพ์"
+
+#: src/synos_driver_center/app.py:991
+#: src/synos_driver_center/app.py:1732
+msgid "Xbox Controller Support"
+msgstr "การรองรับคอนโทรลเลอร์ Xbox"
+
+#: src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1741
+#: src/synos_driver_center/app.py:1825
+#: src/synos_driver_center/app.py:1869
+#: src/synos_driver_center/app.py:1877
+#: src/synos_driver_center/app.py:2059
+msgid "Not installed"
+msgstr "ไม่ได้ติดตั้ง"
+
+#: src/synos_driver_center/app.py:1012
+#: src/synos_driver_center/app.py:1749
+msgid "Trusted"
+msgstr "เชื่อถือได้"
+
+#: src/synos_driver_center/app.py:1065
+msgid "Check for Driver Updates"
+msgstr "ตรวจสอบอัปเดตไดรเวอร์"
+
+#: src/synos_driver_center/app.py:1067
+msgid "Refresh software sources and compare the recommended driver version."
+msgstr "รีเฟรชแหล่งซอฟต์แวร์และเปรียบเทียบเวอร์ชันไดรเวอร์ที่แนะนำ"
+
+#: src/synos_driver_center/app.py:1079
+msgid "Driver information updated."
+msgstr "อัปเดตข้อมูลไดรเวอร์แล้ว"
+
+#: src/synos_driver_center/app.py:1088
+#: src/synos_driver_center/app.py:1535
+msgid ""
+"SynOS will update software sources and install the drivers recommended "
+"for this hardware."
+msgstr ""
+"SynOS จะอัปเดตแหล่งซอฟต์แวร์และติดตั้งไดรเวอร์ที่แนะนำสำหรับฮาร์ดแวร์นี้"
+
+#: src/synos_driver_center/app.py:1174
+msgid ""
+"Keep system firmware and supported hardware up to date through the Linux "
+"Vendor Firmware Service."
+msgstr ""
+"อัปเดตเฟิร์มแวร์ระบบและฮาร์ดแวร์ที่รองรับให้ทันสมัยอยู่เสมอผ่าน Linux Vendor"
+" Firmware Service"
+
+#: src/synos_driver_center/app.py:1186
+msgid "Firmware operation failed: "
+msgstr "การทำงานของเฟิร์มแวร์ล้มเหลว: "
+
+#: src/synos_driver_center/app.py:1187
+#: src/synos_driver_center/app.py:1296
+msgid "Check Again"
+msgstr "ตรวจสอบอีกครั้ง"
+
+#: src/synos_driver_center/app.py:1193
+msgid "Firmware operation"
+msgstr "การทำงานของเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1220
+msgid "Firmware service"
+msgstr "บริการเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1224
+msgid "Not available"
+msgstr "ไม่สามารถใช้ได้"
+
+#: src/synos_driver_center/app.py:1238
+msgid "Not refreshed in this session"
+msgstr "ไม่ได้รีเฟรชในเซสชั่นนี้"
+
+#: src/synos_driver_center/app.py:1241
+msgid "Firmware metadata"
+msgstr "ข้อมูลเมตาของเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1250
+msgid "Supported devices"
+msgstr "อุปกรณ์ที่รองรับ"
+
+#: src/synos_driver_center/app.py:1252
+#, python-format
+msgid "%d device detected"
+msgid_plural "%d devices detected"
+msgstr[0] "%d อุปกรณ์ที่ตรวจพบ"
+
+#: src/synos_driver_center/app.py:1262
+msgid "Available firmware updates"
+msgstr "การอัพเดตเฟิร์มแวร์ที่มีอยู่"
+
+#: src/synos_driver_center/app.py:1264
+#, python-format
+msgid "%d update available"
+msgid_plural "%d updates available"
+msgstr[0] "%d การอัปเดตพร้อมใช้งาน"
+
+#: src/synos_driver_center/app.py:1276
+msgid "Firmware actions"
+msgstr "การกระทำของเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1278
+msgid "Refresh Firmware Metadata"
+msgstr "รีเฟรชข้อมูลเมตาของเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1279
+msgid "Download the latest metadata from enabled firmware sources."
+msgstr "ดาวน์โหลดข้อมูลเมตาล่าสุดจากแหล่งเฟิร์มแวร์ที่เปิดใช้งาน"
+
+#: src/synos_driver_center/app.py:1282
+msgid "Refresh"
+msgstr "รีเฟรช"
+
+#: src/synos_driver_center/app.py:1292
+msgid "Check for Firmware Updates"
+msgstr "ตรวจสอบการอัปเดตเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1293
+msgid "Compare connected devices with the available metadata."
+msgstr "เปรียบเทียบอุปกรณ์ที่เชื่อมต่อกับข้อมูลเมตาที่มีอยู่"
+
+#: src/synos_driver_center/app.py:1307
+msgid "Update All Firmware"
+msgstr "อัพเดตเฟิร์มแวร์ทั้งหมด"
+
+#: src/synos_driver_center/app.py:1309
+#, python-format
+msgid "Install %d available update."
+msgid_plural "Install all %d available updates."
+msgstr[0] "ติดตั้งการอัปเดตที่พร้อมใช้งาน %d รายการ"
+
+#: src/synos_driver_center/app.py:1315
+msgid "Update All"
+msgstr "อัปเดตทั้งหมด"
+
+#: src/synos_driver_center/app.py:1330
+msgid "Firmware Devices"
+msgstr "อุปกรณ์เฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1332
+msgid "Expand a device to inspect installed and available firmware versions."
+msgstr "ขยายอุปกรณ์เพื่อตรวจสอบเวอร์ชันเฟิร์มแวร์ที่ติดตั้งและพร้อมใช้งาน"
+
+#: src/synos_driver_center/app.py:1342
+msgid "The firmware service did not report any manageable devices."
+msgstr "บริการเฟิร์มแวร์ไม่ได้รายงานอุปกรณ์ที่สามารถจัดการได้"
+
+#: src/synos_driver_center/app.py:1348
+msgid "Firmware Update History"
+msgstr "ประวัติการอัพเดตเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1349
+msgid "Results reported by the fwupd service."
+msgstr "ผลลัพธ์ที่รายงานโดยบริการ fwupd"
+
+#: src/synos_driver_center/app.py:1357
+msgid "Unknown time"
+msgstr "ไม่ทราบเวลาที่"
+
+#: src/synos_driver_center/app.py:1373
+msgid "No firmware update history"
+msgstr "ไม่มีประวัติการอัพเดตเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1374
+msgid "Completed firmware operations will appear here."
+msgstr "การทำงานของเฟิร์มแวร์ที่เสร็จสมบูรณ์จะปรากฏที่นี่"
+
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1399
+#: src/synos_driver_center/app.py:1415
+#: src/synos_driver_center/app.py:1426
+#: src/synos_driver_center/app.py:1473
+#: src/synos_driver_center/app.py:1489
+#: src/synos_driver_center/app.py:1490
+msgid "Unknown"
+msgstr "ไม่ทราบ"
+
+#: src/synos_driver_center/app.py:1398
+msgid "Current version"
+msgstr "รุ่นปัจจุบัน"
+
+#: src/synos_driver_center/app.py:1405
+#: src/synos_driver_center/app.py:1518
+msgid "Update"
+msgstr "อัปเดต"
+
+#: src/synos_driver_center/app.py:1414
+msgid "Available version"
+msgstr "รุ่นที่มีจำหน่าย"
+
+#: src/synos_driver_center/app.py:1419
+msgid "Low"
+msgstr "ต่ำ"
+
+#: src/synos_driver_center/app.py:1420
+msgid "Medium"
+msgstr "ปานกลาง"
+
+#: src/synos_driver_center/app.py:1421
+msgid "High"
+msgstr "สูง"
+
+#: src/synos_driver_center/app.py:1422
+msgid "Critical"
+msgstr "สำคัญ"
+
+#: src/synos_driver_center/app.py:1425
+msgid "Update urgency"
+msgstr "อัพเดทด่วนครับ"
+
+#: src/synos_driver_center/app.py:1436
+msgid "Release notes"
+msgstr "บันทึกประจำรุ่น"
+
+#: src/synos_driver_center/app.py:1443
+msgid "Firmware status"
+msgstr "สถานะเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1447
+msgid "Up to date"
+msgstr "ถึงวันที่"
+
+#: src/synos_driver_center/app.py:1451
+msgid "Connect the computer to AC power"
+msgstr "เชื่อมต่อคอมพิวเตอร์เข้ากับไฟ AC"
+
+#: src/synos_driver_center/app.py:1459
+msgid "Installation requirements"
+msgstr "ข้อกำหนดในการติดตั้ง"
+
+#: src/synos_driver_center/app.py:1468
+msgid "Pending"
+msgstr "รอดำเนินการ"
+
+#: src/synos_driver_center/app.py:1469
+msgid "Success"
+msgstr "ความสำเร็จ"
+
+#: src/synos_driver_center/app.py:1470
+#: src/synos_driver_center/app.py:1472
+msgid "Failed"
+msgstr "ล้มเหลว"
+
+#: src/synos_driver_center/app.py:1486
+#, python-format
+msgid "Install firmware for %(device)s from %(current)s to %(available)s?"
+msgstr ""
+"ติดตั้งเฟิร์มแวร์สำหรับ %(device)s จาก %(current)s ถึง %(available)s หรือไม่"
+
+#: src/synos_driver_center/app.py:1494
+#, python-format
+msgid "Install %d available firmware update?"
+msgid_plural "Install all %d available firmware updates?"
+msgstr[0] "ติดตั้งการอัปเดตเฟิร์มแวร์ที่พร้อมใช้งาน %d รายการหรือไม่?"
+
+#: src/synos_driver_center/app.py:1500
+msgid "Keep the computer connected to AC power."
+msgstr "ให้คอมพิวเตอร์เชื่อมต่อกับไฟ AC"
+
+#: src/synos_driver_center/app.py:1504
+msgid ""
+"This update may invalidate full-disk encryption secrets. Make sure you have "
+"the volume recovery key before continuing."
+msgstr ""
+"การอัปเดตนี้อาจทำให้ข้อมูลลับของการเข้ารหัสดิสก์ทั้งลูกใช้ไม่ได้ "
+"โปรดตรวจสอบว่าคุณมีคีย์การกู้คืนไดรฟ์ข้อมูลก่อนดำเนินการต่อ"
+
+#: src/synos_driver_center/app.py:1509
+msgid "A restart may be required to finish installation."
+msgstr "อาจจำเป็นต้องรีสตาร์ทเพื่อให้การติดตั้งเสร็จสิ้น"
+
+#: src/synos_driver_center/app.py:1510
+msgid "Do not disconnect devices or turn off the computer."
+msgstr "อย่าตัดการเชื่อมต่ออุปกรณ์หรือปิดคอมพิวเตอร์"
+
+#: src/synos_driver_center/app.py:1514
+msgid "Install Firmware Update"
+msgstr "ติดตั้งอัพเดตเฟิร์มแวร์"
+
+#: src/synos_driver_center/app.py:1517
+#: src/synos_driver_center/app.py:1539
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:432
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:446
+msgid "Cancel"
+msgstr "ยกเลิก"
+
+#: src/synos_driver_center/app.py:1540
+#: src/synos_driver_center/app.py:2210
+msgid "Apply"
+msgstr "สมัคร"
+
+#: src/synos_driver_center/app.py:1587
+msgid "open source"
+msgstr "โอเพ่นซอร์ส"
+
+#: src/synos_driver_center/app.py:1587
+msgid "proprietary"
+msgstr "กรรมสิทธิ์"
+
+#: src/synos_driver_center/app.py:1589
+msgid "built in"
+msgstr "ในตัว"
+
+#: src/synos_driver_center/app.py:1613
+msgid "In use"
+msgstr "ใช้งานอยู่"
+
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1651
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1831
+msgid "Kernel module"
+msgstr "โมดูลเคอร์เนล"
+
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1777
+#: src/synos_driver_center/app.py:1796
+#: src/synos_driver_center/app.py:1860
+#: src/synos_driver_center/app.py:1890
+#: src/synos_driver_center/app.py:1898
+msgid "Repair & Reinstall"
+msgstr "ซ่อมแซมและติดตั้งใหม่"
+
+#: src/synos_driver_center/app.py:1675
+msgid "Advanced driver versions"
+msgstr "เวอร์ชันไดรเวอร์ขั้นสูง"
+
+#: src/synos_driver_center/app.py:1676
+msgid "Older, newer, and server-oriented packages"
+msgstr "แพ็คเกจที่เก่ากว่า ใหม่กว่า และเน้นเซิร์ฟเวอร์"
+
+#: src/synos_driver_center/app.py:1697
+msgid "Select another driver to apply changes."
+msgstr "เลือกไดรเวอร์อื่นเพื่อใช้การเปลี่ยนแปลง"
+
+#: src/synos_driver_center/app.py:1733
+msgid ""
+"xpadneo improves Bluetooth mapping, rumble, battery reporting and "
+"compatibility for modern Xbox controllers."
+msgstr ""
+"xpadneo ปรับปรุงการแมป Bluetooth, เสียงดังก้อง, การรายงานแบตเตอรี่ "
+"และความเข้ากันได้สำหรับคอนโทรลเลอร์ Xbox สมัยใหม่"
+
+#: src/synos_driver_center/app.py:1740
+msgid "Driver package"
+msgstr "แพ็คเกจไดรเวอร์"
+
+#: src/synos_driver_center/app.py:1743
+msgid "Install Driver"
+msgstr "ติดตั้งไดร์เวอร์"
+
+#: src/synos_driver_center/app.py:1760
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:242
+msgid "Secure Boot state could not be determined"
+msgstr "ไม่สามารถระบุสถานะ Secure Boot ได้"
+
+#: src/synos_driver_center/app.py:1765
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:285
+msgid "Pending enrollment in blue screen (MOKManager)"
+msgstr "กำลังรอการลงทะเบียนในหน้าจอสีน้ำเงิน (MOKManager)"
+
+#: src/synos_driver_center/app.py:1770
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:290
+msgid "Certificate is not trusted by motherboard"
+msgstr "เมนบอร์ดไม่น่าเชื่อถือใบรับรอง"
+
+#: src/synos_driver_center/app.py:1775
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:318
+msgid "Some DKMS modules need to be re-signed"
+msgstr "โมดูล DKMS บางโมดูลจำเป็นต้องลงนามใหม่"
+
+#: src/synos_driver_center/app.py:1786
+msgid "Module signature"
+msgstr "ลายเซ็นโมดูล"
+
+#: src/synos_driver_center/app.py:1794
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Missing"
+msgstr "หายไป"
+
+#: src/synos_driver_center/app.py:1806
+msgid "Loaded"
+msgstr "โหลดแล้ว"
+
+#: src/synos_driver_center/app.py:1811
+msgid "Standing by"
+msgstr "ยืนเคียงข้าง"
+
+#: src/synos_driver_center/app.py:1838
+msgid "Bluetooth Settings"
+msgstr "การตั้งค่าบลูทูธ"
+
+#: src/synos_driver_center/app.py:1847
+msgid ""
+"SynOS provides Intel SOF firmware and ALSA UCM profiles for reliable "
+"audio initialization and routing."
+msgstr ""
+"SynOS มีเฟิร์มแวร์ Intel SOF และโปรไฟล์ ALSA UCM "
+"สำหรับการเริ่มต้นและการกำหนดเส้นทางเสียงที่เชื่อถือได้"
+
+#: src/synos_driver_center/app.py:1850
+msgid "Support packages"
+msgstr "แพ็คเกจสนับสนุน"
+
+#: src/synos_driver_center/app.py:1858
+msgid "Install Audio Support"
+msgstr "ติดตั้งการสนับสนุนด้านเสียง"
+
+#: src/synos_driver_center/app.py:1868
+msgid "Intel SOF firmware"
+msgstr "เฟิร์มแวร์ Intel SOF"
+
+#: src/synos_driver_center/app.py:1876
+msgid "ALSA UCM profiles"
+msgstr "โปรไฟล์ ALSA UCM"
+
+#: src/synos_driver_center/app.py:1883
+msgid "Runtime status"
+msgstr "สถานะรันไทม์"
+
+#: src/synos_driver_center/app.py:1887
+msgid "SOF firmware files"
+msgstr "ไฟล์เฟิร์มแวร์ SOF"
+
+#: src/synos_driver_center/app.py:1895
+msgid "UCM configuration files"
+msgstr "ไฟล์การกำหนดค่า UCM"
+
+#: src/synos_driver_center/app.py:1903
+msgid "SOF kernel modules"
+msgstr "โมดูลเคอร์เนล SOF"
+
+#: src/synos_driver_center/app.py:1904
+msgid "Not currently loaded"
+msgstr "ยังไม่ได้โหลดในขณะนี้"
+
+#: src/synos_driver_center/app.py:1909
+msgid "Active audio drivers"
+msgstr "ไดรเวอร์เสียงที่ใช้งานอยู่"
+
+#: src/synos_driver_center/app.py:1919
+msgid ""
+"Inspect the local print service, configured queues, and the packages that "
+"provide modern and legacy printer support."
+msgstr ""
+"ตรวจสอบบริการการพิมพ์ในเครื่อง คิวที่กำหนดค่า "
+"และแพ็คเกจที่ให้การสนับสนุนเครื่องพิมพ์สมัยใหม่และรุ่นเก่า"
+
+#: src/synos_driver_center/app.py:1924
+#: src/synos_driver_center/app.py:1958
+msgid "Enable Printing Support"
+msgstr "เปิดใช้งานการสนับสนุนการพิมพ์"
+
+#: src/synos_driver_center/app.py:1925
+msgid "Allow local, network, and USB printing services to run."
+msgstr "อนุญาตให้บริการการพิมพ์ภายใน เครือข่าย และ USB ทำงาน"
+
+#: src/synos_driver_center/app.py:1955
+msgid "CUPS service"
+msgstr "บริการถ้วย"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Running"
+msgstr "กำลังดำเนินการ"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Stopped"
+msgstr "หยุดแล้ว"
+
+#: src/synos_driver_center/app.py:1968
+msgid "Start at boot"
+msgstr "เริ่มต้นที่บูต"
+
+#: src/synos_driver_center/app.py:1969
+msgid "Enabled"
+msgstr "เปิดใช้งานแล้ว"
+
+#: src/synos_driver_center/app.py:1974
+#, python-format
+msgid "%d configured printer"
+msgid_plural "%d configured printers"
+msgstr[0] "%d เครื่องพิมพ์ที่กำหนดค่าแล้ว"
+
+#: src/synos_driver_center/app.py:1980
+msgid "Configured printers"
+msgstr "กำหนดค่าเครื่องพิมพ์แล้ว"
+
+#: src/synos_driver_center/app.py:1986
+msgid "Default printer"
+msgstr "เครื่องพิมพ์เริ่มต้น"
+
+#: src/synos_driver_center/app.py:1987
+msgid "Not set"
+msgstr "ไม่ได้ตั้งค่า"
+
+#: src/synos_driver_center/app.py:1991
+msgid "No configured queues"
+msgstr "ไม่มีคิวที่กำหนดค่าไว้"
+
+#: src/synos_driver_center/app.py:1996
+#, python-format
+msgid "%d queue paused"
+msgid_plural "%d queues paused"
+msgstr[0] "%d คิวหยุดชั่วคราว"
+
+#: src/synos_driver_center/app.py:2000
+msgid "All queues enabled"
+msgstr "เปิดใช้งานคิวทั้งหมดแล้ว"
+
+#: src/synos_driver_center/app.py:2004
+msgid "Print queues"
+msgstr "พิมพ์คิว"
+
+#: src/synos_driver_center/app.py:2015
+msgid "Core printing"
+msgstr "การพิมพ์หลัก"
+
+#: src/synos_driver_center/app.py:2016
+msgid "Required for the local print service and command-line clients."
+msgstr "จำเป็นสำหรับบริการการพิมพ์ในเครื่องและไคลเอ็นต์บรรทัดคำสั่ง"
+
+#: src/synos_driver_center/app.py:2023
+msgid "Driverless printing"
+msgstr "การพิมพ์แบบไร้ไดรเวอร์"
+
+#: src/synos_driver_center/app.py:2024
+msgid "Modern IPP drivers, document filters, and capability tools."
+msgstr "ไดรเวอร์ IPP ที่ทันสมัย ตัวกรองเอกสาร และเครื่องมือความสามารถ"
+
+#: src/synos_driver_center/app.py:2031
+msgid "Network discovery"
+msgstr "การค้นพบเครือข่าย"
+
+#: src/synos_driver_center/app.py:2032
+msgid "Automatic discovery of printers advertised on the local network."
+msgstr "ค้นพบเครื่องพิมพ์ที่โฆษณาบนเครือข่ายท้องถิ่นโดยอัตโนมัติ"
+
+#: src/synos_driver_center/app.py:2039
+msgid "Optional compatibility"
+msgstr "ความเข้ากันได้เสริม"
+
+#: src/synos_driver_center/app.py:2040
+msgid ""
+"USB IPP, administrative authorization, legacy drivers, and network scanning."
+msgstr "USB IPP, การอนุญาตผู้ดูแลระบบ, ไดรเวอร์รุ่นเก่า และการสแกนเครือข่าย"
+
+#: src/synos_driver_center/app.py:2063
+msgid "Install Missing Packages"
+msgstr "ติดตั้งแพ็คเกจที่หายไป"
+
+#: src/synos_driver_center/app.py:2116
+msgid "Printing support enabled."
+msgstr "เปิดใช้งานการสนับสนุนการพิมพ์แล้ว"
+
+#: src/synos_driver_center/app.py:2122
+msgid "Printing operation failed: "
+msgstr "การดำเนินการพิมพ์ล้มเหลว: "
+
+#: src/synos_driver_center/app.py:2211
+msgid "Working…"
+msgstr "ทำงาน..."
+
+#: src/synos_driver_center/app.py:2280
+msgid "SynOS Team"
+msgstr "ทีม SynOS"
+
+#: src/synos_driver_center/app.py:2283
+msgid "Install, inspect, and repair hardware drivers on SynOS."
+msgstr "ติดตั้ง ตรวจสอบ และซ่อมแซมไดรเวอร์ฮาร์ดแวร์บน SynOS"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:121
+msgid "Secure Boot Configuration"
+msgstr "การกำหนดค่า Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:129
+msgid ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+msgstr ""
+"Secure Boot "
+"เป็นมาตรฐานความปลอดภัยของเมนบอร์ดที่รับประกันว่าเฉพาะซอฟต์แวร์ที่ได้รับอนุญาตเท่านั้นที่จะโหลดในขณะเริ่มต้นเครื่อง"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:132
+msgid "It protects your system from low-level malware and rootkits."
+msgstr "มันปกป้องระบบของคุณจากมัลแวร์ระดับต่ำและรูทคิต"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:141
+msgid "System Trust Status"
+msgstr "สถานะความไว้วางใจของระบบ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:183
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:325
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:509
+msgid "Create & Enroll Certificate"
+msgstr "สร้างและลงทะเบียนใบรับรอง"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:189
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:338
+msgid "Repair Module Signatures"
+msgstr "ซ่อมแซมลายเซ็นโมดูล"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:197
+msgid "Note: Use password <b>123456</b> after rebooting."
+msgstr "หมายเหตุ: ใช้รหัสผ่าน <b>123456</b> หลังจาก รีสตาร์ทเครื่อง"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:202
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:495
+msgid "Reboot & Configure Secure Boot"
+msgstr "รีสตาร์ท & กำหนดค่า Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:210
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:419
+msgid "  Check Again  "
+msgstr "  ตรวจสอบอีกครั้ง  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:236
+msgid "Motherboard hardware protection is active"
+msgstr "การป้องกันฮาร์ดแวร์ของเมนบอร์ดกำลังทำงานอยู่"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:239
+msgid "Firmware does not support Secure Boot"
+msgstr "เฟิร์มแวร์ไม่รองรับ Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:245
+msgid "Secure Boot is disabled"
+msgstr "Secure Boot ถูกปิดใช้งาน"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:251
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:253
+msgid "Not required without firmware enforcement"
+msgstr "ไม่จำเป็นหากไม่มีการบังคับใช้เฟิร์มแวร์"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:257
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:261
+msgid "Not checked because Secure Boot state is unknown"
+msgstr "ไม่ได้ตรวจสอบเนื่องจากไม่ทราบสถานะ Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:266
+msgid "Certificate generated locally"
+msgstr "สร้างใบรับรองภายในเครื่อง"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:268
+msgid "Missing local certificate"
+msgstr "ขาดใบรับรองในเครื่อง"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:281
+msgid "Certificate is trusted by motherboard"
+msgstr "ใบรับรองได้รับความไว้วางใจจากเมนบอร์ด"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:296
+msgid "Kernel signature enforcement is inactive"
+msgstr "การบังคับใช้ลายเซ็นเคอร์เนลไม่ได้ใช้งาน"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:299
+msgid "Driver trust cannot be verified"
+msgstr "ไม่สามารถตรวจสอบความน่าเชื่อถือของผู้ขับขี่ได้"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:303
+msgid ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+msgstr ""
+"ความไว้วางใจ Secure Boot พร้อมแล้ว "
+"ไม่มีการติดตั้งโมดูลเคอร์เนลของบริษัทอื่นในปัจจุบัน"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:307
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:550
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:558
+msgid "Drivers are signed and ready to load"
+msgstr "ไดรเวอร์ลงนามเรียบร้อยแล้วและพร้อมโหลด"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:311
+msgid "Drivers are trusted, but automatic DKMS signing needs repair"
+msgstr ""
+"ไดรเวอร์เชื่อถือได้ แต่การเซ็นชื่อ DKMS อัตโนมัติจำเป็นต้องได้รับการซ่อมแซม"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:315
+msgid "No signed third-party drivers detected"
+msgstr "ไม่พบไดรเวอร์บุคคลที่สามที่มีการลงนาม"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:323
+msgid "Enroll Existing Certificate"
+msgstr "ลงทะเบียนใบรับรองที่มีอยู่"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:336
+msgid "Repair Automatic DKMS Signing"
+msgstr "ซ่อมแซมการลงนาม DKMS อัตโนมัติ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:356
+msgid ""
+"This firmware does not provide Secure Boot. No certificate is required."
+msgstr "เฟิร์มแวร์นี้ไม่มี Secure Boot ไม่จำเป็นต้องมีใบรับรอง"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:363
+msgid ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+msgstr ""
+"ไม่สามารถอ่านสถานะ Secure Boot ได้ "
+"การดำเนินการที่เชื่อถือได้ของไดรเวอร์จะถูกบล็อกจนกว่าการตรวจจับจะสำเร็จ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:369
+msgid "No certificate is required while Secure Boot is disabled."
+msgstr "ไม่จำเป็นต้องมีใบรับรองในขณะที่ Secure Boot ถูกปิดใช้งาน"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:375
+msgid "System Trust Established. Third-party drivers will load securely."
+msgstr ""
+"ความไว้วางใจของระบบได้รับการจัดตั้งแล้ว "
+"ไดรเวอร์บุคคลที่สามจะโหลดอย่างปลอดภัย"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:379
+msgid "The certificate is enrolled and current drivers are trusted."
+msgstr "ลงทะเบียนใบรับรองแล้วและไดรเวอร์ปัจจุบันเชื่อถือได้"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:381
+msgid "Repair automatic DKMS signing before future driver updates."
+msgstr "ซ่อมแซมการเซ็นชื่อ DKMS อัตโนมัติก่อนการอัปเดตไดรเวอร์ในอนาคต"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:386
+msgid "The certificate is enrolled, but some modules are not signed with it."
+msgstr "ลงทะเบียนใบรับรองแล้ว แต่บางโมดูลไม่ได้ลงนามด้วย"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:391
+msgid "A certificate is waiting for enrollment."
+msgstr "ใบรับรองกำลังรอการลงทะเบียน"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:393
+msgid "Restart and enter password 123456 in MOKManager."
+msgstr "รีสตาร์ทและป้อนรหัสผ่าน 123456 ใน MOKManager"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:398
+msgid "The local trust certificate is not yet enrolled."
+msgstr "ใบรับรองความน่าเชื่อถือในเครื่องยังไม่ได้ลงทะเบียน"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:400
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:407
+msgid "You must configure this to use third-party drivers like NVIDIA."
+msgstr "คุณต้องกำหนดค่าสิ่งนี้เพื่อใช้ไดรเวอร์บุคคลที่สาม เช่น NVIDIA"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:405
+msgid "The local trust certificate is missing."
+msgstr "ใบรับรองความน่าเชื่อถือในเครื่องหายไป"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:423
+msgid "  Checking...  "
+msgstr "  กำลังตรวจสอบ...  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:430
+msgid "Please trust the certificate upon reboot using password 123456."
+msgstr "กรุณาไว้วางใจใบรับรองเมื่อรีสตาร์ทโดยใช้รหัสผ่าน 123456"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:447
+msgid "Reboot"
+msgstr "รีสตาร์ท"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:483
+msgid "Success! When you reboot, a blue screen will appear."
+msgstr "สำเร็จ! เมื่อคุณรีสตาร์ท หน้าจอสีน้ำเงินจะปรากฏขึ้น"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:487
+msgid "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+msgstr "เลือก 'Enroll MOK' → 'Continue' → 'Yes' และป้อนรหัสผ่าน: 123456"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:491
+msgid "Certificate Created"
+msgstr "สร้างใบรับรองแล้ว"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:523
+msgid "Secure Boot Trust Not Required"
+msgstr "Secure Boot ไม่จำเป็นต้องเชื่อถือ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:524
+msgid "Firmware signature enforcement is not active."
+msgstr "การบังคับใช้ลายเซ็นเฟิร์มแวร์ไม่ทำงาน"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:534
+msgid ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt."
+" You can repair them after enrollment."
+msgstr ""
+"ใบรับรองพร้อมแล้ว แต่โมดูล DKMS อย่างน้อยหนึ่งโมดูลไม่สามารถสร้างขึ้นใหม่ได้"
+" คุณสามารถซ่อมแซมได้หลังจากการลงทะเบียน"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:542
+msgid "Configuration needs attention"
+msgstr "การกำหนดค่าจำเป็นต้องได้รับการดูแล"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:549
+msgid "System Trust Established"
+msgstr "ก่อตั้งความน่าเชื่อถือของระบบแล้ว"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:557
+msgid "Driver Signature Trusted"
+msgstr "ลายเซ็นไดรเวอร์ได้รับการไว้วางใจ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:573
+msgid "Configuration failed. Please try again."
+msgstr "การกำหนดค่าล้มเหลว กรุณาลองใหม่อีกครั้ง"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:574
+msgid "Please check the advanced output."
+msgstr "โปรดตรวจสอบเอาต์พุตขั้นสูง"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:585
+msgid "Generating & Signing..."
+msgstr "กำลังสร้าง & ลงนาม..."
+
+#: src/synos_driver_center/app.py:1940
+msgid "Add Printer"
+msgstr "เพิ่มเครื่องพิมพ์"
+
+#: src/synos_driver_center/app.py:1365
+#: src/synos_driver_center/app.py:1390
+#: src/synos_driver_center/app.py:1488
+msgid "Firmware device"
+msgstr "อุปกรณ์เฟิร์มแวร์"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:156
+msgid "Local MOK Certificate"
+msgstr "ใบรับรอง MOK ในเครื่อง"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:155
+msgid "Secure Boot Enabled"
+msgstr "เปิดใช้งาน Secure Boot แล้ว"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:158
+msgid "Third-party Drivers"
+msgstr "ไดรเวอร์บุคคลที่สาม"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:157
+msgid "UEFI Firmware Trust"
+msgstr "ความไว้วางใจเฟิร์มแวร์ UEFI"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:10
+msgid "Authentication is required to change hardware drivers"
+msgstr "จำเป็นต้องมีการตรวจสอบสิทธิ์เพื่อเปลี่ยนไดรเวอร์ฮาร์ดแวร์"
+
+#: data/com.synos.DriverCenter.desktop:12
+msgid "driver;firmware;fwupd;nvidia;graphics;xbox;secure boot;hardware;"
+msgstr "ไดรเวอร์;เฟิร์มแวร์;fwupd;nvidia;กราฟิก;xbox;Secure Boot;ฮาร์ดแวร์;"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:8
+msgid "Install and repair hardware drivers"
+msgstr "ติดตั้งและซ่อมแซมไดรเวอร์ฮาร์ดแวร์"
+
+#: data/com.synos.DriverCenter.desktop:4
+msgid "Manage hardware drivers and device firmware"
+msgstr "จัดการไดรเวอร์ฮาร์ดแวร์และเฟิร์มแวร์ของอุปกรณ์"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:8
+msgid "Configure Secure Boot trust and repair DKMS signatures"
+msgstr "กำหนดค่าความไว้วางใจของ Secure Boot และซ่อมแซมลายเซ็น DKMS"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:10
+msgid "Authentication is required to configure Secure Boot trust"
+msgstr "จำเป็นต้องมีการตรวจสอบสิทธิ์เพื่อกำหนดค่าความไว้วางใจของ Secure Boot"
+
+#~ msgid "Download the latest metadata from enabled firmware remotes."
+#~ msgstr "ดาวน์โหลดข้อมูลเมตาล่าสุดจากรีโมตเฟิร์มแวร์ที่เปิดใช้งาน"
+
+#~ msgid "Driver Center"
+#~ msgstr "เกี่ยวกับศูนย์ไดร์เวอร์"
+
+#~ msgid "Secure Boot needs attention"
+#~ msgstr "ฝ่ายสนับสนุนจำเป็นต้องได้รับการดูแล"
+
+#~ msgid "Establish system trust before installing a third-party driver."
+#~ msgstr ""
+#~ "สถานะหรือความน่าเชื่อถือของ Secure Boot "
+#~ "ต้องได้รับการแก้ไขก่อนที่จะติดตั้งไดรเวอร์ของบริษัทอื่น"
+
+#, python-format
+#~ msgid "%d recommended driver is available"
+#~ msgid_plural "%d recommended drivers are available"
+#~ msgstr[0] "การค้นพบอุปกรณ์ FIDO ไม่พร้อมใช้งาน"
+
+#~ msgid "Install Recommended Drivers"
+#~ msgstr "ติดตั้งไดร์เวอร์"
+
+#~ msgid "Driver changes are ready"
+#~ msgstr "ลายเซ็นไดรเวอร์ได้รับการไว้วางใจ"
+
+#~ msgid "A graphics driver needs attention"
+#~ msgstr "การกำหนดค่าจำเป็นต้องได้รับการดูแล"
+
+#~ msgid "Your drivers are ready"
+#~ msgstr "ลายเซ็นไดรเวอร์ได้รับการไว้วางใจ"
+
+#~ msgid "Recommended changes"
+#~ msgstr "แนะนำ"
+
+#~ msgid "Install Recommended Drivers?"
+#~ msgstr "ติดตั้งไดร์เวอร์"
+
+#~ msgid "Install"
+#~ msgstr "ติดตั้งแล้ว"
+
+#~ msgid "Hardware"
+#~ msgstr "ฮาร์ดแวร์"
+
+#~ msgid "Blocked by Secure Boot"
+#~ msgstr "บล็อกโดย Secure Boot"
+
+#~ msgid "Complete printing support"
+#~ msgstr "รองรับการพิมพ์อย่างสมบูรณ์"
+
+#~ msgid "Install missing printing packages"
+#~ msgstr "ติดตั้งแพ็คเกจการพิมพ์ที่ขาดหายไป"
+
+#, python-format
+#~ msgid "%d package is missing"
+#~ msgid_plural "%d packages are missing"
+#~ msgstr[0] "แพ็คเกจ %d หายไป"

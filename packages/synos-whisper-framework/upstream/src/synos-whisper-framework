@@ -1,0 +1,6 @@
+#!/usr/bin/python3
+
+from synos_whisper_framework.daemon import main
+
+raise SystemExit(main())
+

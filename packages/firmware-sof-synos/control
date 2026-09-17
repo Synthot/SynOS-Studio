@@ -1,0 +1,12 @@
+Package: firmware-sof-synos
+Version: 2.0.2-1+synos1
+Section: kernel
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Recommends: alsa-ucm-conf-synos
+Provides: firmware-sof-signed
+Conflicts: firmware-sof-signed
+Replaces: firmware-sof-signed
+Homepage: ${BRAND_URL_HOME}
+Description: Intel SOF firmware binaries derived from Ubuntu and refreshed with a newer Intel snapshot

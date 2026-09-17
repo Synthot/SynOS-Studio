@@ -1,0 +1,10 @@
+# kind	source (relative to upstream/)	target	mode
+file	src/synos-appearance	/usr/bin/synos-appearance	755
+file	src/synos_appearance/__init__.py	/usr/lib/python3/dist-packages/synos_appearance/__init__.py	644
+file	src/synos_appearance/layout.py	/usr/lib/python3/dist-packages/synos_appearance/layout.py	644
+file	src/synos_appearance/preview.py	/usr/lib/python3/dist-packages/synos_appearance/preview.py	644
+file	src/synos_appearance/settings_transfer.py	/usr/lib/python3/dist-packages/synos_appearance/settings_transfer.py	644
+file	src/synos_appearance/weather.py	/usr/lib/python3/dist-packages/synos_appearance/weather.py	644
+folder	locale	/usr/share/locale	644
+file	data/synos-appearance.desktop	/usr/share/applications/synos-appearance.desktop	644
+file	data/synos-appearance.svg	/usr/share/icons/hicolor/scalable/apps/synos-appearance.svg	644

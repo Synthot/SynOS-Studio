@@ -1,0 +1,4 @@
+# kind	source (relative to upstream/)	target	mode
+file	scripts/synos-gdm-set-wallpaper	/usr/bin/synos-gdm-set-wallpaper	755
+file	assets/Floating-objects-dark.png	/usr/share/synos-gdm3-wallpaper/Floating-objects-dark.png	644
+folder	deploy/fluent-gnome-shell/	/usr/share/synos-gdm3-wallpaper/fluent-gnome-shell/	644

@@ -1,0 +1,864 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-swapcontrol-gtk\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-14 09:51+0000\n"
+"Language: ru_RU\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: src/window.rs:76
+msgid "About"
+msgstr "О программе"
+
+#: src/views/swap_view.rs:305
+msgid "Accept threshold percent"
+msgstr "Порог принятия (%)"
+
+#: src/views/zram_view.rs:252
+msgid "Advanced options"
+msgstr "Расширенные опции"
+
+#: src/views/stress_test_view.rs:230 src/views/swap_view.rs:230
+msgid "Advanced settings"
+msgstr "Расширенные настройки"
+
+#: src/views/zram_view.rs:353
+msgid "Algorithm"
+msgstr "Алгоритм"
+
+#: src/views/swap_view.rs:339
+msgid "Apply Settings"
+msgstr "Применить настройки"
+
+#: src/views/swap_view.rs:672
+msgid "Applying settings…"
+msgstr "Применение настроек…"
+
+#: src/views/dashboard_view.rs:392
+msgid "Auth needed"
+msgstr "Требуется аутентификация"
+
+#: src/views/dashboard_view.rs:435
+msgid "Buf"
+msgstr "Буферы"
+
+#: src/views/dashboard_view.rs:412
+msgid "Buffers"
+msgstr "Буферы"
+
+#: src/views/dashboard_view.rs:436
+msgid "Cache"
+msgstr "Кэш"
+
+#: src/views/dashboard_view.rs:417
+msgid "Cached"
+msgstr "Кешировано"
+
+#: src/views/zram_view.rs:383
+msgid "Cancel"
+msgstr "Отмена"
+
+#: src/views/stress_test_view.rs:323
+msgid "Cancel Test"
+msgstr "Отмена"
+
+#: src/views/stress_test_view.rs:606
+msgid "Cancelled by user."
+msgstr "Отменено пользователем."
+
+#: src/views/dashboard_view.rs:209
+msgid "Channels"
+msgstr "Каналы"
+
+#: src/views/stress_test_view.rs:618
+msgid "Completed successfully — memory pressure test passed."
+msgstr "Завершено успешно — тест нагрузки на память пройден."
+
+#: src/views/swap_view.rs:188
+msgid ""
+"Compress swap pages in a RAM pool — faster than disk swap. Use Zram or "
+"Zswap, not both."
+msgstr ""
+"Сжатие страниц подкачки в пуле ОЗУ — быстрее, чем дисковая подкачка. "
+"Используйте Zram или Zswap, но не оба одновременно."
+
+#: src/views/zram_view.rs:73
+msgid "Compressed RAM block device — fast in-memory swap"
+msgstr "Сжатый блочное устройство ОЗУ — быстрая подкачка в памяти"
+
+#: src/views/swap_view.rs:271
+msgid "Compression algorithm"
+msgstr "Алгоритм сжатия"
+
+#: src/views/zram_view.rs:384
+msgid "Create"
+msgstr "Создать"
+
+#: src/views/zram_view.rs:110 src/views/zram_view.rs:195
+msgid "Create Zram Device"
+msgstr "Создать устройство Zram"
+
+#: src/window.rs:110
+msgid "Dashboard"
+msgstr "Панель управления"
+
+#: src/views/zram_view.rs:576
+msgid "Destroy Zram Device"
+msgstr "Уничтожение устройства zram"
+
+#: src/views/zram_view.rs:444
+msgid "Device Created"
+msgstr "Устройство создано"
+
+#: src/views/dashboard_view.rs:525
+msgid "Disabled"
+msgstr "Отключено"
+
+#: src/views/swap_view.rs:526
+msgid "Disabling Zswap..."
+msgstr "Отключение Zswap…"
+
+#: src/views/swap_view.rs:582
+msgid "Disabling swap…"
+msgstr "Отключение свопа…"
+
+#: src/views/swap_view.rs:102
+msgid "Disk Swap Configuration"
+msgstr "Настройка виртуальной памяти"
+
+#: src/views/dashboard_view.rs:636
+msgid ""
+"Disk swap is active with memory compression — your system is well-protected "
+"against memory pressure."
+msgstr ""
+"Виртуальная память на диске активна, включено сжатие памяти — система "
+"надежно защищена от нехватки оперативной памяти."
+
+#: src/views/stress_test_view.rs:610 src/views/stress_test_view.rs:622
+msgid "Duration:"
+msgstr "Длительность:"
+
+#: src/views/dashboard_view.rs:631
+msgid ""
+"Enable Zram for snappy compressed swap in RAM — it's 10× faster than disk "
+"swap and dramatically reduces I/O under memory pressure."
+msgstr ""
+"Включите Zram для быстрой сжатой подкачки в ОЗУ — это в 10 раз быстрее "
+"дисковой подкачки и значительно снижает нагрузку на ввод-вывод при нехватке "
+"оперативной памяти."
+
+#: src/views/swap_view.rs:524
+msgid "Enabling Zswap..."
+msgstr "Включение Zswap…"
+
+#: src/views/swap_view.rs:584
+msgid "Enabling swap…"
+msgstr "Включение свопа…"
+
+#: src/views/stress_test_view.rs:614 src/views/swap_view.rs:510
+#: src/views/zram_view.rs:187
+msgid "Error"
+msgstr "Ошибка"
+
+#: src/views/dashboard_view.rs:422 src/views/dashboard_view.rs:437
+msgid "Free"
+msgstr "Свободно"
+
+#: src/views/stress_test_view.rs:255 src/views/stress_test_view.rs:256
+#: src/views/stress_test_view.rs:406
+msgid "Growth speed"
+msgstr "Скорость роста"
+
+#: src/views/dashboard_view.rs:291
+msgid "Hibernation"
+msgstr "Гибернация"
+
+#: src/views/swap_view.rs:602 src/views/swap_view.rs:709
+msgid "Hibernation Warning"
+msgstr "Предупреждение о гибернации"
+
+#: src/views/dashboard_view.rs:539 src/views/swap_view.rs:815
+msgid "Inactive"
+msgstr "Неактивно"
+
+#: src/views/swap_view.rs:161 src/views/swap_view.rs:175
+msgid "Loading..."
+msgstr "Загрузка..."
+
+#: src/views/stress_test_view.rs:237
+msgid "Maximum hold time"
+msgstr "Максимальное время удержания"
+
+#: src/views/swap_view.rs:287
+msgid "Maximum pool percent"
+msgstr "Максимальный процент пула"
+
+#: src/views/dashboard_view.rs:147
+msgid "Memory Overview"
+msgstr "Обзор памяти"
+
+#: src/views/zram_view.rs:119
+msgid "No Zram Devices"
+msgstr "Нет устройств Zram"
+
+#: src/views/dashboard_view.rs:478
+msgid "No device"
+msgstr "Нет устройства"
+
+#: src/views/dashboard_view.rs:614
+msgid "No disk swap detected"
+msgstr "Не обнаружено использование виртуальной памяти"
+
+#: src/views/dashboard_view.rs:630
+msgid "No memory acceleration enabled"
+msgstr "Ускорение памяти не включено"
+
+#: src/views/dashboard_view.rs:568
+msgid "None"
+msgstr "Нет"
+
+#: src/views/dashboard_view.rs:552 src/views/dashboard_view.rs:560
+msgid "Off"
+msgstr "Выкл."
+
+#: src/views/dashboard_view.rs:559
+msgid "On"
+msgstr "Вкл"
+
+#: src/views/swap_view.rs:306
+msgid ""
+"Only store pages that compress to ≤ this % of original. Higher = more pages "
+"cached. Recommended: 90%"
+msgstr ""
+"Сохранять только страницы, сжимаемые до ≤ этого % от исходного размера. Чем "
+"выше значение, тем больше страниц кэшируется. Рекомендуется: 90%"
+
+#: src/views/dashboard_view.rs:635
+msgid "Optimal memory configuration"
+msgstr "Оптимальная конфигурация памяти"
+
+#: src/views/stress_test_view.rs:607 src/views/stress_test_view.rs:619
+msgid "Peak allocated:"
+msgstr "Пиковое выделение:"
+
+#: src/views/zram_view.rs:372
+msgid "Priority"
+msgstr "Приоритет"
+
+#: src/views/stress_test_view.rs:214
+msgid "RAM"
+msgstr "Оперативная память"
+
+#: src/views/zram_view.rs:559
+msgid "Remove"
+msgstr "Удалить"
+
+#: src/views/stress_test_view.rs:365
+msgid "Run Again"
+msgstr "Выполнить снова"
+
+#: src/views/stress_test_view.rs:284
+msgid "Run Stress Test"
+msgstr "Запустить стресс-тест"
+
+#: src/views/swap_view.rs:312
+msgid "Shrinker"
+msgstr "Сжатие памяти"
+
+#: src/views/zram_view.rs:274
+msgid "Size (MiB)"
+msgstr "Размер (МиБ)"
+
+#: src/views/dashboard_view.rs:208
+msgid "Speed"
+msgstr "Скорость"
+
+#: src/views/stress_test_view.rs:105 src/window.rs:114
+msgid "Stress Test"
+msgstr "Стресс-тест"
+
+#: src/views/dashboard_view.rs:271 src/views/dashboard_view.rs:288
+#: src/window.rs:112
+msgid "Swap"
+msgstr "Файл подкачки"
+
+#: src/progress_dialog.rs:24 src/window.rs:59
+#: data/com.synos.swapcontrol.desktop:24
+msgid "Swap Control"
+msgstr "«Контроль виртуальной памяти»"
+
+#: src/views/swap_view.rs:152
+msgid "Swap usage"
+msgstr "Использование виртуальной памяти"
+
+#: src/views/dashboard_view.rs:292 src/views/swap_view.rs:262
+#: src/views/swap_view.rs:682
+msgid "Swappiness"
+msgstr "swappiness"
+
+#: src/views/dashboard_view.rs:625
+msgid "Swappiness not optimized for Zram"
+msgstr "Swappiness не оптимизирована для Zram"
+
+#: src/views/stress_test_view.rs:211
+msgid "Target Pressure"
+msgstr "Целевая нагрузка"
+
+#: src/views/stress_test_view.rs:350
+msgid "Test Complete"
+msgstr "Тест завершен"
+
+#: src/views/dashboard_view.rs:206
+msgid "Total RAM"
+msgstr "Общий объём ОЗУ"
+
+#: src/views/dashboard_view.rs:207
+msgid "Type"
+msgstr "Тип"
+
+#: src/views/dashboard_view.rs:407 src/views/dashboard_view.rs:434
+msgid "Used"
+msgstr "Используется"
+
+#: src/views/dashboard_view.rs:615
+msgid ""
+"When RAM is full the kernel may kill applications. Enable disk swap for a "
+"reliable safety net."
+msgstr ""
+"При полном заполнении оперативной памяти ядро может принудительно завершать "
+"приложения. Включите дисковую подкачку для надежной защиты."
+
+#: src/views/dashboard_view.rs:263 src/views/dashboard_view.rs:290
+#: src/window.rs:111
+msgid "Zram"
+msgstr "Zram"
+
+#: src/views/zram_view.rs:66
+msgid "Zram Devices"
+msgstr "Устройства Zram"
+
+#: src/views/dashboard_view.rs:619
+msgid "Zram and Zswap are both active"
+msgstr "Zram и Zswap активны одновременно"
+
+#: src/views/dashboard_view.rs:620
+msgid ""
+"Zram and Zswap are mutually exclusive — each creates its own compressed RAM "
+"pool. Running both wastes CPU and can cause severe memory thrashing. Disable"
+" one of them."
+msgstr ""
+"Zram и Zswap несовместимы: каждая технология создаёт собственный пул сжатой "
+"оперативной памяти. Их одновременная работа напрасно нагружает процессор и "
+"может вызвать интенсивный обмен страницами памяти (thrashing). Отключите "
+"одну из них."
+
+#: src/views/dashboard_view.rs:267 src/views/dashboard_view.rs:289
+#: src/views/swap_view.rs:190 src/views/swap_view.rs:691
+msgid "Zswap"
+msgstr "Zswap"
+
+#: src/views/stress_test_view.rs:217
+msgid "default"
+msgstr "по умолчанию"
+
+#: src/views/swap_view.rs:272
+msgid ""
+"lz4 = fast (recommended), zstd = best ratio, lzo = legacy. Changing requires"
+" zswap restart."
+msgstr ""
+"lz4 = быстро (рекомендуется), zstd = лучшее сжатие, lzo = устаревший. "
+"Изменение требует перезапуска zswap."
+
+#: src/views/stress_test_view.rs:216
+msgid "range"
+msgstr "диапазон"
+
+#: src/views/stress_test_view.rs:238
+msgid "seconds"
+msgstr "секунд"
+
+#: src/views/swap_view.rs:123
+msgid "with Zram"
+msgstr "с Zram"
+
+#: src/views/dashboard_view.rs:167
+msgid "with Zram active — prefer fast compressed RAM over disk cache"
+msgstr ""
+"при активном Zram — предпочесть быструю сжатую оперативную память дисковому "
+"кэшу"
+
+#: src/views/dashboard_view.rs:574
+msgid "Ready"
+msgstr "Готово"
+
+#: src/views/dashboard_view.rs:576
+msgid "Unsupported"
+msgstr "Не поддерживается"
+
+#: src/views/dashboard_view.rs:578
+msgid "Not configured"
+msgstr "Не настроено"
+
+#: src/views/dashboard_view.rs:580
+msgid "Resume target missing"
+msgstr "Отсутствует цель восстановления"
+
+#: src/views/dashboard_view.rs:582
+msgid "Resume target inactive"
+msgstr "Цель восстановления неактивна"
+
+#: src/views/dashboard_view.rs:584
+msgid "Swap too small"
+msgstr "Размер файла подкачки недостаточен"
+
+#: src/views/dashboard_view.rs:586
+msgid "Not ready"
+msgstr "Не готово"
+
+#: src/views/swap_view.rs:109
+msgid ""
+"Review installer-managed swap partitions and manage the legacy supplementary"
+" swap file"
+msgstr ""
+"Просмотрите разделы виртуальной памяти, созданные установщиком, и управляйте"
+" дополнительным файлом подкачки"
+
+#: src/views/swap_view.rs:160
+msgid "Swap partition"
+msgstr "Раздел подкачки"
+
+#: src/views/swap_view.rs:174
+msgid "Additional swap file"
+msgstr "Дополнительный файл подкачки"
+
+#: src/views/swap_view.rs:200
+msgid "Additional swap file size"
+msgstr "Размер дополнительного файла подкачки"
+
+#: src/views/swap_view.rs:201
+msgid "0 GiB means no supplementary swap file"
+msgstr "0 ГиБ означает отсутствие дополнительного файла подкачки"
+
+#: src/views/swap_view.rs:603
+msgid ""
+"This swap file is the configured resume target. Disabling it will break "
+"hibernation. Continue?"
+msgstr ""
+"Этот файл подкачки настроен как цель восстановления из гибернации. Его "
+"отключение приведет к неработоспособности гибернации. Продолжить?"
+
+#: src/views/swap_view.rs:710
+msgid ""
+"This swap file is the configured resume target. Its physical offset would "
+"change, so resize is blocked until hibernation is disabled."
+msgstr ""
+"Этот файл подкачки настроен как цель восстановления из гибернации. Его "
+"физический сдвиг изменится, поэтому изменение размера заблокировано до "
+"отключения гибернации."
+
+#: src/views/swap_view.rs:727
+msgid "unknown"
+msgstr "Неизвестно"
+
+#: src/views/swap_view.rs:743
+msgid "No swap partition — a legacy swap file can be managed below"
+msgstr ""
+"Раздел подкачки отсутствует — ниже можно управлять устаревшим файлом "
+"подкачки"
+
+#: src/views/swap_view.rs:212
+msgid "Remove incompatible file"
+msgstr "Удалить несовместимый файл"
+
+#: src/views/swap_view.rs:382
+msgid "Removing incompatible swap file…"
+msgstr "Удаление несовместимого файла подкачки…"
+
+#: src/views/swap_view.rs:795
+msgid "Present but inactive"
+msgstr "Создан, но неактивен"
+
+#: src/views/swap_view.rs:797
+msgid "Not created — choose a size below to add one"
+msgstr "Не создан — выберите размер ниже для добавления"
+
+#: src/views/swap_view.rs:799
+msgid "Not created — at least 20 GiB must remain free"
+msgstr "Не создан — должно оставаться не менее 20 ГиБ свободного места"
+
+#: src/views/swap_view.rs:835
+msgid ""
+"Resize is locked because this file is the configured hibernation resume "
+"target"
+msgstr ""
+"Изменение размера заблокировано, так как этот файл является настроенной "
+"целью восстановления из гибернации"
+
+#: src/views/swap_view.rs:837
+msgid ""
+"Optional compatibility file; 0 GiB removes it and 20 GiB remains reserved "
+"for the system"
+msgstr ""
+"Необязательный файл совместимости; 0 ГиБ удаляет его, 20 ГиБ остаётся "
+"зарезервировано для системы"
+
+#: src/views/swap_view.rs:839
+msgid ""
+"Disabled on Btrfs because a root-subvolume swap file would prevent Disk "
+"Snapshots Manager recovery points"
+msgstr ""
+"Отключено на Btrfs, так как файл подкачки в корневом подтоме помешает "
+"созданию контрольных точек восстановления менеджером снимков диска"
+
+#: src/views/zram_view.rs:120
+msgid ""
+"Create a compressed RAM swap device for faster memory pressure handling."
+msgstr ""
+"Создайте сжатое устройство подкачки в ОЗУ для более быстрой реакции на "
+"нехватку памяти."
+
+#: src/views/stress_test_view.rs:176
+msgid "Ensure important work is saved before running this test."
+msgstr "Убедитесь, что важная работа сохранена перед запуском этого теста."
+
+#: src/views/swap_view.rs:288
+msgid "Max % of RAM the compressed pool may occupy. Recommended: 20%"
+msgstr ""
+"Максимальная часть оперативной памяти, которую может занимать сжатый пул. "
+"Рекомендуется: 20%"
+
+#: src/views/dashboard_view.rs:154
+msgid "Real-time RAM, swap, and compression subsystem status"
+msgstr "Статус подсистем ОЗУ, подкачки и сжатия в реальном времени"
+
+#: src/views/swap_view.rs:313
+msgid "Reclaim pool pages under memory pressure. Recommended: ON"
+msgstr "Освобождать страницы пула при нехватке памяти. Рекомендуется: ВКЛ"
+
+#: src/views/stress_test_view.rs:112
+msgid "Simulate memory pressure to test swap and OOM behavior"
+msgstr ""
+"Моделируйте недостаток памяти для проверки работы подкачки и управления ОЗУ"
+
+#: src/views/stress_test_view.rs:166
+msgid "Warning: This will consume system memory and may cause instability"
+msgstr ""
+"Внимание: это будет использовать память системы и может вызвать "
+"нестабильность"
+
+#: src/views/zram_view.rs:445
+msgid "Zram configuration saved. The device will be created shortly."
+msgstr "Настройка Zram сохранена. Устройство будет создано в ближайшее время."
+
+#: src/views/dashboard_view.rs:178 src/views/swap_view.rs:133
+msgid "<i>Recommended swappiness: {0} ({1})</i>"
+msgstr "<i>Рекомендуемое значение swappiness: {0} ({1})</i>"
+
+#: src/views/zram_view.rs:90
+msgid "<i>Recommended: {0} MiB, lz4, priority 100 (for {1} GiB RAM)</i>"
+msgstr ""
+"<i>Рекомендуемые значения: {0} МиБ, lz4, приоритет 100 (для {1} ГиБ ОЗУ)</i>"
+
+#: src/views/swap_view.rs:777
+msgid "Active — {0} GiB used / {1} GiB total"
+msgstr "Активно — использовано {0} ГиБ / всего {1} ГиБ"
+
+#: src/swap/exec.rs:26 src/swap/exec.rs:68
+msgid "Authentication cancelled"
+msgstr "Аутентификация отменена"
+
+#: src/swap/swapfile.rs:113
+msgid "Cannot inspect the root filesystem"
+msgstr "Невозможно проверить корневую файловую систему"
+
+#: src/swap/swapfile.rs:108
+msgid "Cannot inspect the root filesystem: {0}"
+msgstr "Не удалось проверить корневую файловую систему: {0}"
+
+#: src/swap/sysctl.rs:79
+msgid "Cannot parse MemTotal: {0}"
+msgstr "Не удалось разобрать MemTotal: {0}"
+
+#: src/swap/sysctl.rs:43
+msgid "Cannot parse swappiness: {0}"
+msgstr "Не удалось разобрать значение swappiness: {0}"
+
+#: src/swap/zswap.rs:59
+msgid "Cannot parse {0} as u8: {1}"
+msgstr "Не удалось разобрать {0} как u8: {1}"
+
+#: src/swap/sysctl.rs:70
+msgid "Cannot read /proc/meminfo: {0}"
+msgstr "Не удалось прочитать /proc/meminfo: {0}"
+
+#: src/swap/swapfile.rs:39
+msgid "Cannot read /proc/swaps: {0}"
+msgstr "Не удалось прочитать /proc/swaps: {0}"
+
+#: src/swap/sysctl.rs:36 src/swap/zswap.rs:47
+msgid "Cannot read {0}: {1}"
+msgstr "Не удалось прочитать {0}: {1}"
+
+#: src/swap/exec.rs:18 src/swap/exec.rs:52
+msgid "Failed to execute pkexec: {0}"
+msgstr "Не удалось выполнить pkexec: {0}"
+
+#: src/swap/persist.rs:31
+msgid "Failed to remove legacy unit {0}: {1}"
+msgstr "Не удалось удалить устаревшую юнит-файл {0}: {1}"
+
+#: src/swap/sysctl.rs:129
+msgid "Failed to set swappiness: {0} / {1}"
+msgstr "Не удалось установить swappiness: {0} / {1}"
+
+#: src/swap/exec.rs:61
+msgid "Failed to wait on pkexec: {0}"
+msgstr "Не удалось ожидать завершения pkexec: {0}"
+
+#: src/i18n.rs:24
+msgid "Hello {0}, you have {1} messages"
+msgstr "Привет, {0}, у вас {1} сообщений"
+
+#: src/views/swap_view.rs:239
+msgid ""
+"How aggressively the kernel swaps — lower = stay in RAM longer (recommended:"
+" {0})"
+msgstr ""
+"Насколько агрессивно ядро использует подкачку — меньшее значение = дольше "
+"остаётся в ОЗУ (рекомендуется: {0})"
+
+#: src/views/swap_view.rs:236
+msgid ""
+"How aggressively the kernel swaps — with Zram active, set to {0} to prefer "
+"fast compressed RAM over disk cache (recommended: {0})"
+msgstr ""
+"Насколько агрессивно ядро использует подкачку — при активном Zram установите"
+" значение {0}, чтобы предпочесть быструю сжатую оперативную память дисковому"
+" кэшу (рекомендуется: {0})"
+
+#: src/views/dashboard_view.rs:505
+msgid "Idle ({0} GiB available)"
+msgstr "Идеал ({0} GiB доступно)"
+
+#: src/views/zram_view.rs:536
+msgid "Idle — {0} MiB available"
+msgstr "Ожидание — доступно {0} МБ"
+
+#: src/swap/sysctl.rs:83
+msgid "MemTotal not found"
+msgstr "MemTotal не найден"
+
+#: src/views/swap_view.rs:791
+msgid "Present but inactive — activation is disabled on {0}"
+msgstr "Присутствует, но неактивен — активация отключена на {0}"
+
+#: src/views/stress_test_view.rs:681
+msgid ""
+"RAM: {0} GiB total · {1} GiB used · {2} GiB avail\n"
+"Swap used: {3} GiB"
+msgstr ""
+"ОЗУ: всего {0} ГиБ · занято {1} ГиБ · доступно {2} ГиБ\n"
+"Использовано swap: {3} ГиБ"
+
+#: src/views/swap_view.rs:678
+msgid "Resize"
+msgstr "Изменить размер"
+
+#: src/views/swap_view.rs:842
+msgid "Swap file resizing is unsupported on {0}"
+msgstr "Изменение размера файла подкачки не поддерживается на {0}"
+
+#: src/progress_dialog.rs:58
+msgid "Task panicked: {0}"
+msgstr "Произошла паника задачи: {0}"
+
+#: src/swap/persist.rs:74
+msgid ""
+"The package 'synos-swap-config' is not installed.\n"
+"\n"
+"Zram changes cannot be applied or persisted without it.\n"
+"Install 'synos-swap-config' to manage zram from this GUI."
+msgstr ""
+"Пакет 'synos-swap-config' не установлен.\n"
+"\n"
+"Изменения Zram не могут быть применены или сохранены без него.\n"
+"Установите 'synos-swap-config', чтобы управлять zram из этого GUI."
+
+#: src/swap/persist.rs:133
+msgid ""
+"The package 'synos-swap-config' is not installed.\n"
+"\n"
+"Zswap changes cannot be applied or persisted without it.\n"
+"Install 'synos-swap-config' to manage zswap from this GUI."
+msgstr ""
+"Пакет 'synos-swap-config' не установлен.\n"
+"\n"
+"Изменения Zswap не могут быть применены или сохранены без него.\n"
+"Установите 'synos-swap-config', чтобы управлять zswap из этого GUI."
+
+#: src/views/zram_view.rs:578
+msgid ""
+"This will immediately remove {0} and flush its contents to disk swap. "
+"Continue?"
+msgstr ""
+"Это немедленно удалит {0} и выгрузит его содержимое на swap-диск. "
+"Продолжить?"
+
+#: src/views/swap_view.rs:802
+msgid "Unavailable on {0}; the swap partition remains active"
+msgstr "Недоступно в {0}; раздел подкачки остаётся активным"
+
+#: src/views/dashboard_view.rs:626
+msgid ""
+"Zram is active but swappiness is {0} instead of {1}. Set it to {1} to prefer"
+" fast compressed RAM swap — dropping file cache when zram is available "
+"wastes I/O performance."
+msgstr ""
+"Zram активен, но swappiness установлена в значение {0}, а не {1}. Установите"
+" значение {1}, чтобы предпочесть быструю сжатую виртуальную память в "
+"оперативной памяти — отбрасывание файлового кэша при наличии zram приводит к"
+" потере производительности ввода-вывода."
+
+#: src/swap/persist.rs:88
+msgid "Zram persistence disabled"
+msgstr "Персистентность Zram отключена"
+
+#: src/swap/persist.rs:90
+msgid "Zram persistence enabled"
+msgstr "Персистентность Zram включена"
+
+#: src/swap/persist.rs:148
+msgid "Zswap persistence disabled"
+msgstr "Персистентность Zswap отключена"
+
+#: src/swap/persist.rs:146
+msgid "Zswap persistence enabled"
+msgstr "Персистентность Zswap включена"
+
+#: src/views/dashboard_view.rs:172 src/views/swap_view.rs:127
+msgid "for {0} GiB RAM"
+msgstr "для {0} ГиБ ОЗУ"
+
+#: src/swap/sysctl.rs:133
+msgid "swappiness updated"
+msgstr "Значение swappiness обновлено"
+
+#: src/swap/persist.rs:37
+msgid "systemctl {0} failed: {1}"
+msgstr "Ошибка systemctl {0}: {1}"
+
+#: src/views/zram_view.rs:530
+msgid "{0} MiB used (stats reset)"
+msgstr "Использовано {0} МиБ (статистика сброшена)"
+
+#: src/views/zram_view.rs:525
+msgid "{0} MiB used · saved {1}%"
+msgstr "Использовано {0} МБ · сэкономлено {1}%"
+
+#: src/views/dashboard_view.rs:520
+msgid "{0} · pool {1}%"
+msgstr "{0} · пул {1}%"
+
+#: src/views/dashboard_view.rs:496
+msgid "{0} · saved {1}%"
+msgstr "{0} · сохранено {1}%"
+
+#: src/views/swap_view.rs:759
+msgid ""
+"{0} — installer-managed; size cannot be changed while the system is running"
+msgstr ""
+"{0} — управляется установщиком; размер не может быть изменён, пока система "
+"работает"
+
+#: data/com.synos.swapcontrol.desktop:99
+msgid "swap;memory;zswap;zram;swappiness;virtual memory;compression;RAM;"
+msgstr "swap;память;zswap;zram;swappiness;виртуальная память;сжатие;RAM;"
+
+#: data/com.synos.swapcontrol.desktop:70
+msgid "Manage virtual memory, compression, and swap settings"
+msgstr "Управление виртуальной памятью, сжатием и настройками подкачки"
+
+#: data/com.synos.swapcontrol.desktop:47
+msgid "Virtual Memory Settings"
+msgstr "Настройки виртуальной памяти"
+
+#: synos-swapcontrol-gtk/data/com.synos.swapcontrol.policy:39
+msgid "Authentication is required to modify swap, zswap, and zram settings"
+msgstr "Требуется аутентификация для изменения параметров swap, zswap и zram"
+
+#: synos-swapcontrol-gtk/data/com.synos.swapcontrol.policy:9
+msgid "Manage virtual memory settings"
+msgstr "Управление настройками виртуальной памяти"
+
+#~ msgid "Disabling swap will break hibernation. Continue?"
+#~ msgstr "Отключение свопа нарушит работу гибернации. Продолжить?"
+
+#~ msgid "Disk Swap"
+#~ msgstr "Виртуальная память диска"
+
+#~ msgid "Swap file size"
+#~ msgstr "Размер файла подкачки"
+
+#~ msgid "<i>Recommended: {0} GiB swap, swappiness {1} ({2})</i>"
+#~ msgstr "<i>Рекомендуется: файл подкачки {0} GiB, swappiness {1} ({2})</i>"
+
+#~ msgid "Creating Zram device…"
+#~ msgstr "Создание устройства zram…"
+
+#~ msgid "Destroying Zram device…"
+#~ msgstr "Уничтожение устройства zram…"
+
+#~ msgid "Disk-based swap file — the last line of defense when RAM is full"
+#~ msgstr ""
+#~ "Файл подкачки на диске — это последняя линия обороны, когда оперативная "
+#~ "память полностью заполнена"
+
+#~ msgid "Hibernation not detected — recommended: {0} GiB"
+#~ msgstr "Спящий режим не обнаружен — рекомендуется: {0} GiB"
+
+#~ msgid "Active"
+#~ msgstr "Активный"
+
+#~ msgid "Compressed write-back cache for swap"
+#~ msgstr "Кэш с обратной записью со сжатием для подкачки"
+
+#~ msgid "Compressed write-back cache — intercepts pages before disk swap"
+#~ msgstr ""
+#~ "Сжатый кэш с обратной записью — перехватывает страницы до их выгрузки в "
+#~ "виртуальную память на диск"
+
+#~ msgid "How much RAM zswap can use for compressed pages"
+#~ msgstr "Сколько ОЗУ zswap может использовать для сжатых страниц"
+
+#~ msgid "Max pool (% of RAM)"
+#~ msgstr "Максимальный пул (% от ОЗУ)"
+
+#~ msgid "No zram devices. Create one to enable compressed RAM swap."
+#~ msgstr ""
+#~ "Отсутствуют устройства сжатой виртуальной памяти. Создайте одно для "
+#~ "включения сжатого обмена в оперативной памяти."
+
+#~ msgid "Reclaim pool memory when system is under pressure"
+#~ msgstr "Освобождать память пула при высокой нагрузке на систему"
+
+#~ msgid "Resizing swap file…"
+#~ msgstr "Изменение размера файла подкачки…"
+
+#~ msgid "Zswap Configuration"
+#~ msgstr "Настройка Zswap"
+
+#~ msgid "lzo-rle is fastest, zstd saves more space"
+#~ msgstr "lzo-rle работает быстрее, zstd экономит больше места"
+
+#~ msgid ""
+#~ "<i>Recommended: {0}–{1} MiB, lzo-rle, priority 100 (for {2} GiB RAM)</i>"
+#~ msgstr ""
+#~ "<i>Recommended: {0}–{1} MiB, lzo-rle, priority 100 (for {2} GiB RAM)</i>"
+
+#~ msgid ""
+#~ "Hibernation active — minimum {0} GiB (RAM + 1 GiB). Recommended: {1} GiB"
+#~ msgstr ""
+#~ "Hibernation active — minimum {0} GiB (RAM + 1 GiB). Recommended: {1} GiB"

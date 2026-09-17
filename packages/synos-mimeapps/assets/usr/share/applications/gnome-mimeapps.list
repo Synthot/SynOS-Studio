@@ -1,0 +1,167 @@
+[Default Applications]
+# File manager
+inode/directory=org.gnome.Nautilus.desktop;
+
+# Mail
+x-scheme-handler/mailto=org.gnome.Geary.desktop;
+
+# Calendar
+text/calendar=org.gnome.Calendar.desktop;
+
+# Web with Mozilla Firefox
+x-scheme-handler/http=firefox.desktop;
+x-scheme-handler/https=firefox.desktop;
+text/html=firefox.desktop;
+application/xhtml+xml=firefox.desktop;
+
+# Images with Loupe
+image/jpeg=org.gnome.Loupe.desktop;
+image/jpg=org.gnome.Loupe.desktop;
+image/pjpeg=org.gnome.Loupe.desktop;
+image/png=org.gnome.Loupe.desktop;
+image/tiff=org.gnome.Loupe.desktop;
+image/x-3fr=org.gnome.Loupe.desktop;
+image/x-adobe-dng=org.gnome.Loupe.desktop;
+image/x-arw=org.gnome.Loupe.desktop;
+image/x-bay=org.gnome.Loupe.desktop;
+image/x-bmp=org.gnome.Loupe.desktop;
+image/x-canon-cr2=org.gnome.Loupe.desktop;
+image/x-canon-crw=org.gnome.Loupe.desktop;
+image/x-cap=org.gnome.Loupe.desktop;
+image/x-cr2=org.gnome.Loupe.desktop;
+image/x-crw=org.gnome.Loupe.desktop;
+image/x-dcr=org.gnome.Loupe.desktop;
+image/x-dcraw=org.gnome.Loupe.desktop;
+image/x-dcs=org.gnome.Loupe.desktop;
+image/x-dng=org.gnome.Loupe.desktop;
+image/x-drf=org.gnome.Loupe.desktop;
+image/x-eip=org.gnome.Loupe.desktop;
+image/x-erf=org.gnome.Loupe.desktop;
+image/x-fff=org.gnome.Loupe.desktop;
+image/x-fuji-raf=org.gnome.Loupe.desktop;
+image/x-iiq=org.gnome.Loupe.desktop;
+image/x-k25=org.gnome.Loupe.desktop;
+image/x-kdc=org.gnome.Loupe.desktop;
+image/x-mef=org.gnome.Loupe.desktop;
+image/x-minolta-mrw=org.gnome.Loupe.desktop;
+image/x-mos=org.gnome.Loupe.desktop;
+image/x-mrw=org.gnome.Loupe.desktop;
+image/x-nef=org.gnome.Loupe.desktop;
+image/x-nikon-nef=org.gnome.Loupe.desktop;
+image/x-nrw=org.gnome.Loupe.desktop;
+image/x-olympus-orf=org.gnome.Loupe.desktop;
+image/x-orf=org.gnome.Loupe.desktop;
+image/x-panasonic-raw=org.gnome.Loupe.desktop;
+image/x-pef=org.gnome.Loupe.desktop;
+image/x-pentax-pef=org.gnome.Loupe.desktop;
+image/x-png=org.gnome.Loupe.desktop;
+image/x-ptx=org.gnome.Loupe.desktop;
+image/x-pxn=org.gnome.Loupe.desktop;
+image/x-r3d=org.gnome.Loupe.desktop;
+image/x-raf=org.gnome.Loupe.desktop;
+image/x-raw=org.gnome.Loupe.desktop;
+image/x-rw2=org.gnome.Loupe.desktop;
+image/x-rwl=org.gnome.Loupe.desktop;
+image/x-rwz=org.gnome.Loupe.desktop;
+image/x-sigma-x3f=org.gnome.Loupe.desktop;
+image/x-sony-arw=org.gnome.Loupe.desktop;
+image/x-sony-sr2=org.gnome.Loupe.desktop;
+image/x-sony-srf=org.gnome.Loupe.desktop;
+image/x-sr2=org.gnome.Loupe.desktop;
+image/x-srf=org.gnome.Loupe.desktop;
+image/x-x3f=org.gnome.Loupe.desktop;
+
+# Videos with Celluloid (mpv)
+video/x-ogm+ogg=io.github.celluloid_player.Celluloid.desktop;
+video/3gp=io.github.celluloid_player.Celluloid.desktop;
+video/3gpp=io.github.celluloid_player.Celluloid.desktop;
+video/3gpp2=io.github.celluloid_player.Celluloid.desktop;
+video/dv=io.github.celluloid_player.Celluloid.desktop;
+video/divx=io.github.celluloid_player.Celluloid.desktop;
+video/fli=io.github.celluloid_player.Celluloid.desktop;
+video/flv=io.github.celluloid_player.Celluloid.desktop;
+video/mp2t=io.github.celluloid_player.Celluloid.desktop;
+video/mp4=io.github.celluloid_player.Celluloid.desktop;
+video/mp4v-es=io.github.celluloid_player.Celluloid.desktop;
+video/mpeg=io.github.celluloid_player.Celluloid.desktop;
+video/mpeg-system=io.github.celluloid_player.Celluloid.desktop;
+video/msvideo=io.github.celluloid_player.Celluloid.desktop;
+video/ogg=io.github.celluloid_player.Celluloid.desktop;
+video/quicktime=io.github.celluloid_player.Celluloid.desktop;
+video/vivo=io.github.celluloid_player.Celluloid.desktop;
+video/vnd.divx=io.github.celluloid_player.Celluloid.desktop;
+video/vnd.mpegurl=io.github.celluloid_player.Celluloid.desktop;
+video/vnd.rn-realvideo=io.github.celluloid_player.Celluloid.desktop;
+video/vnd.vivo=io.github.celluloid_player.Celluloid.desktop;
+video/webm=io.github.celluloid_player.Celluloid.desktop;
+video/x-anim=io.github.celluloid_player.Celluloid.desktop;
+video/x-avi=io.github.celluloid_player.Celluloid.desktop;
+video/x-flc=io.github.celluloid_player.Celluloid.desktop;
+video/x-fli=io.github.celluloid_player.Celluloid.desktop;
+video/x-flic=io.github.celluloid_player.Celluloid.desktop;
+video/x-flv=io.github.celluloid_player.Celluloid.desktop;
+video/x-m4v=io.github.celluloid_player.Celluloid.desktop;
+video/x-matroska=io.github.celluloid_player.Celluloid.desktop;
+video/x-mjpeg=io.github.celluloid_player.Celluloid.desktop;
+video/x-mpeg=io.github.celluloid_player.Celluloid.desktop;
+video/x-mpeg2=io.github.celluloid_player.Celluloid.desktop;
+video/x-ms-asf=io.github.celluloid_player.Celluloid.desktop;
+video/x-ms-asf-plugin=io.github.celluloid_player.Celluloid.desktop;
+video/x-ms-asx=io.github.celluloid_player.Celluloid.desktop;
+video/x-msvideo=io.github.celluloid_player.Celluloid.desktop;
+video/x-ms-wm=io.github.celluloid_player.Celluloid.desktop;
+video/x-ms-wmv=io.github.celluloid_player.Celluloid.desktop;
+video/x-ms-wmx=io.github.celluloid_player.Celluloid.desktop;
+video/x-ms-wvx=io.github.celluloid_player.Celluloid.desktop;
+video/x-nsv=io.github.celluloid_player.Celluloid.desktop;
+video/x-theora=io.github.celluloid_player.Celluloid.desktop;
+video/x-theora+ogg=io.github.celluloid_player.Celluloid.desktop;
+video/x-totem-stream=io.github.celluloid_player.Celluloid.desktop;
+
+# Audio with GNOME Music
+audio/x-vorbis+ogg=io.bassi.Amberol.desktop;
+audio/vorbis=io.bassi.Amberol.desktop;
+audio/x-vorbis=io.bassi.Amberol.desktop;
+audio/x-scpls=io.bassi.Amberol.desktop;
+audio/x-mp3=io.bassi.Amberol.desktop;
+audio/x-mpeg=io.bassi.Amberol.desktop;
+audio/mpeg=io.bassi.Amberol.desktop;
+audio/x-mpegurl=io.bassi.Amberol.desktop;
+audio/x-flac=io.bassi.Amberol.desktop;
+audio/mp4=io.bassi.Amberol.desktop;
+audio/x-it=io.bassi.Amberol.desktop;
+audio/x-mod=io.bassi.Amberol.desktop;
+audio/x-s3m=io.bassi.Amberol.desktop;
+audio/x-stm=io.bassi.Amberol.desktop;
+audio/x-xm=io.bassi.Amberol.desktop;
+
+# Books with Papers
+application/pdf=org.gnome.Papers.desktop;
+application/epub+zip=org.gnome.Papers.desktop;
+
+# Archives with File-Roller
+application/zip=org.gnome.FileRoller.desktop;
+application/x-7z-compressed=org.gnome.FileRoller.desktop;
+application/x-rar=org.gnome.FileRoller.desktop;
+application/x-tar=org.gnome.FileRoller.desktop;
+application/gzip=org.gnome.FileRoller.desktop;
+
+# Text with GNOME Text Editor
+text/plain=org.gnome.TextEditor.desktop;
+text/markdown=org.gnome.TextEditor.desktop;
+
+# Torrent
+application/x-bittorrent=transmission-gtk.desktop;
+application/x-utorrent=transmission-gtk.desktop;
+
+# Disk Images with GNOME Disk Image Mounter
+application/x-cd-image=gnome-disk-image-mounter.desktop;
+application/x-raw-disk-image=gnome-disk-image-mounter.desktop;
+
+# Deb with GNOME Software
+application/vnd.debian.binary-package=gnome-software.desktop;
+
+# Windows Executables with SynOS EXE Runner (prevent Bottles takeover)
+application/x-msdownload=com.synos.ExeRunner.desktop;
+application/vnd.microsoft.portable-executable=com.synos.ExeRunner.desktop;
+application/x-msi=com.synos.ExeRunner.desktop;

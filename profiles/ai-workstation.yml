@@ -1,0 +1,9 @@
+id: ai-workstation
+extends: developer
+description: Machine for local AI work. Developer tools plus PyTorch and llama.cpp; the GPU compute stack and the inference services (Ollama, Open WebUI, vLLM) are chosen per bundle.
+software:
+  bundles: [ai-dev]
+hardware:
+  gpu: none
+installer:
+  encryption: optional

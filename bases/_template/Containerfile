@@ -1,0 +1,41 @@
+# Build container for the debian base. Build with the suite you target:
+#   podman build --build-arg SUITE=<suite> -t synos-builder-debian -f bases/debian/Containerfile .
+# Run privileged (chroot, bind mounts and loop devices are needed):
+#   podman run --rm --privileged -v $PWD:/src -w /src synos-builder-debian make
+ARG SUITE=trixie
+FROM debian:${SUITE}
+ARG DEBIAN_FRONTEND=noninteractive
+ENV SYNOS_IN_CONTAINER=1 LC_ALL=C.UTF-8
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        sudo lsb-release make python3 python3-yaml python3-jsonschema ansible \
+        binutils curl debootstrap fonts-unifont gnupg isomd5sum squashfs-tools sbsigntool \
+        xorriso grub2-common mtools dosfstools util-linux librsvg2-bin fakeroot \
+        debian-archive-keyring ca-certificates git \
+        rustup build-essential pkg-config gettext patch libglib2.0-dev-bin libglib2.0-bin \
+        libadwaita-1-dev libgtk-4-dev libgtk-3-dev libdbus-1-dev libsystemd-dev \
+        python3-gi gir1.2-gtk-4.0 locales sassc libpcap-dev libglib2.0-dev gtk-update-icon-cache imagemagick \
+        apt-utils dpkg-dev gzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && sed -i 's/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen en_US.UTF-8
+# The build runs as root here; root's password is locked in the base image and
+# sudo refuses to validate the account. Nothing needs privilege elevation, so
+# sudo becomes a pass-through that also accepts its own options (sudo -v).
+RUN printf '#!/bin/sh\nwhile [ $# -gt 0 ] && [ "${1#-}" != "$1" ]; do shift; done\n[ $# -eq 0 ] && exit 0\nexec "$@"\n' > /usr/local/bin/sudo \
+    && chmod 755 /usr/local/bin/sudo
+# amd64 signed boot chain; harmless on arm64 images where the target root supplies it.
+RUN if [ "$(dpkg --print-architecture)" = amd64 ]; then \
+        apt-get update && apt-get install -y --no-install-recommends \
+            grub-pc-bin grub-efi-amd64 grub-efi-amd64-signed shim-signed \
+        && rm -rf /var/lib/apt/lists/*; fi
+# Debian's packaged Rust is older than what the Rust applications use; rustup
+# installs the toolchain the projects pin (rust-toolchain.toml) at build time.
+RUN rustup toolchain install stable --profile minimal && rustup default stable
+ENV PATH=/root/.cargo/bin:$PATH
+# The engine itself, so a bundle builds without a checkout (docs/BUNDLE.md):
+#   podman run --rm --privileged -v $PWD:/bundle -e SYNOS_KEYS_DIR=.build/keys <image> \
+#       synos build /bundle --output /bundle/dist
+# A mounted checkout at /src (make container-build) still takes precedence: it
+# runs its own make; /opt/synos is only used by the launcher every bundle ships.
+COPY . /opt/synos
+RUN ln -s /opt/synos/tools/synos /usr/local/bin/synos && mkdir -p /opt/synos/.build
+WORKDIR /src

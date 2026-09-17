@@ -1,0 +1,11 @@
+Package: gnome-shell-extension-arcmenu
+Version: 2.0.2-4+synos1
+Section: gnome
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-dconf-runtime, gnome-shell, dconf-gsettings-backend | gsettings-backend, gir1.2-adw-1, gir1.2-gtk-4.0, gir1.2-gmenu-3.0, gir1.2-accountsservice-1.0
+Recommends: gnome-shell-extension-prefs | gnome-shell-extension-manager
+Suggests: synos-control-panel
+Homepage: ${BRAND_URL_HOME}
+Description: Application Menu Extension for GNOME — packaged for ${BRAND_NAME}

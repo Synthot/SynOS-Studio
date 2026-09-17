@@ -1,0 +1,101 @@
+- name: Hardening packages
+  ansible.builtin.apt:
+    name: [ufw, auditd, fwupd, unattended-upgrades, apparmor-profiles-extra]
+    state: present
+    install_recommends: false
+
+- name: Unattended security upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    mode: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "{{ '1' if base_hardening_unattended_upgrades else '0' }}";
+  when: base_hardening_unattended_upgrades
+
+- name: Firewall policy (applied at boot; ufw cannot talk to the kernel in a chroot)
+  ansible.builtin.copy:
+    dest: /etc/ufw/ufw.conf
+    mode: "0644"
+    content: |
+      ENABLED={{ 'yes' if base_hardening_firewall == 'default-deny-inbound' else 'no' }}
+      LOGLEVEL=low
+
+- name: USBGuard
+  ansible.builtin.apt:
+    name: usbguard
+    state: present
+  when: base_hardening_usbguard
+
+- name: USBGuard policy allows keyboards, mice and hubs; blocks the rest until enrolled
+  ansible.builtin.copy:
+    dest: /etc/usbguard/rules.conf
+    mode: "0600"
+    content: |
+      allow with-interface equals { 09:00:* }
+      allow with-interface one-of { 03:00:01 03:01:01 03:00:02 03:01:02 }
+      block
+  when: base_hardening_usbguard
+
+- name: OpenSCAP content for the compliance baseline
+  ansible.builtin.apt:
+    name: [openscap-scanner, ssg-base]
+    state: present
+    install_recommends: false
+  when: base_hardening_compliance != 'none'
+
+- name: Record the baseline the image was built for
+  ansible.builtin.copy:
+    dest: /etc/synos/compliance
+    mode: "0644"
+    content: "{{ base_hardening_compliance }}\n"
+  when: base_hardening_compliance != 'none'
+
+- name: Evaluate the baseline (skipped in a chroot; run at first boot or by the fleet)
+  ansible.builtin.command: >
+    oscap xccdf eval --profile {{ base_hardening_compliance }}
+    --results /var/lib/synos/compliance-results.xml /usr/share/xml/scap/ssg/content/ssg-{{ ansible_distribution | lower }}{{ ansible_distribution_major_version }}-ds.xml
+  when: base_hardening_compliance != 'none' and not base_hardening_in_chroot
+  changed_when: false
+  failed_when: false
+
+- name: OpenSSH server for profiles that enable SSH (installed systems only; the live session keeps it off)
+  ansible.builtin.apt:
+    name: openssh-server
+    state: present
+    install_recommends: false
+  when: base_hardening_ssh == 'enabled'
+
+- name: First-boot service script (enables SSH, opens the profile's ports)
+  ansible.builtin.template:
+    src: synos-first-boot-services.sh.j2
+    dest: /usr/libexec/synos-first-boot-services
+    mode: "0755"
+  when: base_hardening_ssh == 'enabled' or base_hardening_open_ports | length > 0
+
+- name: First-boot service unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/synos-first-boot-services.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=SynOS: enable the services the profile asks for (first boot of an installed system)
+      ConditionKernelCommandLine=!rd.synos.live
+      ConditionPathExists=!/var/lib/synos/first-boot-services.done
+      After=network-pre.target
+      Wants=network-pre.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/libexec/synos-first-boot-services
+
+      [Install]
+      WantedBy=multi-user.target
+  when: base_hardening_ssh == 'enabled' or base_hardening_open_ports | length > 0
+
+- name: Enable the first-boot service unit (symlink works in the chroot)
+  ansible.builtin.file:
+    src: /etc/systemd/system/synos-first-boot-services.service
+    dest: /etc/systemd/system/multi-user.target.wants/synos-first-boot-services.service
+    state: link
+  when: base_hardening_ssh == 'enabled' or base_hardening_open_ports | length > 0

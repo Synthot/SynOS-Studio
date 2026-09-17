@@ -1,0 +1,11 @@
+Package: synos-no-snapd
+Version: ${VERSION}
+Section: admin
+Priority: optional
+Architecture: all
+Conflicts: snapd, snap-store, ubuntu-pro-client, ubuntu-advantage-tools, ubuntu-report, popularity-contest, apport, whoopsie
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Description: keep snapd and Ubuntu telemetry off a ${BRAND_NAME} system
+ Conflicts with snapd and the Ubuntu reporting components and pins them
+ so they cannot return through recommends or upgrades. Applications ship
+ as Debian packages or Flatpaks instead.

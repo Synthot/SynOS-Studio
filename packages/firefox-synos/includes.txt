@@ -1,0 +1,3 @@
+# kind	source (relative to upstream/)	target	mode
+file	data/firefox.desktop.desktop	/usr/share/applications/firefox.desktop	644
+file	data/firefox.svg	/usr/share/icons/hicolor/scalable/apps/firefox.svg	644

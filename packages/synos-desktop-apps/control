@@ -1,0 +1,10 @@
+Package: synos-desktop-apps
+Version: 2.0.2-3+synos1
+Section: misc
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Recommends: synos-mimeapps, firefox-synos, gnome-browser-connector, gnome-online-accounts, remmina, remmina-plugin-rdp, transmission-gtk, geary, gnome-calendar, gnome-clocks, gnome-weather, gnome-text-editor, papers, gnome-calculator, seahorse, gnome-characters, gnome-font-viewer, simple-scan, loupe, celluloid, amberol, gnome-snapshot, gnome-sound-recorder, ffmpegthumbnailer, libgdk-pixbuf2.0-bin, synos-control-panel, synos-driver-center, synos-oobe, synos-exe-runner, synos-ufwall-gtk, synos-swapcontrol-gtk, synos-yubikey-manager, baobab, file-roller, gnome-sushi, gnome-disk-utility, gnome-logs, resources, gnome-power-manager, usb-creator-gtk, yelp, gnome-user-docs, gnome-control-center-faces, gnome-chess
+Suggests: synos-btrfs-snapshots-manager
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} default applications — pulls in recommended apps for ${BRAND_NAME}

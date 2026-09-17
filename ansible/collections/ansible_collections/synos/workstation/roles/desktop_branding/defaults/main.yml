@@ -1,0 +1,3 @@
+# Path or URL of a <brand>-branding_<version>_all.deb rendered by tools/render_brand.py
+desktop_branding_package: ""
+desktop_branding_brand_id: synos

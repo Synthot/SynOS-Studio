@@ -1,0 +1,9 @@
+Package: synos-bash-guess-command
+Version: 2.0.2-1+synos1
+Section: shells
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: bash (>= 4.4), bash-completion, libc6 (>= 2.39), libgcc-s1
+Homepage: ${BRAND_URL_HOME}
+Description: Fast offline ghost-text suggestions for Bash, with APT package prediction, semantic local context and transition-ranked history while preserving native Tab completion.

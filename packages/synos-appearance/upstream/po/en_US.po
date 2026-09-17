@@ -1,0 +1,277 @@
+# SynOS Appearance — English (United States) translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance 2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: English (United States)\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos-appearance:535
+msgid "About SynOS Appearance"
+msgstr ""
+
+#: src/synos-appearance:309
+msgid "Advanced"
+msgstr ""
+
+#: src/synos-appearance:512 src/synos-appearance:572
+msgid "SynOS Appearance"
+msgstr ""
+
+#: src/synos-appearance:574
+msgid "SynOS Team"
+msgstr ""
+
+#: src/synos-appearance:314
+msgid "Appearance"
+msgstr ""
+
+#: src/synos-appearance:454
+msgid "Apply to Login Screen"
+msgstr "Apply to Login Screen"
+
+#: src/synos-appearance:57
+msgid "Bottom"
+msgstr "Bottom"
+
+#: src/synos-appearance:397
+msgid "Cancel"
+msgstr ""
+
+#: src/synos-appearance:434
+msgid "Choose an image for the GDM login screen background."
+msgstr "Choose an image for the GDM login screen background."
+
+#: src/synos-appearance:72
+msgid "Choose the visual style of your taskbar."
+msgstr ""
+
+#: src/synos-appearance:445
+msgid "Choose…"
+msgstr "Choose…"
+
+#: src/synos-appearance:90 src/synos-appearance:223
+msgid "Classic"
+msgstr "Classic"
+
+#: src/synos-appearance:120
+msgid "Combine multiple windows of one app into a single icon"
+msgstr "Combine multiple windows of one app into a single icon"
+
+#: src/synos-appearance:364
+msgid "Danger Zone"
+msgstr ""
+
+#: src/synos-appearance:264
+msgid "Display the Activities button on the taskbar"
+msgstr "Display the Activities button on the taskbar"
+
+#: src/synos-appearance:122
+msgid "Enable grouping"
+msgstr "Enable grouping"
+
+#: src/synos-appearance:338
+msgid "Extension Settings"
+msgstr ""
+
+#: src/synos-appearance:428
+msgid "GDM Wallpaper"
+msgstr "GDM Wallpaper"
+
+#: src/synos-appearance:119
+msgid "Group apps"
+msgstr "Group apps"
+
+#: src/synos-appearance:466
+msgid "Images"
+msgstr "Images"
+
+#: src/synos-appearance:130
+msgid "Keep launchers separate from running apps"
+msgstr "Keep launchers separate from running apps"
+
+#: src/synos-appearance:85
+msgid "Layout"
+msgstr ""
+
+#: src/synos-appearance:57
+msgid "Left"
+msgstr "Left"
+
+#: src/synos-appearance:433
+msgid "Login Screen Wallpaper"
+msgstr "Login Screen Wallpaper"
+
+#: src/synos-appearance:318 src/synos-appearance:328
+#: src/synos-appearance:351
+msgid "Open"
+msgstr ""
+
+#: src/synos-appearance:339
+msgid "Open the preference windows of the panel extensions."
+msgstr ""
+
+#: src/synos-appearance:244
+msgid "Panel Indicators"
+msgstr ""
+
+#: src/synos-appearance:240
+msgid "Panel Widgets"
+msgstr ""
+
+#: src/synos-appearance:71
+msgid "Preview"
+msgstr ""
+
+#: src/synos-appearance:369 src/synos-appearance:398
+msgid "Reset"
+msgstr ""
+
+#: src/synos-appearance:367
+msgid "Reset desktop settings"
+msgstr ""
+
+#: src/synos-appearance:393
+msgid "Reset desktop settings?"
+msgstr ""
+
+#: src/synos-appearance:368
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+
+#: src/synos-appearance:57
+msgid "Right"
+msgstr "Right"
+
+#: src/synos-appearance:444
+msgid "Select image"
+msgstr "Select image"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "Separated"
+
+#: src/synos-appearance:263
+msgid "Show Activities Button"
+msgstr "Show Activities Button"
+
+#: src/synos-appearance:231
+msgid "Show Desktop Icons"
+msgstr ""
+
+#: src/synos-appearance:230
+msgid "Show Network"
+msgstr "Show Network"
+
+#: src/synos-appearance:229
+msgid "Show Weather"
+msgstr "Show Weather"
+
+#: src/synos-appearance:260
+msgid "Show or hide built-in panel elements."
+msgstr "Show or hide built-in panel elements."
+
+#: src/synos-appearance:259
+msgid "Taskbar Elements"
+msgstr "Taskbar Elements"
+
+#: src/synos-appearance:66
+msgid "Taskbar Style"
+msgstr ""
+
+#: src/synos-appearance:245
+msgid "Toggle panel indicator widgets on or off."
+msgstr ""
+
+#: src/synos-appearance:57
+msgid "Top"
+msgstr "Top"
+
+#: src/synos-appearance:327
+msgid "Tweaks"
+msgstr ""
+
+#: src/synos-appearance:129
+msgid "Use Vista taskbar behavior"
+msgstr "Use Vista taskbar behavior"
+
+#: src/synos-appearance:317
+msgid "Wallpaper"
+msgstr ""
+
+#: src/synos-appearance:88 src/synos-appearance:220
+msgid "Centered"
+msgstr "Centered"
+
+#: src/synos-appearance:280
+msgid "✓ Activities button — {action}n"
+msgstr "✓ Activities button — {action}n"
+
+#: src/synos-appearance:151 src/synos-appearance:186
+msgid "✓ Applied — {style} | {pos}"
+msgstr ""
+
+#: src/synos-appearance:387
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ Desktop settings reset. Log out and back in to apply all changes."
+
+#: src/synos-appearance:502
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ GDM wallpaper applied"
+
+#: src/synos-appearance:294
+msgid "✓ {label} — {action}d"
+msgstr ""
+
+#: src/synos-appearance:188
+msgid "✗ Failed to apply position"
+msgstr ""
+
+#: src/synos-appearance:153
+msgid "✗ Failed to apply style"
+msgstr ""
+
+#: src/synos-appearance:389
+msgid "✗ Failed to reset"
+msgstr ""
+
+#: src/synos-appearance:504
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ Failed to set GDM wallpaper"
+
+#: src/synos-appearance:282
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ Failed to toggle activities button"
+
+#: src/synos-appearance:296
+msgid "✗ Failed to {action} {label}"
+msgstr ""
+
+#: src/synos-appearance:487
+msgid "✗ Please select an image first"
+msgstr "✗ Please select an image first"
+
+#: src/synos-appearance:394
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"

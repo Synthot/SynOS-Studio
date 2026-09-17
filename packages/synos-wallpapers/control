@@ -1,0 +1,12 @@
+Package: synos-wallpapers
+Version: ${VERSION}
+Section: x11
+Priority: optional
+Architecture: all
+Depends: synos-dconf-runtime, ${BRAND_ID}-branding
+Provides: ubuntu-wallpapers
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Description: ${BRAND_NAME} default wallpaper selection
+ Points the desktop and lock screen defaults at the wallpaper shipped by the
+ ${BRAND_NAME} brand kit and lists it in the background chooser. Replaces the
+ upstream wallpaper collection; the artwork itself comes from branding/.

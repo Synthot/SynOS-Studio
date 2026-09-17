@@ -1,0 +1,16 @@
+# kind	source (relative to upstream/)	target	mode
+file	scripts/synos-driver-center	/usr/bin/synos-driver-center	755
+file	scripts/memory-helper	/usr/libexec/synos-driver-center/memory-helper	755
+file	scripts/driver-helper	/usr/libexec/synos-driver-center/driver-helper	755
+file	src/synos_driver_center/__init__.py	/usr/lib/python3/dist-packages/synos_driver_center/__init__.py	644
+file	src/synos_driver_center/__main__.py	/usr/lib/python3/dist-packages/synos_driver_center/__main__.py	644
+file	src/synos_driver_center/app.py	/usr/lib/python3/dist-packages/synos_driver_center/app.py	644
+file	src/synos_driver_center/computer.py	/usr/lib/python3/dist-packages/synos_driver_center/computer.py	644
+file	src/synos_driver_center/computer_ui.py	/usr/lib/python3/dist-packages/synos_driver_center/computer_ui.py	644
+file	src/synos_driver_center/core.py	/usr/lib/python3/dist-packages/synos_driver_center/core.py	644
+file	src/synos_driver_center/firmware.py	/usr/lib/python3/dist-packages/synos_driver_center/firmware.py	644
+folder	resources	/usr/share/synos-driver-center/illustrations	644
+file	data/com.synos.DriverCenter.policy	/usr/share/polkit-1/actions/com.synos.DriverCenter.policy	644
+folder	locale	/usr/share/locale	644
+file	data/com.synos.DriverCenter.desktop	/usr/share/applications/com.synos.DriverCenter.desktop	644
+file	data/com.synos.DriverCenter.svg	/usr/share/icons/hicolor/scalable/apps/com.synos.DriverCenter.svg	644

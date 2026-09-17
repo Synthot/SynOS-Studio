@@ -1,0 +1,9 @@
+id: de
+name: Deutschland
+locales: [de_DE.UTF-8]
+keyboard: de
+timezone: Europe/Berlin
+mirror: http://ftp.de.debian.org/debian/
+compliance: bsi-sys-1-3
+eid: []
+paper: a4

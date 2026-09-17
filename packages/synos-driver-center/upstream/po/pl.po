@@ -1,0 +1,1393 @@
+# synos-driver-center translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-driver-center.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-driver-center\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-11 16:11+0800\n"
+"PO-Revision-Date: 2026-08-06 07:08+0000\n"
+"Last-Translator: AnduinOS Team <anduin@aiursoft.com>\n"
+"Language-Team: pl\n"
+"Language: pl_PL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: src/synos_driver_center/app.py:123 src/synos_driver_center/app.py:221
+#: src/synos_driver_center/app.py:295
+#: src/synos_driver_center/app.py:2278
+#: data/com.synos.DriverCenter.desktop:2
+msgid "SynOS Driver Center"
+msgstr "SynOS Centrum sterowników"
+
+#: src/synos_driver_center/app.py:242 src/synos_driver_center/app.py:340
+#: src/synos_driver_center/app.py:342
+msgid "Home"
+msgstr "Strona główna"
+
+#: src/synos_driver_center/app.py:245 src/synos_driver_center/app.py:802
+#: src/synos_driver_center/app.py:1073
+#: src/synos_driver_center/app.py:1641
+#: src/synos_driver_center/app.py:1803
+msgid "Scan again"
+msgstr "Zeskanuj ponownie"
+
+#: src/synos_driver_center/app.py:250
+msgid "About Driver Center"
+msgstr "Informacje o Centrum sterowników"
+
+#: src/synos_driver_center/app.py:252
+msgid "Main Menu"
+msgstr "Menu główne"
+
+#: src/synos_driver_center/app.py:297
+msgid "Scanning for drivers"
+msgstr "Skanowanie w poszukiwaniu sterowników"
+
+#: src/synos_driver_center/app.py:298
+msgid "Checking hardware and Secure Boot status…"
+msgstr "Sprawdzam sprzęt i stan Secure Boot…"
+
+#: src/synos_driver_center/app.py:340 src/synos_driver_center/app.py:878
+#: src/synos_driver_center/app.py:1218
+#: src/synos_driver_center/app.py:1951
+msgid "System status"
+msgstr "Stan systemu"
+
+#: src/synos_driver_center/app.py:359 src/synos_driver_center/app.py:363
+msgid "Audio"
+msgstr "Dźwięk"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:942
+msgid "Audio support ready"
+msgstr "Obsługa dźwięku gotowa"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:375
+#: src/synos_driver_center/app.py:402 src/synos_driver_center/app.py:496
+#: src/synos_driver_center/app.py:845 src/synos_driver_center/app.py:848
+#: src/synos_driver_center/app.py:912 src/synos_driver_center/app.py:942
+#: src/synos_driver_center/app.py:972 src/synos_driver_center/app.py:997
+#: src/synos_driver_center/app.py:1013
+msgid "Support needs attention"
+msgstr "Wsparcie wymaga uwagi"
+
+#: src/synos_driver_center/app.py:370
+msgid "Printing service stopped"
+msgstr "Usługa drukowania została zatrzymana"
+
+#: src/synos_driver_center/app.py:372 src/synos_driver_center/app.py:956
+#: src/synos_driver_center/app.py:2118
+msgid "Printing support disabled."
+msgstr "Obsługa drukowania wyłączona."
+
+#: src/synos_driver_center/app.py:377
+msgid "Some queues are paused"
+msgstr "Niektóre kolejki są wstrzymane"
+
+#: src/synos_driver_center/app.py:379 src/synos_driver_center/app.py:967
+msgid "No printers configured"
+msgstr "Nie skonfigurowano żadnych drukarek"
+
+#: src/synos_driver_center/app.py:382 src/synos_driver_center/app.py:962
+#, python-format
+msgid "%d printer configured"
+msgid_plural "%d printers configured"
+msgstr[0] "%d skonfigurowana drukarka"
+msgstr[1] "%d skonfigurowane drukarki"
+msgstr[2] "%d skonfigurowanych drukarek"
+
+#: src/synos_driver_center/app.py:387 src/synos_driver_center/app.py:390
+msgid "Printers"
+msgstr "Drukarki"
+
+#: src/synos_driver_center/app.py:395 src/synos_driver_center/app.py:407
+msgid "Xbox Controller"
+msgstr "Kontroler Xbox"
+
+#: src/synos_driver_center/app.py:397 src/synos_driver_center/app.py:995
+msgid "xpadneo installed"
+msgstr "Zainstalowano xpadneo"
+
+#: src/synos_driver_center/app.py:400 src/synos_driver_center/app.py:996
+msgid "Optional Bluetooth driver"
+msgstr "Opcjonalny sterownik Bluetooth"
+
+#: src/synos_driver_center/app.py:413 src/synos_driver_center/app.py:417
+#: src/synos_driver_center/app.py:807 src/synos_driver_center/app.py:811
+#: src/synos_driver_center/app.py:1011
+#: src/synos_driver_center/app.py:1105
+#: src/synos_driver_center/app.py:1570
+#: src/synos_driver_center/app.py:1761
+#: src/synos_driver_center/app.py:1766
+#: src/synos_driver_center/app.py:1771
+#: src/synos_driver_center/app.py:1782
+msgid "Secure Boot"
+msgstr "Secure Boot"
+
+#: src/synos_driver_center/app.py:414
+#: src/synos_driver_center/app.py:1013
+msgid "Trust established"
+msgstr "Utworzono zaufanie"
+
+#: src/synos_driver_center/app.py:414 src/synos_driver_center/app.py:798
+#: src/synos_driver_center/app.py:805 src/synos_driver_center/app.py:892
+#: src/synos_driver_center/app.py:1012
+msgid "Action required"
+msgstr "Wymagane działanie"
+
+#: src/synos_driver_center/app.py:424 src/synos_driver_center/app.py:428
+#: src/synos_driver_center/app.py:1025
+#: src/synos_driver_center/app.py:1172
+msgid "Device Firmware"
+msgstr "Oprogramowanie sprzętowe urządzenia"
+
+#: src/synos_driver_center/app.py:494
+#: src/synos_driver_center/app.py:1203
+msgid "Checking for updates…"
+msgstr "Sprawdzam dostępność aktualizacji…"
+
+#: src/synos_driver_center/app.py:498 src/synos_driver_center/app.py:520
+#: src/synos_driver_center/app.py:644
+msgid "Shutdown Required"
+msgstr "Wymagane wyłączenie"
+
+#: src/synos_driver_center/app.py:500 src/synos_driver_center/app.py:522
+#: src/synos_driver_center/app.py:840 src/synos_driver_center/app.py:907
+#: src/synos_driver_center/app.py:1052
+#: src/synos_driver_center/app.py:1471
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:429
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:443
+msgid "Reboot Required"
+msgstr "Wymagany restart"
+
+#: src/synos_driver_center/app.py:504 src/synos_driver_center/app.py:526
+#: src/synos_driver_center/app.py:627
+#, python-format
+msgid "%d firmware update available"
+msgid_plural "%d firmware updates available"
+msgstr[0] "%d dostępna aktualizacja oprogramowania sprzętowego"
+msgstr[1] "%d dostępne aktualizacje oprogramowania sprzętowego"
+msgstr[2] "%d dostępnych aktualizacji oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:509
+msgid "No supported devices"
+msgstr "Brak obsługiwanych urządzeń"
+
+#: src/synos_driver_center/app.py:510
+msgid "Firmware is up to date"
+msgstr "Oprogramowanie sprzętowe jest aktualne"
+
+#: src/synos_driver_center/app.py:516
+msgid "Checking…"
+msgstr "Sprawdzam…"
+
+#: src/synos_driver_center/app.py:516
+msgid "Contacting the firmware service"
+msgstr "Kontakt z serwisem oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:518 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:971 src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1440
+msgid "Needs attention"
+msgstr "Wymaga uwagi"
+
+#: src/synos_driver_center/app.py:520 src/synos_driver_center/app.py:601
+#: src/synos_driver_center/app.py:1453
+msgid "Shutdown required after installation"
+msgstr "Po instalacji wymagane jest wyłączenie"
+
+#: src/synos_driver_center/app.py:522
+msgid "Restart to finish the firmware update"
+msgstr ""
+"Uruchom ponownie, aby zakończyć aktualizację oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:530 src/synos_driver_center/app.py:828
+#: src/synos_driver_center/app.py:902
+#: src/synos_driver_center/app.py:1049
+#: src/synos_driver_center/app.py:1269
+#: src/synos_driver_center/app.py:1404
+msgid "Update available"
+msgstr "Dostępna aktualizacja"
+
+#: src/synos_driver_center/app.py:532 src/synos_driver_center/app.py:893
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1757
+#: src/synos_driver_center/app.py:1801
+#: src/synos_driver_center/app.py:1910
+msgid "Not detected"
+msgstr "Nie wykryto"
+
+#: src/synos_driver_center/app.py:532
+#: src/synos_driver_center/app.py:1341
+msgid "No supported firmware devices"
+msgstr "Brak obsługiwanych urządzeń z oprogramowaniem sprzętowym"
+
+#: src/synos_driver_center/app.py:535
+#, python-format
+msgid "%d device is up to date"
+msgid_plural "%d devices are up to date"
+msgstr[0] "%d urządzenie jest aktualne"
+msgstr[1] "%d urządzenia są aktualne"
+msgstr[2] "%d urządzeń jest aktualnych"
+
+#: src/synos_driver_center/app.py:539 src/synos_driver_center/app.py:853
+#: src/synos_driver_center/app.py:917 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:959 src/synos_driver_center/app.py:992
+#: src/synos_driver_center/app.py:1055
+#: src/synos_driver_center/app.py:1269
+msgid "Ready"
+msgstr "Gotowe"
+
+#: src/synos_driver_center/app.py:568
+msgid "Scheduling firmware update…"
+msgstr "Planuję aktualizację oprogramowania sprzętowego…"
+
+#: src/synos_driver_center/app.py:569
+msgid "Downloading firmware…"
+msgstr "Pobieram oprogramowanie sprzętowe…"
+
+#: src/synos_driver_center/app.py:570
+msgid "Installing firmware…"
+msgstr "Instaluję oprogramowanie sprzętowe…"
+
+#: src/synos_driver_center/app.py:571
+msgid "Verifying firmware…"
+msgstr "Weryfikuję oprogramowanie sprzętowe…"
+
+#: src/synos_driver_center/app.py:572
+msgid "Waiting for authentication…"
+msgstr "Oczekiwanie na uwierzytelnienie…"
+
+#: src/synos_driver_center/app.py:573
+msgid "Waiting for user action…"
+msgstr "Oczekiwanie na działanie użytkownika…"
+
+#: src/synos_driver_center/app.py:577
+msgid "Updating firmware…"
+msgstr "Aktualizuję oprogramowanie sprzętowe…"
+
+#: src/synos_driver_center/app.py:598
+#: src/synos_driver_center/app.py:2123
+#: src/synos_driver_center/app.py:2252
+msgid "unknown error"
+msgstr "nieznany błąd"
+
+#: src/synos_driver_center/app.py:603
+#: src/synos_driver_center/app.py:1455
+msgid "Restart required after installation"
+msgstr "Po instalacji wymagane jest ponowne uruchomienie"
+
+#: src/synos_driver_center/app.py:607 src/synos_driver_center/app.py:680
+#: src/synos_driver_center/app.py:686
+msgid "Firmware operation failed"
+msgstr "Operacja oprogramowania układowego nie powiodła się"
+
+#: src/synos_driver_center/app.py:610
+#: src/synos_driver_center/app.py:2260
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:478
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:526
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:544
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:552
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:560
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:576
+msgid "OK"
+msgstr "OK"
+
+#: src/synos_driver_center/app.py:621
+msgid "Firmware metadata refreshed."
+msgstr "Odświeżono metadane oprogramowania sprzętowego."
+
+#: src/synos_driver_center/app.py:632
+msgid "No firmware updates are available."
+msgstr "Brak dostępnych aktualizacji oprogramowania sprzętowego."
+
+#: src/synos_driver_center/app.py:639
+msgid "Firmware update completed."
+msgstr "Aktualizacja oprogramowania sprzętowego zakończona."
+
+#: src/synos_driver_center/app.py:644
+msgid "Restart Required"
+msgstr "Wymagane ponowne uruchomienie"
+
+#: src/synos_driver_center/app.py:647
+msgid ""
+"The firmware update has been prepared. Save your work and shut down the "
+"computer to finish installing it."
+msgstr ""
+"Aktualizacja oprogramowania układowego została przygotowana. Zapisz swoją "
+"pracę i wyłącz komputer, aby dokończyć instalację."
+
+#: src/synos_driver_center/app.py:652
+msgid ""
+"The firmware update has been prepared. Save your work and restart the "
+"computer to finish installing it."
+msgstr ""
+"Aktualizacja oprogramowania sprzętowego została przygotowana. Zapisz swoją "
+"pracę i uruchom ponownie komputer, aby zakończyć instalację."
+
+#: src/synos_driver_center/app.py:657
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:494
+msgid "Later"
+msgstr "Później"
+
+#: src/synos_driver_center/app.py:660
+msgid "Shut Down Now"
+msgstr "Zamknij teraz"
+
+#: src/synos_driver_center/app.py:660
+msgid "Restart Now"
+msgstr "Uruchom ponownie teraz"
+
+#: src/synos_driver_center/app.py:766
+#: src/synos_driver_center/app.py:1361
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1616
+#: src/synos_driver_center/app.py:1741
+msgid "Installed"
+msgstr "Zainstalowano"
+
+#: src/synos_driver_center/app.py:768
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Available"
+msgstr "Dostępny"
+
+#: src/synos_driver_center/app.py:800 src/synos_driver_center/app.py:858
+#: src/synos_driver_center/app.py:1063
+#: src/synos_driver_center/app.py:1736
+msgid "Driver status"
+msgstr "Stan sterownika"
+
+#: src/synos_driver_center/app.py:801
+#: src/synos_driver_center/app.py:1652
+#: src/synos_driver_center/app.py:2252
+msgid "Driver operation failed: "
+msgstr "Działanie sterownika nie powiodło się: "
+
+#: src/synos_driver_center/app.py:809
+#: src/synos_driver_center/app.py:1568
+msgid ""
+"Secure Boot status or trust must be resolved before installing a third-party"
+" driver."
+msgstr ""
+"Stan Secure Boot lub zaufanie muszą zostać rozwiązane przed zainstalowaniem "
+"sterownika innej firmy."
+
+#: src/synos_driver_center/app.py:814 src/synos_driver_center/app.py:897
+#: src/synos_driver_center/app.py:1046
+#: src/synos_driver_center/app.py:1618
+msgid "Recommended"
+msgstr "Zalecane"
+
+#: src/synos_driver_center/app.py:818
+#: src/synos_driver_center/app.py:1557
+msgid ""
+"Choose the driver used by this device. SynOS marks the hardware-tested "
+"recommendation."
+msgstr ""
+"Wybierz sterownik używany przez to urządzenie. SynOS oznacza zalecenie "
+"przetestowania sprzętu."
+
+#: src/synos_driver_center/app.py:820 src/synos_driver_center/app.py:832
+#: src/synos_driver_center/app.py:1097
+#: src/synos_driver_center/app.py:1533
+#: src/synos_driver_center/app.py:1578
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1667
+#: src/synos_driver_center/app.py:2007
+msgid "Apply Changes"
+msgstr "Zastosuj zmiany"
+
+#: src/synos_driver_center/app.py:843
+#: src/synos_driver_center/app.py:2250
+msgid "Driver changes completed. Restart may be required."
+msgstr ""
+"Zmiany sterownika zostały zakończone. Może być wymagane ponowne "
+"uruchomienie."
+
+#: src/synos_driver_center/app.py:849 src/synos_driver_center/app.py:928
+#: src/synos_driver_center/app.py:1036
+#: src/synos_driver_center/app.py:1563
+msgid "Available drivers"
+msgstr "Dostępne sterowniki"
+
+#: src/synos_driver_center/app.py:860 src/synos_driver_center/app.py:921
+msgid "No additional drivers are needed."
+msgstr "Nie są potrzebne żadne dodatkowe sterowniki."
+
+#: src/synos_driver_center/app.py:940
+#: src/synos_driver_center/app.py:1846
+msgid "Audio Support"
+msgstr "Obsługa dźwięku"
+
+#: src/synos_driver_center/app.py:955
+#: src/synos_driver_center/app.py:1969
+msgid "Disabled"
+msgstr "Wyłączone"
+
+#: src/synos_driver_center/app.py:977
+#: src/synos_driver_center/app.py:1918
+msgid "Printing Support"
+msgstr "Wsparcie drukowania"
+
+#: src/synos_driver_center/app.py:991
+#: src/synos_driver_center/app.py:1732
+msgid "Xbox Controller Support"
+msgstr "Wsparcie dla kontrolera Xbox"
+
+#: src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1741
+#: src/synos_driver_center/app.py:1825
+#: src/synos_driver_center/app.py:1869
+#: src/synos_driver_center/app.py:1877
+#: src/synos_driver_center/app.py:2059
+msgid "Not installed"
+msgstr "Nie zainstalowano"
+
+#: src/synos_driver_center/app.py:1012
+#: src/synos_driver_center/app.py:1749
+msgid "Trusted"
+msgstr "Zaufane"
+
+#: src/synos_driver_center/app.py:1065
+msgid "Check for Driver Updates"
+msgstr "Sprawdź aktualizacje sterowników"
+
+#: src/synos_driver_center/app.py:1067
+msgid "Refresh software sources and compare the recommended driver version."
+msgstr "Odśwież źródła oprogramowania i porównaj zalecaną wersję sterownika."
+
+#: src/synos_driver_center/app.py:1079
+msgid "Driver information updated."
+msgstr "Zaktualizowano informacje o sterownikach."
+
+#: src/synos_driver_center/app.py:1088
+#: src/synos_driver_center/app.py:1535
+msgid ""
+"SynOS will update software sources and install the drivers recommended "
+"for this hardware."
+msgstr ""
+"SynOS zaktualizuje źródła oprogramowania i zainstaluje sterowniki "
+"zalecane dla tego sprzętu."
+
+#: src/synos_driver_center/app.py:1174
+msgid ""
+"Keep system firmware and supported hardware up to date through the Linux "
+"Vendor Firmware Service."
+msgstr ""
+"Aktualizuj oprogramowanie systemowe i obsługiwany sprzęt za pomocą Linux "
+"Vendor Firmware Service."
+
+#: src/synos_driver_center/app.py:1186
+msgid "Firmware operation failed: "
+msgstr "Operacja oprogramowania układowego nie powiodła się: "
+
+#: src/synos_driver_center/app.py:1187
+#: src/synos_driver_center/app.py:1296
+msgid "Check Again"
+msgstr "Sprawdź ponownie"
+
+#: src/synos_driver_center/app.py:1193
+msgid "Firmware operation"
+msgstr "Działanie oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:1220
+msgid "Firmware service"
+msgstr "Serwis oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:1224
+msgid "Not available"
+msgstr "Niedostępne"
+
+#: src/synos_driver_center/app.py:1238
+msgid "Not refreshed in this session"
+msgstr "Nie odświeżono w tej sesji"
+
+#: src/synos_driver_center/app.py:1241
+msgid "Firmware metadata"
+msgstr "Metadane oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:1250
+msgid "Supported devices"
+msgstr "Obsługiwane urządzenia"
+
+#: src/synos_driver_center/app.py:1252
+#, python-format
+msgid "%d device detected"
+msgid_plural "%d devices detected"
+msgstr[0] "%d wykryte urządzenie"
+msgstr[1] "%d wykryte urządzenia"
+msgstr[2] "%d wykrytych urządzeń"
+
+#: src/synos_driver_center/app.py:1262
+msgid "Available firmware updates"
+msgstr "Dostępne aktualizacje oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:1264
+#, python-format
+msgid "%d update available"
+msgid_plural "%d updates available"
+msgstr[0] "%d dostępna aktualizacja"
+msgstr[1] "%d dostępne aktualizacje"
+msgstr[2] "%d dostępnych aktualizacji"
+
+#: src/synos_driver_center/app.py:1276
+msgid "Firmware actions"
+msgstr "Działania oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:1278
+msgid "Refresh Firmware Metadata"
+msgstr "Odśwież metadane oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:1279
+msgid "Download the latest metadata from enabled firmware sources."
+msgstr ""
+"Pobierz najnowsze metadane z włączonych źródeł oprogramowania sprzętowego."
+
+#: src/synos_driver_center/app.py:1282
+msgid "Refresh"
+msgstr "Odśwież"
+
+#: src/synos_driver_center/app.py:1292
+msgid "Check for Firmware Updates"
+msgstr "Sprawdź dostępność aktualizacji oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:1293
+msgid "Compare connected devices with the available metadata."
+msgstr "Porównaj podłączone urządzenia z dostępnymi metadanymi."
+
+#: src/synos_driver_center/app.py:1307
+msgid "Update All Firmware"
+msgstr "Zaktualizuj całe oprogramowanie sprzętowe"
+
+#: src/synos_driver_center/app.py:1309
+#, python-format
+msgid "Install %d available update."
+msgid_plural "Install all %d available updates."
+msgstr[0] "Zainstaluj %d dostępną aktualizację."
+msgstr[1] "Zainstaluj wszystkie %d dostępne aktualizacje."
+msgstr[2] "Zainstaluj wszystkie %d dostępnych aktualizacji."
+
+#: src/synos_driver_center/app.py:1315
+msgid "Update All"
+msgstr "Aktualizuj wszystko"
+
+#: src/synos_driver_center/app.py:1330
+msgid "Firmware Devices"
+msgstr "Urządzenia z oprogramowaniem sprzętowym"
+
+#: src/synos_driver_center/app.py:1332
+msgid "Expand a device to inspect installed and available firmware versions."
+msgstr ""
+"Rozwiń urządzenie, aby sprawdzić zainstalowane i dostępne wersje "
+"oprogramowania sprzętowego."
+
+#: src/synos_driver_center/app.py:1342
+msgid "The firmware service did not report any manageable devices."
+msgstr ""
+"Usługa oprogramowania sprzętowego nie zgłosiła żadnych urządzeń, którymi "
+"można zarządzać."
+
+#: src/synos_driver_center/app.py:1348
+msgid "Firmware Update History"
+msgstr "Historia aktualizacji oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:1349
+msgid "Results reported by the fwupd service."
+msgstr "Wyniki zgłoszone przez serwis fwupd."
+
+#: src/synos_driver_center/app.py:1357
+msgid "Unknown time"
+msgstr "Nieznany czas"
+
+#: src/synos_driver_center/app.py:1373
+msgid "No firmware update history"
+msgstr "Brak historii aktualizacji oprogramowania"
+
+#: src/synos_driver_center/app.py:1374
+msgid "Completed firmware operations will appear here."
+msgstr "Tutaj pojawią się zakończone operacje oprogramowania sprzętowego."
+
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1399
+#: src/synos_driver_center/app.py:1415
+#: src/synos_driver_center/app.py:1426
+#: src/synos_driver_center/app.py:1473
+#: src/synos_driver_center/app.py:1489
+#: src/synos_driver_center/app.py:1490
+msgid "Unknown"
+msgstr "Nieznany"
+
+#: src/synos_driver_center/app.py:1398
+msgid "Current version"
+msgstr "Aktualna wersja"
+
+#: src/synos_driver_center/app.py:1405
+#: src/synos_driver_center/app.py:1518
+msgid "Update"
+msgstr "Aktualizacja"
+
+#: src/synos_driver_center/app.py:1414
+msgid "Available version"
+msgstr "Dostępna wersja"
+
+#: src/synos_driver_center/app.py:1419
+msgid "Low"
+msgstr "Niski"
+
+#: src/synos_driver_center/app.py:1420
+msgid "Medium"
+msgstr "Średni"
+
+#: src/synos_driver_center/app.py:1421
+msgid "High"
+msgstr "Wysoka"
+
+#: src/synos_driver_center/app.py:1422
+msgid "Critical"
+msgstr "Krytyczny"
+
+#: src/synos_driver_center/app.py:1425
+msgid "Update urgency"
+msgstr "Pilna aktualizacja"
+
+#: src/synos_driver_center/app.py:1436
+msgid "Release notes"
+msgstr "Informacje o wydaniu"
+
+#: src/synos_driver_center/app.py:1443
+msgid "Firmware status"
+msgstr "Stan oprogramowania"
+
+#: src/synos_driver_center/app.py:1447
+msgid "Up to date"
+msgstr "Aktualne"
+
+#: src/synos_driver_center/app.py:1451
+msgid "Connect the computer to AC power"
+msgstr "Podłącz komputer do źródła prądu przemiennego"
+
+#: src/synos_driver_center/app.py:1459
+msgid "Installation requirements"
+msgstr "Wymagania instalacyjne"
+
+#: src/synos_driver_center/app.py:1468
+msgid "Pending"
+msgstr "Oczekujące"
+
+#: src/synos_driver_center/app.py:1469
+msgid "Success"
+msgstr "Sukces"
+
+#: src/synos_driver_center/app.py:1470
+#: src/synos_driver_center/app.py:1472
+msgid "Failed"
+msgstr "Nie udało się"
+
+#: src/synos_driver_center/app.py:1486
+#, python-format
+msgid "Install firmware for %(device)s from %(current)s to %(available)s?"
+msgstr ""
+"Zainstalować oprogramowanie sprzętowe dla %(device)s z %(current)s na "
+"%(available)s?"
+
+#: src/synos_driver_center/app.py:1494
+#, python-format
+msgid "Install %d available firmware update?"
+msgid_plural "Install all %d available firmware updates?"
+msgstr[0] "Zainstalować %d dostępną aktualizację oprogramowania sprzętowego?"
+msgstr[1] ""
+"Zainstalować wszystkie %d dostępne aktualizacje oprogramowania sprzętowego?"
+msgstr[2] ""
+"Zainstalować wszystkie %d dostępnych aktualizacji oprogramowania "
+"sprzętowego?"
+
+#: src/synos_driver_center/app.py:1500
+msgid "Keep the computer connected to AC power."
+msgstr "Trzymaj komputer podłączony do źródła prądu przemiennego."
+
+#: src/synos_driver_center/app.py:1504
+msgid ""
+"This update may invalidate full-disk encryption secrets. Make sure you have "
+"the volume recovery key before continuing."
+msgstr ""
+"Ta aktualizacja może unieważnić sekrety pełnego szyfrowania dysku. Przed "
+"kontynuowaniem upewnij się, że masz klucz odzyskiwania woluminu."
+
+#: src/synos_driver_center/app.py:1509
+msgid "A restart may be required to finish installation."
+msgstr "Aby zakończyć instalację, może być konieczne ponowne uruchomienie."
+
+#: src/synos_driver_center/app.py:1510
+msgid "Do not disconnect devices or turn off the computer."
+msgstr "Nie odłączaj urządzeń ani nie wyłączaj komputera."
+
+#: src/synos_driver_center/app.py:1514
+msgid "Install Firmware Update"
+msgstr "Zainstaluj aktualizację oprogramowania sprzętowego"
+
+#: src/synos_driver_center/app.py:1517
+#: src/synos_driver_center/app.py:1539
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:432
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:446
+msgid "Cancel"
+msgstr "Anuluj"
+
+#: src/synos_driver_center/app.py:1540
+#: src/synos_driver_center/app.py:2210
+msgid "Apply"
+msgstr "Zastosuj"
+
+#: src/synos_driver_center/app.py:1587
+msgid "open source"
+msgstr "otwartoźródłowy"
+
+#: src/synos_driver_center/app.py:1587
+msgid "proprietary"
+msgstr "zastrzeżony"
+
+#: src/synos_driver_center/app.py:1589
+msgid "built in"
+msgstr "wbudowany"
+
+#: src/synos_driver_center/app.py:1613
+msgid "In use"
+msgstr "W użyciu"
+
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1651
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1831
+msgid "Kernel module"
+msgstr "Moduł jądra"
+
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1777
+#: src/synos_driver_center/app.py:1796
+#: src/synos_driver_center/app.py:1860
+#: src/synos_driver_center/app.py:1890
+#: src/synos_driver_center/app.py:1898
+msgid "Repair & Reinstall"
+msgstr "Napraw i zainstaluj ponownie"
+
+#: src/synos_driver_center/app.py:1675
+msgid "Advanced driver versions"
+msgstr "Zaawansowane wersje sterowników"
+
+#: src/synos_driver_center/app.py:1676
+msgid "Older, newer, and server-oriented packages"
+msgstr "Starsze, nowsze i zorientowane na serwer pakiety"
+
+#: src/synos_driver_center/app.py:1697
+msgid "Select another driver to apply changes."
+msgstr "Wybierz inny sterownik, aby zastosować zmiany."
+
+#: src/synos_driver_center/app.py:1733
+msgid ""
+"xpadneo improves Bluetooth mapping, rumble, battery reporting and "
+"compatibility for modern Xbox controllers."
+msgstr ""
+"xpadneo poprawia mapowanie Bluetooth, dudnienie, raportowanie baterii i "
+"kompatybilność z nowoczesnymi kontrolerami Xbox."
+
+#: src/synos_driver_center/app.py:1740
+msgid "Driver package"
+msgstr "Pakiet sterowników"
+
+#: src/synos_driver_center/app.py:1743
+msgid "Install Driver"
+msgstr "Zainstaluj sterownik"
+
+#: src/synos_driver_center/app.py:1760
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:242
+msgid "Secure Boot state could not be determined"
+msgstr "Nie można określić stanu Secure Boot"
+
+#: src/synos_driver_center/app.py:1765
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:285
+msgid "Pending enrollment in blue screen (MOKManager)"
+msgstr "Oczekiwanie na rejestrację w niebieskim ekranie (MOKManager)"
+
+#: src/synos_driver_center/app.py:1770
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:290
+msgid "Certificate is not trusted by motherboard"
+msgstr "Certyfikat nie jest zaufany przez płytę główną"
+
+#: src/synos_driver_center/app.py:1775
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:318
+msgid "Some DKMS modules need to be re-signed"
+msgstr "Niektóre moduły DKMS wymagają ponownego podpisania"
+
+#: src/synos_driver_center/app.py:1786
+msgid "Module signature"
+msgstr "Podpis modułu"
+
+#: src/synos_driver_center/app.py:1794
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Missing"
+msgstr "Brak"
+
+#: src/synos_driver_center/app.py:1806
+msgid "Loaded"
+msgstr "Wczytany"
+
+#: src/synos_driver_center/app.py:1811
+msgid "Standing by"
+msgstr "Czekamy"
+
+#: src/synos_driver_center/app.py:1838
+msgid "Bluetooth Settings"
+msgstr "Ustawienia Bluetooth"
+
+#: src/synos_driver_center/app.py:1847
+msgid ""
+"SynOS provides Intel SOF firmware and ALSA UCM profiles for reliable "
+"audio initialization and routing."
+msgstr ""
+"SynOS zapewnia oprogramowanie sprzętowe Intel SOF i profile ALSA UCM w "
+"celu niezawodnej inicjalizacji i routingu dźwięku."
+
+#: src/synos_driver_center/app.py:1850
+msgid "Support packages"
+msgstr "Pakiety wsparcia"
+
+#: src/synos_driver_center/app.py:1858
+msgid "Install Audio Support"
+msgstr "Zainstaluj obsługę dźwięku"
+
+#: src/synos_driver_center/app.py:1868
+msgid "Intel SOF firmware"
+msgstr "Oprogramowanie sprzętowe Intel SOF"
+
+#: src/synos_driver_center/app.py:1876
+msgid "ALSA UCM profiles"
+msgstr "Profile ALSA UCM"
+
+#: src/synos_driver_center/app.py:1883
+msgid "Runtime status"
+msgstr "Stan środowiska wykonawczego"
+
+#: src/synos_driver_center/app.py:1887
+msgid "SOF firmware files"
+msgstr "Pliki oprogramowania sprzętowego SOF"
+
+#: src/synos_driver_center/app.py:1895
+msgid "UCM configuration files"
+msgstr "Pliki konfiguracyjne UCM"
+
+#: src/synos_driver_center/app.py:1903
+msgid "SOF kernel modules"
+msgstr "Moduły jądra SOF"
+
+#: src/synos_driver_center/app.py:1904
+msgid "Not currently loaded"
+msgstr "Aktualnie nie załadowano"
+
+#: src/synos_driver_center/app.py:1909
+msgid "Active audio drivers"
+msgstr "Aktywne sterowniki audio"
+
+#: src/synos_driver_center/app.py:1919
+msgid ""
+"Inspect the local print service, configured queues, and the packages that "
+"provide modern and legacy printer support."
+msgstr ""
+"Sprawdź lokalną usługę drukowania, skonfigurowane kolejki i pakiety "
+"zapewniające obsługę nowoczesnych i starszych drukarek."
+
+#: src/synos_driver_center/app.py:1924
+#: src/synos_driver_center/app.py:1958
+msgid "Enable Printing Support"
+msgstr "Włącz obsługę drukowania"
+
+#: src/synos_driver_center/app.py:1925
+msgid "Allow local, network, and USB printing services to run."
+msgstr "Zezwalaj na działanie usług drukowania lokalnego, sieciowego i USB."
+
+#: src/synos_driver_center/app.py:1955
+msgid "CUPS service"
+msgstr "Usługa CUPS"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Running"
+msgstr "Działa"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Stopped"
+msgstr "Zatrzymano"
+
+#: src/synos_driver_center/app.py:1968
+msgid "Start at boot"
+msgstr "Rozpocznij od rozruchu"
+
+#: src/synos_driver_center/app.py:1969
+msgid "Enabled"
+msgstr "Włączony"
+
+#: src/synos_driver_center/app.py:1974
+#, python-format
+msgid "%d configured printer"
+msgid_plural "%d configured printers"
+msgstr[0] "%d skonfigurowana drukarka"
+msgstr[1] "%d skonfigurowane drukarki"
+msgstr[2] "%d skonfigurowanych drukarek"
+
+#: src/synos_driver_center/app.py:1980
+msgid "Configured printers"
+msgstr "Skonfigurowane drukarki"
+
+#: src/synos_driver_center/app.py:1986
+msgid "Default printer"
+msgstr "Domyślna drukarka"
+
+#: src/synos_driver_center/app.py:1987
+msgid "Not set"
+msgstr "Nie ustawiono"
+
+#: src/synos_driver_center/app.py:1991
+msgid "No configured queues"
+msgstr "Brak skonfigurowanych kolejek"
+
+#: src/synos_driver_center/app.py:1996
+#, python-format
+msgid "%d queue paused"
+msgid_plural "%d queues paused"
+msgstr[0] "%d wstrzymana kolejka"
+msgstr[1] "%d wstrzymane kolejki"
+msgstr[2] "%d wstrzymanych kolejek"
+
+#: src/synos_driver_center/app.py:2000
+msgid "All queues enabled"
+msgstr "Wszystkie kolejki włączone"
+
+#: src/synos_driver_center/app.py:2004
+msgid "Print queues"
+msgstr "Kolejki wydruku"
+
+#: src/synos_driver_center/app.py:2015
+msgid "Core printing"
+msgstr "Drukowanie rdzenia"
+
+#: src/synos_driver_center/app.py:2016
+msgid "Required for the local print service and command-line clients."
+msgstr ""
+"Wymagane w przypadku lokalnej usługi drukowania i klientów wiersza poleceń."
+
+#: src/synos_driver_center/app.py:2023
+msgid "Driverless printing"
+msgstr "Drukowanie bez sterownika"
+
+#: src/synos_driver_center/app.py:2024
+msgid "Modern IPP drivers, document filters, and capability tools."
+msgstr ""
+"Nowoczesne sterowniki IPP, filtry dokumentów i narzędzia zwiększające "
+"możliwości."
+
+#: src/synos_driver_center/app.py:2031
+msgid "Network discovery"
+msgstr "Wykrywanie sieci"
+
+#: src/synos_driver_center/app.py:2032
+msgid "Automatic discovery of printers advertised on the local network."
+msgstr "Automatyczne wykrywanie drukarek reklamowanych w sieci lokalnej."
+
+#: src/synos_driver_center/app.py:2039
+msgid "Optional compatibility"
+msgstr "Opcjonalna kompatybilność"
+
+#: src/synos_driver_center/app.py:2040
+msgid ""
+"USB IPP, administrative authorization, legacy drivers, and network scanning."
+msgstr ""
+"USB IPP, autoryzacja administracyjna, starsze sterowniki i skanowanie "
+"sieciowe."
+
+#: src/synos_driver_center/app.py:2063
+msgid "Install Missing Packages"
+msgstr "Zainstaluj brakujące pakiety"
+
+#: src/synos_driver_center/app.py:2116
+msgid "Printing support enabled."
+msgstr "Włączono obsługę drukowania."
+
+#: src/synos_driver_center/app.py:2122
+msgid "Printing operation failed: "
+msgstr "Operacja drukowania nie powiodła się: "
+
+#: src/synos_driver_center/app.py:2211
+msgid "Working…"
+msgstr "Pracuję…"
+
+#: src/synos_driver_center/app.py:2280
+msgid "SynOS Team"
+msgstr "Zespół SynOS"
+
+#: src/synos_driver_center/app.py:2283
+msgid "Install, inspect, and repair hardware drivers on SynOS."
+msgstr "Zainstaluj, sprawdź i napraw sterowniki sprzętu w SynOS."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:121
+msgid "Secure Boot Configuration"
+msgstr "Konfiguracja Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:129
+msgid ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+msgstr ""
+"Secure Boot to standard bezpieczeństwa płyty głównej, który zapewnia "
+"ładowanie tylko zaufanego oprogramowania podczas uruchamiania."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:132
+msgid "It protects your system from low-level malware and rootkits."
+msgstr ""
+"Ochroni Twój system przed niskopoziomowym złośliwym oprogramowaniem i "
+"rootkitami."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:141
+msgid "System Trust Status"
+msgstr "Status zaufania systemu"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:183
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:325
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:509
+msgid "Create & Enroll Certificate"
+msgstr "Utwórz i zarejestruj certyfikat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:189
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:338
+msgid "Repair Module Signatures"
+msgstr "Podpisy modułów naprawy"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:197
+msgid "Note: Use password <b>123456</b> after rebooting."
+msgstr "Uwaga: Użyj hasła <b>123456</b> po ponownym uruchomieniu."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:202
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:495
+msgid "Reboot & Configure Secure Boot"
+msgstr "Restart i konfiguracja Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:210
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:419
+msgid "  Check Again  "
+msgstr "  Sprawdź ponownie  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:236
+msgid "Motherboard hardware protection is active"
+msgstr "Ochrona sprzętowa płyty głównej jest aktywna"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:239
+msgid "Firmware does not support Secure Boot"
+msgstr "Oprogramowanie sprzętowe nie obsługuje Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:245
+msgid "Secure Boot is disabled"
+msgstr "Secure Boot jest wyłączony"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:251
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:253
+msgid "Not required without firmware enforcement"
+msgstr "Niewymagane bez wymuszania oprogramowania sprzętowego"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:257
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:261
+msgid "Not checked because Secure Boot state is unknown"
+msgstr "Nie zaznaczono, ponieważ stan Secure Boot jest nieznany"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:266
+msgid "Certificate generated locally"
+msgstr "Certyfikat wygenerowany lokalnie"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:268
+msgid "Missing local certificate"
+msgstr "Brak lokalnego certyfikatu"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:281
+msgid "Certificate is trusted by motherboard"
+msgstr "Certyfikat jest zaufany przez płytę główną"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:296
+msgid "Kernel signature enforcement is inactive"
+msgstr "Wymuszanie podpisu jądra jest nieaktywne"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:299
+msgid "Driver trust cannot be verified"
+msgstr "Nie można zweryfikować zaufania sterownika"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:303
+msgid ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+msgstr ""
+"Zaufanie Secure Boot jest gotowe. Obecnie nie są zainstalowane żadne moduły "
+"jądra innych firm."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:307
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:550
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:558
+msgid "Drivers are signed and ready to load"
+msgstr "Sterowniki są podpisane i gotowe do załadowania."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:311
+msgid "Drivers are trusted, but automatic DKMS signing needs repair"
+msgstr ""
+"Sterowniki są zaufane, ale automatyczne podpisywanie DKMS wymaga naprawy"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:315
+msgid "No signed third-party drivers detected"
+msgstr "Nie wykryto podpisanych sterowników firm trzecich."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:323
+msgid "Enroll Existing Certificate"
+msgstr "Zarejestruj istniejący certyfikat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:336
+msgid "Repair Automatic DKMS Signing"
+msgstr "Napraw automatyczne podpisywanie DKMS"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:356
+msgid ""
+"This firmware does not provide Secure Boot. No certificate is required."
+msgstr ""
+"To oprogramowanie sprzętowe nie udostępnia Secure Boot. Żaden certyfikat nie"
+" jest wymagany."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:363
+msgid ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+msgstr ""
+"Nie można odczytać statusu Secure Boot. Operacje zaufania sterowników są "
+"blokowane do momentu pomyślnego wykrycia."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:369
+msgid "No certificate is required while Secure Boot is disabled."
+msgstr "Żaden certyfikat nie jest wymagany, gdy Secure Boot jest wyłączony."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:375
+msgid "System Trust Established. Third-party drivers will load securely."
+msgstr ""
+"Zaufanie systemowe ustanowione. Sterowniki firm trzecich będą ładowane "
+"bezpiecznie."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:379
+msgid "The certificate is enrolled and current drivers are trusted."
+msgstr "Certyfikat został zarejestrowany, a aktualne sterowniki są zaufane."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:381
+msgid "Repair automatic DKMS signing before future driver updates."
+msgstr ""
+"Napraw automatyczne podpisywanie DKMS przed przyszłymi aktualizacjami "
+"sterowników."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:386
+msgid "The certificate is enrolled, but some modules are not signed with it."
+msgstr ""
+"Certyfikat jest zarejestrowany, ale niektóre moduły nie są nim podpisane."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:391
+msgid "A certificate is waiting for enrollment."
+msgstr "Certyfikat oczekuje na rejestrację."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:393
+msgid "Restart and enter password 123456 in MOKManager."
+msgstr "Uruchom ponownie i wprowadź hasło 123456 w MOKManager."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:398
+msgid "The local trust certificate is not yet enrolled."
+msgstr "Lokalny certyfikat zaufania nie został jeszcze zarejestrowany."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:400
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:407
+msgid "You must configure this to use third-party drivers like NVIDIA."
+msgstr ""
+"Musisz to skonfigurować, aby korzystać ze sterowników firm trzecich, takich "
+"jak NVIDIA."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:405
+msgid "The local trust certificate is missing."
+msgstr "Brak lokalnego certyfikatu zaufania."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:423
+msgid "  Checking...  "
+msgstr "  Sprawdzanie...  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:430
+msgid "Please trust the certificate upon reboot using password 123456."
+msgstr "Zaufaj certyfikatowi po ponownym uruchomieniu, używając hasła 123456."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:447
+msgid "Reboot"
+msgstr "Restart"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:483
+msgid "Success! When you reboot, a blue screen will appear."
+msgstr "Sukces! Po restarcie pojawi się niebieski ekran."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:487
+msgid "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+msgstr "Wybierz 'Enroll MOK' → 'Continue' → 'Yes' i wpisz hasło: 123456"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:491
+msgid "Certificate Created"
+msgstr "Certyfikat utworzony"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:523
+msgid "Secure Boot Trust Not Required"
+msgstr "Secure Boot Zaufanie nie jest wymagane"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:524
+msgid "Firmware signature enforcement is not active."
+msgstr "Wymuszanie podpisu oprogramowania sprzętowego nie jest aktywne."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:534
+msgid ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt."
+" You can repair them after enrollment."
+msgstr ""
+"Certyfikat jest gotowy, ale nie udało się odbudować jednego lub więcej "
+"modułów DKMS. Możesz je naprawić po rejestracji."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:542
+msgid "Configuration needs attention"
+msgstr "Konfiguracja wymaga uwagi"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:549
+msgid "System Trust Established"
+msgstr "Utworzono zaufanie systemu"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:557
+msgid "Driver Signature Trusted"
+msgstr "Podpis sterownika zaufany"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:573
+msgid "Configuration failed. Please try again."
+msgstr "Konfiguracja nie powiodła się. Spróbuj ponownie."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:574
+msgid "Please check the advanced output."
+msgstr "Proszę sprawdzić szczegółowe wyjście (output)."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:585
+msgid "Generating & Signing..."
+msgstr "Generowanie i podpisywanie..."
+
+#: src/synos_driver_center/app.py:1940
+msgid "Add Printer"
+msgstr "Dodaj drukarkę"
+
+#: src/synos_driver_center/app.py:1365
+#: src/synos_driver_center/app.py:1390
+#: src/synos_driver_center/app.py:1488
+msgid "Firmware device"
+msgstr "Urządzenie firmware"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:156
+msgid "Local MOK Certificate"
+msgstr "Lokalny certyfikat MOK"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:155
+msgid "Secure Boot Enabled"
+msgstr "Secure Boot włączony"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:158
+msgid "Third-party Drivers"
+msgstr "Sterowniki firm trzecich"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:157
+msgid "UEFI Firmware Trust"
+msgstr "Zaufanie do oprogramowania układowego UEFI"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:10
+msgid "Authentication is required to change hardware drivers"
+msgstr "Wymagane jest uwierzytelnienie, aby zmienić sterowniki sprzętu"
+
+#: data/com.synos.DriverCenter.desktop:12
+msgid "driver;firmware;fwupd;nvidia;graphics;xbox;secure boot;hardware;"
+msgstr ""
+"sterownik;firmware;fwupd;nvidia;grafika;kontroler Xbox;Secure Boot;sprzęt;"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:8
+msgid "Install and repair hardware drivers"
+msgstr "Zainstaluj i napraw sterowniki sprzętu"
+
+#: data/com.synos.DriverCenter.desktop:4
+msgid "Manage hardware drivers and device firmware"
+msgstr "Zarządzaj sterownikami sprzętu i oprogramowaniem układowym urządzeń"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:8
+msgid "Configure Secure Boot trust and repair DKMS signatures"
+msgstr "Skonfiguruj zaufanie Secure Boot i napraw podpisy DKMS"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:10
+msgid "Authentication is required to configure Secure Boot trust"
+msgstr ""
+"Wymagane jest uwierzytelnienie, aby skonfigurować zaufanie Secure Boot"
+
+#~ msgid "Download the latest metadata from enabled firmware remotes."
+#~ msgstr ""
+#~ "Pobierz najnowsze metadane z włączonych pilotów oprogramowania sprzętowego."
+
+#~ msgid "Driver Center"
+#~ msgstr "Informacje o Centrum sterowników"
+
+#~ msgid "Secure Boot needs attention"
+#~ msgstr "Wsparcie wymaga uwagi"
+
+#~ msgid "Establish system trust before installing a third-party driver."
+#~ msgstr ""
+#~ "Stan Secure Boot lub zaufanie muszą zostać rozwiązane przed zainstalowaniem "
+#~ "sterownika innej firmy."
+
+#, python-format
+#~ msgid "%d recommended driver is available"
+#~ msgid_plural "%d recommended drivers are available"
+#~ msgstr[0] "Odkrywanie urządzenia FIDO jest niedostępne"
+#~ msgstr[1] "Odkrywanie urządzenia FIDO jest niedostępne"
+#~ msgstr[2] "Odkrywanie urządzenia FIDO jest niedostępne"
+
+#~ msgid "Install Recommended Drivers"
+#~ msgstr "Zainstaluj sterownik"
+
+#~ msgid "Driver changes are ready"
+#~ msgstr "Podpis sterownika zaufany"
+
+#~ msgid "A graphics driver needs attention"
+#~ msgstr "Konfiguracja wymaga uwagi"
+
+#~ msgid "Your drivers are ready"
+#~ msgstr "Podpis sterownika zaufany"
+
+#~ msgid "Recommended changes"
+#~ msgstr "Zalecane"
+
+#~ msgid "Install Recommended Drivers?"
+#~ msgstr "Zainstaluj sterownik"
+
+#~ msgid "Install"
+#~ msgstr "7Zainstalowano"
+
+#~ msgid "Hardware"
+#~ msgstr "Sprzęt"
+
+#~ msgid "Blocked by Secure Boot"
+#~ msgstr "Zablokowany przez Secure Boot"
+
+#~ msgid "Complete printing support"
+#~ msgstr "Pełna obsługa drukowania"
+
+#~ msgid "Install missing printing packages"
+#~ msgstr "Zainstaluj brakujące pakiety drukowania"
+
+#, python-format
+#~ msgid "%d package is missing"
+#~ msgid_plural "%d packages are missing"
+#~ msgstr[0] "Brak pakietu %d"
+#~ msgstr[1] "Brak pakietów %d"
+#~ msgstr[2] "Brak pakietów %d"

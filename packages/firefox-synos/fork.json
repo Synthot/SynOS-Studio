@@ -1,0 +1,11 @@
+{
+  "package": "firefox",
+  "distro": "mozilla",
+  "url": "https://packages.mozilla.org/apt",
+  "suite": "mozilla",
+  "suite_mapping": "",
+  "component": "main",
+  "arch": "$(Arch)",
+  "signed_by": "assets/mozilla-keyring.asc",
+  "suppress_scripts": false
+}

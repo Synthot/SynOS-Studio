@@ -1,0 +1,9 @@
+#!/bin/bash
+status=$(LC_ALL=C gnome-extensions show "network-stats@gnome.noroadsleft.xyz" | grep "State" | awk '{print $2}')
+if [ "$status" == "ENABLED" ] || [ "$status" == "ACTIVE" ]; then
+    gnome-extensions disable network-stats@gnome.noroadsleft.xyz
+    echo "Disabled network state display"
+else
+    gnome-extensions enable network-stats@gnome.noroadsleft.xyz
+    echo "Enabled network state display"
+fi

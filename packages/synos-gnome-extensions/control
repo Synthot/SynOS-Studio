@@ -1,0 +1,12 @@
+Package: synos-gnome-extensions
+Version: 2.0.2-1+synos1
+Section: metapackages
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Recommends: gnome-shell-extension-synos-loc, gnome-shell-extension-no-power-icon, gnome-shell-extension-noti-bottom-right, gnome-shell-extension-appindicator-synos, gnome-shell-extension-arcmenu, gnome-shell-extension-accent-gtk-theme, gnome-shell-extension-accent-icons-theme, gnome-shell-extension-accent-user-theme, gnome-shell-extension-blur-my-shell, gnome-shell-extension-clipboard-indicator, gnome-shell-extension-customize-ibus, gnome-shell-extension-dash-to-panel-synos, gnome-shell-extension-desktop-icons-ng-synos, gnome-shell-extension-lockkeys, gnome-shell-extension-network-stats, gnome-shell-extension-proxy-switcher, gnome-shell-extension-simple-weather, gnome-shell-extension-tiling-assistant, gnome-shell-extension-drive-menu, gnome-shell-extension-user-theme, gnome-shell-extension-prefs
+Provides: gnome-shell-ubuntu-extensions
+Conflicts: gnome-shell-ubuntu-extensions
+Replaces: gnome-shell-ubuntu-extensions
+Homepage: ${BRAND_URL_HOME}
+Description: Meta-package that installs all ${BRAND_NAME} GNOME Shell extensions. Installing this package pulls in the complete set of extensions used by ${BRAND_NAME} desktop. Individual extensions can be removed separately.

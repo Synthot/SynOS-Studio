@@ -1,0 +1,4 @@
+fleet_enrollment_pull_url: ""            # git URL ansible-pull clones at first boot
+fleet_enrollment_playbook: site.yml
+fleet_enrollment_roles: []               # informative; the pulled playbook decides
+fleet_enrollment_inventory_url: ""       # optional registration endpoint (POST hostname, machine-id)

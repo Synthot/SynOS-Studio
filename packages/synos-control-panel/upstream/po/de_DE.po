@@ -1,0 +1,682 @@
+# German translations for synos-control-panel package.
+# Copyright (C) 2026 THE synos-control-panel'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the synos-control-panel package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-control-panel\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-31 15:21+0000\n"
+"PO-Revision-Date: 2026-08-31 15:21+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos_control_panel/app.py:77 src/synos_control_panel/app.py:95
+#: data/com.synos.ControlPanel.desktop:3
+msgid "Control Panel"
+msgstr "Systemsteuerung"
+
+#: src/synos_control_panel/app.py:95
+msgid "SynOS"
+msgstr "SynOS"
+
+#: src/synos_control_panel/app.py:99 src/synos_control_panel/app.py:1750
+msgid "Search Control Panel"
+msgstr "Systemsteuerung durchsuchen"
+
+#: src/synos_control_panel/app.py:100
+msgid "Search settings"
+msgstr "Einstellungen durchsuchen"
+
+#: src/synos_control_panel/app.py:107
+msgid "About Control Panel"
+msgstr "Über die Systemsteuerung"
+
+#: src/synos_control_panel/app.py:109
+msgid "Main Menu"
+msgstr "Hauptmenü"
+
+#: src/synos_control_panel/app.py:131
+msgid "Adjust your computer's settings"
+msgstr "Computereinstellungen anpassen"
+
+#: src/synos_control_panel/app.py:134
+msgid "Choose a category below, or search for a setting."
+msgstr ""
+"Wählen Sie unten eine Kategorie aus oder suchen Sie nach einer Einstellung."
+
+#: src/synos_control_panel/app.py:150
+msgid "No settings found"
+msgstr "Keine Einstellungen gefunden"
+
+#: src/synos_control_panel/app.py:151
+msgid "Try a different search."
+msgstr "Versuchen Sie eine andere Suche."
+
+#: src/synos_control_panel/app.py:236
+msgid "Configure NetworkManager connection profiles"
+msgstr "NetworkManager-Verbindungsprofile konfigurieren"
+
+#: src/synos_control_panel/app.py:238
+msgid "Install Advanced Network Configuration"
+msgstr "Erweiterte Netzwerkkonfiguration installieren"
+
+#: src/synos_control_panel/app.py:245
+msgid "System"
+msgstr "System"
+
+#: src/synos_control_panel/app.py:250
+msgid "Security"
+msgstr "Sicherheit"
+
+#: src/synos_control_panel/app.py:255
+msgid "Network and Internet"
+msgstr "Netzwerk und Internet"
+
+#: src/synos_control_panel/app.py:260
+msgid "User Accounts"
+msgstr "Benutzerkonten"
+
+#: src/synos_control_panel/app.py:268
+msgid "Hardware and Drivers"
+msgstr "Hardware und Treiber"
+
+#: src/synos_control_panel/app.py:276
+msgid "Scan documents and select a scanner"
+msgstr "Dokumente scannen und einen Scanner auswählen"
+
+#: src/synos_control_panel/app.py:278
+msgid "Install Document Scanner"
+msgstr "Dokumentenscanner installieren"
+
+#: src/synos_control_panel/app.py:284
+msgid "Appearance"
+msgstr "Aussehen"
+
+#: src/synos_control_panel/app.py:292
+msgid "Programs"
+msgstr "Programme"
+
+#: src/synos_control_panel/app.py:299
+msgid "Manage application permissions with Flatseal"
+msgstr "Anwendungsberechtigungen mit Flatseal verwalten"
+
+#: src/synos_control_panel/app.py:301
+msgid "Install Flatseal to manage application permissions"
+msgstr "Flatseal installieren, um Anwendungsberechtigungen zu verwalten"
+
+#: src/synos_control_panel/app.py:307
+msgid "AI Stack"
+msgstr "KI-Stack"
+
+#: src/synos_control_panel/app.py:312
+msgid "Installed"
+msgstr "Installiert"
+
+#: src/synos_control_panel/app.py:312
+msgid "Not installed"
+msgstr "Nicht installiert"
+
+#: src/synos_control_panel/app.py:317
+msgid "Configure microphone, language, shortcut, and training"
+msgstr "Mikrofon, Sprache, Tastenkürzel und Kalibrierung konfigurieren"
+
+#: src/synos_control_panel/app.py:319
+msgid "Install private, offline speech-to-text"
+msgstr "Private Offline-Spracherkennung installieren"
+
+#: src/synos_control_panel/app.py:325 src/synos_control_panel/app.py:860
+msgid "Windows Compatibility"
+msgstr "Windows-Kompatibilität"
+
+#: src/synos_control_panel/app.py:331
+msgid "Open your Windows application environments"
+msgstr "Ihre Windows-Anwendungsumgebungen öffnen"
+
+#: src/synos_control_panel/app.py:333
+msgid "Install Bottles to run Windows applications"
+msgstr "Bottles installieren, um Windows-Anwendungen auszuführen"
+
+#: src/synos_control_panel/app.py:339
+msgid "Backup and Recovery"
+msgstr "Sicherung und Wiederherstellung"
+
+#: src/synos_control_panel/app.py:371
+msgid "Open Deja Dup backups"
+msgstr "Deja Dup-Sicherungen öffnen"
+
+#: src/synos_control_panel/app.py:373
+msgid "Install Deja Dup from the app store"
+msgstr "Deja Dup aus dem App-Store installieren"
+
+#: src/synos_control_panel/app.py:384 src/synos_control_panel/app.py:398
+#: src/synos_control_panel/app.py:412
+#: src/synos_control_panel/app.py:1781
+msgid "Setting not found"
+msgstr "Einstellung nicht gefunden"
+
+#: src/synos_control_panel/app.py:520 src/synos_control_panel/app.py:531
+#: src/synos_control_panel/app.py:540
+msgid "Could not open this setting"
+msgstr "Diese Einstellung konnte nicht geöffnet werden."
+
+#: src/synos_control_panel/app.py:539
+msgid "The application exited before it could be opened."
+msgstr "Die Anwendung wurde beendet, bevor sie geöffnet werden konnte."
+
+#: src/synos_control_panel/app.py:546
+msgid "OK"
+msgstr "OK"
+
+#: src/synos_control_panel/app.py:552 src/synos_control_panel/app.py:830
+#, python-format
+msgid "Install %s?"
+msgstr "%s installieren?"
+
+#: src/synos_control_panel/app.py:554
+#, python-format
+msgid ""
+"%s is a recommended component, but it is not installed. You can reinstall it"
+" now."
+msgstr ""
+"%s ist eine empfohlene Komponente, die jedoch nicht installiert ist. Sie "
+"können sie jetzt neu installieren."
+
+#: src/synos_control_panel/app.py:559 src/synos_control_panel/app.py:833
+#: src/synos_control_panel/app.py:934
+#: src/synos_control_panel/app.py:1141
+#: src/synos_control_panel/app.py:1332
+#: src/synos_control_panel/app.py:1538
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: src/synos_control_panel/app.py:560
+#: src/synos_control_panel/app.py:1334
+msgid "Install"
+msgstr "Installieren"
+
+#: src/synos_control_panel/app.py:569
+#, python-format
+msgid "Installing %s…"
+msgstr "%s wird installiert…"
+
+#: src/synos_control_panel/app.py:578
+#, python-format
+msgid "%s installed"
+msgstr "%s installiert"
+
+#: src/synos_control_panel/app.py:585 src/synos_control_panel/app.py:798
+msgid "Authentication was cancelled."
+msgstr "Die Authentifizierung wurde abgebrochen."
+
+#: src/synos_control_panel/app.py:587
+msgid "The recommended component could not be installed."
+msgstr "Die empfohlene Komponente konnte nicht installiert werden."
+
+#: src/synos_control_panel/app.py:588
+msgid "Installation failed"
+msgstr "Installation fehlgeschlagen"
+
+#: src/synos_control_panel/app.py:635
+msgid "Startup and Boot"
+msgstr "Start und Boot"
+
+#: src/synos_control_panel/app.py:653
+msgid "Boot menu"
+msgstr "Boot-Menü"
+
+#: src/synos_control_panel/app.py:655
+msgid ""
+"Choose how long the boot menu waits before starting the default system."
+msgstr ""
+"Wählen Sie aus, wie lange das Boot-Menü wartet, bevor das Standardsystem "
+"gestartet wird."
+
+#: src/synos_control_panel/app.py:659
+msgid "Boot menu wait time"
+msgstr "Wartezeit des Boot-Menüs"
+
+#: src/synos_control_panel/app.py:661
+msgid "The same delay is used after an interrupted or unsuccessful startup."
+msgstr ""
+"Die gleiche Verzögerung wird auch nach einem unterbrochenen oder "
+"fehlgeschlagenen Start verwendet."
+
+#: src/synos_control_panel/app.py:668
+#, python-format
+msgid "%d seconds"
+msgstr "%d s"
+
+#: src/synos_control_panel/app.py:676
+msgid "Boot display"
+msgstr "Boot-Anzeige"
+
+#: src/synos_control_panel/app.py:678
+msgid "Choose the size of the GRUB menu and startup logo."
+msgstr "Wählen Sie die Größe des GRUB-Menüs und des Startlogos."
+
+#: src/synos_control_panel/app.py:682
+msgid "Display mode"
+msgstr "Anzeigemodus"
+
+#: src/synos_control_panel/app.py:684
+msgid "Native resolution shows more detail; large text is easier to read."
+msgstr ""
+"Die native Auflösung zeigt mehr Details; große Schrift ist leichter lesbar."
+
+#: src/synos_control_panel/app.py:692
+msgid "Native resolution"
+msgstr "Native Auflösung"
+
+#: src/synos_control_panel/app.py:692
+msgid "Large text mode"
+msgstr "Modus mit großer Schrift"
+
+#: src/synos_control_panel/app.py:714
+#: src/synos_control_panel/app.py:1007
+#: src/synos_control_panel/app.py:1214
+#: src/synos_control_panel/app.py:1431
+#: src/synos_control_panel/app.py:1623
+msgid "Close"
+msgstr "Schließen"
+
+#: src/synos_control_panel/app.py:716
+#: src/synos_control_panel/app.py:1540
+#: src/synos_control_panel/app.py:1544
+msgid "Apply"
+msgstr "Übernehmen"
+
+#: src/synos_control_panel/app.py:776
+msgid "Updating the boot menu…"
+msgstr "Boot-Menü wird aktualisiert…"
+
+#: src/synos_control_panel/app.py:790
+msgid "Boot settings updated. The change applies on the next startup."
+msgstr ""
+"Starteinstellungen aktualisiert. Die Änderung wird beim nächsten Start "
+"wirksam."
+
+#: src/synos_control_panel/app.py:793
+msgid "Boot settings updated"
+msgstr "Starteinstellungen aktualisiert"
+
+#: src/synos_control_panel/app.py:800
+msgid "The boot setting could not be changed."
+msgstr "Die Starteinstellung konnte nicht geändert werden."
+
+#: src/synos_control_panel/app.py:831
+msgid "This application is available from the app store."
+msgstr "Diese Anwendung ist im App-Store verfügbar."
+
+#: src/synos_control_panel/app.py:834
+msgid "Open App Store"
+msgstr "App-Store öffnen"
+
+#: src/synos_control_panel/app.py:878
+msgid "Bottles"
+msgstr "Bottles"
+
+#: src/synos_control_panel/app.py:880
+msgid ""
+"Run Windows applications in isolated compatibility environments powered by "
+"Wine and Bottles."
+msgstr ""
+"Windows-Anwendungen in isolierten Kompatibilitätsumgebungen auf Basis von "
+"Wine und Bottles ausführen."
+
+#: src/synos_control_panel/app.py:885
+msgid "Install Bottles"
+msgstr "Bottles installieren"
+
+#: src/synos_control_panel/app.py:886
+msgid "Downloads Bottles and its runtime from Flathub"
+msgstr "Lädt Bottles und die zugehörige Laufzeitumgebung von Flathub herunter"
+
+#: src/synos_control_panel/app.py:902
+#: src/synos_control_panel/app.py:1109
+#: src/synos_control_panel/app.py:1302
+#: src/synos_control_panel/app.py:1506
+msgid "Advanced Output"
+msgstr "Erweiterte Ausgabe"
+
+#: src/synos_control_panel/app.py:936
+#: src/synos_control_panel/app.py:1143
+msgid "Start"
+msgstr "Starten"
+
+#: src/synos_control_panel/app.py:978
+#: src/synos_control_panel/app.py:1185
+#: src/synos_control_panel/app.py:1371
+msgid "Installing…"
+msgstr "Wird installiert…"
+
+#: src/synos_control_panel/app.py:980
+msgid "Downloading and installing Bottles… This may take a few minutes."
+msgstr ""
+"Bottles wird heruntergeladen und installiert… Dies kann einige Minuten "
+"dauern."
+
+#: src/synos_control_panel/app.py:985
+msgid "Preparing Flathub and Bottles installation…"
+msgstr "Flathub- und Bottles-Installation wird vorbereitet…"
+
+#: src/synos_control_panel/app.py:999
+msgid "✓ Bottles is ready."
+msgstr "✓ Bottles ist bereit."
+
+#: src/synos_control_panel/app.py:1003
+#: src/synos_control_panel/app.py:1210
+#: src/synos_control_panel/app.py:1398
+#: src/synos_control_panel/app.py:1619
+msgid "✓ Installation completed successfully."
+msgstr "✓ Installation erfolgreich abgeschlossen."
+
+#: src/synos_control_panel/app.py:1005
+msgid "Open Bottles"
+msgstr "Bottles öffnen"
+
+#: src/synos_control_panel/app.py:1010
+msgid "Bottles installed"
+msgstr "Bottles installiert"
+
+#: src/synos_control_panel/app.py:1016
+#: src/synos_control_panel/app.py:1223
+#: src/synos_control_panel/app.py:1442
+msgid "✗ Installation failed. Review Advanced Output."
+msgstr "✗ Installation fehlgeschlagen. Prüfen Sie die erweiterte Ausgabe."
+
+#: src/synos_control_panel/app.py:1021
+#: src/synos_control_panel/app.py:1228
+#: src/synos_control_panel/app.py:1447
+#: src/synos_control_panel/app.py:1642
+msgid "✗ Operation failed: "
+msgstr "✗ Operation fehlgeschlagen: "
+
+#: src/synos_control_panel/app.py:1023
+#: src/synos_control_panel/app.py:1230
+#: src/synos_control_panel/app.py:1449
+#: src/synos_control_panel/app.py:1644
+msgid "Retry"
+msgstr "Erneut versuchen"
+
+#: src/synos_control_panel/app.py:1053
+msgid "Deja Dup Backups"
+msgstr "Deja Dup-Sicherungen"
+
+#: src/synos_control_panel/app.py:1067
+msgid "Permission Settings"
+msgstr "Berechtigungseinstellungen"
+
+#: src/synos_control_panel/app.py:1085
+msgid "Flatseal"
+msgstr "Flatseal"
+
+#: src/synos_control_panel/app.py:1087
+msgid ""
+"Review and control what files, devices, network connections, and services "
+"Flatpak applications can access."
+msgstr ""
+"Prüfen und steuern Sie, auf welche Dateien, Geräte, Netzwerkverbindungen und"
+" Dienste Flatpak-Anwendungen zugreifen können."
+
+#: src/synos_control_panel/app.py:1092
+msgid "Install Flatseal"
+msgstr "Flatseal installieren"
+
+#: src/synos_control_panel/app.py:1094
+msgid "Administrator authentication is required when installation starts"
+msgstr ""
+"Für den Beginn der Installation ist eine Administrator-Authentifizierung "
+"erforderlich."
+
+#: src/synos_control_panel/app.py:1186
+msgid "Downloading and installing Flatseal…"
+msgstr "Flatseal wird heruntergeladen und installiert…"
+
+#: src/synos_control_panel/app.py:1191
+msgid "Preparing Flatseal installation…"
+msgstr "Flatseal-Installation wird vorbereitet…"
+
+#: src/synos_control_panel/app.py:1206
+msgid "✓ Flatseal is ready."
+msgstr "✓ Flatseal ist bereit."
+
+#: src/synos_control_panel/app.py:1212
+msgid "Open Flatseal"
+msgstr "Flatseal öffnen"
+
+#: src/synos_control_panel/app.py:1217
+msgid "Flatseal installed"
+msgstr "Flatseal installiert"
+
+#: src/synos_control_panel/app.py:1249
+msgid "Install Voice Typing"
+msgstr "Spracheingabe installieren"
+
+#: src/synos_control_panel/app.py:1267
+msgid "Offline Voice Typing"
+msgstr "Offline-Spracheingabe"
+
+#: src/synos_control_panel/app.py:1269
+msgid ""
+"Press Super + H to dictate into browsers, editors, messages, terminals, and "
+"other applications. Audio stays on this computer."
+msgstr ""
+"Drücken Sie Super + H, um in Browsern, Editoren, Nachrichten, Terminals und "
+"anderen Anwendungen zu diktieren. Die Audiodaten werden auf diesem Computer "
+"verarbeitet und niemals hochgeladen."
+
+#: src/synos_control_panel/app.py:1274
+msgid "Private by default"
+msgstr "Standardmäßig privat"
+
+#: src/synos_control_panel/app.py:1275
+msgid "Speech is recognized locally with whisper.cpp"
+msgstr "Die Spracherkennung erfolgt auf diesem Computer mit whisper.cpp."
+
+#: src/synos_control_panel/app.py:1280
+msgid "About 140 MB to download"
+msgstr "Etwa 140 MB zum Herunterladen"
+
+#: src/synos_control_panel/app.py:1282
+msgid ""
+"Includes the multilingual Base model; optional models are available later"
+msgstr ""
+"Enthält das mehrsprachige Basismodell; optionale Modelle sind später "
+"verfügbar"
+
+#: src/synos_control_panel/app.py:1291
+msgid "Administrator authentication is required when installation starts."
+msgstr ""
+"Für den Beginn der Installation ist eine Administrator-Authentifizierung "
+"erforderlich."
+
+#: src/synos_control_panel/app.py:1376
+msgid "Downloading the local engine and multilingual speech model…"
+msgstr ""
+"Lokale Engine und mehrsprachiges Spracherkennungsmodell werden "
+"heruntergeladen…"
+
+#: src/synos_control_panel/app.py:1382
+msgid "Preparing Voice Typing installation…"
+msgstr "Installation der Spracheingabe wird vorbereitet…"
+
+#: src/synos_control_panel/app.py:1425
+msgid ""
+"✓ Installed. Sign out and back in once, then press Super + H to start Voice "
+"Typing."
+msgstr ""
+"✓ Installiert. Melden Sie sich einmal ab und wieder an, dann drücken Sie "
+"Super + H, um die Spracheingabe zu starten."
+
+#: src/synos_control_panel/app.py:1429
+msgid "Open Settings"
+msgstr "Einstellungen öffnen"
+
+#: src/synos_control_panel/app.py:1435
+msgid "Voice Typing installed — sign out to finish"
+msgstr ""
+"Spracheingabe installiert — melden Sie sich ab, um die Einrichtung "
+"abzuschließen"
+
+#: src/synos_control_panel/app.py:1466
+msgid "On-device AI"
+msgstr "On-Device-KI"
+
+#: src/synos_control_panel/app.py:1484
+msgid "Why AI"
+msgstr "Why AI"
+
+#: src/synos_control_panel/app.py:1486
+msgid ""
+"Run the Why AI assistant locally. The model and runtime are installed only "
+"when this option is enabled."
+msgstr ""
+"Führen Sie den Why AI-Assistenten auf diesem Computer aus. Das Modell und "
+"die Laufzeitumgebung werden nur installiert, wenn diese Option aktiviert "
+"ist."
+
+#: src/synos_control_panel/app.py:1491
+msgid "Install on-device AI"
+msgstr "On-Device-KI installieren"
+
+#: src/synos_control_panel/app.py:1492
+msgid "Enable the local Why AI stack on this computer"
+msgstr "Den lokalen Why AI-Stack auf diesem Computer aktivieren"
+
+#: src/synos_control_panel/app.py:1586
+msgid "Applying…"
+msgstr "Wird übernommen…"
+
+#: src/synos_control_panel/app.py:1588
+msgid "Downloading and installing Why AI… This may take about 10 minutes."
+msgstr ""
+"Why AI wird heruntergeladen und installiert… Dies kann etwa 10 Minuten "
+"dauern."
+
+#: src/synos_control_panel/app.py:1590
+msgid "Disabling the local Why AI stack…"
+msgstr "Der lokale Stack von Why AI wird deaktiviert…"
+
+#: src/synos_control_panel/app.py:1597
+msgid "Preparing package operation…"
+msgstr "Paketoperation wird vorbereitet…"
+
+#: src/synos_control_panel/app.py:1611
+msgid "✓ On-device AI is ready."
+msgstr "✓ On-Device-KI ist bereit."
+
+#: src/synos_control_panel/app.py:1613
+msgid "✓ On-device AI is disabled."
+msgstr "✓ On-Device-KI ist deaktiviert."
+
+#: src/synos_control_panel/app.py:1619
+msgid "✓ Change completed successfully."
+msgstr "✓ Änderung erfolgreich abgeschlossen."
+
+#: src/synos_control_panel/app.py:1628
+msgid "On-device AI enabled"
+msgstr "On-Device-KI aktiviert"
+
+#: src/synos_control_panel/app.py:1630
+msgid "On-device AI disabled"
+msgstr "On-Device-KI deaktiviert"
+
+#: src/synos_control_panel/app.py:1638
+msgid "✗ Package operation failed. Review Advanced Output."
+msgstr "✗ Paketoperation fehlgeschlagen. Prüfen Sie die erweiterte Ausgabe."
+
+#: src/synos_control_panel/app.py:1715
+#, python-brace-format
+msgid "{command} exited with status {status}"
+msgstr "{command} wurde mit Exit-Code {status} beendet"
+
+#: src/synos_control_panel/app.py:1742
+msgid "Open a Control Panel topic"
+msgstr "Einen Eintrag der Systemsteuerung öffnen"
+
+#: src/synos_control_panel/app.py:1743
+msgid "TOPIC"
+msgstr "EINTRAG"
+
+#: src/synos_control_panel/app.py:1751
+msgid "TERMS"
+msgstr "BEGRIFFE"
+
+#: src/synos_control_panel/app.py:1788
+msgid "SynOS Control Panel"
+msgstr "SynOS-Systemsteuerung"
+
+#: src/synos_control_panel/app.py:1790
+msgid "SynOS Team"
+msgstr "SynOS-Team"
+
+#: src/synos_control_panel/app.py:1792
+msgid "Find and manage SynOS system settings."
+msgstr "SynOS-Systemeinstellungen finden und verwalten."
+
+#: data/com.synos.ControlPanel.desktop:11
+msgid "settings;control;system;hardware;drivers;accounts;backup;"
+msgstr "einstellungen;steuerung;system;hardware;treiber;konten;sicherung;"
+
+#: synos-control-panel/data/com.synos.ControlPanel.policy:8
+msgid "Change boot menu settings"
+msgstr "Boot-Menü-Einstellungen ändern"
+
+#: synos-control-panel/data/com.synos.ControlPanel.policy:10
+msgid "Authentication is required to change boot menu settings"
+msgstr ""
+"Zur Änderung der Boot-Menü-Einstellungen ist eine Authentifizierung "
+"erforderlich."
+
+#: data/com.synos.ControlPanel.desktop:4
+msgid "Find and manage SynOS system settings"
+msgstr "SynOS-Systemeinstellungen finden und verwalten"
+
+#: src/synos_control_panel/app.py
+msgid "Authentication is required to read the boot menu."
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Current setting (unchanged)"
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Custom setting (unchanged)"
+msgstr "Benutzerdefinierte Einstellung (unverändert)"
+
+#: src/synos_control_panel/app.py
+msgid "Default operating system"
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Load operating systems"
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "No supported operating systems were found in the boot menu."
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Only operating systems already in the boot menu are listed."
+msgstr ""
+"Nur Betriebssysteme, die bereits im Boot-Menü vorhanden sind, werden "
+"aufgelistet."
+
+#: src/synos_control_panel/app.py
+msgid "Reading the boot menu…"
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Starts automatically when the boot menu wait time ends."
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "The boot menu could not be read."
+msgstr ""

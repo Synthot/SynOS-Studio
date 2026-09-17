@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://synos.example/schema/manifest.schema.json",
+  "title": "SynOS build manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "name",
+    "version",
+    "base",
+    "suite",
+    "arch",
+    "profile",
+    "regions",
+    "brand"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "base": {
+      "type": "string",
+      "enum": [
+        "debian",
+        "ubuntu"
+      ]
+    },
+    "suite": {
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+$"
+    },
+    "arch": {
+      "type": "string",
+      "enum": [
+        "amd64",
+        "arm64"
+      ]
+    },
+    "profile": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "regions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]{2}(-[a-z]{2})?$"
+      },
+      "uniqueItems": true
+    },
+    "brand": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]{1,32}$"
+    },
+    "mirrors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "type": "string",
+          "format": "date"
+        },
+        "apt": {
+          "type": "string",
+          "format": "uri"
+        },
+        "security": {
+          "type": "string",
+          "format": "uri"
+        },
+        "flatpak": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "overrides": {
+      "$ref": "profile.schema.json#/$defs/profileBody"
+    },
+    "packages": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "URL of the published SynOS package repository installed systems update from; empty ships the source disabled"
+        },
+        "takeover": {
+          "oneOf": [
+            {
+              "const": "all"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]+$"
+              },
+              "uniqueItems": true
+            }
+          ],
+          "description": "Deprecated and ignored: every stack role is served from the SynOS repository. Accepted so older bundles still validate."
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "squashfs_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 22,
+          "description": "zstd level for the root filesystem; 19 is smallest, 12 is roughly twice as fast to build"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,3 @@
+# kind	source (relative to upstream/)	target	mode
+folder	deploy/${SUITE}/lockkeys@vaina.lt	/usr/share/gnome-shell/extensions/lockkeys@vaina.lt	644
+file	dconf/15-lockkeys.conf	/etc/dconf/db/synos.d/15-lockkeys.conf	644

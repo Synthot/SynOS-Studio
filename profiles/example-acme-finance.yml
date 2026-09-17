@@ -1,0 +1,49 @@
+# Example customer profile. Copy, rename, and commit in your own repository.
+id: example-acme-finance
+extends: workstation
+description: Finance department workstation, locked down, French and Dutch.
+software:
+  bundles: [office, communication, remote-access, printing, smartcard]
+  packages:
+    add:
+      - gnucash
+      - name: keepassxc
+        version: ">=2.7"
+    remove: [gnome-games, transmission]
+  repositories:
+    - name: acme-internal
+      url: https://apt.acme.example
+      suite: stable
+      key: keys/example-acme.asc
+      packages: [acme-vpn-client, acme-agent]
+  flatpak:
+    remotes:
+      - name: acme
+        url: https://flatpak.acme.example/repo
+    apps: [org.onlyoffice.desktopeditors]
+    preinstall: true
+  defaults:
+    browser: browser
+    autostart: [acme-agent]
+installer:
+  encryption: required
+  ssh: disabled
+  unattended: answers/finance.yml
+security:
+  compliance: anssi-bp028-enhanced
+  usbguard: true
+directory:
+  join: active-directory
+  domain: corp.acme.example
+  allowed_groups: [finance-users, it-admins]
+policy:
+  dconf:
+    org.gnome.desktop.background.picture-uri: locked
+    org.gnome.desktop.screensaver.lock-delay: 300
+  browser:
+    homepage: https://intranet.acme.example
+    extensions: [ublock-origin]
+ansible:
+  playbooks: [ansible/playbooks/examples/acme-finance.yml]
+  pull_url: https://git.acme.example/it/workstation-config.git
+  first_boot_roles: [acme.fleet_enrollment]

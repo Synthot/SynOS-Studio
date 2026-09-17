@@ -1,0 +1,517 @@
+# SynOS Appearance — French translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: French\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "À propos de l'apparence d'SynOS"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "Avancé"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "Apparence d'SynOS"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "Équipe SynOS"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "Apparence"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "Appliquer à l’écran de connexion"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "En bas"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "Annuler"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "Choisissez une image pour l arrière-plan de l écran de connexion GDM."
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "Choisissez le style visuel de votre barre des tâches."
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "Choisir…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "Classique"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr ""
+"Fusionner plusieurs fenêtres d'une même application en une seule icône"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "Zone de danger"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "Afficher le bouton Activités dans la barre des tâches"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "Activer le groupement"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "Paramètres des extensions"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "Fond d’écran GDM"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "Grouper les applications"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "Images"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "Séparer les lanceurs des applications en cours"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "Disposition"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "À gauche"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "Écran de connexion"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "Ouvrir"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "Ouvrez les fenêtres de préférence des extensions du panneau."
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "Indicateurs du panneau"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "Widgets du panneau"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "Aperçu"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "Réinitialiser"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "Réinitialiser les paramètres du bureau"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "Réinitialiser les paramètres du bureau ?"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "Rétablir les paramètres d’usine de l’apparence du bureau, de la recherche, des dossiers d’applications et de la confidentialité"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "À droite"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "Sélectionner une image"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "Séparé"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "Afficher le bouton Activités"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "Afficher les icônes du bureau"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "Afficher le réseau"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "Afficher la météo"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "Afficher ou masquer les éléments intégrés du panneau."
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "Éléments de la barre des tâches"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "Style de la barre des tâches"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr "Activer ou désactiver les widgets des indicateurs du panneau."
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "En haut"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "Réglages"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "Comportement de la barre des tâches Vista"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "Fond d'écran"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "Centré"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ Appliqué — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ Paramètres du bureau réinitialisés. Déconnectez-vous puis reconnectez-vous pour appliquer toutes les modifications."
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ Fond d’écran GDM appliqué"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ Échec de l'application de la position"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ Échec de l'application du style"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ Échec de la réinitialisation"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ Échec de la définition du fond d’écran GDM"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ Échec du basculement du bouton Activités"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ Veuillez d’abord sélectionner une image"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "Les extensions, la disposition du panneau, les préférences de recherche, les dossiers d’applications, le fond d’écran, l’interface et les préférences de confidentialité seront rétablis aux paramètres d’usine."
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "Statistiques réseau"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Météo simple"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr "Mettre à jour la localisation approximative utilisée pour la météo"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "Accord de confidentialité relatif aux services météo"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. Localisation approximative (ipapi.co)\n"
+"SynOS effectuera une requête HTTPS vers ipapi.co. Son exploitant, Kloudend, Inc., verra votre adresse IP publique et pourra l’utiliser pour estimer votre ville, votre pays et vos coordonnées approximatives.\n"
+"\n"
+"2. Données météorologiques (Open-Meteo)\n"
+"L’extension météo enverra les coordonnées approximatives sélectionnées à Open-Meteo, exploité par OpenMeteo GmbH. Le service verra également votre adresse IP publique et pourra conserver les journaux d’API pendant 90 jours au maximum.\n"
+"\n"
+"SynOS n’est ni affilié à l’un de ces deux services tiers, ni parrainé ou approuvé par l’un d’eux. Si la détection de la localisation échoue, SynOS utilisera une estimation hors ligne basée sur le fuseau horaire de votre système.\n"
+"\n"
+"Politiques de confidentialité :\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "Refuser"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "Tout accepter"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr ""
+"La fonctionnalité météo n’a pas été activée, car l’autorisation a été "
+"refusée."
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "Échec de l’enregistrement de l’autorisation pour la météo."
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "Détermination de votre localisation approximative…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "Échec de la configuration de l'extension météo."
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "La localisation utilisée pour la météo est désormais {location}."
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr ""
+"Service de localisation indisponible ; utilisation de {location} basée sur "
+"votre fuseau horaire."
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr ""
+"La fonctionnalité météo a été désactivée, mais son autorisation enregistrée "
+"n’a pas pu être supprimée."
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"Sauvegarder les paramètres GNOME, les dispositions et les préférences des "
+"extensions. Les fichiers personnels ne sont pas inclus."
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "Sauvegarde et restauration"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "Exporter les paramètres GNOME"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "Exporter les paramètres GNOME"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "Exporter…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "Comment ces paramètres doivent-ils être importés ?"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "Fichiers de paramètres INI"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "Importer les paramètres GNOME"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "Importer les paramètres GNOME"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "Importer…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "Importation par fusion"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"L’importation par fusion conserve les valeurs actuelles absentes du fichier.\n"
+"\n"
+"La restauration complète réinitialise d’abord tous les paramètres /org/gnome/ ; les valeurs absentes du fichier reviennent à leurs valeurs par défaut. Une sauvegarde de sécurité est effectuée avant chaque opération."
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "Restaurer les paramètres à partir d’un fichier INI dconf"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr "Enregistrer les paramètres actuels dans un fichier INI lisible"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "Restauration complète"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ Paramètres GNOME exportés"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ Paramètres importés. Déconnectez-vous puis reconnectez-vous pour appliquer"
+" toutes les modifications."
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ Échec de l'exportation des paramètres GNOME"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ Échec de l'importation des paramètres GNOME"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ Échec de la lecture du fichier de paramètres"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr "✗ Échec de l'importation et de la restauration automatique"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr ""
+"✗ Échec de l'importation ; les paramètres précédents ont été restaurés"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ Le fichier sélectionné n’est pas un fichier INI dconf valide"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "barre des tâches;panneau;disposition;style;fenêtres;apparence;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr ""
+"Basculer entre les dispositions centrée et classique de la barre des tâches"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ Bouton Activités masqué"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ Bouton Activités affiché"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ {label} désactivé"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ {label} activé"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ Échec de la désactivation de {label}"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ Échec de l’activation de {label}"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ Bouton Activités — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action}é"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ Échec de {action} {label}"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "Position de la barre des tâches"
+
+#~ msgid "Panel Position"
+#~ msgstr "Position du panneau"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "Choisissez l'emplacement de votre barre des tâches sur l'écran."

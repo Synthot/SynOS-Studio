@@ -1,0 +1,18 @@
+id: synos
+display_name: SynOS
+vendor: SynOS Project
+tagline: The workstation that stays yours.
+hostname_prefix: synos
+urls:
+  home: https://synos.example
+  support: https://support.synos.example
+  bug_report: https://issues.synos.example
+  privacy: https://synos.example/privacy
+colors:
+  accent: "#0E6B7A"
+  ground: "#12181C"
+  ink: "#E6ECEA"
+assets:
+  logo: logo.svg
+  logo_mono: logo.svg
+  wallpaper: null

@@ -1,0 +1,511 @@
+# SynOS Appearance — Swedish translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: Swedish\n"
+"Language: sv_SE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "Om SynOS-utseende"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "Avancerat"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "SynOS-utseende"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "SynOS-teamet"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "Utseende"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "Tillämpa på inloggningsskärm"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "Nederkant"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "Avbryt"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "Välj en bild för GDM-inloggningsskärmens bakgrund."
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "Välj det visuella stilen för din aktivitetsfält."
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "Välj…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "Klassisk"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr "Slå samman flera fönster från en app till en ikon"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "Farozon"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "Visa aktivitetsknappen i aktivitetsfältet"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "Aktivera gruppering"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "Tilläggsinställningar"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "GDM-bakgrund"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "Gruppera appar"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "Bilder"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "Separera startikoner från körande appar"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "Layout"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "Vänster"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "Bakgrund för inloggningsskärm"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "Öppna"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "Öppna inställningsfönstren för paneltillägg."
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "Panelindikatorer"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "Panelwidgetar"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "Förhandsgranskning"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "Återställ"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "Återställ skrivbordsinställningar"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "Återställ skrivbordsinställningar?"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "Återställ skrivbordets utseende, sökning, appmappar och sekretess till fabriksinställningarna"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "Höger"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "Välj bild"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "Separerad"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "Visa aktivitetsknapp"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "Visa skrivbordets ikoner"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "Visa nätverk"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "Visa väder"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "Visa eller dölj inbyggda panelelement."
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "Aktivitetsfältselement"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "Aktivitetsfältets stil"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr "Växla panelindikatorwidgetar på eller av."
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "Överkant"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "Justeringar"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "Vista-aktivitetsfältsbeteende"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "Bakgrundsbild"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "Centrerad"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ Verkligen — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ Skrivbordsinställningarna har återställts. Logga ut och in igen för att tillämpa alla ändringar."
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ GDM-bakgrund tillämpad"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ Misslyckades med att tillämpa position"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ Misslyckades med att tillämpa stil"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ Misslyckades med att återställa"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ Misslyckades med att ställa in GDM-bakgrund"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ Kunde inte växla aktivitetsknapp"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ Välj en bild först"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "Detta återställer tillägg, panellayout, sökinställningar, appmappar, bakgrundsbild, gränssnitt och sekretessinställningar till fabriksinställningarna."
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "Nätverksstatistik"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Enkel väderleksvisning"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr "Uppdatera uppskattad väderplats"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "Integritetsavtal för vädertjänster"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. Ungefärlig plats (ipapi.co)\n"
+"SynOS kommer att göra en HTTPS-förfrågan till ipapi.co. Tjänstens operatör, Kloudend, Inc., kommer att se din publika IP-adress och kan använda den för att uppskatta vilken stad och vilket land du befinner dig i samt dina ungefärliga koordinater.\n"
+"\n"
+"2. Väderdata (Open-Meteo)\n"
+"Vädertillägget kommer att skicka de valda ungefärliga koordinaterna till Open-Meteo, som drivs av OpenMeteo GmbH. Tjänsten kommer också att se din publika IP-adress och kan spara API-loggar i upp till 90 dagar.\n"
+"\n"
+"SynOS är inte knutet till, sponsrat av eller godkänt av någon av de båda tredjepartstjänsterna. Om platsidentifieringen misslyckas kommer SynOS att använda en offlineuppskattning baserad på systemets tidszon.\n"
+"\n"
+"Integritetspolicyer:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "Avböj"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "Godkänn allt"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr "Vädertillägget aktiverades inte eftersom behörigheten avslogs."
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "Kunde inte spara behörigheten för vädertillägget."
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "Uppskattar din ungefärliga plats…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "Misslyckades med att konfigurera vädertillägget."
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "Väderplatsen är inställd på {location}."
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr ""
+"Platstjänsten är inte tillgänglig; {location} används utifrån din tidszon."
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr ""
+"Vädertillägget inaktiverades, men den sparade behörigheten kunde inte tas "
+"bort."
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"Säkerhetskopiera GNOME-inställningar, layouter och tilläggsinställningar. "
+"Personliga filer ingår inte."
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "Säkerhetskopiering och återställning"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "Exportera GNOME-inställningar"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "Exportera GNOME-inställningar"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "Exportera…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "Hur ska dessa inställningar importeras?"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "INI-inställningsfiler"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "Importera GNOME-inställningar"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "Importera GNOME-inställningar"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "Importera…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "Sammanfogad import"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"Vid sammanfogad import behålls aktuella värden som saknas i filen.\n"
+"\n"
+"Vid fullständig återställning återställs först alla inställningar under /org/gnome/; värden som saknas i filen återgår till sina standardvärden. En säkerhetskopia sparas innan någon av åtgärderna utförs."
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "Återställ inställningar från en dconf-INI-fil"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr "Spara de aktuella inställningarna som en läsbar INI-fil"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "Fullständig återställning"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ GNOME-inställningar exporterade"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ Inställningarna har importerats. Logga ut och in igen för att alla "
+"ändringar ska börja gälla."
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ Misslyckades med att exportera GNOME-inställningar"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ Misslyckades med att importera GNOME-inställningar"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ Kunde inte läsa inställningsfilen"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr "✗ Både importen och den automatiska återställningen misslyckades"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr "✗ Importen misslyckades; tidigare inställningar återställdes"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ Den valda filen är inte en giltig dconf-INI-fil"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "aktivitetsfält;panel;layout;stil;fönster;utseende;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr "Växla mellan Centrerad och klassisk aktivitetsfältslayout"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ Aktivitetsknappen är dold"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ Aktivitetsknappen visas"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ {label} inaktiverad"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ {label} aktiverad"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ Kunde inte inaktivera {label}"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ Kunde inte aktivera {label}"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ Aktivitetsknapp — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action}ad"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ Misslyckades med att {action} {label}"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "Aktivitetsfältets position"
+
+#~ msgid "Panel Position"
+#~ msgstr "Panelsposition"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "Välj var ditt aktivitetsfält placeras på skärmen."

@@ -1,0 +1,3 @@
+# kind	source (relative to upstream/)	target	mode
+folder	deploy/${SUITE}/tiling-assistant@leleat-on-github	/usr/share/gnome-shell/extensions/tiling-assistant@leleat-on-github	644
+file	dconf/19-tiling-assistant.conf	/etc/dconf/db/synos.d/19-tiling-assistant.conf	644

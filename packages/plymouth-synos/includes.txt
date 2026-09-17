@@ -1,0 +1,4 @@
+# kind	source (relative to upstream/)	target	mode
+file	assets/synos_text.png	/usr/share/plymouth/themes/synos-spinner/watermark.png	644
+file	assets/logo_96.png	/usr/share/plymouth/themes/synos-spinner/bgrt-fallback.png	644
+file	assets/synos-text.plymouth	/usr/share/plymouth/themes/synos-text/synos-text.plymouth	644

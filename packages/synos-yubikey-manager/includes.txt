@@ -1,0 +1,11 @@
+# kind	source (relative to upstream/)	target	mode
+file	obj/synos-yubikey-manager	/usr/bin/synos-yubikey-manager	755
+file	data/helper	/usr/lib/synos-yubikey-manager/helper	755
+file	data/com.synos.yubikeymanager.policy	/usr/share/polkit-1/actions/com.synos.yubikeymanager.policy	644
+file	data/security-key-symbolic.svg	/usr/share/icons/hicolor/symbolic/apps/com.synos.yubikeymanager-security-key-symbolic.svg	644
+file	data/security-key-onboarding.svg	/usr/share/synos-yubikey-manager/illustrations/security-key-onboarding.svg	644
+file	data/security-key-connected.svg	/usr/share/synos-yubikey-manager/illustrations/security-key-connected.svg	644
+file	data/yubikey-device.svg	/usr/share/synos-yubikey-manager/illustrations/yubikey-device.svg	644
+folder	locale	/usr/share/locale	644
+file	data/com.synos.yubikeymanager.desktop	/usr/share/applications/com.synos.yubikeymanager.desktop	644
+file	data/com.synos.yubikeymanager.svg	/usr/share/icons/hicolor/scalable/apps/com.synos.yubikeymanager.svg	644

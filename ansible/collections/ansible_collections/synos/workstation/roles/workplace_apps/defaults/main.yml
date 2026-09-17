@@ -1,0 +1,5 @@
+workplace_apps_packages: []
+workplace_apps_remove: []
+workplace_apps_flatpak_remotes: []     # [{name: acme, url: https://...}]
+workplace_apps_flatpak_apps: []
+workplace_apps_default_browser: ""     # desktop file id, e.g. firefox.desktop

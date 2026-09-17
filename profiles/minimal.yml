@@ -1,0 +1,16 @@
+id: minimal
+description: Base system and desktop shell only. Parent of every profile.
+software:
+  bundles: [desktop-core]
+installer:
+  filesystem: btrfs
+  encryption: default-on
+  automatic_login: false
+  passwordless_sudo: false
+  ssh: disabled
+security:
+  compliance: none
+  usbguard: false
+  firewall: default-deny-inbound
+policy:
+  dconf: {}

@@ -1,0 +1,13 @@
+# kind	source (relative to upstream/)	target	mode
+file	src/synos-whisper-framework	/usr/libexec/synos-whisper-framework	755
+file	src/synos-voice-diagnostics	/usr/bin/synos-voice-diagnostics	755
+folder	src/synos_whisper_framework	/usr/lib/python3/dist-packages/synos_whisper_framework	644
+file	data/com.synos.VoiceTyping.service	/usr/share/dbus-1/services/com.synos.VoiceTyping.service	644
+file	data/com.synos.voice-typing.gschema.xml	/usr/share/glib-2.0/schemas/com.synos.voice-typing.gschema.xml	644
+file	obj/models/ggml-base.bin	/usr/share/synos-whisper-framework/models/ggml-base.bin	644
+file	obj/models/ggml-silero-v6.2.0.bin	/usr/share/synos-whisper-framework/models/ggml-silero-v6.2.0.bin	644
+file	VAD-NOTICE	/usr/share/doc/synos-whisper-framework/VAD-NOTICE	644
+file	VAD-LICENSE	/usr/share/doc/synos-whisper-framework/VAD-LICENSE	644
+file	MODEL-NOTICE	/usr/share/doc/synos-whisper-framework/MODEL-NOTICE	644
+file	MODEL-LICENSE	/usr/share/doc/synos-whisper-framework/MODEL-LICENSE	644
+folder	data/benchmark	/usr/share/synos-whisper-framework/benchmark	644

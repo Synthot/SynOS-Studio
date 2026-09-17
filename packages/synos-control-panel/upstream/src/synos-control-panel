@@ -1,0 +1,4 @@
+#!/usr/bin/python3
+from synos_control_panel.app import main
+
+raise SystemExit(main())

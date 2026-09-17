@@ -1,0 +1,10 @@
+Package: gnome-shell-extension-accent-icons-theme
+Version: 2.0.2-1+synos1
+Section: gnome
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: gnome-shell, dconf-gsettings-backend | gsettings-backend, gir1.2-adw-1, gir1.2-gtk-4.0
+Recommends: gnome-shell-extension-prefs | gnome-shell-extension-manager
+Homepage: ${BRAND_URL_HOME}
+Description: Makes icons follow system accent color and color scheme Light or Dark, a fork from https://github.com/taiwbi/gnome-accent-directories This extension is included by default in BRGV-OS and ${BRAND_NAME} — packaged for ${BRAND_NAME}

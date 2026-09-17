@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.synos.BtrfsSnapshotsManager
+Exec=/usr/bin/synos-btrfs-snapshots-manager --gapplication-service

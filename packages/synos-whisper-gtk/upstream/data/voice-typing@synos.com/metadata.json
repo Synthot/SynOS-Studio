@@ -1,0 +1,9 @@
+{
+  "uuid": "voice-typing@synos.com",
+  "name": "SynOS Voice Typing",
+  "description": "Global shortcut, non-focusing microphone overlay, and secure desktop text insertion for SynOS Voice Typing.",
+  "shell-version": ["49", "50"],
+  "version": 1,
+  "gettext-domain": "synos-whisper-gtk",
+  "url": "https://source.synos.example/packages"
+}

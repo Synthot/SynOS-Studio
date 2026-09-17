@@ -1,0 +1,9 @@
+id: ca
+name: Canada
+locales: [en_CA.UTF-8, fr_CA.UTF-8]
+keyboard: ca
+timezone: America/Toronto
+mirror: http://ftp.ca.debian.org/debian/
+compliance: itsg-33
+eid: []
+paper: letter

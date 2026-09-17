@@ -1,0 +1,14 @@
+[Unit]
+Description=SynOS first boot: fleet enrollment through ansible-pull
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!/var/lib/synos/first-boot.done
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/synos/first-boot.env
+ExecStart=/usr/local/sbin/synos-first-boot
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

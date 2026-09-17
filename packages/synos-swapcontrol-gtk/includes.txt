@@ -1,0 +1,7 @@
+# kind	source (relative to upstream/)	target	mode
+file	obj/swapcontrol-gtk	/usr/bin/swapcontrol-gtk	755
+file	data/helper	/usr/lib/synos-swapcontrol/helper	755
+file	data/com.synos.swapcontrol.policy	/usr/share/polkit-1/actions/com.synos.swapcontrol.policy	644
+folder	locale	/usr/share/locale	644
+file	data/com.synos.swapcontrol.desktop	/usr/share/applications/com.synos.swapcontrol.desktop	644
+file	data/com.synos.swapcontrol.svg	/usr/share/icons/hicolor/scalable/apps/com.synos.swapcontrol.svg	644

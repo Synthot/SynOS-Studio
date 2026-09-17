@@ -1,0 +1,9 @@
+Package: synos-multimedia-codecs
+Version: 2.0.2-1+synos1
+Section: metapackages
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: gstreamer1.0-plugins-bad, gstreamer1.0-plugins-ugly, gstreamer1.0-libav, libavcodec-extra
+Homepage: ${BRAND_URL_HOME}
+Description: Extended multimedia format support for ${BRAND_NAME} GStreamer and FFmpeg applications

@@ -1,0 +1,13 @@
+Package: synos-desktop
+Version: 2.0.2-4+synos1
+Section: metapackages
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-desktop-core, synos-dracut-migration, synos-apt-config, base-files
+Recommends: synos-apt-config, synos-no-snapd, synos-kernel-parameters, synos-swap-config, synos-deskmon, synos-theme-sync, synos-templates, synos-software-properties-common, synos-desktop-apps, synos-appstore, synos-theme
+Provides: yaru-theme-gnome-shell
+Conflicts: yaru-theme-gnome-shell, update-notifier, update-notifier-common, update-manager, update-manager-core, ubuntu-release-upgrader-core, ubuntu-release-upgrader-gtk, ubuntu-desktop, whoopsie
+Replaces: yaru-theme-gnome-shell, update-notifier, update-notifier-common, update-manager, update-manager-core, ubuntu-release-upgrader-core, ubuntu-release-upgrader-gtk, ubuntu-desktop, whoopsie
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} complete desktop — metapackage that pulls in all ${BRAND_NAME} components

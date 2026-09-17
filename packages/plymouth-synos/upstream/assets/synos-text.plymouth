@@ -1,0 +1,11 @@
+[Plymouth Theme]
+Name=SynOS Text
+Description=Text mode theme for SynOS fallback
+ModuleName=ubuntu-text
+
+[ubuntu-text]
+title=SynOS
+black=0x000000
+white=0xffffff
+brown=0x0078D7
+blue=0x0078D7

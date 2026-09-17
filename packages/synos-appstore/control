@@ -1,0 +1,9 @@
+Package: synos-appstore
+Version: 2.0.2-1+synos1
+Section: metapackages
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Recommends: flatpak, gnome-software, gnome-software-plugin-flatpak, gnome-software-plugin-fwupd
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} app store metapackage — GNOME Software with Flatpak support. Install this if you want a graphical app store and Flatpak sandboxed applications.

@@ -1,0 +1,24 @@
+# Build context for bases/*/Containerfile (COPY . /opt/synos). Podman reads
+# .containerignore, Docker reads .dockerignore; keep both identical. Mirrors
+# .gitignore: build outputs never enter the image.
+.git
+.build
+dist
+new_building_os
+image
+logs
+test-results
+*.iso
+*.torrent
+*.log
+args.sh
+keys/private
+packages/.build
+packages/*/upstream/deploy
+packages/*/upstream/obj
+packages/*/upstream/target
+packages/*/upstream/src/target
+packages/*/upstream/locale
+**/__pycache__
+**/*.pyc
+**/target

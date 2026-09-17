@@ -1,0 +1,9 @@
+Package: synos-theme-sync
+Version: 2.0.2-1+synos1
+Section: utils
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: libglib2.0-0t64 | libglib2.0-0, flatpak
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Theme Sync — expose the selected host GTK3 theme to Flatpak applications

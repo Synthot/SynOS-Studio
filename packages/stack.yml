@@ -1,0 +1,101 @@
+# The product stack: every package that makes the desktop, installer and live
+# system, grouped the way the build installs them. Each entry names the role
+# and the package that fills it: a SynOS package built from packages/<name>/,
+# or a package of the base archive (dracut, os-prober...). `only_base` limits
+# an entry to one base. The manifest key packages.takeover is accepted for
+# compatibility and ignored: every role is served from the SynOS repository.
+groups:
+  apt:
+    description: Package source configuration and archive keyring
+    install_recommends: false
+    packages:
+      - role: apt-config
+        package: synos-apt-config
+      - role: archive-keyring
+        package: synos-archive-keyring
+      - role: base-files
+        package: base-files          # the archive's own package; os-release is owned by the brand kit
+  live:
+    description: Dracut Live stack
+    install_recommends: false
+    packages:
+      - role: dracut
+        package: dracut
+      - role: dracut-core
+        package: dracut-core
+      - role: dracut-install
+        package: dracut-install
+      - role: dracut-live
+        only_base: [debian]
+        package: dracut-live         # Debian ships dmsquash-live in its own package; Ubuntu folds it into dracut-core
+      - role: live-layers
+        package: synos-live-layers
+      - role: discover
+        package: discover
+      - role: laptop-detect
+        package: laptop-detect
+      - role: os-prober
+        package: os-prober
+      - role: keyutils
+        package: keyutils
+  desktop:
+    description: Desktop metapackages, theme, extensions, forks
+    install_recommends: true
+    exclude: [build-essential]      # dpkg-dev only recommends it; keep it out of the ISO
+    packages:
+      - role: desktop
+        package: synos-desktop
+      - role: desktop-apps
+        package: synos-desktop-apps
+      - role: gnome-extensions
+        package: synos-gnome-extensions
+      - role: appstore
+        package: synos-appstore
+      - role: theme
+        package: synos-theme
+      - role: wallpapers
+        package: synos-wallpapers
+      - role: fonts
+        package: synos-fonts
+      - role: no-snapd
+        package: synos-no-snapd
+      - role: session
+        package: synos-session
+      - role: software-properties
+        package: synos-software-properties-common
+        only_base: [ubuntu]           # makes Ubuntu's add-apt-repository work; Debian 13 has no software-properties
+      - role: system-tweaks
+        package: synos-system-tweaks
+      - role: browser
+        package: firefox-synos
+      - role: ext-appindicator
+        package: gnome-shell-extension-appindicator-synos
+      - role: ext-dash-to-panel
+        package: gnome-shell-extension-dash-to-panel-synos
+      - role: ext-desktop-icons
+        package: gnome-shell-extension-desktop-icons-ng-synos
+      - role: plymouth-theme
+        package: plymouth-synos
+      - role: alsa-ucm
+        package: alsa-ucm-conf-synos
+      - role: firmware-sof
+        package: firmware-sof-synos
+  installer:
+    description: Native declarative installer
+    install_recommends: false
+    packages:
+      - role: installer
+        package: synos-installer-beta
+  snapshots:
+    description: Btrfs snapshots manager payload (kept for Btrfs targets by the installer)
+    install_recommends: false
+    packages:
+      - role: snapshots-manager
+        package: synos-btrfs-snapshots-manager
+  vmware:
+    description: VMware guest integration (amd64 Live image only)
+    install_recommends: true
+    only_arch: [amd64]
+    packages:
+      - role: open-vm-tools
+        package: open-vm-tools-desktop

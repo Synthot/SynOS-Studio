@@ -1,0 +1,3 @@
+# kind	source (relative to upstream/)	target	mode
+folder	deploy/${SUITE}/blur-my-shell@aunetx	/usr/share/gnome-shell/extensions/blur-my-shell@aunetx	644
+file	dconf/11-blur-my-shell.conf	/etc/dconf/db/synos.d/11-blur-my-shell.conf	644

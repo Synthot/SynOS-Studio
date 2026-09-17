@@ -1,0 +1,528 @@
+# synos-whisper-gtk translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-whisper-gtk.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-whisper-gtk\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-31 15:23+0000\n"
+"PO-Revision-Date: 2026-08-31 15:23+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fi_FI\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos_whisper_gtk/app.py:29
+msgid "Automatic detection"
+msgstr "Automaattinen kielentunnistus"
+
+#: src/synos_whisper_gtk/app.py:30
+#: data/voice-typing@synos.com/extension.js:77
+#: data/voice-typing@synos.com/extension.js:78
+msgid "Simplified Chinese"
+msgstr "Yksinkertaistettu kiina"
+
+#: src/synos_whisper_gtk/app.py:31
+#: data/voice-typing@synos.com/extension.js:78
+msgid "Traditional Chinese"
+msgstr "Perinteinen kiina"
+
+#: src/synos_whisper_gtk/app.py:32
+#: data/voice-typing@synos.com/extension.js:79
+msgid "English"
+msgstr "Englanti"
+
+#: src/synos_whisper_gtk/app.py:33
+#: data/voice-typing@synos.com/extension.js:79
+msgid "Spanish"
+msgstr "Espanja"
+
+#: src/synos_whisper_gtk/app.py:34
+#: data/voice-typing@synos.com/extension.js:80
+msgid "French"
+msgstr "Ranska"
+
+#: src/synos_whisper_gtk/app.py:35
+#: data/voice-typing@synos.com/extension.js:80
+msgid "German"
+msgstr "Saksa"
+
+#: src/synos_whisper_gtk/app.py:36
+#: data/voice-typing@synos.com/extension.js:80
+msgid "Japanese"
+msgstr "Japani"
+
+#: src/synos_whisper_gtk/app.py:37
+#: data/voice-typing@synos.com/extension.js:80
+msgid "Korean"
+msgstr "Korea"
+
+#: src/synos_whisper_gtk/app.py:38
+#: data/voice-typing@synos.com/extension.js:81
+msgid "Russian"
+msgstr "venäjä"
+
+#: src/synos_whisper_gtk/app.py:39
+#: data/voice-typing@synos.com/extension.js:81
+msgid "Portuguese"
+msgstr "Portugali"
+
+#: src/synos_whisper_gtk/app.py:43 src/synos_whisper_gtk/app.py:66
+#: src/synos_whisper_gtk/app.py:96 src/synos_whisper_gtk/app.py:313
+#: data/com.synos.VoiceTyping.Settings.desktop:2
+msgid "Voice Typing"
+msgstr "Äänikirjoitus"
+
+#: src/synos_whisper_gtk/app.py:44
+#: data/voice-typing@synos.com/extension.js:68
+#: data/voice-typing@synos.com/extension.js:92
+#: data/voice-typing@synos.com/extension.js:147
+#: data/voice-typing@synos.com/extension.js:296
+#: data/voice-typing@synos.com/extension.js:361
+#: data/voice-typing@synos.com/extension.js:399
+#: data/voice-typing@synos.com/extension.js:434
+#: data/voice-typing@synos.com/extension.js:459
+msgid "Ready"
+msgstr "Valmis"
+
+#: src/synos_whisper_gtk/app.py:45
+#: data/voice-typing@synos.com/extension.js:69
+#: data/voice-typing@synos.com/extension.js:354
+#: data/voice-typing@synos.com/extension.js:436
+#: data/voice-typing@synos.com/extension.js:437
+msgid "Listening…"
+msgstr "Kuunnellaan…"
+
+#: src/synos_whisper_gtk/app.py:46
+msgid "Sign out required"
+msgstr "Uloskirjautuminen vaaditaan"
+
+#: src/synos_whisper_gtk/app.py:47
+msgid "Needs attention"
+msgstr "Vaatii huomiota"
+
+#: src/synos_whisper_gtk/app.py:51
+msgid "Sign out and back in to finish enabling Voice Typing."
+msgstr ""
+"Kirjaudu ulos ja takaisin sisään viimeistelläksesi äänikirjoituksen "
+"aktivoimisen."
+
+#: src/synos_whisper_gtk/app.py:91
+msgid "Settings"
+msgstr "Asetukset"
+
+#: src/synos_whisper_gtk/app.py:98
+msgid ""
+"Use the keyboard shortcut to dictate into the focused application. Speech is"
+" processed locally and is never uploaded."
+msgstr ""
+"Käytä pikanäppäintä tekstin sanelemiseen aktiiviseen sovellukseen. Puhe "
+"käsitellään paikallisesti tällä tietokoneella, eikä sitä koskaan ladata "
+"palvelimelle."
+
+#: src/synos_whisper_gtk/app.py:103
+msgid "Status"
+msgstr "Tila"
+
+#: src/synos_whisper_gtk/app.py:103
+msgid "Checking the local service…"
+msgstr "Tarkistetaan paikallista palvelua…"
+
+#: src/synos_whisper_gtk/app.py:107 src/synos_whisper_gtk/app.py:307
+msgid "Start"
+msgstr "Aloita"
+
+#: src/synos_whisper_gtk/app.py:116
+msgid "Input"
+msgstr "Syöttö"
+
+#: src/synos_whisper_gtk/app.py:117
+msgid "System default"
+msgstr "Järjestelmän oletus"
+
+#: src/synos_whisper_gtk/app.py:120
+msgid "Microphone"
+msgstr "Mikrofoni"
+
+#: src/synos_whisper_gtk/app.py:131
+msgid "Language"
+msgstr "Kieli"
+
+#: src/synos_whisper_gtk/app.py:142
+msgid "Behavior"
+msgstr "Toiminta"
+
+#: src/synos_whisper_gtk/app.py:144
+msgid "Keyboard shortcut"
+msgstr "Pikanäppäin"
+
+#: src/synos_whisper_gtk/app.py:145
+msgid "Activate voice typing from anywhere"
+msgstr "Aktivoi äänikirjoitus mistä tahansa"
+
+#: src/synos_whisper_gtk/app.py:149
+msgid "Disabled"
+msgstr "Poistettu käytöstä"
+
+#: src/synos_whisper_gtk/app.py:153
+msgid "Change…"
+msgstr "Vaihda…"
+
+#: src/synos_whisper_gtk/app.py:164
+msgid "Automatic punctuation"
+msgstr "Automaattinen välimerkintä"
+
+#: src/synos_whisper_gtk/app.py:165
+msgid "Keep punctuation recognized from speech"
+msgstr "Säilytä puheesta tunnistetut välimerkit"
+
+#: src/synos_whisper_gtk/app.py:169
+msgid "Voice commands"
+msgstr "Äänikomennot"
+
+#: src/synos_whisper_gtk/app.py:170
+msgid "Recognize commands such as “new line” and “comma”"
+msgstr "Tunnista komennot, kuten ”uusi rivi” ja ”pilkku”"
+
+#: src/synos_whisper_gtk/app.py:174
+msgid "Live transcription"
+msgstr "Reaaliaikainen litterointi"
+
+#: src/synos_whisper_gtk/app.py:175
+msgid "Show words in the microphone bar while you speak"
+msgstr "Näytä sanat mikrofonipalkissa puhuessasi"
+
+#: src/synos_whisper_gtk/app.py:179
+msgid "Final result preview"
+msgstr "Valmiin tuloksen esikatselu"
+
+#: src/synos_whisper_gtk/app.py:180
+msgid "Pause briefly before inserting the completed phrase"
+msgstr "Odota hetki ennen valmiin tekstin lisäämistä"
+
+#: src/synos_whisper_gtk/app.py:184
+msgid "Start and stop sounds"
+msgstr "Käynnistys- ja pysäytysäänet"
+
+#: src/synos_whisper_gtk/app.py:185
+msgid "Play a subtle microphone cue"
+msgstr "Toista hillitty mikrofonin äänimerkki"
+
+#: src/synos_whisper_gtk/app.py:195
+msgid "Models"
+msgstr "Mallit"
+
+#: src/synos_whisper_gtk/app.py:198
+msgid "Offline speech models"
+msgstr "Puheentunnistusmallit ilman verkkoyhteyttä"
+
+#: src/synos_whisper_gtk/app.py:200
+msgid ""
+"The Base multilingual model is installed with Voice Typing. Optional models "
+"are verified before use."
+msgstr ""
+"Base-malli, joka tukee useita kieliä, on asennettu äänikirjoituksen mukana. "
+"Valinnaiset mallit tarkistetaan ennen käyttöä."
+
+#: src/synos_whisper_gtk/app.py:213
+msgid "Remove downloaded model"
+msgstr "Poista ladattu malli"
+
+#: src/synos_whisper_gtk/app.py:216
+#, python-format
+msgid "Remove %s"
+msgstr "Poista %s"
+
+#: src/synos_whisper_gtk/app.py:230
+msgid "Microphone Training"
+msgstr "Mikrofonin kalibrointi"
+
+#: src/synos_whisper_gtk/app.py:234
+msgid "Calibrate your speaking setup"
+msgstr "Kalibroi puheympäristösi"
+
+#: src/synos_whisper_gtk/app.py:236
+msgid ""
+"Whisper does not need a personal voice profile. Use this page to check "
+"microphone level, distance, and background noise."
+msgstr ""
+"Whisper ei tarvitse henkilökohtaista ääniprofiilia. Käytä tätä sivua "
+"tarkistaaksesi mikrofonin tulotason, etäisyyden mikrofoniin ja taustamelun."
+
+#: src/synos_whisper_gtk/app.py:242
+msgid "Practice phrase"
+msgstr "Harjoituslause"
+
+#: src/synos_whisper_gtk/app.py:243
+msgid "“Voice typing makes writing faster and more accessible.”"
+msgstr "“Äänikirjoitus tekee kirjoittamisesta nopeampaa ja saavutettavampaa.”"
+
+#: src/synos_whisper_gtk/app.py:249
+msgid "Input level"
+msgstr "Syöttötaso"
+
+#: src/synos_whisper_gtk/app.py:250
+msgid "Speak normally; aim for the middle of the meter"
+msgstr "Puhu normaalisti; pyri pitämään tulotaso mittarin keskikohdan lähellä"
+
+#: src/synos_whisper_gtk/app.py:254
+msgid "Microphone input level"
+msgstr "Mikrofonin syöttötaso"
+
+#: src/synos_whisper_gtk/app.py:260
+msgid "Microphone test"
+msgstr "Mikrofonitestaus"
+
+#: src/synos_whisper_gtk/app.py:261
+msgid "No audio is saved during this test"
+msgstr "Ääntä ei tallenneta tämän testin aikana"
+
+#: src/synos_whisper_gtk/app.py:263 src/synos_whisper_gtk/app.py:559
+msgid "Start Test"
+msgstr "Aloita testaus"
+
+#: src/synos_whisper_gtk/app.py:268
+msgid "Tips for better recognition"
+msgstr "Vinkit parempaan tunnistamiseen"
+
+#: src/synos_whisper_gtk/app.py:271
+msgid "Speak naturally"
+msgstr "Puhu luontevasti"
+
+#: src/synos_whisper_gtk/app.py:272
+msgid "Use short phrases and pause briefly between sentences"
+msgstr "Käytä lyhyitä ilmauksia ja pidä lyhyt tauko virkkeiden välillä"
+
+#: src/synos_whisper_gtk/app.py:276
+msgid "Reduce background noise"
+msgstr "Vähennä taustamelua"
+
+#: src/synos_whisper_gtk/app.py:277
+msgid "Keep the microphone close without speaking directly into it"
+msgstr "Pidä mikrofoni lähellä suutasi, mutta älä puhu suoraan siihen"
+
+#: src/synos_whisper_gtk/app.py:281
+msgid "Choose the language"
+msgstr "Valitse kieli"
+
+#: src/synos_whisper_gtk/app.py:282
+msgid "A fixed language is faster than automatic detection"
+msgstr ""
+"Valitun kielen käyttäminen on automaattista kielentunnistusta nopeampaa"
+
+#: src/synos_whisper_gtk/app.py:305
+msgid "Stop"
+msgstr "Pysäytä"
+
+#: src/synos_whisper_gtk/app.py:343
+msgid "Set Keyboard Shortcut"
+msgstr "Aseta pikanäppäin"
+
+#: src/synos_whisper_gtk/app.py:365
+msgid "Press the new shortcut"
+msgstr "Paina uutta pikanäppäintä"
+
+#: src/synos_whisper_gtk/app.py:369
+msgid "The keys you press will be used to start or stop Voice Typing."
+msgstr ""
+"Painamiasi näppäimiä käytetään äänikirjoituksen käynnistämiseen tai "
+"pysäyttämiseen."
+
+#: src/synos_whisper_gtk/app.py:377
+msgid "Waiting for input…"
+msgstr "Odotetaan syötettä…"
+
+#: src/synos_whisper_gtk/app.py:383
+msgid "Esc cancels · Backspace disables the shortcut"
+msgstr "Esc peruuttaa · Backspace poistaa pikanäppäimen käytöstä"
+
+#: src/synos_whisper_gtk/app.py:445
+#, python-format
+msgid "Download %s from Hugging Face?"
+msgstr "Ladataanko %s Hugging Facesta?"
+
+#: src/synos_whisper_gtk/app.py:447
+msgid ""
+"This optional model is hosted by Hugging Face, a third-party service. SynOS is not affiliated with, sponsored by, or partnered with Hugging Face.\n"
+"\n"
+"If you continue, your computer will connect directly to huggingface.co. Hugging Face will receive your public IP address and that address may reveal your approximate location.\n"
+"\n"
+"Privacy policy: https://huggingface.co/privacy"
+msgstr ""
+"Tätä valinnaista mallia ylläpitää kolmannen osapuolen palvelu Hugging Face. SynOS ei ole sidoksissa Hugging Faceen, Hugging Face ei sponsoroi sitä, eivätkä ne ole yhteistyökumppaneita.\n"
+"\n"
+"Jos jatkat, tietokoneesi muodostaa suoran yhteyden osoitteeseen huggingface.co. Hugging Face saa julkisen IP-osoitteesi, jonka perusteella likimääräinen sijaintisi voidaan päätellä.\n"
+"\n"
+"Tietosuojakäytäntö: https://huggingface.co/privacy"
+
+#: src/synos_whisper_gtk/app.py:456 src/synos_whisper_gtk/app.py:510
+msgid "Cancel"
+msgstr "Peruuta"
+
+#: src/synos_whisper_gtk/app.py:457
+msgid "Continue Download"
+msgstr "Jatka latausta"
+
+#: src/synos_whisper_gtk/app.py:479 src/synos_whisper_gtk/app.py:538
+msgid "Downloading…"
+msgstr "Ladataan…"
+
+#: src/synos_whisper_gtk/app.py:497
+msgid "Retry"
+msgstr "Yritä uudelleen"
+
+#: src/synos_whisper_gtk/app.py:498
+msgid "Model download failed"
+msgstr "Mallin lataus epäonnistui"
+
+#: src/synos_whisper_gtk/app.py:499
+msgid "Close"
+msgstr "Sulje"
+
+#: src/synos_whisper_gtk/app.py:507
+#, python-format
+msgid "Remove %s model?"
+msgstr "Poistetaanko %s -malli?"
+
+#: src/synos_whisper_gtk/app.py:508
+msgid "The model can be downloaded again later."
+msgstr "Mallin voi ladata uudelleen myöhemmin."
+
+#: src/synos_whisper_gtk/app.py:511
+msgid "Remove"
+msgstr "Poista"
+
+#: src/synos_whisper_gtk/app.py:547
+msgid "In Use"
+msgstr "Käytössä"
+
+#: src/synos_whisper_gtk/app.py:550
+msgid "Use"
+msgstr "Käytä"
+
+#: src/synos_whisper_gtk/app.py:553
+msgid "Download"
+msgstr "Lataa"
+
+#: src/synos_whisper_gtk/app.py:559
+msgid "Stop Test"
+msgstr "Pysäytä testaus"
+
+#: src/synos_whisper_gtk/app.py:593
+msgid "SynOS Voice Typing"
+msgstr "SynOS-äänikirjoitus"
+
+#: src/synos_whisper_gtk/app.py:595
+msgid "SynOS Team"
+msgstr "SynOS-tiimi"
+
+#: src/synos_whisper_gtk/app.py:597
+msgid "Private, offline speech-to-text for the whole desktop."
+msgstr ""
+"Yksityinen, ilman verkkoyhteyttä toimiva puheentunnistus koko työpöydälle."
+
+#: src/synos_whisper_gtk/app.py:605
+#, python-format
+msgid "%.0f MB"
+msgstr "%.0f Mt"
+
+#: data/voice-typing@synos.com/extension.js:70
+msgid "Recognizing…"
+msgstr "Tunnistetaan…"
+
+#: data/voice-typing@synos.com/extension.js:71
+msgid "Testing microphone…"
+msgstr "Testataan mikrofonia…"
+
+#: data/voice-typing@synos.com/extension.js:72
+msgid "No speech detected"
+msgstr "Puhetta ei havaittu"
+
+#: data/voice-typing@synos.com/extension.js:73
+msgid "Microphone unavailable"
+msgstr "Mikrofoni ei ole käytettävissä"
+
+#: data/voice-typing@synos.com/extension.js:77
+#: data/voice-typing@synos.com/extension.js:314
+msgid "Auto"
+msgstr "Automaattinen"
+
+#: data/voice-typing@synos.com/extension.js:371
+#: data/voice-typing@synos.com/extension.js:432
+msgid "Off"
+msgstr "Pois"
+
+#: data/voice-typing@synos.com/extension.js:544
+msgid "Voice typing is disabled in password fields"
+msgstr "Äänikirjoitus on poistettu käytöstä salasanakentissä"
+
+#: data/voice-typing@synos.com/extension.js:549
+msgid "Select a text field before dictating"
+msgstr "Valitse tekstikenttä ennen sanelua"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:34
+msgid "Briefly preview recognized text before inserting it"
+msgstr "Näytä tunnistettu teksti hetken ennen sen lisäämistä"
+
+#: data/com.synos.VoiceTyping.Settings.desktop:3
+msgid "Configure offline system-wide dictation"
+msgstr ""
+"Määritä ilman verkkoyhteyttä toimivan järjestelmänlaajuisen äänikirjoituksen"
+" asetukset"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:26
+msgid "Enable exact-match punctuation and layout commands"
+msgstr ""
+"Ota käyttöön tarkkaan vastaavuuteen perustuvat välimerkki- ja "
+"tekstinmuotoilukomennot"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:6
+msgid "Global voice typing shortcut"
+msgstr "Äänikirjoituksen globaali pikanäppäin"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:52
+msgid "Horizontal offset from the centered overlay position"
+msgstr "Vaakasuuntainen siirtymä peittokuvan keskitetystä sijainnista"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:22
+msgid "Keep punctuation recognized by Whisper"
+msgstr "Säilytä Whisperin tunnistamat välimerkit"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:10
+msgid "PipeWire node name, or empty for the system default"
+msgstr ""
+"PipeWire-solmun nimi; jätä tyhjäksi käyttääksesi järjestelmän oletussolmua"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:30
+msgid "Play a subtle sound when listening starts or stops"
+msgstr ""
+"Toista hillitty äänimerkki, kun sovellus alkaa tai lopettaa mikrofonin "
+"kuuntelun"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:43
+msgid "Preview duration in milliseconds"
+msgstr "Esikatselun kesto millisekunteina"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:14
+msgid "Recognition language and Chinese output script"
+msgstr "Tunnistuskieli ja kiinankielisen tekstin kirjoitusjärjestelmä"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:38
+msgid "Show periodically refreshed partial transcripts while speaking"
+msgstr ""
+"Näytä osittaiset litteroinnit, jotka päivittyvät säännöllisesti puhuessasi"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:18
+msgid "Speech recognition model"
+msgstr "Puheentunnistusmalli"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:48
+msgid "Voice activity threshold in decibels"
+msgstr "Puheaktiivisuuden kynnysarvo desibeleinä"
+
+#: data/com.synos.VoiceTyping.Settings.desktop:9
+msgid "voice;typing;dictation;speech;microphone;accessibility;"
+msgstr "ääni;kirjoittaminen;sanelu;puhe;mikrofoni;saavutettavuus;"

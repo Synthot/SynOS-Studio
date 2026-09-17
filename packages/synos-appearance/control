@@ -1,0 +1,9 @@
+Package: synos-appearance
+Version: 2.0.2-11+synos1
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: python3, python3-gi, python3-gi-cairo, gir1.2-gtk-4.0, dconf-cli, gir1.2-adw-1, synos-gdm3-wallpaper
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Appearance — toggle between Centered and Classic taskbar layouts

@@ -1,0 +1,9 @@
+id: us
+name: United States
+locales: [en_US.UTF-8]
+keyboard: us
+timezone: America/New_York
+mirror: http://ftp.us.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: letter

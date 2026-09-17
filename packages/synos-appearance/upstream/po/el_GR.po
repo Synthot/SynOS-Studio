@@ -1,0 +1,517 @@
+# SynOS Appearance — Greek translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: Greek\n"
+"Language: el_GR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "Σχετικά με την Εμφάνιση του SynOS"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "Προχωρημένα"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "Εμφάνιση SynOS"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "Ομάδα SynOS"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "Εμφάνιση"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "Εφαρμογή στην οθόνη σύνδεσης"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "Κάτω"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "Επιλέξτε μια εικόνα για το φόντο της οθόνης σύνδεσης GDM."
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "Διάλεξε το οπτικό στυλ της γραμμής εργασιών σου."
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "Επιλογή…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "Κλασικό"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr "Συνένωση πολλαπλών παραθύρων μιας εφαρμογής σε ένα εικονίδιο"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "Ζώνη κινδύνου"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "Εμφάνιση του κουμπιού Δραστηριότητες στη γραμμή εργασιών"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "Ενεργοποίηση ομαδοποίησης"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "Ρυθμίσεις επεκτάσεων"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "Ταπετσαρία GDM"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "Ομαδοποίηση εφαρμογών"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "Εικόνες"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "Διαχωρισμός εκκινητών από εκτελούμενες εφαρμογές"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "Διάταξη"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "Αριστερά"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "Ταπετσαρία οθόνης σύνδεσης"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "Άνοιγμα"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "Άνοιξε τα παράθυρα προτιμήσεων των προσθηκών της γραμμής εργασιών."
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "Ενδείξεις γραμμής εργασιών"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "Γραφικά στοιχεία γραμμής εργασιών"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "Προεπισκόπηση"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "Επαναφορά"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "Επαναφορά ρυθμίσεων επιφάνειας εργασίας"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "Επαναφορά ρυθμίσεων επιφάνειας εργασίας;"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "Επαναφορά εμφάνισης επιφάνειας εργασίας, αναζήτησης, φακέλων εφαρμογών και απορρήτου στις εργοστασιακές ρυθμίσεις"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "Δεξιά"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "Επιλογή εικόνας"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "Διαχωρισμένο"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "Εμφάνιση κουμπιού δραστηριοτήτων"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "Εμφάνιση εικονιδίων επιφάνειας εργασίας"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "Εμφάνιση δικτύου"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "Εμφάνιση καιρού"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "Εμφάνιση ή απόκρυψη ενσωματωμένων στοιχείων πίνακα."
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "Στοιχεία γραμμής εργασιών"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "Στυλ γραμμής εργασιών"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr ""
+"Ενεργοποίηση ή απενεργοποίηση των γραφικών στοιχείων ένδειξης "
+"πίνακα.Ενεργοποίησε ή απενεργοποίησε τα widgets των δεικτών της γραμμής "
+"εργασιών."
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "Πάνω"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "Ρυθμίσεις"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "Συμπεριφορά γραμμής εργασιών Vista"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "Τοίχος Παραθύρου"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "Κεντραρισμένο"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ Εφαρμόστηκε — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ Έγινε επαναφορά των ρυθμίσεων επιφάνειας εργασίας. Αποσυνδεθείτε και συνδεθείτε ξανά για να εφαρμοστούν όλες οι αλλαγές."
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ Η ταπετσαρία GDM εφαρμόστηκε"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ Απέτυχε η εφαρμογή θέσης"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ Απέτυχε η εφαρμογή στυλ"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ Απέτυχε η επαναφορά"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ Αποτυχία ορισμού ταπετσαρίας GDM"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ Αποτυχία εναλλαγής κουμπιού δραστηριοτήτων"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ Παρακαλώ επιλέξτε πρώτα μια εικόνα"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "Αυτό θα επαναφέρει τις επεκτάσεις, τη διάταξη του πίνακα, τις προτιμήσεις αναζήτησης, τους φακέλους εφαρμογών, την ταπετσαρία, τη διεπαφή και τις προτιμήσεις απορρήτου στις εργοστασιακές ρυθμίσεις."
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "Network Stats"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Simple Weather"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr ""
+"Ενημέρωση της κατά προσέγγιση τοποθεσίας που χρησιμοποιείται για τον καιρό"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "Συμφωνία απορρήτου υπηρεσιών καιρού"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. Κατά προσέγγιση τοποθεσία (ipapi.co)\n"
+"Το SynOS θα υποβάλει ένα αίτημα HTTPS στο ipapi.co. Ο φορέας εκμετάλλευσής του, η Kloudend, Inc., θα δει τη δημόσια διεύθυνση IP σας και ενδέχεται να τη χρησιμοποιήσει για να εκτιμήσει την πόλη, τη χώρα και τις κατά προσέγγιση συντεταγμένες σας.\n"
+"\n"
+"2. Δεδομένα καιρού (Open-Meteo)\n"
+"Η επέκταση καιρού θα στείλει τις επιλεγμένες κατά προσέγγιση συντεταγμένες στο Open-Meteo, το οποίο διαχειρίζεται η OpenMeteo GmbH. Η υπηρεσία θα δει επίσης τη δημόσια διεύθυνση IP σας και ενδέχεται να διατηρεί αρχεία καταγραφής API για έως και 90 ημέρες.\n"
+"\n"
+"Το SynOS δεν συνδέεται με, δεν χρηματοδοτείται από και δεν έχει την έγκριση καμίας από τις δύο υπηρεσίες τρίτων. Αν αποτύχει ο εντοπισμός της τοποθεσίας, το SynOS θα χρησιμοποιήσει μια εκτίμηση εκτός σύνδεσης βάσει της ζώνης ώρας του συστήματός σας.\n"
+"\n"
+"Πολιτικές απορρήτου:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "Απόρριψη"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "Συμφωνώ με όλα"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr "Η επέκταση καιρού δεν ενεργοποιήθηκε επειδή απορρίφθηκε η άδεια."
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "Απέτυχε η αποθήκευση της άδειας για τη λειτουργία καιρού."
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "Προσδιορισμός της κατά προσέγγιση τοποθεσίας σας…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "Δεν ήταν δυνατή η ρύθμιση της επέκτασης καιρού."
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "Η τοποθεσία για τον καιρό ορίστηκε σε {location}."
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr ""
+"Η υπηρεσία τοποθεσίας δεν είναι διαθέσιμη· χρησιμοποιείται η τοποθεσία "
+"{location} βάσει της ζώνης ώρας σας."
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr ""
+"Η λειτουργία καιρού απενεργοποιήθηκε, αλλά δεν ήταν δυνατή η διαγραφή της "
+"αποθηκευμένης άδειάς της."
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"Αντίγραφο ασφαλείας ρυθμίσεων GNOME, διατάξεων και προτιμήσεων επεκτάσεων. "
+"Τα προσωπικά αρχεία δεν περιλαμβάνονται."
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "Αντίγραφο ασφαλείας και επαναφορά"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "Εξαγωγή ρυθμίσεων GNOME"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "Εξαγωγή ρυθμίσεων GNOME"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "Εξαγωγή…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "Πώς πρέπει να εισαχθούν αυτές οι ρυθμίσεις;"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "Αρχεία ρυθμίσεων INI"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "Εισαγωγή ρυθμίσεων GNOME"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "Εισαγωγή ρυθμίσεων GNOME"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "Εισαγωγή…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "Εισαγωγή με συγχώνευση"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"Η εισαγωγή με συγχώνευση διατηρεί τις τρέχουσες τιμές που απουσιάζουν από το αρχείο.\n"
+"\n"
+"Η πλήρης επαναφορά επαναφέρει αρχικά όλες τις ρυθμίσεις /org/gnome/ στις προεπιλεγμένες τιμές τους· οι τιμές που απουσιάζουν από το αρχείο παραμένουν στις προεπιλεγμένες τιμές τους. Πριν από καθεμία από τις δύο ενέργειες αποθηκεύεται ένα αντίγραφο ασφαλείας."
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "Επαναφορά ρυθμίσεων από αρχείο dconf σε μορφή INI"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr ""
+"Αποθήκευση των τρεχουσών ρυθμίσεων σε αρχείο INI αναγνώσιμο από άνθρωπο"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "Πλήρης επαναφορά"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ Οι ρυθμίσεις GNOME εξήχθησαν"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ Οι ρυθμίσεις εισήχθησαν. Αποσυνδεθείτε και συνδεθείτε ξανά για να "
+"εφαρμοστούν όλες οι αλλαγές."
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ Απέτυχε η εξαγωγή των ρυθμίσεων GNOME"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ Απέτυχε η εισαγωγή των ρυθμίσεων GNOME"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ Απέτυχε η ανάγνωση του αρχείου ρυθμίσεων"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr "✗ Απέτυχαν τόσο η εισαγωγή όσο και η αυτόματη επαναφορά"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr "✗ Απέτυχε η εισαγωγή· επαναφέρθηκαν οι προηγούμενες ρυθμίσεις"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ Το επιλεγμένο αρχείο δεν είναι έγκυρο αρχείο dconf σε μορφή INI"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "γραμμή εργασιών;πίνακας;διάταξη;στυλ;παράθυρα;εμφάνιση;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr "Εναλλαγή μεταξύ κεντραρισμένης και κλασικής διάταξης γραμμής εργασιών"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ Αποκρύφθηκε το κουμπί δραστηριοτήτων"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ Εμφανίστηκε το κουμπί δραστηριοτήτων"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ Απενεργοποιήθηκε το {label}"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ Η ενεργοποίηση ολοκληρώθηκε: {label}"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ Απέτυχε η απενεργοποίηση του {label}"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ Απέτυχε η ενεργοποίηση του {label}"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ Κουμπί δραστηριοτήτων — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action}ε"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ Απέτυχε να {action} το {label}"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "Θέση Γραμμής Εργασιών"
+
+#~ msgid "Panel Position"
+#~ msgstr "Θέση Γραμμής Εργασιών"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "Διάλεξε πού θα βρίσκεται η γραμμή εργασιών στην οθόνη."

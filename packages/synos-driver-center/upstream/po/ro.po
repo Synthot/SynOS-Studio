@@ -1,0 +1,1385 @@
+# synos-driver-center translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-driver-center.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-driver-center\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-11 16:11+0800\n"
+"PO-Revision-Date: 2026-08-06 07:08+0000\n"
+"Last-Translator: AnduinOS Team <anduin@aiursoft.com>\n"
+"Language-Team: ro\n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2);\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: src/synos_driver_center/app.py:123 src/synos_driver_center/app.py:221
+#: src/synos_driver_center/app.py:295
+#: src/synos_driver_center/app.py:2278
+#: data/com.synos.DriverCenter.desktop:2
+msgid "SynOS Driver Center"
+msgstr "SynOS Centru de șoferi"
+
+#: src/synos_driver_center/app.py:242 src/synos_driver_center/app.py:340
+#: src/synos_driver_center/app.py:342
+msgid "Home"
+msgstr "Acasă"
+
+#: src/synos_driver_center/app.py:245 src/synos_driver_center/app.py:802
+#: src/synos_driver_center/app.py:1073
+#: src/synos_driver_center/app.py:1641
+#: src/synos_driver_center/app.py:1803
+msgid "Scan again"
+msgstr "Scanați din nou"
+
+#: src/synos_driver_center/app.py:250
+msgid "About Driver Center"
+msgstr "Despre Driver Center"
+
+#: src/synos_driver_center/app.py:252
+msgid "Main Menu"
+msgstr "Meniul principal"
+
+#: src/synos_driver_center/app.py:297
+msgid "Scanning for drivers"
+msgstr "Scanare pentru drivere"
+
+#: src/synos_driver_center/app.py:298
+msgid "Checking hardware and Secure Boot status…"
+msgstr "Se verifică starea hardware și a Secure Boot..."
+
+#: src/synos_driver_center/app.py:340 src/synos_driver_center/app.py:878
+#: src/synos_driver_center/app.py:1218
+#: src/synos_driver_center/app.py:1951
+msgid "System status"
+msgstr "Starea sistemului"
+
+#: src/synos_driver_center/app.py:359 src/synos_driver_center/app.py:363
+msgid "Audio"
+msgstr "Audio"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:942
+msgid "Audio support ready"
+msgstr "Suport audio gata"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:375
+#: src/synos_driver_center/app.py:402 src/synos_driver_center/app.py:496
+#: src/synos_driver_center/app.py:845 src/synos_driver_center/app.py:848
+#: src/synos_driver_center/app.py:912 src/synos_driver_center/app.py:942
+#: src/synos_driver_center/app.py:972 src/synos_driver_center/app.py:997
+#: src/synos_driver_center/app.py:1013
+msgid "Support needs attention"
+msgstr "Asistența necesită atenție"
+
+#: src/synos_driver_center/app.py:370
+msgid "Printing service stopped"
+msgstr "Serviciul de imprimare a fost oprit"
+
+#: src/synos_driver_center/app.py:372 src/synos_driver_center/app.py:956
+#: src/synos_driver_center/app.py:2118
+msgid "Printing support disabled."
+msgstr "Suport de imprimare dezactivat."
+
+#: src/synos_driver_center/app.py:377
+msgid "Some queues are paused"
+msgstr "Unele cozi sunt întrerupte"
+
+#: src/synos_driver_center/app.py:379 src/synos_driver_center/app.py:967
+msgid "No printers configured"
+msgstr "Nu au fost configurate imprimante"
+
+#: src/synos_driver_center/app.py:382 src/synos_driver_center/app.py:962
+#, python-format
+msgid "%d printer configured"
+msgid_plural "%d printers configured"
+msgstr[0] "%d imprimantă configurată"
+msgstr[1] "%d imprimante configurate"
+msgstr[2] "%d de imprimante configurate"
+
+#: src/synos_driver_center/app.py:387 src/synos_driver_center/app.py:390
+msgid "Printers"
+msgstr "Imprimante"
+
+#: src/synos_driver_center/app.py:395 src/synos_driver_center/app.py:407
+msgid "Xbox Controller"
+msgstr "Controler Xbox"
+
+#: src/synos_driver_center/app.py:397 src/synos_driver_center/app.py:995
+msgid "xpadneo installed"
+msgstr "xpadneo instalat"
+
+#: src/synos_driver_center/app.py:400 src/synos_driver_center/app.py:996
+msgid "Optional Bluetooth driver"
+msgstr "Driver Bluetooth opțional"
+
+#: src/synos_driver_center/app.py:413 src/synos_driver_center/app.py:417
+#: src/synos_driver_center/app.py:807 src/synos_driver_center/app.py:811
+#: src/synos_driver_center/app.py:1011
+#: src/synos_driver_center/app.py:1105
+#: src/synos_driver_center/app.py:1570
+#: src/synos_driver_center/app.py:1761
+#: src/synos_driver_center/app.py:1766
+#: src/synos_driver_center/app.py:1771
+#: src/synos_driver_center/app.py:1782
+msgid "Secure Boot"
+msgstr "Secure Boot"
+
+#: src/synos_driver_center/app.py:414
+#: src/synos_driver_center/app.py:1013
+msgid "Trust established"
+msgstr "Încredere stabilită"
+
+#: src/synos_driver_center/app.py:414 src/synos_driver_center/app.py:798
+#: src/synos_driver_center/app.py:805 src/synos_driver_center/app.py:892
+#: src/synos_driver_center/app.py:1012
+msgid "Action required"
+msgstr "Acțiune necesară"
+
+#: src/synos_driver_center/app.py:424 src/synos_driver_center/app.py:428
+#: src/synos_driver_center/app.py:1025
+#: src/synos_driver_center/app.py:1172
+msgid "Device Firmware"
+msgstr "Firmware-ul dispozitivului"
+
+#: src/synos_driver_center/app.py:494
+#: src/synos_driver_center/app.py:1203
+msgid "Checking for updates…"
+msgstr "Se verifică actualizările..."
+
+#: src/synos_driver_center/app.py:498 src/synos_driver_center/app.py:520
+#: src/synos_driver_center/app.py:644
+msgid "Shutdown Required"
+msgstr "Oprire necesară"
+
+#: src/synos_driver_center/app.py:500 src/synos_driver_center/app.py:522
+#: src/synos_driver_center/app.py:840 src/synos_driver_center/app.py:907
+#: src/synos_driver_center/app.py:1052
+#: src/synos_driver_center/app.py:1471
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:429
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:443
+msgid "Reboot Required"
+msgstr "Restartare necesară"
+
+#: src/synos_driver_center/app.py:504 src/synos_driver_center/app.py:526
+#: src/synos_driver_center/app.py:627
+#, python-format
+msgid "%d firmware update available"
+msgid_plural "%d firmware updates available"
+msgstr[0] "%d actualizare de firmware disponibilă"
+msgstr[1] "%d actualizări de firmware disponibile"
+msgstr[2] "%d de actualizări de firmware disponibile"
+
+#: src/synos_driver_center/app.py:509
+msgid "No supported devices"
+msgstr "Nu există dispozitive acceptate"
+
+#: src/synos_driver_center/app.py:510
+msgid "Firmware is up to date"
+msgstr "Firmware-ul este actualizat"
+
+#: src/synos_driver_center/app.py:516
+msgid "Checking…"
+msgstr "Se verifică…"
+
+#: src/synos_driver_center/app.py:516
+msgid "Contacting the firmware service"
+msgstr "Contactarea serviciului de firmware"
+
+#: src/synos_driver_center/app.py:518 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:971 src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1440
+msgid "Needs attention"
+msgstr "Necesită atenție"
+
+#: src/synos_driver_center/app.py:520 src/synos_driver_center/app.py:601
+#: src/synos_driver_center/app.py:1453
+msgid "Shutdown required after installation"
+msgstr "Este necesară oprirea după instalare"
+
+#: src/synos_driver_center/app.py:522
+msgid "Restart to finish the firmware update"
+msgstr "Reporniți pentru a finaliza actualizarea firmware-ului"
+
+#: src/synos_driver_center/app.py:530 src/synos_driver_center/app.py:828
+#: src/synos_driver_center/app.py:902
+#: src/synos_driver_center/app.py:1049
+#: src/synos_driver_center/app.py:1269
+#: src/synos_driver_center/app.py:1404
+msgid "Update available"
+msgstr "Actualizare disponibilă"
+
+#: src/synos_driver_center/app.py:532 src/synos_driver_center/app.py:893
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1757
+#: src/synos_driver_center/app.py:1801
+#: src/synos_driver_center/app.py:1910
+msgid "Not detected"
+msgstr "Nu a fost detectat"
+
+#: src/synos_driver_center/app.py:532
+#: src/synos_driver_center/app.py:1341
+msgid "No supported firmware devices"
+msgstr "Nu există dispozitive cu firmware acceptate"
+
+#: src/synos_driver_center/app.py:535
+#, python-format
+msgid "%d device is up to date"
+msgid_plural "%d devices are up to date"
+msgstr[0] "%d dispozitiv este actualizat"
+msgstr[1] "%d dispozitive sunt actualizate"
+msgstr[2] "%d de dispozitive sunt actualizate"
+
+#: src/synos_driver_center/app.py:539 src/synos_driver_center/app.py:853
+#: src/synos_driver_center/app.py:917 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:959 src/synos_driver_center/app.py:992
+#: src/synos_driver_center/app.py:1055
+#: src/synos_driver_center/app.py:1269
+msgid "Ready"
+msgstr "Pregătit"
+
+#: src/synos_driver_center/app.py:568
+msgid "Scheduling firmware update…"
+msgstr "Se programează actualizarea firmware-ului..."
+
+#: src/synos_driver_center/app.py:569
+msgid "Downloading firmware…"
+msgstr "Se descarcă firmware-ul..."
+
+#: src/synos_driver_center/app.py:570
+msgid "Installing firmware…"
+msgstr "Se instalează firmware..."
+
+#: src/synos_driver_center/app.py:571
+msgid "Verifying firmware…"
+msgstr "Se verifică firmware-ul..."
+
+#: src/synos_driver_center/app.py:572
+msgid "Waiting for authentication…"
+msgstr "Se așteaptă autentificarea..."
+
+#: src/synos_driver_center/app.py:573
+msgid "Waiting for user action…"
+msgstr "Se așteaptă acțiunea utilizatorului..."
+
+#: src/synos_driver_center/app.py:577
+msgid "Updating firmware…"
+msgstr "Se actualizează firmware-ul..."
+
+#: src/synos_driver_center/app.py:598
+#: src/synos_driver_center/app.py:2123
+#: src/synos_driver_center/app.py:2252
+msgid "unknown error"
+msgstr "eroare necunoscută"
+
+#: src/synos_driver_center/app.py:603
+#: src/synos_driver_center/app.py:1455
+msgid "Restart required after installation"
+msgstr "Este necesară repornirea după instalare"
+
+#: src/synos_driver_center/app.py:607 src/synos_driver_center/app.py:680
+#: src/synos_driver_center/app.py:686
+msgid "Firmware operation failed"
+msgstr "Operarea cu firmware-ul a eșuat"
+
+#: src/synos_driver_center/app.py:610
+#: src/synos_driver_center/app.py:2260
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:478
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:526
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:544
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:552
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:560
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:576
+msgid "OK"
+msgstr "OK"
+
+#: src/synos_driver_center/app.py:621
+msgid "Firmware metadata refreshed."
+msgstr "Metadatele firmware-ului au fost reîmprospătate."
+
+#: src/synos_driver_center/app.py:632
+msgid "No firmware updates are available."
+msgstr "Nu sunt disponibile actualizări de firmware."
+
+#: src/synos_driver_center/app.py:639
+msgid "Firmware update completed."
+msgstr "Actualizare firmware finalizată."
+
+#: src/synos_driver_center/app.py:644
+msgid "Restart Required"
+msgstr "Este necesară repornirea"
+
+#: src/synos_driver_center/app.py:647
+msgid ""
+"The firmware update has been prepared. Save your work and shut down the "
+"computer to finish installing it."
+msgstr ""
+"Actualizarea firmware-ului a fost pregătită. Salvați-vă lucrul și opriți "
+"computerul pentru a finaliza instalarea."
+
+#: src/synos_driver_center/app.py:652
+msgid ""
+"The firmware update has been prepared. Save your work and restart the "
+"computer to finish installing it."
+msgstr ""
+"Actualizarea firmware-ului a fost pregătită. Salvați-vă munca și reporniți "
+"computerul pentru a termina instalarea."
+
+#: src/synos_driver_center/app.py:657
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:494
+msgid "Later"
+msgstr "Mai târziu"
+
+#: src/synos_driver_center/app.py:660
+msgid "Shut Down Now"
+msgstr "Închide acum"
+
+#: src/synos_driver_center/app.py:660
+msgid "Restart Now"
+msgstr "Reporniți acum"
+
+#: src/synos_driver_center/app.py:766
+#: src/synos_driver_center/app.py:1361
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1616
+#: src/synos_driver_center/app.py:1741
+msgid "Installed"
+msgstr "Instalat"
+
+#: src/synos_driver_center/app.py:768
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Available"
+msgstr "Disponibil"
+
+#: src/synos_driver_center/app.py:800 src/synos_driver_center/app.py:858
+#: src/synos_driver_center/app.py:1063
+#: src/synos_driver_center/app.py:1736
+msgid "Driver status"
+msgstr "Starea șoferului"
+
+#: src/synos_driver_center/app.py:801
+#: src/synos_driver_center/app.py:1652
+#: src/synos_driver_center/app.py:2252
+msgid "Driver operation failed: "
+msgstr "Operarea driverului a eșuat: "
+
+#: src/synos_driver_center/app.py:809
+#: src/synos_driver_center/app.py:1568
+msgid ""
+"Secure Boot status or trust must be resolved before installing a third-party"
+" driver."
+msgstr ""
+"Secure Boot trebuie rezolvate înainte de a instala un driver terță parte."
+
+#: src/synos_driver_center/app.py:814 src/synos_driver_center/app.py:897
+#: src/synos_driver_center/app.py:1046
+#: src/synos_driver_center/app.py:1618
+msgid "Recommended"
+msgstr "Recomandat"
+
+#: src/synos_driver_center/app.py:818
+#: src/synos_driver_center/app.py:1557
+msgid ""
+"Choose the driver used by this device. SynOS marks the hardware-tested "
+"recommendation."
+msgstr ""
+"Alegeți driverul utilizat de acest dispozitiv. SynOS marchează "
+"recomandarea testată de hardware."
+
+#: src/synos_driver_center/app.py:820 src/synos_driver_center/app.py:832
+#: src/synos_driver_center/app.py:1097
+#: src/synos_driver_center/app.py:1533
+#: src/synos_driver_center/app.py:1578
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1667
+#: src/synos_driver_center/app.py:2007
+msgid "Apply Changes"
+msgstr "Aplicați modificări"
+
+#: src/synos_driver_center/app.py:843
+#: src/synos_driver_center/app.py:2250
+msgid "Driver changes completed. Restart may be required."
+msgstr ""
+"Modificările driverului au fost finalizate. Este posibil să fie necesară "
+"repornirea."
+
+#: src/synos_driver_center/app.py:849 src/synos_driver_center/app.py:928
+#: src/synos_driver_center/app.py:1036
+#: src/synos_driver_center/app.py:1563
+msgid "Available drivers"
+msgstr "Drivere disponibile"
+
+#: src/synos_driver_center/app.py:860 src/synos_driver_center/app.py:921
+msgid "No additional drivers are needed."
+msgstr "Nu sunt necesare drivere suplimentare."
+
+#: src/synos_driver_center/app.py:940
+#: src/synos_driver_center/app.py:1846
+msgid "Audio Support"
+msgstr "Suport audio"
+
+#: src/synos_driver_center/app.py:955
+#: src/synos_driver_center/app.py:1969
+msgid "Disabled"
+msgstr "Dezactivat"
+
+#: src/synos_driver_center/app.py:977
+#: src/synos_driver_center/app.py:1918
+msgid "Printing Support"
+msgstr "Suport pentru imprimare"
+
+#: src/synos_driver_center/app.py:991
+#: src/synos_driver_center/app.py:1732
+msgid "Xbox Controller Support"
+msgstr "Suport pentru controller Xbox"
+
+#: src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1741
+#: src/synos_driver_center/app.py:1825
+#: src/synos_driver_center/app.py:1869
+#: src/synos_driver_center/app.py:1877
+#: src/synos_driver_center/app.py:2059
+msgid "Not installed"
+msgstr "Nu este instalat"
+
+#: src/synos_driver_center/app.py:1012
+#: src/synos_driver_center/app.py:1749
+msgid "Trusted"
+msgstr "De încredere"
+
+#: src/synos_driver_center/app.py:1065
+msgid "Check for Driver Updates"
+msgstr "Verifică actualizările driverelor"
+
+#: src/synos_driver_center/app.py:1067
+msgid "Refresh software sources and compare the recommended driver version."
+msgstr ""
+"Reîmprospătează sursele software și compară versiunea recomandată a "
+"driverului."
+
+#: src/synos_driver_center/app.py:1079
+msgid "Driver information updated."
+msgstr "Informațiile despre drivere au fost actualizate."
+
+#: src/synos_driver_center/app.py:1088
+#: src/synos_driver_center/app.py:1535
+msgid ""
+"SynOS will update software sources and install the drivers recommended "
+"for this hardware."
+msgstr ""
+"SynOS va actualiza sursele software și va instala driverele recomandate "
+"pentru acest hardware."
+
+#: src/synos_driver_center/app.py:1174
+msgid ""
+"Keep system firmware and supported hardware up to date through the Linux "
+"Vendor Firmware Service."
+msgstr ""
+"Păstrați firmware-ul sistemului și hardware-ul acceptat la zi prin Linux "
+"Vendor Firmware Service."
+
+#: src/synos_driver_center/app.py:1186
+msgid "Firmware operation failed: "
+msgstr "Operarea cu firmware-ul a eșuat: "
+
+#: src/synos_driver_center/app.py:1187
+#: src/synos_driver_center/app.py:1296
+msgid "Check Again"
+msgstr "Verificați din nou"
+
+#: src/synos_driver_center/app.py:1193
+msgid "Firmware operation"
+msgstr "Operare cu firmware"
+
+#: src/synos_driver_center/app.py:1220
+msgid "Firmware service"
+msgstr "Serviciu de firmware"
+
+#: src/synos_driver_center/app.py:1224
+msgid "Not available"
+msgstr "Nu este disponibil"
+
+#: src/synos_driver_center/app.py:1238
+msgid "Not refreshed in this session"
+msgstr "Nu a fost reîmprospătat în această sesiune"
+
+#: src/synos_driver_center/app.py:1241
+msgid "Firmware metadata"
+msgstr "Metadatele firmware-ului"
+
+#: src/synos_driver_center/app.py:1250
+msgid "Supported devices"
+msgstr "Dispozitive acceptate"
+
+#: src/synos_driver_center/app.py:1252
+#, python-format
+msgid "%d device detected"
+msgid_plural "%d devices detected"
+msgstr[0] "%d dispozitiv detectat"
+msgstr[1] "%d dispozitive detectate"
+msgstr[2] "%d de dispozitive detectate"
+
+#: src/synos_driver_center/app.py:1262
+msgid "Available firmware updates"
+msgstr "Actualizări de firmware disponibile"
+
+#: src/synos_driver_center/app.py:1264
+#, python-format
+msgid "%d update available"
+msgid_plural "%d updates available"
+msgstr[0] "%d actualizare disponibilă"
+msgstr[1] "%d actualizări disponibile"
+msgstr[2] "%d de actualizări disponibile"
+
+#: src/synos_driver_center/app.py:1276
+msgid "Firmware actions"
+msgstr "Acțiuni de firmware"
+
+#: src/synos_driver_center/app.py:1278
+msgid "Refresh Firmware Metadata"
+msgstr "Actualizează metadatele firmware-ului"
+
+#: src/synos_driver_center/app.py:1279
+msgid "Download the latest metadata from enabled firmware sources."
+msgstr "Descărcați cele mai recente metadate din surse de firmware activate."
+
+#: src/synos_driver_center/app.py:1282
+msgid "Refresh"
+msgstr "Reîmprospătați"
+
+#: src/synos_driver_center/app.py:1292
+msgid "Check for Firmware Updates"
+msgstr "Verificați actualizările de firmware"
+
+#: src/synos_driver_center/app.py:1293
+msgid "Compare connected devices with the available metadata."
+msgstr "Comparați dispozitivele conectate cu metadatele disponibile."
+
+#: src/synos_driver_center/app.py:1307
+msgid "Update All Firmware"
+msgstr "Actualizați tot firmware-ul"
+
+#: src/synos_driver_center/app.py:1309
+#, python-format
+msgid "Install %d available update."
+msgid_plural "Install all %d available updates."
+msgstr[0] "Instalați %d actualizare disponibilă."
+msgstr[1] "Instalați toate cele %d actualizări disponibile."
+msgstr[2] "Instalați toate cele %d de actualizări disponibile."
+
+#: src/synos_driver_center/app.py:1315
+msgid "Update All"
+msgstr "Actualizați toate"
+
+#: src/synos_driver_center/app.py:1330
+msgid "Firmware Devices"
+msgstr "Dispozitive cu firmware"
+
+#: src/synos_driver_center/app.py:1332
+msgid "Expand a device to inspect installed and available firmware versions."
+msgstr ""
+"Extindeți un dispozitiv pentru a inspecta versiunile de firmware instalate "
+"și disponibile."
+
+#: src/synos_driver_center/app.py:1342
+msgid "The firmware service did not report any manageable devices."
+msgstr "Serviciul de firmware nu a raportat niciun dispozitiv gestionabil."
+
+#: src/synos_driver_center/app.py:1348
+msgid "Firmware Update History"
+msgstr "Istoricul actualizărilor firmware-ului"
+
+#: src/synos_driver_center/app.py:1349
+msgid "Results reported by the fwupd service."
+msgstr "Rezultate raportate de serviciul fwupd."
+
+#: src/synos_driver_center/app.py:1357
+msgid "Unknown time"
+msgstr "Ora necunoscută"
+
+#: src/synos_driver_center/app.py:1373
+msgid "No firmware update history"
+msgstr "Fără istoric de actualizare a firmware-ului"
+
+#: src/synos_driver_center/app.py:1374
+msgid "Completed firmware operations will appear here."
+msgstr "Operațiunile de firmware finalizate vor apărea aici."
+
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1399
+#: src/synos_driver_center/app.py:1415
+#: src/synos_driver_center/app.py:1426
+#: src/synos_driver_center/app.py:1473
+#: src/synos_driver_center/app.py:1489
+#: src/synos_driver_center/app.py:1490
+msgid "Unknown"
+msgstr "Necunoscut"
+
+#: src/synos_driver_center/app.py:1398
+msgid "Current version"
+msgstr "Versiunea curentă"
+
+#: src/synos_driver_center/app.py:1405
+#: src/synos_driver_center/app.py:1518
+msgid "Update"
+msgstr "Actualizare"
+
+#: src/synos_driver_center/app.py:1414
+msgid "Available version"
+msgstr "Versiune disponibilă"
+
+#: src/synos_driver_center/app.py:1419
+msgid "Low"
+msgstr "Scăzut"
+
+#: src/synos_driver_center/app.py:1420
+msgid "Medium"
+msgstr "Mediu"
+
+#: src/synos_driver_center/app.py:1421
+msgid "High"
+msgstr "Înalt"
+
+#: src/synos_driver_center/app.py:1422
+msgid "Critical"
+msgstr "Critic"
+
+#: src/synos_driver_center/app.py:1425
+msgid "Update urgency"
+msgstr "Actualizare urgentă"
+
+#: src/synos_driver_center/app.py:1436
+msgid "Release notes"
+msgstr "Note de lansare"
+
+#: src/synos_driver_center/app.py:1443
+msgid "Firmware status"
+msgstr "Starea firmware-ului"
+
+#: src/synos_driver_center/app.py:1447
+msgid "Up to date"
+msgstr "La zi"
+
+#: src/synos_driver_center/app.py:1451
+msgid "Connect the computer to AC power"
+msgstr "Conectați computerul la curent alternativ"
+
+#: src/synos_driver_center/app.py:1459
+msgid "Installation requirements"
+msgstr "Cerințe de instalare"
+
+#: src/synos_driver_center/app.py:1468
+msgid "Pending"
+msgstr "În așteptare"
+
+#: src/synos_driver_center/app.py:1469
+msgid "Success"
+msgstr "Succes"
+
+#: src/synos_driver_center/app.py:1470
+#: src/synos_driver_center/app.py:1472
+msgid "Failed"
+msgstr "A eșuat"
+
+#: src/synos_driver_center/app.py:1486
+#, python-format
+msgid "Install firmware for %(device)s from %(current)s to %(available)s?"
+msgstr ""
+"Instalați firmware pentru %(device)s de la %(current)s la %(available)s?"
+
+#: src/synos_driver_center/app.py:1494
+#, python-format
+msgid "Install %d available firmware update?"
+msgid_plural "Install all %d available firmware updates?"
+msgstr[0] "Instalați %d actualizare disponibilă de firmware?"
+msgstr[1] "Instalați toate cele %d actualizări disponibile de firmware?"
+msgstr[2] "Instalați toate cele %d de actualizări disponibile de firmware?"
+
+#: src/synos_driver_center/app.py:1500
+msgid "Keep the computer connected to AC power."
+msgstr "Țineți computerul conectat la curent alternativ."
+
+#: src/synos_driver_center/app.py:1504
+msgid ""
+"This update may invalidate full-disk encryption secrets. Make sure you have "
+"the volume recovery key before continuing."
+msgstr ""
+"Această actualizare poate invalida secretele criptării complete a discului. "
+"Asigurați-vă că aveți cheia de recuperare a volumului înainte de a continua."
+
+#: src/synos_driver_center/app.py:1509
+msgid "A restart may be required to finish installation."
+msgstr "Poate fi necesară o repornire pentru a finaliza instalarea."
+
+#: src/synos_driver_center/app.py:1510
+msgid "Do not disconnect devices or turn off the computer."
+msgstr "Nu deconectați dispozitivele și nu opriți computerul."
+
+#: src/synos_driver_center/app.py:1514
+msgid "Install Firmware Update"
+msgstr "Instalați actualizarea firmware-ului"
+
+#: src/synos_driver_center/app.py:1517
+#: src/synos_driver_center/app.py:1539
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:432
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:446
+msgid "Cancel"
+msgstr "Anulează"
+
+#: src/synos_driver_center/app.py:1540
+#: src/synos_driver_center/app.py:2210
+msgid "Apply"
+msgstr "Aplicați"
+
+#: src/synos_driver_center/app.py:1587
+msgid "open source"
+msgstr "sursă deschisă"
+
+#: src/synos_driver_center/app.py:1587
+msgid "proprietary"
+msgstr "proprietar"
+
+#: src/synos_driver_center/app.py:1589
+msgid "built in"
+msgstr "încorporat"
+
+#: src/synos_driver_center/app.py:1613
+msgid "In use"
+msgstr "În uz"
+
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1651
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1831
+msgid "Kernel module"
+msgstr "Modulul Kernel"
+
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1777
+#: src/synos_driver_center/app.py:1796
+#: src/synos_driver_center/app.py:1860
+#: src/synos_driver_center/app.py:1890
+#: src/synos_driver_center/app.py:1898
+msgid "Repair & Reinstall"
+msgstr "Reparați și reinstalați"
+
+#: src/synos_driver_center/app.py:1675
+msgid "Advanced driver versions"
+msgstr "Versiuni avansate de driver"
+
+#: src/synos_driver_center/app.py:1676
+msgid "Older, newer, and server-oriented packages"
+msgstr "Pachete mai vechi, mai noi și orientate spre server"
+
+#: src/synos_driver_center/app.py:1697
+msgid "Select another driver to apply changes."
+msgstr "Selectați alt driver pentru a aplica modificările."
+
+#: src/synos_driver_center/app.py:1733
+msgid ""
+"xpadneo improves Bluetooth mapping, rumble, battery reporting and "
+"compatibility for modern Xbox controllers."
+msgstr ""
+"xpadneo îmbunătățește maparea Bluetooth, zgomotul, raportarea bateriei și "
+"compatibilitatea pentru controlerele moderne Xbox."
+
+#: src/synos_driver_center/app.py:1740
+msgid "Driver package"
+msgstr "Pachet de driver"
+
+#: src/synos_driver_center/app.py:1743
+msgid "Install Driver"
+msgstr "Instalați driverul"
+
+#: src/synos_driver_center/app.py:1760
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:242
+msgid "Secure Boot state could not be determined"
+msgstr "Secure Boot nu a putut fi determinată"
+
+#: src/synos_driver_center/app.py:1765
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:285
+msgid "Pending enrollment in blue screen (MOKManager)"
+msgstr "Așteaptă înscrierea în ecranul albastru (MOKManager)"
+
+#: src/synos_driver_center/app.py:1770
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:290
+msgid "Certificate is not trusted by motherboard"
+msgstr "Certificatul nu este de încredere de către placa de bază"
+
+#: src/synos_driver_center/app.py:1775
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:318
+msgid "Some DKMS modules need to be re-signed"
+msgstr "Unele module DKMS trebuie resemnate"
+
+#: src/synos_driver_center/app.py:1786
+msgid "Module signature"
+msgstr "Semnătura modulului"
+
+#: src/synos_driver_center/app.py:1794
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Missing"
+msgstr "Lipsește"
+
+#: src/synos_driver_center/app.py:1806
+msgid "Loaded"
+msgstr "Încărcat"
+
+#: src/synos_driver_center/app.py:1811
+msgid "Standing by"
+msgstr "În așteptare"
+
+#: src/synos_driver_center/app.py:1838
+msgid "Bluetooth Settings"
+msgstr "Setări Bluetooth"
+
+#: src/synos_driver_center/app.py:1847
+msgid ""
+"SynOS provides Intel SOF firmware and ALSA UCM profiles for reliable "
+"audio initialization and routing."
+msgstr ""
+"SynOS oferă firmware Intel SOF și profile ALSA UCM pentru inițializare și"
+" rutare audio fiabile."
+
+#: src/synos_driver_center/app.py:1850
+msgid "Support packages"
+msgstr "Pachete de asistență"
+
+#: src/synos_driver_center/app.py:1858
+msgid "Install Audio Support"
+msgstr "Instalați suport audio"
+
+#: src/synos_driver_center/app.py:1868
+msgid "Intel SOF firmware"
+msgstr "Firmware Intel SOF"
+
+#: src/synos_driver_center/app.py:1876
+msgid "ALSA UCM profiles"
+msgstr "Profiluri ALSA UCM"
+
+#: src/synos_driver_center/app.py:1883
+msgid "Runtime status"
+msgstr "Stare de rulare"
+
+#: src/synos_driver_center/app.py:1887
+msgid "SOF firmware files"
+msgstr "fișiere firmware SOF"
+
+#: src/synos_driver_center/app.py:1895
+msgid "UCM configuration files"
+msgstr "Fișiere de configurare UCM"
+
+#: src/synos_driver_center/app.py:1903
+msgid "SOF kernel modules"
+msgstr "Modulele nucleului SOF"
+
+#: src/synos_driver_center/app.py:1904
+msgid "Not currently loaded"
+msgstr "Nu este încărcat momentan"
+
+#: src/synos_driver_center/app.py:1909
+msgid "Active audio drivers"
+msgstr "Drivere audio active"
+
+#: src/synos_driver_center/app.py:1919
+msgid ""
+"Inspect the local print service, configured queues, and the packages that "
+"provide modern and legacy printer support."
+msgstr ""
+"Inspectați serviciul de imprimare local, cozile configurate și pachetele "
+"care oferă suport pentru imprimantă modernă și veche."
+
+#: src/synos_driver_center/app.py:1924
+#: src/synos_driver_center/app.py:1958
+msgid "Enable Printing Support"
+msgstr "Activați suport pentru imprimare"
+
+#: src/synos_driver_center/app.py:1925
+msgid "Allow local, network, and USB printing services to run."
+msgstr "Permiteți rularea serviciilor de imprimare locale, de rețea și USB."
+
+#: src/synos_driver_center/app.py:1955
+msgid "CUPS service"
+msgstr "Serviciul CUPS"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Running"
+msgstr "Alergă"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Stopped"
+msgstr "Oprit"
+
+#: src/synos_driver_center/app.py:1968
+msgid "Start at boot"
+msgstr "Începe la pornire"
+
+#: src/synos_driver_center/app.py:1969
+msgid "Enabled"
+msgstr "Activat"
+
+#: src/synos_driver_center/app.py:1974
+#, python-format
+msgid "%d configured printer"
+msgid_plural "%d configured printers"
+msgstr[0] "%d imprimantă configurată"
+msgstr[1] "%d imprimante configurate"
+msgstr[2] "%d de imprimante configurate"
+
+#: src/synos_driver_center/app.py:1980
+msgid "Configured printers"
+msgstr "Imprimante configurate"
+
+#: src/synos_driver_center/app.py:1986
+msgid "Default printer"
+msgstr "Imprimantă implicită"
+
+#: src/synos_driver_center/app.py:1987
+msgid "Not set"
+msgstr "Nesetat"
+
+#: src/synos_driver_center/app.py:1991
+msgid "No configured queues"
+msgstr "Nu există cozi configurate"
+
+#: src/synos_driver_center/app.py:1996
+#, python-format
+msgid "%d queue paused"
+msgid_plural "%d queues paused"
+msgstr[0] "%d coadă întreruptă"
+msgstr[1] "%d cozi întrerupte"
+msgstr[2] "%d de cozi întrerupte"
+
+#: src/synos_driver_center/app.py:2000
+msgid "All queues enabled"
+msgstr "Toate cozile sunt activate"
+
+#: src/synos_driver_center/app.py:2004
+msgid "Print queues"
+msgstr "Cozi de imprimare"
+
+#: src/synos_driver_center/app.py:2015
+msgid "Core printing"
+msgstr "Imprimare de bază"
+
+#: src/synos_driver_center/app.py:2016
+msgid "Required for the local print service and command-line clients."
+msgstr ""
+"Necesar pentru serviciul de imprimare local și clienții de linie de comandă."
+
+#: src/synos_driver_center/app.py:2023
+msgid "Driverless printing"
+msgstr "Imprimare fără driver"
+
+#: src/synos_driver_center/app.py:2024
+msgid "Modern IPP drivers, document filters, and capability tools."
+msgstr ""
+"Drivere IPP moderne, filtre de documente și instrumente de capacitate."
+
+#: src/synos_driver_center/app.py:2031
+msgid "Network discovery"
+msgstr "Descoperirea rețelei"
+
+#: src/synos_driver_center/app.py:2032
+msgid "Automatic discovery of printers advertised on the local network."
+msgstr "Descoperirea automată a imprimantelor promovate în rețeaua locală."
+
+#: src/synos_driver_center/app.py:2039
+msgid "Optional compatibility"
+msgstr "Compatibilitate opțională"
+
+#: src/synos_driver_center/app.py:2040
+msgid ""
+"USB IPP, administrative authorization, legacy drivers, and network scanning."
+msgstr ""
+"USB IPP, autorizare administrativă, drivere vechi și scanare în rețea."
+
+#: src/synos_driver_center/app.py:2063
+msgid "Install Missing Packages"
+msgstr "Instalați pachetele lipsă"
+
+#: src/synos_driver_center/app.py:2116
+msgid "Printing support enabled."
+msgstr "Suport de imprimare activat."
+
+#: src/synos_driver_center/app.py:2122
+msgid "Printing operation failed: "
+msgstr "Operația de imprimare a eșuat: "
+
+#: src/synos_driver_center/app.py:2211
+msgid "Working…"
+msgstr "Se lucrează..."
+
+#: src/synos_driver_center/app.py:2280
+msgid "SynOS Team"
+msgstr "Echipa SynOS"
+
+#: src/synos_driver_center/app.py:2283
+msgid "Install, inspect, and repair hardware drivers on SynOS."
+msgstr "Instalați, inspectați și reparați driverele hardware pe SynOS."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:121
+msgid "Secure Boot Configuration"
+msgstr "Configurare Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:129
+msgid ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+msgstr ""
+"Secure Boot este un standard de securitate al plăcii de bază care asigură că"
+" doar software-ul de încredere se încarcă la pornire."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:132
+msgid "It protects your system from low-level malware and rootkits."
+msgstr ""
+"Vi protejează sistemul împotriva malware-ului la nivel scăzut și a rootkit-"
+"urilor."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:141
+msgid "System Trust Status"
+msgstr "Statusul Încrederii Sistemului"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:183
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:325
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:509
+msgid "Create & Enroll Certificate"
+msgstr "Creează și Înscrie Certificatul"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:189
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:338
+msgid "Repair Module Signatures"
+msgstr "Semnăturile modulelor de reparații"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:197
+msgid "Note: Use password <b>123456</b> after rebooting."
+msgstr "Notă: Utilizați parola <b>123456</b> după repornire."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:202
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:495
+msgid "Reboot & Configure Secure Boot"
+msgstr "Restartare și Configurare Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:210
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:419
+msgid "  Check Again  "
+msgstr "  Verifică din nou  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:236
+msgid "Motherboard hardware protection is active"
+msgstr "Protecția hardware a plăcii de bază este activă"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:239
+msgid "Firmware does not support Secure Boot"
+msgstr "Firmware-ul nu acceptă Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:245
+msgid "Secure Boot is disabled"
+msgstr "Secure Boot este dezactivat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:251
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:253
+msgid "Not required without firmware enforcement"
+msgstr "Nu este necesar fără aplicarea firmware-ului"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:257
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:261
+msgid "Not checked because Secure Boot state is unknown"
+msgstr "Nu este verificat deoarece starea Secure Boot este necunoscută"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:266
+msgid "Certificate generated locally"
+msgstr "Certificat generat local"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:268
+msgid "Missing local certificate"
+msgstr "Lipsește certificatul local"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:281
+msgid "Certificate is trusted by motherboard"
+msgstr "Certificatul este de încredere pentru placa de bază"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:296
+msgid "Kernel signature enforcement is inactive"
+msgstr "Aplicarea semnăturii kernel este inactivă"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:299
+msgid "Driver trust cannot be verified"
+msgstr "Încrederea șoferului nu poate fi verificată"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:303
+msgid ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+msgstr ""
+"Secure Boot încrederea este gata. În prezent, nu sunt instalate module "
+"kernel terțe."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:307
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:550
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:558
+msgid "Drivers are signed and ready to load"
+msgstr "Driverele sunt semnate și gata de încărcare"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:311
+msgid "Drivers are trusted, but automatic DKMS signing needs repair"
+msgstr ""
+"Driverele sunt de încredere, dar semnarea automată DKMS necesită reparații"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:315
+msgid "No signed third-party drivers detected"
+msgstr "Nu s-au detectat drivere terțe semnate"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:323
+msgid "Enroll Existing Certificate"
+msgstr "Înregistrați certificatul existent"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:336
+msgid "Repair Automatic DKMS Signing"
+msgstr "Reparați semnarea automată DKMS"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:356
+msgid ""
+"This firmware does not provide Secure Boot. No certificate is required."
+msgstr ""
+"Acest firmware nu oferă Secure Boot. Nu este necesar niciun certificat."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:363
+msgid ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+msgstr ""
+"Secure Boot nu a putut fi citită. Operațiunile de încredere în șofer sunt "
+"blocate până când detectarea reușește."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:369
+msgid "No certificate is required while Secure Boot is disabled."
+msgstr ""
+"Nu este necesar niciun certificat în timp ce Secure Boot este dezactivat."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:375
+msgid "System Trust Established. Third-party drivers will load securely."
+msgstr ""
+"Încrederea sistemului stabilită. Driverele terțe se vor încărca în "
+"siguranță."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:379
+msgid "The certificate is enrolled and current drivers are trusted."
+msgstr "Certificatul este înregistrat și șoferii actuali sunt de încredere."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:381
+msgid "Repair automatic DKMS signing before future driver updates."
+msgstr ""
+"Reparați semnarea automată DKMS înainte de viitoarele actualizări ale "
+"driverului."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:386
+msgid "The certificate is enrolled, but some modules are not signed with it."
+msgstr ""
+"Certificatul este înscris, dar unele module nu sunt semnate cu acesta."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:391
+msgid "A certificate is waiting for enrollment."
+msgstr "Se așteaptă un certificat pentru înscriere."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:393
+msgid "Restart and enter password 123456 in MOKManager."
+msgstr "Reporniți și introduceți parola 123456 în MOKManager."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:398
+msgid "The local trust certificate is not yet enrolled."
+msgstr "Certificatul de încredere local nu este încă înregistrat."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:400
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:407
+msgid "You must configure this to use third-party drivers like NVIDIA."
+msgstr "Și continuați cu configurarea sistemului în timp ce se descarcă."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:405
+msgid "The local trust certificate is missing."
+msgstr "Lipsește certificatul de încredere local."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:423
+msgid "  Checking...  "
+msgstr "  Se verifică...  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:430
+msgid "Please trust the certificate upon reboot using password 123456."
+msgstr ""
+"Vă rugăm să aveți încredere în certificat la repornire folosind parola "
+"123456."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:447
+msgid "Reboot"
+msgstr "Restartează"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:483
+msgid "Success! When you reboot, a blue screen will appear."
+msgstr "Succes! Când reporniți, va apărea un ecran albastru."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:487
+msgid "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+msgstr ""
+"Selectați 'Înscrie MOK' → 'Continuă' → 'Da', și introduceți parola: 123456"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:491
+msgid "Certificate Created"
+msgstr "Certificat creat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:523
+msgid "Secure Boot Trust Not Required"
+msgstr "Secure Boot Încrederea nu este necesară"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:524
+msgid "Firmware signature enforcement is not active."
+msgstr "Aplicarea semnăturii firmware nu este activă."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:534
+msgid ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt."
+" You can repair them after enrollment."
+msgstr ""
+"Certificatul este gata, dar unul sau mai multe module DKMS nu au putut fi "
+"reconstruite. Le puteți repara după înscriere."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:542
+msgid "Configuration needs attention"
+msgstr "Configurația necesită atenție"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:549
+msgid "System Trust Established"
+msgstr "Încrederea în sistem a fost stabilită"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:557
+msgid "Driver Signature Trusted"
+msgstr "Semnătura șoferului este de încredere"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:573
+msgid "Configuration failed. Please try again."
+msgstr "Configurarea a eșuat. Vă rugăm să încercați din nou."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:574
+msgid "Please check the advanced output."
+msgstr "Vă rugăm să verificați ieșirea avansată."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:585
+msgid "Generating & Signing..."
+msgstr "Se generează și semnează..."
+
+#: src/synos_driver_center/app.py:1940
+msgid "Add Printer"
+msgstr "Adaugă imprimantă"
+
+#: src/synos_driver_center/app.py:1365
+#: src/synos_driver_center/app.py:1390
+#: src/synos_driver_center/app.py:1488
+msgid "Firmware device"
+msgstr "Dispozitiv firmware"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:156
+msgid "Local MOK Certificate"
+msgstr "Certificat MOK local"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:155
+msgid "Secure Boot Enabled"
+msgstr "Secure Boot Activat"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:158
+msgid "Third-party Drivers"
+msgstr "Drivere Terțe"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:157
+msgid "UEFI Firmware Trust"
+msgstr "Încrederea Firmware-ului UEFI"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:10
+msgid "Authentication is required to change hardware drivers"
+msgstr "Este necesară autentificarea pentru a modifica driverele hardware"
+
+#: data/com.synos.DriverCenter.desktop:12
+msgid "driver;firmware;fwupd;nvidia;graphics;xbox;secure boot;hardware;"
+msgstr "driver;firmware;fwupd;nvidia;grafică;xbox;Secure Boot;hardware;"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:8
+msgid "Install and repair hardware drivers"
+msgstr "Instalați și reparați driverele hardware"
+
+#: data/com.synos.DriverCenter.desktop:4
+msgid "Manage hardware drivers and device firmware"
+msgstr "Gestionați driverele hardware și firmware-ul dispozitivelor"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:8
+msgid "Configure Secure Boot trust and repair DKMS signatures"
+msgstr "Configurează încrederea Secure Boot și repară semnăturile DKMS"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:10
+msgid "Authentication is required to configure Secure Boot trust"
+msgstr ""
+"Este necesară autentificarea pentru a configura încrederea Secure Boot"
+
+#~ msgid "Download the latest metadata from enabled firmware remotes."
+#~ msgstr ""
+#~ "Descărcați cele mai recente metadate de pe telecomenzile firmware activate."
+
+#~ msgid "Driver Center"
+#~ msgstr "Despre Driver Center"
+
+#~ msgid "Secure Boot needs attention"
+#~ msgstr "Asistența necesită atenție"
+
+#~ msgid "Establish system trust before installing a third-party driver."
+#~ msgstr ""
+#~ "Secure Boot trebuie rezolvate înainte de a instala un driver terță parte."
+
+#, python-format
+#~ msgid "%d recommended driver is available"
+#~ msgid_plural "%d recommended drivers are available"
+#~ msgstr[0] "Descoperirea dispozitivului FIDO nu este disponibilă"
+#~ msgstr[1] "Descoperirea dispozitivului FIDO nu este disponibilă"
+#~ msgstr[2] "Descoperirea dispozitivului FIDO nu este disponibilă"
+
+#~ msgid "Install Recommended Drivers"
+#~ msgstr "Instalați driverul"
+
+#~ msgid "Driver changes are ready"
+#~ msgstr "Semnătura șoferului este de încredere"
+
+#~ msgid "A graphics driver needs attention"
+#~ msgstr "Configurația necesită atenție"
+
+#~ msgid "Your drivers are ready"
+#~ msgstr "Semnătura șoferului este de încredere"
+
+#~ msgid "Recommended changes"
+#~ msgstr "Recomandat"
+
+#~ msgid "Install Recommended Drivers?"
+#~ msgstr "Instalați driverul"
+
+#~ msgid "Install"
+#~ msgstr "Instalat"
+
+#~ msgid "Hardware"
+#~ msgstr "Hardware"
+
+#~ msgid "Blocked by Secure Boot"
+#~ msgstr "Blocat de Secure Boot"
+
+#~ msgid "Complete printing support"
+#~ msgstr "Suport complet pentru imprimare"
+
+#~ msgid "Install missing printing packages"
+#~ msgstr ""
+#~ "Instalați pachetele de imprimare lipsă\n"
+#~ "Pachetul "
+
+#, python-format
+#~ msgid "%d package is missing"
+#~ msgid_plural "%d packages are missing"
+#~ msgstr[0] "%d lipsește"
+#~ msgstr[1] "Pachetele %d lipsesc"
+#~ msgstr[2] "Pachetele %d lipsesc"

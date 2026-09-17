@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://synos.example/schema/profile.schema.json",
+  "title": "SynOS profile",
+  "type": "object",
+  "required": ["id"],
+  "allOf": [{ "$ref": "#/$defs/profileBody" }],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "extends": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "description": { "type": "string" }
+  },
+  "$defs": {
+    "packageRef": {
+      "oneOf": [
+        { "type": "string", "pattern": "^[a-z0-9][a-z0-9+.-]*$" },
+        {
+          "type": "object", "required": ["name"], "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9+.-]*$" },
+            "version": { "type": "string" },
+            "only_on": { "type": "array", "items": { "type": "string", "enum": ["debian", "ubuntu"] } }
+          }
+        }
+      ]
+    },
+    "profileBody": {
+      "type": "object",
+      "properties": {
+        "software": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "bundles": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "packages": {
+              "type": "object", "additionalProperties": false,
+              "properties": {
+                "add": { "type": "array", "items": { "$ref": "#/$defs/packageRef" } },
+                "remove": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "repositories": {
+              "type": "array",
+              "items": {
+                "type": "object", "required": ["name", "url", "key"], "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string" }, "url": { "type": "string", "format": "uri" },
+                  "suite": { "type": "string" }, "components": { "type": "string" },
+                  "key": { "type": "string" }, "packages": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            "debs": {
+              "type": "array",
+              "items": { "type": "object", "required": ["url", "sha256"], "additionalProperties": false,
+                "properties": { "url": { "type": "string", "format": "uri" }, "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" } } }
+            },
+            "flatpak": {
+              "type": "object", "additionalProperties": false,
+              "properties": {
+                "remotes": { "type": "array", "items": { "type": "object", "required": ["name", "url"],
+                  "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri" } } } },
+                "apps": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+$" } },
+                "preinstall": { "type": "boolean" }
+              }
+            },
+            "appimages": {
+              "type": "array",
+              "items": { "type": "object", "required": ["name", "url", "sha256"],
+                "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri" }, "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" } } }
+            },
+            "services": {
+              "type": "array",
+              "description": "Containers run as system services (podman quadlet); pulled on first boot, GPU passed through when gpu is true",
+              "items": {
+                "type": "object", "required": ["name", "image"], "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+                  "image": { "type": "string" },
+                  "ports": { "type": "array", "items": { "type": "string", "pattern": "^[0-9]{1,5}:[0-9]{1,5}$" } },
+                  "volumes": { "type": "array", "items": { "type": "string" } },
+                  "env": { "type": "object", "additionalProperties": { "type": "string" } },
+                  "gpu": { "type": "boolean" },
+                  "exec": { "type": "string", "description": "Arguments passed to the container's entry point" },
+                  "description": { "type": "string" }
+                }
+              }
+            },
+            "store": { "type": "object", "properties": { "catalog": { "type": "string" }, "allow_user_install": { "type": "boolean" } } },
+            "defaults": {
+              "type": "object", "additionalProperties": false,
+              "properties": {
+                "browser": { "type": "string" }, "mail": { "type": "string" }, "pdf": { "type": "string" },
+                "autostart": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "hardware": {
+          "type": "object", "additionalProperties": false,
+          "description": "The one hardware choice the installer cannot make: which GPU compute stack to ship",
+          "properties": {
+            "gpu": { "enum": ["none", "nvidia", "amd", "intel"] }
+          }
+        },
+        "installer": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "filesystem": { "enum": ["btrfs", "ext4"] },
+            "encryption": { "enum": ["required", "default-on", "optional", "off"] },
+            "automatic_login": { "type": "boolean" },
+            "passwordless_sudo": { "type": "boolean" },
+            "ssh": { "enum": ["enabled", "disabled"] },
+            "unattended": { "type": "string" }
+          }
+        },
+        "security": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "compliance": { "type": "string" },
+            "usbguard": { "type": "boolean" },
+            "firewall": { "enum": ["default-deny-inbound", "off"] },
+            "open_ports": { "type": "array", "uniqueItems": true, "description": "Inbound ports opened at first boot of an installed system, e.g. 22/tcp",
+              "items": { "type": "string", "pattern": "^[0-9]{1,5}(/(tcp|udp))?$" } }
+          }
+        },
+        "directory": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "join": { "enum": ["none", "active-directory", "entra-id", "freeipa", "ldap"] },
+            "domain": { "type": "string" },
+            "allowed_groups": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "policy": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "kiosk_app": { "type": "string" },
+            "dconf": { "type": "object", "additionalProperties": true },
+            "browser": { "type": "object", "properties": { "homepage": { "type": "string", "format": "uri" }, "extensions": { "type": "array", "items": { "type": "string" } } } }
+          }
+        },
+        "ansible": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "playbooks": { "type": "array", "items": { "type": "string" } },
+            "first_boot_roles": { "type": "array", "items": { "type": "string" } },
+            "pull_url": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

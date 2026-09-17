@@ -1,0 +1,10 @@
+Package: synos-whisper-worker
+Version: 2.0.2-1+synos1
+Section: utils
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: libc6 (>= 2.34), libggml0 (>= 0.9.11), libstdc++6, libgcc-s1
+Recommends: libggml0-backend-vulkan (>= 0.9.11)
+Homepage: ${BRAND_URL_HOME}
+Description: Private persistent whisper.cpp inference worker for ${BRAND_NAME} Voice Typing.

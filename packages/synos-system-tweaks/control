@@ -1,0 +1,10 @@
+Package: synos-system-tweaks
+Version: 2.0.2-1+synos1
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Conflicts: synos-system-tweaks-server
+Replaces: synos-system-tweaks-server
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} system performance and compatibility tweaks — optimized for interactive desktop responsiveness

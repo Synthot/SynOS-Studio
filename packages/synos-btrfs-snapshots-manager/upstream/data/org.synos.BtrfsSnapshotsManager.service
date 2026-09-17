@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=org.synos.BtrfsSnapshotsManager
+Exec=/usr/libexec/synos-btrfs-snapshots-manager-helper
+User=root
+SystemdService=synos-btrfs-snapshots-manager-helper.service

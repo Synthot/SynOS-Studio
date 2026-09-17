@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+if [ "$1" = "configure" ] && command -v snap >/dev/null 2>&1; then
+    echo "synos-no-snapd: snapd is still present; remove it with 'apt purge snapd'." >&2
+fi

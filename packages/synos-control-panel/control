@@ -1,0 +1,11 @@
+Package: synos-control-panel
+Version: 2.0.2-21+synos1
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: python3, python3-gi, gir1.2-gdkpixbuf-2.0, gir1.2-gtk-4.0, gir1.2-adw-1, gnome-control-center, gnome-software, flatpak, pkexec, grub2-common, synos-driver-center, synos-appearance, synos-ufwall-gtk, synos-swapcontrol-gtk, synos-yubikey-manager
+Recommends: network-manager-gnome, simple-scan
+Suggests: synos-btrfs-snapshots-manager, synos-whisper-gtk
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Control Panel — a category-based home for system, hardware, application, account, appearance, and recovery settings.

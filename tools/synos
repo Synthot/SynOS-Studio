@@ -1,0 +1,526 @@
+#!/usr/bin/env python3
+"""synos — build a configuration bundle into an installable image.
+
+    synos check                          host requirements (podman/docker, disk, python modules)
+    synos bundle validate <zip|dir>      check a bundle without touching this checkout
+    synos bundle apply <zip|dir>         copy a bundle's files into this checkout and validate the manifest
+    synos build <zip|dir|manifest.yml>   apply (when given a bundle) and build the image in a container
+    synos version
+
+Every command accepts --json (one JSON object on stdout, nothing else) for
+scripts, Ansible and CI. Exit codes: 0 success, 1 the bundle or manifest is
+invalid, 2 the host cannot build (missing engine, disk, tool), 3 the build
+itself failed. A bundle is a zip or a folder holding bundle.json and the
+files described in docs/BUNDLE.md. Inside the builder image (which carries this
+engine at /opt/synos) `synos build` runs the build directly; the build.sh every
+bundle ships starts that container, so users never clone anything.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import zipfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SUPPORTED_FORMATS = (1,)
+ALLOWED_PREFIXES = ("manifests/", "profiles/", "branding/", "keys/", "answers/")
+DOC_FILES = ("README.md", "build.sh", "build.ps1", "build.cmd", "build.command")   # for the person who unzips; never applied
+MIN_FREE_GB = 40
+DEFAULT_IMAGE_REPOSITORY = os.environ.get("SYNOS_IMAGE_REPOSITORY", "ghcr.io/synthot/synos-builder")
+
+EXIT_OK, EXIT_INVALID, EXIT_HOST, EXIT_BUILD = 0, 1, 2, 3
+
+
+class Failure(Exception):
+    def __init__(self, message: str, code: int = EXIT_INVALID, **details):
+        super().__init__(message)
+        self.code = code
+        self.details = details
+
+
+def engine_version() -> str:
+    return (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+
+
+def version_tuple(text: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in text.split("."))
+
+
+# ------------------------------------------------------------------ bundles
+class Bundle:
+    """A zip file or a directory; files are addressed by their bundle-relative path."""
+
+    def __init__(self, location: Path):
+        self.location = location
+        self._zip = None
+        if location.is_dir():
+            self.kind = "directory"
+        elif zipfile.is_zipfile(location):
+            self.kind = "zip"
+            self._zip = zipfile.ZipFile(location)
+        else:
+            raise Failure(f"{location} is neither a directory nor a zip file")
+
+    def names(self) -> list[str]:
+        if self._zip is not None:
+            return sorted(n for n in self._zip.namelist() if not n.endswith("/"))
+        return sorted(str(p.relative_to(self.location)) for p in self.location.rglob("*") if p.is_file())
+
+    def read(self, name: str) -> bytes:
+        if self._zip is not None:
+            return self._zip.read(name)
+        return (self.location / name).read_bytes()
+
+    def close(self) -> None:
+        if self._zip is not None:
+            self._zip.close()
+
+
+def safe_relative(name: str) -> bool:
+    return not (name.startswith("/") or name.startswith("\\") or ".." in Path(name).parts or ":" in name.split("/")[0])
+
+
+def load_schema(name: str) -> dict:
+    return json.loads((ROOT / "schema" / f"{name}.schema.json").read_text(encoding="utf-8"))
+
+
+def schema_errors(instance, schema: dict) -> list[str]:
+    """Validate against a schema, resolving the sibling schemas in schema/ locally
+    (they reference each other by $id URL)."""
+    try:
+        import jsonschema
+        from jsonschema import Draft202012Validator
+    except ImportError:
+        return []
+    siblings = [json.loads(p.read_text(encoding="utf-8")) for p in (ROOT / "schema").glob("*.schema.json")]
+    try:
+        from referencing import Registry, Resource  # type: ignore
+        registry = Registry()
+        for doc in siblings:
+            registry = registry.with_resource(doc["$id"], Resource.from_contents(doc))
+        validator = Draft202012Validator(schema, registry=registry)
+    except ImportError:  # older jsonschema: a RefResolver with a pre-filled store
+        store = {doc["$id"]: doc for doc in siblings}
+        validator = Draft202012Validator(schema, resolver=jsonschema.RefResolver.from_schema(schema, store=store))
+    return sorted(f"{'/'.join(str(p) for p in e.path) or '.'}: {e.message}" for e in validator.iter_errors(instance))
+
+
+def load_yaml_bytes(data: bytes):
+    import yaml
+    return yaml.safe_load(data.decode("utf-8"))
+
+
+def inspect_bundle(bundle: Bundle) -> dict:
+    """Structural validation: descriptor, layout, manifest and profile schemas,
+    references between the bundle's own files. Returns a report."""
+    names = bundle.names()
+    report = {"files": names, "warnings": [], "errors": [], "manifest": None, "name": None,
+              "engine_required": None, "engine": engine_version()}
+    if "bundle.json" not in names:
+        report["errors"].append("bundle.json is missing (see docs/BUNDLE.md)")
+        return report
+    try:
+        descriptor = json.loads(bundle.read("bundle.json").decode("utf-8"))
+    except (ValueError, UnicodeDecodeError) as exc:
+        report["errors"].append(f"bundle.json is not valid JSON: {exc}")
+        return report
+    report["descriptor"] = descriptor
+    report["errors"] += [f"bundle.json {e}" for e in schema_errors(descriptor, load_schema("bundle"))]
+    if report["errors"]:
+        return report
+    if descriptor["format"] not in SUPPORTED_FORMATS:
+        report["errors"].append(f"bundle format {descriptor['format']} is not supported by engine {engine_version()} "
+                                f"(supported: {', '.join(map(str, SUPPORTED_FORMATS))})")
+    required = (descriptor.get("engine") or {}).get("min")
+    report["engine_required"] = required
+    if required and version_tuple(required) > version_tuple(engine_version()):
+        report["errors"].append(f"the bundle needs engine {required} or newer; this checkout is {engine_version()}")
+    ignored = []
+    for name in names:
+        if name == "bundle.json" or name in DOC_FILES:
+            continue
+        if not safe_relative(name):
+            report["errors"].append(f"unsafe path in bundle: {name}")
+        elif not name.startswith(ALLOWED_PREFIXES):
+            # build outputs (dist/), logs and other files next to a bundle are never applied
+            ignored.append(name)
+    if ignored:
+        report["ignored"] = ignored
+        shown = ", ".join(ignored[:5]) + (f" and {len(ignored) - 5} more" if len(ignored) > 5 else "")
+        report["warnings"].append(f"not part of a bundle, ignored: {shown} (bundles carry {', '.join(ALLOWED_PREFIXES)}, README.md and the launchers)")
+    manifest_name = descriptor["manifest"]
+    report["manifest"] = manifest_name
+    report["name"] = descriptor.get("name") or Path(manifest_name).stem
+    if manifest_name not in names:
+        report["errors"].append(f"{manifest_name} named by bundle.json is not in the bundle")
+        return report
+    try:
+        manifest = load_yaml_bytes(bundle.read(manifest_name))
+    except Exception as exc:  # yaml errors
+        report["errors"].append(f"{manifest_name}: {exc}")
+        return report
+    if not isinstance(manifest, dict):
+        report["errors"].append(f"{manifest_name}: not a mapping")
+        return report
+    report["errors"] += [f"{manifest_name} {e}" for e in schema_errors(manifest, load_schema("manifest"))]
+    profile_schema = load_schema("profile")
+    for name in names:
+        if name.startswith("profiles/") and name.endswith(".yml") and name != "profiles/bundles.yml":
+            try:
+                profile = load_yaml_bytes(bundle.read(name))
+                report["errors"] += [f"{name} {e}" for e in schema_errors(profile, profile_schema)]
+            except Exception as exc:
+                report["errors"].append(f"{name}: {exc}")
+    # references: a profile or brand either ships in the bundle or exists in the engine
+    profile = manifest.get("profile")
+    if profile and f"profiles/{profile}.yml" not in names and not (ROOT / "profiles" / f"{profile}.yml").is_file():
+        report["errors"].append(f"profile {profile!r} is neither in the bundle nor in this checkout")
+    brand = manifest.get("brand")
+    if brand and f"branding/{brand}/brand.yml" not in names and not (ROOT / "branding" / brand / "brand.yml").is_file():
+        report["errors"].append(f"brand {brand!r} is neither in the bundle nor in this checkout")
+    for region in manifest.get("regions") or []:
+        if not (ROOT / "regions" / f"{region}.yml").is_file():
+            report["errors"].append(f"region {region!r} does not exist in engine {engine_version()}")
+    base = manifest.get("base")
+    if base and not (ROOT / "bases" / base / "base.env").is_file():
+        report["errors"].append(f"base {base!r} does not exist in engine {engine_version()}")
+    for name in names:
+        if name.startswith("keys/") and not name.endswith(".asc"):
+            report["warnings"].append(f"{name}: repository keys are expected as ASCII-armored .asc files")
+    return report
+
+
+def apply_bundle(bundle: Bundle, report: dict, force: bool) -> dict:
+    """Copy the bundle's files into this checkout. Existing files are only
+    replaced with --force; documentation at the bundle root is not copied."""
+    applied, skipped, conflicts = [], [], []
+    for name in report["files"]:
+        if name == "bundle.json" or name in DOC_FILES or name in report.get("ignored", []):
+            skipped.append(name)
+            continue
+        target = ROOT / name
+        if target.exists() and not force:
+            if target.read_bytes() == bundle.read(name):
+                skipped.append(name)          # identical: nothing to do
+                continue
+            conflicts.append(name)
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(bundle.read(name))
+        applied.append(name)
+    if conflicts:
+        raise Failure("these files already exist with different content; pass --force to replace them: " + ", ".join(conflicts),
+                      conflicts=conflicts, applied=applied)
+    return {"applied": applied, "skipped": skipped}
+
+
+def check_manifest(manifest: Path) -> tuple[bool, str]:
+    result = subprocess.run([sys.executable, str(ROOT / "tools" / "render_manifest.py"), "--manifest", str(manifest), "--check"],
+                            capture_output=True, text=True, check=False)
+    return result.returncode == 0, (result.stdout + result.stderr).strip()
+
+
+# --------------------------------------------------------------------- host
+def container_engine() -> str | None:
+    return shutil.which("podman") or shutil.which("docker")
+
+
+def free_gb(path: Path) -> float:
+    usage = shutil.disk_usage(path)
+    return usage.free / 1024 ** 3
+
+
+def host_report() -> dict:
+    engine = container_engine()
+    modules = {}
+    for module in ("yaml", "jsonschema"):
+        try:
+            __import__(module)
+            modules[module] = True
+        except ImportError:
+            modules[module] = False
+    free = free_gb(ROOT)
+    problems = []
+    inside = bool(os.environ.get("SYNOS_IN_CONTAINER"))
+    if inside:
+        engine = "local (inside the builder image)"
+    elif not engine:
+        problems.append("podman or docker is required (apt install podman)")
+    if free < MIN_FREE_GB:
+        problems.append(f"at least {MIN_FREE_GB} GB free is needed under {ROOT}; {free:.0f} GB available")
+    for module, present in modules.items():
+        if not present:
+            problems.append(f"python3 module {module} is missing (apt install python3-{module})")
+    return {"engine": engine, "free_gb": round(free, 1), "min_free_gb": MIN_FREE_GB, "python_modules": modules,
+            "checkout": str(ROOT), "version": engine_version(), "problems": problems, "ok": not problems}
+
+
+def manifest_values(manifest: Path) -> dict:
+    import yaml
+    data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+    base = data.get("base")
+    suite = data.get("suite")
+    if not suite:
+        env = (ROOT / "bases" / str(base) / "base.env").read_text(encoding="utf-8") if base else ""
+        match = re.search(r'^DEFAULT_SUITE="?([^"\n]+)"?', env, re.M)
+        suite = match.group(1) if match else ""
+    return {"base": base, "suite": suite, "version": data.get("version")}
+
+
+def collect_outputs(output: Path | None) -> dict:
+    """The newest ISO and its evidence files under dist/, copied to --output when
+    asked and handed to the invoking user (SYNOS_UID/SYNOS_GID, set by the launcher)."""
+    dist = ROOT / "dist"
+    isos = sorted(dist.glob("*.iso"), key=lambda p: p.stat().st_mtime) if dist.is_dir() else []
+    iso = isos[-1] if isos else None
+    evidence = [p for p in dist.glob("*") if iso and p.name.startswith(iso.stem) and p != iso] if iso else []
+    copied = []
+    if output and iso:
+        output.mkdir(parents=True, exist_ok=True)
+        for path in [iso, *evidence]:
+            target = output / path.name
+            shutil.copy2(path, target)
+            copied.append(target)
+    uid, gid = os.environ.get("SYNOS_UID"), os.environ.get("SYNOS_GID")
+    if output and uid and gid and hasattr(os, "chown"):
+        for target in [output, *copied, *output.glob("*.log")]:
+            if target.exists():
+                try:
+                    os.chown(target, int(uid), int(gid))
+                except OSError:
+                    pass
+    return {"iso": str((output / iso.name) if output and iso else iso) if iso else None,
+            "evidence": [str(p) for p in (copied[1:] if copied else evidence)]}
+
+
+def run_step(step: list[str], log_to: Path | None) -> int:
+    """Run a build step; with --log, every line goes to the terminal and to the
+    file, so the result survives a closed terminal (the launchers keep it next
+    to the ISO for support)."""
+    print("+ " + " ".join(step), file=sys.stderr)
+    if not log_to:
+        return subprocess.run(step, cwd=ROOT, check=False).returncode
+    log_to.parent.mkdir(parents=True, exist_ok=True)
+    with log_to.open("a", encoding="utf-8", errors="replace") as log:
+        log.write("+ " + " ".join(step) + "\n")
+        process = subprocess.Popen(step, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace")
+        assert process.stdout is not None
+        for line in process.stdout:
+            sys.stderr.write(line)
+            log.write(line)
+        return process.wait()
+
+
+def local_build(manifest: Path, log_to: Path | None, output: Path | None) -> dict:
+    """Inside the builder image (SYNOS_IN_CONTAINER=1) the engine is this checkout:
+    run make here instead of starting another container."""
+    rel_manifest = manifest.relative_to(ROOT) if manifest.is_relative_to(ROOT) else manifest
+    step = ["make", f"MANIFEST={rel_manifest}", "PACKAGES_FLAGS=--strict"]
+    code = run_step(step, log_to)
+    uid, gid = os.environ.get("SYNOS_UID"), os.environ.get("SYNOS_GID")
+    if log_to and uid and gid and hasattr(os, "chown"):
+        try:
+            os.chown(log_to, int(uid), int(gid))      # the log belongs to the user even when the build fails
+        except OSError:
+            pass
+    if code != 0:
+        raise Failure(f"the build failed with exit code {code}" + (f" (log: {log_to})" if log_to else ""), EXIT_BUILD)
+    return {"image": None, "engine": "local", **collect_outputs(output)}
+
+
+def container_build(manifest: Path, image: str | None, pull: bool, log_to: Path | None, output: Path | None = None) -> dict:
+    if os.environ.get("SYNOS_IN_CONTAINER"):
+        return local_build(manifest, log_to, output)
+    host = host_report()
+    if host["problems"]:
+        raise Failure("; ".join(host["problems"]), EXIT_HOST, host=host)
+    engine = host["engine"]
+    values = manifest_values(manifest)
+    base, suite = values["base"], values["suite"]
+    if not base or not suite:
+        raise Failure(f"{manifest} does not name a base and a suite")
+    if image is None and pull:
+        image = f"{DEFAULT_IMAGE_REPOSITORY}:{base}-{suite}"
+    steps = []
+    if image and pull:
+        steps.append([engine, "pull", image])
+    if not image:
+        image = f"synos-builder-{base}:{suite}"
+        steps.append([engine, "build", "--build-arg", f"SUITE={suite}", "-t", image, "-f", f"bases/{base}/Containerfile", "."])
+    rel_manifest = manifest.relative_to(ROOT) if manifest.is_relative_to(ROOT) else manifest
+    if not manifest.is_relative_to(ROOT):
+        raise Failure(f"{manifest} must live inside the checkout so the container can read it")
+    steps.append([engine, "run", "--rm", "--privileged", "-v", f"{ROOT}:/src", "-w", "/src",
+                  "-e", "SYNOS_IN_CONTAINER=1", "-e", "SYNOS_SIGNING_KEY", "-e", "SYNOS_SIGNING_KEY_FILE",
+                  image, "make", f"MANIFEST={rel_manifest}", "PACKAGES_FLAGS=--strict"])
+    for step in steps:
+        code = run_step(step, log_to)
+        if code != 0:
+            raise Failure(f"'{step[0]} {step[1]}' failed with exit code {code}" + (f" (log: {log_to})" if log_to else ""),
+                          EXIT_BUILD, step=step, image=image)
+    return {"image": image, "engine": engine, **collect_outputs(output)}
+
+
+# ---------------------------------------------------------------- commands
+def emit(args, payload: dict, code: int = EXIT_OK) -> int:
+    payload = {"ok": code == EXIT_OK, "exit_code": code, **payload}
+    if args.json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return code
+
+
+def human_lines(report: dict) -> list[str]:
+    lines = []
+    for error in report.get("errors", []):
+        lines.append(f"error: {error}")
+    for warning in report.get("warnings", []):
+        lines.append(f"warning: {warning}")
+    return lines
+
+
+def cmd_check(args) -> int:
+    host = host_report()
+    if not args.json:
+        print(f"engine version {host['version']} in {host['checkout']}")
+        print(f"container engine: {host['engine'] or 'none'}")
+        print(f"free disk: {host['free_gb']} GB (needs {host['min_free_gb']})")
+        for module, present in host["python_modules"].items():
+            print(f"python3 {module}: {'ok' if present else 'missing'}")
+        for problem in host["problems"]:
+            print(f"problem: {problem}")
+        print("ready to build" if host["ok"] else "not ready")
+    return emit(args, {"host": host}, EXIT_OK if host["ok"] else EXIT_HOST)
+
+
+def open_bundle(path: str) -> Bundle:
+    location = Path(path).expanduser().resolve()
+    if not location.exists():
+        raise Failure(f"{location} does not exist")
+    return Bundle(location)
+
+
+def cmd_bundle_validate(args) -> int:
+    bundle = open_bundle(args.bundle)
+    try:
+        report = inspect_bundle(bundle)
+    finally:
+        bundle.close()
+    if not args.json:
+        print(f"bundle {bundle.location.name}: {len(report['files'])} file(s), manifest {report.get('manifest') or '?'}, "
+              f"needs engine {report.get('engine_required') or 'any'}, this checkout is {report['engine']}")
+        for line in human_lines(report):
+            print(line)
+        print("valid" if not report["errors"] else f"{len(report['errors'])} error(s)")
+    return emit(args, {"bundle": str(bundle.location), "report": report}, EXIT_OK if not report["errors"] else EXIT_INVALID)
+
+
+def cmd_bundle_apply(args) -> int:
+    bundle = open_bundle(args.bundle)
+    try:
+        report = inspect_bundle(bundle)
+        if report["errors"]:
+            if not args.json:
+                for line in human_lines(report):
+                    print(line)
+            return emit(args, {"bundle": str(bundle.location), "report": report}, EXIT_INVALID)
+        outcome = apply_bundle(bundle, report, args.force)
+    finally:
+        bundle.close()
+    manifest = ROOT / report["manifest"]
+    ok, log = check_manifest(manifest)
+    if not args.json:
+        for name in outcome["applied"]:
+            print(f"wrote {name}")
+        for line in human_lines(report):
+            print(line)
+        print(log)
+        print(f"manifest {report['manifest']}: {'valid' if ok else 'invalid'}")
+    return emit(args, {"bundle": str(bundle.location), "manifest": str(manifest.relative_to(ROOT)), **outcome,
+                       "warnings": report["warnings"], "validation": log}, EXIT_OK if ok else EXIT_INVALID)
+
+
+def cmd_build(args) -> int:
+    source = Path(args.source).expanduser().resolve()
+    applied: dict = {}
+    if source.is_file() and source.suffix in (".yml", ".yaml"):
+        manifest = source
+    else:
+        bundle = open_bundle(str(source))
+        try:
+            report = inspect_bundle(bundle)
+            if report["errors"]:
+                if not args.json:
+                    for line in human_lines(report):
+                        print(line)
+                return emit(args, {"bundle": str(source), "report": report}, EXIT_INVALID)
+            applied = apply_bundle(bundle, report, args.force)
+        finally:
+            bundle.close()
+        manifest = ROOT / report["manifest"]
+        if not args.json:
+            for name in applied["applied"]:
+                print(f"wrote {name}")
+    ok, log = check_manifest(manifest)
+    if not ok:
+        if not args.json:
+            print(log)
+        return emit(args, {"manifest": str(manifest), "validation": log}, EXIT_INVALID)
+    log_to = Path(args.log).expanduser().resolve() if args.log else None
+    output = Path(args.output).expanduser().resolve() if args.output else None
+    result = container_build(manifest, args.image, args.pull, log_to, output)
+    if not args.json:
+        print(f"image built {('with ' + result['image']) if result['image'] else 'inside the builder image'}: "
+              f"{result['iso'] or 'no ISO found in dist/'}")
+    return emit(args, {"manifest": str(manifest.relative_to(ROOT)), **applied, **result})
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="synos", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--json", action="store_true", help="machine-readable output on stdout")
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("check", help="host requirements")
+    sub.add_parser("version", help="engine version")
+    bundle = sub.add_parser("bundle", help="validate or apply a configuration bundle")
+    bundle_sub = bundle.add_subparsers(dest="bundle_command", required=True)
+    validate = bundle_sub.add_parser("validate")
+    validate.add_argument("bundle")
+    apply_ = bundle_sub.add_parser("apply")
+    apply_.add_argument("bundle")
+    apply_.add_argument("--force", action="store_true", help="replace files that already exist in the checkout")
+    build = sub.add_parser("build", help="build an image from a bundle or a manifest")
+    build.add_argument("source", help="bundle zip, bundle directory or manifest .yml inside this checkout")
+    build.add_argument("--image", help="builder container image to use (default: build it from bases/<base>/Containerfile)")
+    build.add_argument("--pull", action="store_true",
+                       help=f"pull the published builder image ({DEFAULT_IMAGE_REPOSITORY}:<base>-<suite>) instead of building it")
+    build.add_argument("--force", action="store_true", help="replace bundle files that already exist in the checkout")
+    build.add_argument("--log", help="also append the build output to this file (kept next to the ISO by the launchers)")
+    build.add_argument("--output", help="copy the ISO and its evidence files into this directory when the build succeeds")
+    args = parser.parse_args(argv)
+    try:
+        if args.command == "version":
+            return emit(args, {"version": engine_version(), "bundle_formats": list(SUPPORTED_FORMATS)}) if args.json \
+                else print(engine_version()) or EXIT_OK
+        if args.command == "check":
+            return cmd_check(args)
+        if args.command == "bundle":
+            return cmd_bundle_validate(args) if args.bundle_command == "validate" else cmd_bundle_apply(args)
+        return cmd_build(args)
+    except Failure as exc:
+        if args.json:
+            print(json.dumps({"ok": False, "exit_code": exc.code, "error": str(exc), **exc.details}, ensure_ascii=False, indent=2))
+        else:
+            print(f"error: {exc}", file=sys.stderr)
+        return exc.code
+    except KeyboardInterrupt:
+        return 130
+
+
+if __name__ == "__main__":
+    sys.exit(main())

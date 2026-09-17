@@ -1,0 +1,5 @@
+/etc/dconf/db/synos.d/01-custom-keybindings.conf
+/etc/dconf/db/synos.d/02-ptyxis-terminal.conf
+/etc/dconf/db/synos.d/03-system-extensions.conf
+/etc/dconf/db/synos.d/05-app-folders.conf
+/etc/gdm3/greeter.dconf-defaults

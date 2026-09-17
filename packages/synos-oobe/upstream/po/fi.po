@@ -1,0 +1,1814 @@
+# synos-oobe translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-oobe.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-oobe\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-09 15:16+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: fi <LL@li.org>\n"
+"Language: fi_FI\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: assets/synos-oobe:371
+msgid "Disk Snapshots Manager"
+msgstr "Tilannekuvien hallinta"
+
+#: assets/synos-oobe:373
+msgid "Protect your system with automatic Btrfs snapshots and smart cleanup."
+msgstr ""
+"Suojaa järjestelmääsi automaattisilla Btrfs-tilannekuvilla ja älykkäällä "
+"siivouksella."
+
+#: assets/synos-oobe:375
+msgid "Configure Automatic Snapshots"
+msgstr "Määritä automaattiset tilannekuvat"
+
+#: assets/synos-oobe:380
+msgid "System Backup"
+msgstr "Järjestelmän varmuuskopiointi"
+
+#: assets/synos-oobe:382
+msgid "Use Deja Dup to protect your"
+msgstr "Käytä Deja Dupia suojataksesi tietojasi"
+
+#: assets/synos-oobe:383
+msgid "important files with automated,"
+msgstr "tärkeät tiedot automaattisella,"
+
+#: assets/synos-oobe:384
+msgid "secure local or remote backups."
+msgstr "turvallisia paikallisia tai etävarmuuskopioita."
+
+#: assets/synos-oobe:386
+msgid "Get Deja Dup"
+msgstr "Hanki Deja Dup"
+
+#: assets/synos-oobe:443
+msgid "NetworkManager could not scan Wi-Fi."
+msgstr "NetworkManager ei voinut skannata Wi-Fi-verkkoa."
+
+#: assets/synos-oobe:506
+msgid "Could not inspect network adapters."
+msgstr "Verkkosovittimia ei voitu tarkistaa."
+
+#: assets/synos-oobe:516
+msgid "Could not read the Wi-Fi radio state."
+msgstr "Wi-Fi-radion tilaa ei voitu lukea."
+
+#: assets/synos-oobe:522
+msgid "Unknown Wi-Fi radio state: {}"
+msgstr "Tuntematon Wi-Fi-radion tila: {}"
+
+#: assets/synos-oobe:523
+msgid "empty"
+msgstr "tyhjä"
+
+#: assets/synos-oobe:532
+msgid "Could not change the Wi-Fi radio state."
+msgstr "Wi-Fi-radion tilaa ei voitu muuttaa."
+
+#: assets/synos-oobe:634
+msgid "Welcome Home."
+msgstr "Tervetuloa kotiin."
+
+#: assets/synos-oobe:644
+msgid "SynOS is ready. Just a few steps to shape it"
+msgstr "SynOS on valmis. Vain muutama vaihe jäljellä muotoiluun"
+
+#: assets/synos-oobe:644
+msgid "into the perfect system tailored to your habits."
+msgstr "perfektiin järjestelmään, joka on räätälöity tapojesi mukaan."
+
+#: assets/synos-oobe:654
+msgid "  Start Setup  "
+msgstr "  Aloita asetukset  "
+
+#: assets/synos-oobe:701
+msgid "Connect to the Internet"
+msgstr "Yhdistä Internetiin"
+
+#: assets/synos-oobe:709
+msgid ""
+"Connect now so SynOS can safely check for updates, drivers, and apps."
+msgstr ""
+"Yhdistä nyt, jotta SynOS voi tarkistaa päivitykset, ohjaimet ja "
+"sovellukset turvallisesti."
+
+#: assets/synos-oobe:717
+msgid "Internet Connection"
+msgstr "Internet-yhteys"
+
+#: assets/synos-oobe:724
+msgid "Network Hardware"
+msgstr "Verkkolaitteisto"
+
+#: assets/synos-oobe:732
+msgid "Available Wi-Fi Networks"
+msgstr "Käytettävissä olevat Wi-Fi-verkot"
+
+#: assets/synos-oobe:734
+msgid "Wi-Fi"
+msgstr "Wi-Fi"
+
+#: assets/synos-oobe:737
+msgid "Scan Again"
+msgstr "Skannaa uudelleen"
+
+#: assets/synos-oobe:746 assets/synos-oobe:818 assets/synos-oobe:826
+#: assets/synos-oobe:841
+msgid "Open Network Settings"
+msgstr "Avaa Verkkoasetukset"
+
+#: assets/synos-oobe:755
+msgid "Could not open network settings: {}"
+msgstr "Verkkoasetuksia ei voitu avata: {}"
+
+#: assets/synos-oobe:765
+msgid "Continue Offline"
+msgstr "Jatka offline-tilassa"
+
+#: assets/synos-oobe:769
+msgid "Skip updates, online drivers, apps, and account setup."
+msgstr "Ohita päivitykset, online-ohjaimet, sovellukset ja tilin määritykset."
+
+#: assets/synos-oobe:785
+msgid "Internet connection is ready. Choose Next to continue."
+msgstr "Internet-yhteys on valmis. Jatka valitsemalla Seuraava."
+
+#: assets/synos-oobe:792
+msgid "Connect to Wi-Fi or a wired network to continue."
+msgstr "Jatka yhdistämällä Wi-Fi- tai kiinteään verkkoon."
+
+#: assets/synos-oobe:815
+msgid "No network adapters detected."
+msgstr "Verkkosovittimia ei havaittu."
+
+#: assets/synos-oobe:817
+msgid "Connect a network adapter or continue offline."
+msgstr "Yhdistä verkkosovitin tai jatka offline-tilassa."
+
+#: assets/synos-oobe:822
+msgid "Wired Network"
+msgstr "Kiinteä verkko"
+
+#: assets/synos-oobe:824
+msgid "Cable connected."
+msgstr "Kaapeli kytketty."
+
+#: assets/synos-oobe:825
+msgid "Plug in a network cable to connect."
+msgstr "Liitä verkkokaapeli yhdistääksesi."
+
+#: assets/synos-oobe:830
+msgid "Wireless Network"
+msgstr "Langaton verkko"
+
+#: assets/synos-oobe:831
+msgid "Wi-Fi adapter detected."
+msgstr "Wi-Fi-sovitin havaittu."
+
+#: assets/synos-oobe:832
+msgid "Open Wi-Fi Settings"
+msgstr "Avaa Wi-Fi-asetukset"
+
+#: assets/synos-oobe:836
+msgid "Wired and Wireless Networks"
+msgstr "Kiinteät ja langattomat verkot"
+
+#: assets/synos-oobe:838
+msgid "Cable connected and Wi-Fi available."
+msgstr "Kaapeli kytketty ja Wi-Fi käytettävissä."
+
+#: assets/synos-oobe:840
+msgid "Wi-Fi is available; the network cable is disconnected."
+msgstr "Wi-Fi on saatavilla; verkkokaapeli on irti."
+
+#: assets/synos-oobe:852
+msgid "Wi-Fi is turned off."
+msgstr "Wi-Fi on kytketty pois päältä."
+
+#: assets/synos-oobe:856
+msgid "No Wi-Fi networks found."
+msgstr "Wi-Fi-verkkoja ei löytynyt."
+
+#: assets/synos-oobe:885
+msgid "Wi-Fi unavailable: {}"
+msgstr "Wi-Fi ei ole käytettävissä: {}"
+
+#: assets/synos-oobe:967
+msgid "Define Your Visual Order"
+msgstr "Määritä visuaalinen järjestyksesi"
+
+#: assets/synos-oobe:977
+msgid "Light and Shadow"
+msgstr "Valo ja varjo"
+
+#: assets/synos-oobe:978
+msgid "Choose a crisp light theme, or an immersive dark experience."
+msgstr "Valitse kirkas vaalea teema tai mukaansatempaava tumma kokemus."
+
+#: assets/synos-oobe:997
+msgid "Light"
+msgstr "Vaalea"
+
+#: assets/synos-oobe:1009
+msgid "Dark"
+msgstr "Tumma"
+
+#: assets/synos-oobe:1040
+msgid "Workflow Layout"
+msgstr "Työvuon asettelu"
+
+#: assets/synos-oobe:1041
+msgid "Prefer modern centered alignment, or classic left-docked?"
+msgstr ""
+"Pitäisitkö enemmän nykyaikaisesta keskitetystä kohdasta vai klassisesta "
+"vasemmalle sidotusta?"
+
+#: assets/synos-oobe:1075
+msgid "Taskbar Layout"
+msgstr "Tehtäväpalkin asetukset"
+
+#: assets/synos-oobe:1076
+msgid "Choose your workflow."
+msgstr "Valitse työvuosi."
+
+#: assets/synos-oobe:1085
+msgid " Modern "
+msgstr " Nykyinen "
+
+#: assets/synos-oobe:1086
+msgid " Classic "
+msgstr " Klassinen "
+
+#: assets/synos-oobe:1115
+msgid "Show Virtual Desktop Switch Button"
+msgstr "Näytä virtuaalisen työpöydän vaihtopainike"
+
+#: assets/synos-oobe:1116
+msgid "Display the Activities button on the taskbar"
+msgstr "Näytä Aktiviteetit-painike tehtäväpalkissa"
+
+#: assets/synos-oobe:1168
+msgid "Digital Sovereignty, Under Your Control"
+msgstr "Digitaalinen suvereniteetti, hallinnassasi"
+
+#: assets/synos-oobe:1176
+msgid "We deeply value privacy. Here, you hold absolute authority."
+msgstr "Arvostamme yksityisyyttä syvästi. Tässä sinulla on ehdoton valta."
+
+#: assets/synos-oobe:1186
+msgid "Network Security"
+msgstr "Verkkoturvallisuus"
+
+#: assets/synos-oobe:1188
+msgid ""
+"Control inbound protection and whether this computer participates in local "
+"network discovery."
+msgstr ""
+"Hallitse saapuvan verkon suojausta ja sitä, osallistuuko tämä tietokone "
+"paikallisverkon etsintään."
+
+#: assets/synos-oobe:1193
+msgid "Network Firewall (UFW)"
+msgstr "Verkon palomuuri (UFW)"
+
+#: assets/synos-oobe:1246
+msgid "Local Network Discovery (mDNS)"
+msgstr "Paikallisen verkon havaitseminen (mDNS)"
+
+#: assets/synos-oobe:1248
+msgid ""
+"Find printers and nearby devices, and make .local names available on trusted"
+" networks."
+msgstr ""
+"Etsi tulostimia ja lähellä olevia laitteita ja aseta .local-nimet saataville"
+" luotetuissa verkoissa."
+
+#: assets/synos-oobe:1260
+msgid "Local network discovery controls are not installed."
+msgstr "Paikallisen verkon etsintäohjaimia ei ole asennettu."
+
+#: assets/synos-oobe:1295
+msgid "Location Services"
+msgstr "Sijaintipalvelut"
+
+#: assets/synos-oobe:1297
+msgid ""
+"Allow apps like weather and clock to access your approximate geographic "
+"location."
+msgstr ""
+"Salli sovellusten, kuten sään ja kellon, pääsy likimääräiseen "
+"maantieteelliseen sijaintiisi."
+
+#: assets/synos-oobe:1301
+msgid "Location Access"
+msgstr "Sijainnin käyttöoikeus"
+
+#: assets/synos-oobe:1319
+msgid "Power Settings"
+msgstr "Virran asetukset"
+
+#: assets/synos-oobe:1320
+msgid "Manage idle behavior to balance energy saving and convenience."
+msgstr ""
+"Hallitse tyhjäkäyntikäyttäytymistä energiansäästön ja mukavuuden "
+"tasapainottamiseksi."
+
+#: assets/synos-oobe:1324
+msgid "Auto Sleep"
+msgstr "Itsestään nukahtava tila"
+
+#: assets/synos-oobe:1353
+msgid "Command-line Assistance"
+msgstr "Komentoriviavustus"
+
+#: assets/synos-oobe:1354
+msgid "Control local bash predictions."
+msgstr "Hallitse paikallisia bash-ennakointeja."
+
+#: assets/synos-oobe:1358
+msgid "Bash Command Predictions"
+msgstr "Bash-komentojen ennakointi"
+
+#: assets/synos-oobe:1359
+msgid "Show command suggestions in bash"
+msgstr "Näytä komentoehdotuksia bashissa"
+
+#: assets/synos-oobe:1376
+msgid ""
+"Could not update your Bash configuration. Your previous setting was kept."
+msgstr "Bash-määritystä ei voitu päivittää. Aiempi asetus säilytettiin."
+
+#: assets/synos-oobe:1414
+msgid "Keep Your System Up to Date"
+msgstr "Pidä järjestelmäsi ajan tasalla"
+
+#: assets/synos-oobe:1423
+msgid "Security patches and the latest features are just a click away."
+msgstr ""
+"Turvapäivitykset ja uusimmat ominaisuudet ovat vain klikkauksen päässä."
+
+#: assets/synos-oobe:1433
+msgid "Terminal Output"
+msgstr "Terminaalituloste"
+
+#: assets/synos-oobe:1470
+msgid "  Do It Later  "
+msgstr "  Tee myöhemmin  "
+
+#: assets/synos-oobe:1473
+msgid "  Find Fastest Mirror  "
+msgstr "  Etsi nopein peili  "
+
+#: assets/synos-oobe:1476
+msgid "  Check for Updates  "
+msgstr "  Tarkista päivitykset  "
+
+#: assets/synos-oobe:1510
+msgid "Checking for updates…"
+msgstr "Päivitysten tarkistus käynnissä…"
+
+#: assets/synos-oobe:1542
+msgid "Updates are available."
+msgstr "Päivityksiä on saatavilla."
+
+#: assets/synos-oobe:1543
+msgid "  Install Updates  "
+msgstr "  Asenna päivitykset  "
+
+#: assets/synos-oobe:1550
+msgid "✓ System is up to date."
+msgstr "✓ Järjestelmä on ajan tasalla."
+
+#: assets/synos-oobe:1552 assets/synos-oobe:1582
+msgid "  Continue  "
+msgstr "  Jatka  "
+
+#: assets/synos-oobe:1559
+msgid "✗ Check failed: "
+msgstr "✗ Tarkistus epäonnistui: "
+
+#: assets/synos-oobe:1565
+msgid "Installing updates…"
+msgstr "Päivitysten asennus käynnissä…"
+
+#: assets/synos-oobe:1580
+msgid "✓ Updates installed successfully!"
+msgstr "✓ Päivitykset asennettu onnistuneesti!"
+
+#: assets/synos-oobe:1591
+msgid "✗ Installation failed: "
+msgstr "✗ Asennus epäonnistui: "
+
+#: assets/synos-oobe:1630
+msgid "Testing mirrors…"
+msgstr "Peilien testausta…"
+
+#: assets/synos-oobe:1631
+msgid "=== Testing mirror speeds ==="
+msgstr "=== Peilien nopeuksia testataan ==="
+
+#: assets/synos-oobe:1756 assets/synos-oobe:1764
+#, python-brace-format
+msgid "Testing mirrors… ({c}/{t})"
+msgstr "Tarkistetaan peilit… ({c}/{t})"
+
+#: assets/synos-oobe:1772
+msgid "No mirrors reachable."
+msgstr "Mikään peili ei ole saavutettavissa."
+
+#: assets/synos-oobe:1774
+msgid "✗ No mirrors reachable. Check your connection."
+msgstr "✌ Ei saavutettavia peilejä. Tarkista yhteys."
+
+#: assets/synos-oobe:1782
+msgid "=== Testing bandwidth of top 5 mirrors "
+msgstr "=== Ylimpien 5 peilin kaistanleveyttä testataan === "
+
+#: assets/synos-oobe:1783
+msgid "(3 s each) ==="
+msgstr "(3 s kpl) ==="
+
+#: assets/synos-oobe:1837
+msgid "Best mirror by bandwidth"
+msgstr "Parempi kaistanleveys"
+
+#: assets/synos-oobe:1839 assets/synos-oobe:1860
+#: assets/synos-oobe:1867
+msgid "Latency"
+msgstr "Viive"
+
+#: assets/synos-oobe:1840 assets/synos-oobe:1861
+#: assets/synos-oobe:1868
+msgid "Bandwidth"
+msgstr "Kaistanleveys"
+
+#: assets/synos-oobe:1862
+msgid "This is already your current mirror."
+msgstr "Tämä on jo nykyinen peilipalvelimesi."
+
+#: assets/synos-oobe:1872
+msgid "Current mirror"
+msgstr "Nykyinen peilipalvelin"
+
+#: assets/synos-oobe:1876
+msgid "Switch to this mirror and run apt update?"
+msgstr "Vaihda tähän peilipalvelimeen ja aja apt update?"
+
+#: assets/synos-oobe:1881
+msgid "Fastest Mirror Found"
+msgstr "Nopein peilipalvelin löydetty"
+
+#: assets/synos-oobe:1884
+msgid "Keep Current"
+msgstr "Säilytä nykyinen"
+
+#: assets/synos-oobe:1885
+msgid "Switch"
+msgstr "Vaihda"
+
+#: assets/synos-oobe:1907
+msgid "✗ Mirror test failed: "
+msgstr "✗ Peilipalvelimen testaus epäonnistui: "
+
+#: assets/synos-oobe:1913
+msgid "Switching mirror…"
+msgstr "Vaihdetaan peilipalvelinta…"
+
+#: assets/synos-oobe:1914
+msgid "=== Applying mirror switch ==="
+msgstr "=== Vaihdetaan peilipalvelinta ==="
+
+#: assets/synos-oobe:1989
+msgid "✓ Mirror switched and system updated."
+msgstr "✓ Peili vaihdettu ja järjestelmä päivitetty."
+
+#: assets/synos-oobe:1992
+msgid "✓ Switched to "
+msgstr "✓ Vaihdettu palvelimeen "
+
+#: assets/synos-oobe:2005
+msgid "✗ Switch failed: "
+msgstr "✗ Vaihto epäonnistui: "
+
+#: assets/synos-oobe:2045
+msgid "Could not open SynOS Driver Center: {}"
+msgstr "SynOS-ohjainkeskusta ei voitu avata: {}"
+
+#: assets/synos-oobe:2078
+msgid "Configure Hardware Drivers?"
+msgstr "Määritetäänkö laiteajurit?"
+
+#: assets/synos-oobe:2088
+msgid ""
+"Open SynOS Driver Center now to manage graphics cards, Xbox controllers, "
+"and other hardware."
+msgstr ""
+"Avaa SynOS-ohjainkeskus nyt, jotta voit hallita näytönohjaimia, Xbox-"
+"ohjaimia ja muita laitteita."
+
+#: assets/synos-oobe:2111
+msgid "Skip"
+msgstr "Ohita"
+
+#: assets/synos-oobe:2116
+msgid "Open Driver Center"
+msgstr "Avaa ohjainkeskus"
+
+#: assets/synos-oobe:2152
+msgid "Run Windows Apps, with ease"
+msgstr "Suorita Windows-sovelluksia helposti"
+
+#: assets/synos-oobe:2161
+msgid ""
+"Powered by Wine and Bottles technology, running classic Windows applications"
+msgstr ""
+"Perustuu Wine- ja Bottles-teknologiaan, suorittaa klassisia Windows-"
+"sovelluksia"
+
+#: assets/synos-oobe:2161
+msgid "is now easier than ever."
+msgstr "on nyt helpompaa kuin koskaan."
+
+#: assets/synos-oobe:2177
+msgid "✓ Windows compatibility sandbox is already installed."
+msgstr "✓ Windows-yhteensopivuuden hiekkalaatikko on jo asennettu."
+
+#: assets/synos-oobe:2193
+msgid "  Skip  "
+msgstr "  Ohita  "
+
+#: assets/synos-oobe:2197
+msgid "  Enable Windows Compatibility Sandbox  "
+msgstr "  Ota käyttöön Windowsin yhteensopivuussandboxi  "
+
+#: assets/synos-oobe:2207
+msgid "Configure Bottles"
+msgstr "Konfiguroi Bottles"
+
+#: assets/synos-oobe:2222
+msgid "Advanced Output"
+msgstr "Edistynyt tulostus"
+
+#: assets/synos-oobe:2251
+msgid "Deploying compatibility sandbox via Flatpak…"
+msgstr "Yhteensopivuussandboxesa viedään Flatpakilla…"
+
+#: assets/synos-oobe:2251
+msgid "This may take a few minutes."
+msgstr "Tämä voi kestää muutaman minuutin."
+
+#: assets/synos-oobe:2286
+msgid "✓ Sandbox deployed successfully!"
+msgstr "✓ Sandboxesa viedty onnistuneesti!"
+
+#: assets/synos-oobe:2286
+msgid "You can now double-click .exe files to run them."
+msgstr "Voit nyt kaksoisnapsauttaa .exe-tiedostoja suoriaksesi ne."
+
+#: assets/synos-oobe:2295
+msgid "✗ Deployment failed."
+msgstr "✗ Vienti epäonnistui."
+
+#: assets/synos-oobe:2295
+msgid "You can install Bottles later from the App Store."
+msgstr "Voit asentaa Bottlesin myöhemmin Sovelluskaupasta."
+
+#: assets/synos-oobe:2303
+msgid "✗ Error: "
+msgstr "✗ Virhe: "
+
+#: assets/synos-oobe:2334
+msgid "The Magic at Your Fingertips"
+msgstr "Taikuus käden ulottuvillasi"
+
+#: assets/synos-oobe:2342
+msgid "Skip tedious clicking. Capture inspiration with elegance."
+msgstr "Jätä tylsä napsuttelu. Kaappaa inspiraatiota eleganceilla."
+
+#: assets/synos-oobe:2365
+msgid "Screenshot"
+msgstr "Näyttökuva"
+
+#: assets/synos-oobe:2366
+msgid "Select, annotate, copy — all in one motion"
+msgstr "Valitse, huomioi, kopioi — kaikki yhdellä liikkeellä"
+
+#: assets/synos-oobe:2384
+msgid "Screen Recording"
+msgstr "Näyttönauhoitus"
+
+#: assets/synos-oobe:2385
+msgid "Seamless start, instant capture"
+msgstr "Saumaton aloitus, välitön kaappaus"
+
+#: assets/synos-oobe:2405
+msgid "More Essential Shortcuts"
+msgstr "Lisää välttämättömiä pikanäppäimiä"
+
+#: assets/synos-oobe:2408
+msgid "Open File Manager"
+msgstr "Avaa tiedostonhallinta"
+
+#: assets/synos-oobe:2409
+msgid "Open Terminal"
+msgstr "Avaa pääte"
+
+#: assets/synos-oobe:2410
+msgid "Task Manager"
+msgstr "Tehtävähallinta"
+
+#: assets/synos-oobe:2411
+msgid "View Clipboard History"
+msgstr "Näytä leikepöydän historia"
+
+#: assets/synos-oobe:2412
+msgid "Lock Screen"
+msgstr "Lukitusnäyttö"
+
+#: assets/synos-oobe:2413
+msgid "Action Center"
+msgstr "Toimintakeskus"
+
+#: assets/synos-oobe:2414
+msgid "Notification Center"
+msgstr "Ilmoituskeskus"
+
+#: assets/synos-oobe:2415
+msgid "Toggle Network Stats Display"
+msgstr "Näytä/piilota verkon tilastot"
+
+#: assets/synos-oobe:2416
+msgid "Switch Between Windows"
+msgstr "Vaihda ikkunoiden välillä"
+
+#: assets/synos-oobe:2417
+msgid "Close Current Window"
+msgstr "Sulje nykyinen ikkuna"
+
+#: assets/synos-oobe:2418
+msgid "Snap Windows"
+msgstr "Asettele ikkunat"
+
+#: assets/synos-oobe:2419
+msgid "Switch Virtual Desktop"
+msgstr "Vaihda virtuaalista työpöytää"
+
+#: assets/synos-oobe:2420
+msgid "Show Desktop"
+msgstr "Näytä työpöytä"
+
+#: assets/synos-oobe:2421
+msgid "System Settings"
+msgstr "Järjestelmäasetukset"
+
+#: assets/synos-oobe:2422
+msgid "Emoji and Characters"
+msgstr "Emoji ja merkit"
+
+#: assets/synos-oobe:2423
+msgid "Minimize Window"
+msgstr "Pienennä ikkunaa"
+
+#: assets/synos-oobe:2441
+msgid ""
+"You can view and customize all shortcuts anytime in Settings → Keyboard."
+msgstr ""
+"Kaikkia pikanäppäimiä voi tarkastella ja mukauttaa milloin tahansa "
+"asetuksista → näppäimistö."
+
+#: assets/synos-oobe:2478
+msgid "In China? Use USTC mirror for App Store!"
+msgstr "Oletko Kiinassa? Käytä USTC-peiliä App Storelle!"
+
+#: assets/synos-oobe:2484
+msgid ""
+"Flathub access can be slow from China. Switch to the USTC mirror for faster "
+"downloads."
+msgstr ""
+"Flathubin käyttö voi olla hidasta Kiinassa. Siirry USTC-peiliin nopeampien "
+"latausten vuoksi."
+
+#: assets/synos-oobe:2591
+msgid "✓ Already using Chinese mirror — downloads are fast."
+msgstr "✓ Käytetään jo kiinalaista peiliä – lataukset ovat nopeita."
+
+#: assets/synos-oobe:2594
+msgid "Switch Back to International"
+msgstr "Palaa kansainväliseen"
+
+#: assets/synos-oobe:2597
+msgid "Flathub is using the international server."
+msgstr "Flathub käyttää kansainvälistä palvelinta."
+
+#: assets/synos-oobe:2600
+msgid "🚀 Switch to USTC Mirror"
+msgstr "🚀 Siirry USTC-peiliin"
+
+#: assets/synos-oobe:2613
+msgid "Testing USTC mirror..."
+msgstr "Testataan USTC-peiliä..."
+
+#: assets/synos-oobe:2657
+msgid "Switching back..."
+msgstr "Palataan takaisin..."
+
+#: assets/synos-oobe:2684
+msgid "✗ Failed: "
+msgstr "✗ Epäonnistui: "
+
+#: assets/synos-oobe:2687
+msgid "Retry"
+msgstr "Yritä uudelleen"
+
+#: assets/synos-oobe:2713
+msgid "Productive From Day One"
+msgstr "Tuottava jo ensimmäisestä päivästä lähtien"
+
+#: assets/synos-oobe:2722
+msgid "Essential productivity and entertainment tools, hand-picked for you."
+msgstr "Välttämättömät tuotanto- ja viihdetuotteet, huolella valittu sinulle."
+
+#: assets/synos-oobe:2722
+msgid "Click any app to open its details in the App Store."
+msgstr ""
+"Napsauta mitä tahansa sovellusta avataksesi sen tiedot Sovelluskaupassa."
+
+#: assets/synos-oobe:2734
+msgid "WeChat"
+msgstr "WeChat"
+
+#: assets/synos-oobe:2735
+msgid "Most popular messaging app in China"
+msgstr "Kiinan suosituin viestintäsovellus"
+
+#: assets/synos-oobe:2736
+msgid "QQ"
+msgstr "QQ"
+
+#: assets/synos-oobe:2737
+msgid "Tencent QQ instant messenger"
+msgstr "Tencent QQ -pikaviestin"
+
+#: assets/synos-oobe:2738
+msgid "WPS Office"
+msgstr "WPS Office"
+
+#: assets/synos-oobe:2739
+msgid "Best office suite for Chinese documents"
+msgstr "Parhaan toimistopaketti kiinalaisille asiakirjoille"
+
+#: assets/synos-oobe:2744
+msgid "Google Chrome"
+msgstr "Google Chrome"
+
+#: assets/synos-oobe:2745
+msgid "The world's most popular web browser"
+msgstr "Maailman suosituin verkkoselain"
+
+#: assets/synos-oobe:2746
+msgid "Visual Studio Code"
+msgstr "Visual Studio Code"
+
+#: assets/synos-oobe:2747
+msgid "Code editing. Redefined."
+msgstr "Koodin muokkausta. Määritelty uudelleen."
+
+#: assets/synos-oobe:2748
+msgid "Steam"
+msgstr "Steam"
+
+#: assets/synos-oobe:2749
+msgid "Your portal to the gaming universe"
+msgstr "Portti pelimaailmaan"
+
+#: assets/synos-oobe:2750
+msgid "Discord"
+msgstr "Discord"
+
+#: assets/synos-oobe:2751
+msgid "Chat, voice, and video for communities"
+msgstr "Viestintä, ääni- ja videopalvelut yhteisöille"
+
+#: assets/synos-oobe:2752
+msgid "Spotify"
+msgstr "Spotify"
+
+#: assets/synos-oobe:2753
+msgid "Music for everyone"
+msgstr "Musiikkia kaikille"
+
+#: assets/synos-oobe:2754
+msgid "OnlyOffice"
+msgstr "OnlyOffice"
+
+#: assets/synos-oobe:2755
+msgid "Best Microsoft Office-compatible suite"
+msgstr "Parhaan Microsoft Office -yhteensopiva toimistopaketti"
+
+#: assets/synos-oobe:2756
+msgid "Thunderbird"
+msgstr "Thunderbird"
+
+#: assets/synos-oobe:2757
+msgid "Secure, fast, and easy email client"
+msgstr "Turvallinen, nopea ja helppo sähköpostiasiakas"
+
+#: assets/synos-oobe:2758
+msgid "Nextcloud"
+msgstr "Nextcloud"
+
+#: assets/synos-oobe:2759
+msgid "Sync and collaborate on your desktop or laptop"
+msgstr "Synkronoi ja tee yhteistyötä pöytäkoneella tai kannettavalla"
+
+#: assets/synos-oobe:2760
+msgid "Blender"
+msgstr "Blender"
+
+#: assets/synos-oobe:2761
+msgid "Professional 3D creation suite"
+msgstr "Ammatillinen 3D-luontisovellus"
+
+#: assets/synos-oobe:2762
+msgid "GNOME Boxes"
+msgstr "GNOME Boxes"
+
+#: assets/synos-oobe:2763
+msgid "Virtualization made simple"
+msgstr "Virtuaalisointi helppokäyttöisesti"
+
+#: assets/synos-oobe:2764
+msgid "VLC"
+msgstr "VLC"
+
+#: assets/synos-oobe:2765
+msgid "The versatile media player that plays everything"
+msgstr "Moneen käyttötarkoitukseen sopiva mediasoitin, joka toistaa kaiken"
+
+#: assets/synos-oobe:2766
+msgid "Krita"
+msgstr "Krita"
+
+#: assets/synos-oobe:2767
+msgid "Professional free and open source painting program"
+msgstr "Ammattimainen ilmainen ja avoimen lähdekoodin maalausohjelma"
+
+#: assets/synos-oobe:2768
+msgid "OBS Studio"
+msgstr "OBS Studio"
+
+#: assets/synos-oobe:2769
+msgid "Free and open source software for video recording and live streaming"
+msgstr ""
+"Vapaa ja lähdekoodiltaan avoin ohjelmisto videon nauhoittamiseen ja "
+"suoratoistoon"
+
+#: assets/synos-oobe:2831
+msgid "Installed"
+msgstr "Asennettu"
+
+#: assets/synos-oobe:2833
+msgid "Click to open in App Store"
+msgstr "Napsauta avataksesi Sovelluskaupasta"
+
+#: assets/synos-oobe:2841
+msgid "Opening…"
+msgstr "Avataan…"
+
+#: assets/synos-oobe:2860
+msgid "Pro tip: You can explore these apps in the App Store,"
+msgstr "Pro-vinkki: Voit tutustua näihin sovelluksiin Sovelluskaupassa,"
+
+#: assets/synos-oobe:2860
+msgid "and continue with the system setup while they download."
+msgstr "ja jatka järjestelmän asetusten tekemistä niiden latautuessa."
+
+#: assets/synos-oobe:2870
+msgid "  Browse Store  "
+msgstr "  Selaa kauppaa  "
+
+#: assets/synos-oobe:2902
+msgid "Connect & Protect Your Data"
+msgstr "Yhdistä ja suojaa tietosi"
+
+#: assets/synos-oobe:2926
+msgid "Online Accounts"
+msgstr "Verkkotilit"
+
+#: assets/synos-oobe:2932
+msgid "Connect your Google, Microsoft,"
+msgstr "Yhdistä Google- tai Microsoft-tilisi,"
+
+#: assets/synos-oobe:2932
+msgid "or Nextcloud accounts to sync"
+msgstr "tai Nextcloud-tilit synkronoidaksesi"
+
+#: assets/synos-oobe:2933
+msgid "files, contacts, and calendar."
+msgstr "tiedostoja, kontakteja ja kalenteria."
+
+#: assets/synos-oobe:2943
+msgid "Connect Accounts"
+msgstr "Yhdistä tilit"
+
+#: assets/synos-oobe:3013
+msgid "Your Data. Your Rules. Period."
+msgstr "Tietosi. Säännöt sinun. Valmista."
+
+#: assets/synos-oobe:3022
+msgid "SynOS disables all system-level telemetry by default."
+msgstr ""
+"SynOS poistaa oletusarvoisesti kaikki järjestelmätason telemetriat "
+"käytöstä."
+
+#: assets/synos-oobe:3022
+msgid "We do not collect your usage habits."
+msgstr "Emme kerää käyttötapojasi."
+
+#: assets/synos-oobe:3023
+msgid "We do not upload your search history."
+msgstr "Emme lataa hakuhistoriaasi ylös."
+
+#: assets/synos-oobe:3023
+msgid "There are no pervasive advertisements."
+msgstr "Ei laajasti levinneitä mainoksia."
+
+#: assets/synos-oobe:3034
+msgid "In an era ruled by algorithms and surveillance,"
+msgstr "Aikakaudella, jota hallitsevat algoritmit ja valvonta,"
+
+#: assets/synos-oobe:3034
+msgid "this is our firmest commitment to you."
+msgstr "tämä on lupauksemme sinulle."
+
+#: assets/synos-oobe:3052
+msgid "✓ Zero telemetry — your activity is yours alone"
+msgstr "✓ Ei telemetriaa — toimintasi on vain sinun"
+
+#: assets/synos-oobe:3053
+msgid "✓ No data collection — your files stay on your device"
+msgstr "✓ Ei tietojen keräämistä — tiedostosi pysyvät laitteellasi"
+
+#: assets/synos-oobe:3054
+msgid "✓ No ads in your operating system"
+msgstr "✓ Ei mainoksia käyttöjärjestelmässäsi"
+
+#: assets/synos-oobe:3055
+msgid "✓ Full root access — you truly own your machine"
+msgstr "✓ Täysi root-ikäisyys — omistat koneesi todella"
+
+#: assets/synos-oobe:3056
+msgid "✓ UFW firewall — your digital perimeter, defended"
+msgstr "✓ UFW-tulipallossa — digitaalinen reunasi, suojattu"
+
+#: assets/synos-oobe:3057
+msgid "✓ Open source — the code is yours to inspect and modify"
+msgstr "✓ Avoimen lähdekoodin koodi — voit tarkastella ja muokata sitä"
+
+#: assets/synos-oobe:3098
+msgid "Welcome to the SynOS Community"
+msgstr "Tervetuloa SynOS-yhteisöön"
+
+#: assets/synos-oobe:3107
+msgid "Whether you're a Windows refugee seeking shelter,"
+msgstr "Oletpa sitten Windowsin pakolainen etsimässä turvapaikkaa,"
+
+#: assets/synos-oobe:3108
+msgid "or a hardcore geek developer — you'll find your tribe here."
+msgstr "tai kovapohjainen geek-kehittäjä – löydät oman kansasi täältä."
+
+#: assets/synos-oobe:3109
+msgid "Found a bug? Want a feature? Tell us anytime."
+msgstr "Löysitkö bugin? Haluatko ominaisuuden? Kerro meille milloin tahansa."
+
+#: assets/synos-oobe:3121
+msgid "Official Documentation"
+msgstr "Virallinen dokumentaatio"
+
+#: assets/synos-oobe:3122
+msgid "Comprehensive guides and troubleshooting — covers everything you need"
+msgstr "Yksityiskohtaiset oppaat ja vianmääritys — kattaa kaiken tarvitsemasi"
+
+#: assets/synos-oobe:3124
+msgid "Community Forums"
+msgstr "Yhteisöfoorumi"
+
+#: assets/synos-oobe:3125
+msgid "Discuss with other SynOS users and developers"
+msgstr "Keskustele muiden SynOS-käyttäjien ja kehittäjien kanssa"
+
+#: assets/synos-oobe:3127
+msgid "Discord Server"
+msgstr "Discord-palvelin"
+
+#: assets/synos-oobe:3128
+msgid "Join our official Discord server for real-time chat and support"
+msgstr ""
+"Liity viralliseen Discord-palvelimeemme reaaliaikaiseen chat- ja "
+"tukikeskusteluun varten"
+
+#: assets/synos-oobe:3130
+msgid "Report an Issue"
+msgstr "Ilmoita ongelmasta"
+
+#: assets/synos-oobe:3131
+msgid "Found a bug or have a feature request? Let us know!"
+msgstr "Löysitkö virheen tai sinulla on ominaisuuspyyntö? Kerro siitä!"
+
+#: assets/synos-oobe:3133
+msgid "Buy SynOS Enterprise Edition"
+msgstr "Osta SynOS Enterprise -versio"
+
+#: assets/synos-oobe:3134
+msgid ""
+"Get enterprise-grade support and advanced features for your organization"
+msgstr "Hanki organisaatiollesi yritystason tuki ja kehittyneet ominaisuudet"
+
+#: assets/synos-oobe:3136
+msgid "Ask Ubuntu"
+msgstr "Ask Ubuntu"
+
+#: assets/synos-oobe:3137
+msgid "Almost all Ubuntu solutions apply directly to SynOS"
+msgstr "Lähes kaikki Ubuntu-ratkaisut toimivat sellaisinaan SynOS:ssa"
+
+#: assets/synos-oobe:3139
+msgid "Source Code"
+msgstr "Lähdekoodi"
+
+#: assets/synos-oobe:3140
+msgid "SynOS is open-source. Explore the code and contribute!"
+msgstr ""
+"SynOS on avoimen lähdekoodin ohjelmisto. Tutustu koodiin ja osallistu!"
+
+#: assets/synos-oobe:3152
+msgid "Open"
+msgstr "Avaa"
+
+#: assets/synos-oobe:3162
+msgid "💡 SynOS is compatible with Ubuntu's entire ecosystem."
+msgstr "💡 SynOS on yhteensopiva koko Ubuntun ekosysteemin kanssa."
+
+#: assets/synos-oobe:3163
+msgid "You can rely on Ubuntu's vast documentation and expertise."
+msgstr "Voit luottaa Ubuntun laajaan dokumentaatioon ja asiantuntemukseen."
+
+#: assets/synos-oobe:3196
+msgid "All Set."
+msgstr "Kaikki valmista."
+
+#: assets/synos-oobe:3205
+msgid "  Start Your SynOS Journey  "
+msgstr "  Aloita SynOS-matka  "
+
+#: assets/synos-oobe:3239 assets/synos-oobe-autostart.desktop:28
+msgid "SynOS Setup"
+msgstr "SynOS-asetukset"
+
+#: assets/synos-oobe:3242
+msgid "SynOS Welcome Center"
+msgstr "SynOS-tervetuloa-keskus"
+
+#: assets/synos-oobe:3295
+msgid "← Back"
+msgstr "← Takaisin"
+
+#: assets/synos-oobe:3304 assets/synos-oobe:3423
+msgid "Next →"
+msgstr "Seuraava →"
+
+#: assets/synos-oobe:3421
+msgid "Finish"
+msgstr "Valmis"
+
+#: assets/synos-oobe:3488 data/synos-oobe.desktop:28
+msgid "SynOS Welcome"
+msgstr "SynOS-tervetuloa"
+
+#: assets/synos-oobe:3490
+msgid "SynOS Team"
+msgstr "SynOS-tiimi"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:121
+msgid "Secure Boot Configuration"
+msgstr "Secure Boot -määritys"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:129
+msgid ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+msgstr ""
+"Secure Boot on emolevun tietoturvakäytäntö, joka varmistaa, että vain "
+"luotettava ohjelmisto ladataan käynnistyksen yhteydessä."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:132
+msgid "It protects your system from low-level malware and rootkits."
+msgstr ""
+"Se suojaa järjestelmääsi matalan tason haittaohjelmilta ja rootkit-"
+"ohjelmilta."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:141
+msgid "System Trust Status"
+msgstr "Järjestelmän luottamuksen tila"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:183
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:325
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:509
+msgid "Create & Enroll Certificate"
+msgstr "Luo ja rekisteröi sertifikaatti"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:189
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:338
+msgid "Repair Module Signatures"
+msgstr "Korjaa moduulin allekirjoitukset"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:197
+msgid "Note: Use password <b>123456</b> after rebooting."
+msgstr "Huom: Käytä salasanaa <b>123456</b> uudelleenkäynnistyksen jälkeen."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:202
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:495
+msgid "Reboot & Configure Secure Boot"
+msgstr "Uudelleenkäynnistys ja Secure Boot -määritys"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:210
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:419
+msgid "  Check Again  "
+msgstr "  Tarkista uudelleen  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:236
+msgid "Motherboard hardware protection is active"
+msgstr "Emolevyn laitteiston suojaus on aktiivinen"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:239
+msgid "Firmware does not support Secure Boot"
+msgstr "Laiteohjelmisto ei tue Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:242
+msgid "Secure Boot state could not be determined"
+msgstr "Secure Boot-tilaa ei voitu määrittää"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:245
+msgid "Secure Boot is disabled"
+msgstr "Secure Boot ei ole käytössä"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:251
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:253
+msgid "Not required without firmware enforcement"
+msgstr "Ei vaadita ilman laiteohjelmiston valvontaa"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:257
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:261
+msgid "Not checked because Secure Boot state is unknown"
+msgstr "Ei valittu, koska Secure Boot-tila on tuntematon"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:266
+msgid "Certificate generated locally"
+msgstr "Sertifikaatti luotu paikallisesti"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:268
+msgid "Missing local certificate"
+msgstr "Puuttuva paikallinen sertifikaatti"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:281
+msgid "Certificate is trusted by motherboard"
+msgstr "Emolevyn laitteisto luottaa sertifikaattiin"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:285
+msgid "Pending enrollment in blue screen (MOKManager)"
+msgstr "Odottaa rekisteröintiä sinisellä ruudulla (MOKManager)"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:290
+msgid "Certificate is not trusted by motherboard"
+msgstr "Emolevy ei luota varmenteeseen"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:296
+msgid "Kernel signature enforcement is inactive"
+msgstr "Ytimen allekirjoituksen valvonta ei ole aktiivinen"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:299
+msgid "Driver trust cannot be verified"
+msgstr "Ohjaimen luottamusta ei voida varmistaa"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:303
+msgid ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+msgstr ""
+"Secure Boot luottamus on valmis. Kolmannen osapuolen ydinmoduuleja ei ole "
+"tällä hetkellä asennettu."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:307
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:550
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:558
+msgid "Drivers are signed and ready to load"
+msgstr "Ajurit on allekirjoitettu ja valmiina ladattavaksi"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:311
+msgid "Drivers are trusted, but automatic DKMS signing needs repair"
+msgstr ""
+"Ohjaimet ovat luotettavia, mutta automaattinen DKMS-allekirjoitus vaatii "
+"korjausta"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:315
+msgid "No signed third-party drivers detected"
+msgstr "Ei allekirjoitettuja kolmannen osapuolen ajureita havaittu"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:318
+msgid "Some DKMS modules need to be re-signed"
+msgstr "Jotkut DKMS-moduulit on allekirjoitettava uudelleen"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:323
+msgid "Enroll Existing Certificate"
+msgstr "Rekisteröi olemassa oleva sertifikaatti"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:336
+msgid "Repair Automatic DKMS Signing"
+msgstr "Korjaa automaattinen DKMS allekirjoitus"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:356
+msgid ""
+"This firmware does not provide Secure Boot. No certificate is required."
+msgstr ""
+"Tämä laiteohjelmisto ei tarjoa Secure Boot:tä. Varmennetta ei vaadita."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:363
+msgid ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+msgstr ""
+"Secure Boot-tilaa ei voitu lukea. Ohjaimen luottamustoiminnot estetään, "
+"kunnes tunnistus onnistuu."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:369
+msgid "No certificate is required while Secure Boot is disabled."
+msgstr "Varmennetta ei vaadita, kun Secure Boot on poistettu käytöstä."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:375
+msgid "System Trust Established. Third-party drivers will load securely."
+msgstr ""
+"Järjestelmän luottamus vakiintunut. Kolmannen osapuolen ajurit latautuvat "
+"turvallisesti."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:379
+msgid "The certificate is enrolled and current drivers are trusted."
+msgstr "Varmenne on rekisteröity ja nykyiset ohjaimet ovat luotettavia."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:381
+msgid "Repair automatic DKMS signing before future driver updates."
+msgstr ""
+"Korjaa automaattinen DKMS-allekirjoitus ennen tulevia ohjainpäivityksiä."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:386
+msgid "The certificate is enrolled, but some modules are not signed with it."
+msgstr ""
+"Varmenne on rekisteröity, mutta joitain moduuleja ei ole allekirjoitettu "
+"sillä."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:391
+msgid "A certificate is waiting for enrollment."
+msgstr "Varmenne odottaa rekisteröintiä."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:393
+msgid "Restart and enter password 123456 in MOKManager."
+msgstr "Käynnistä uudelleen ja kirjoita salasana 123456 kohtaan MOKManager."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:398
+msgid "The local trust certificate is not yet enrolled."
+msgstr "Paikallista luottamussertifikaattia ei ole vielä rekisteröity."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:400
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:407
+msgid "You must configure this to use third-party drivers like NVIDIA."
+msgstr ""
+"Sinun on määritettävä tämä käyttääksesi kolmannen osapuolen ajureita kuten "
+"NVIDIA."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:405
+msgid "The local trust certificate is missing."
+msgstr "Paikallinen luottamussertifikaatti puuttuu."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:423
+msgid "  Checking...  "
+msgstr "  Tarkistetaan...  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:429
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:443
+msgid "Reboot Required"
+msgstr "Uudelleenkäynnistys vaaditaan"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:430
+msgid "Please trust the certificate upon reboot using password 123456."
+msgstr ""
+"Luota sertifikaattiin uudelleenkäynnistyksen yhteydessä käyttämällä "
+"salasanaa 123456."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:432
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:446
+msgid "Cancel"
+msgstr "Peruuta"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:447
+msgid "Reboot"
+msgstr "Uudelleenkäynnistys"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:483
+msgid "Success! When you reboot, a blue screen will appear."
+msgstr "Onnistui! Kun uudelleenkäynnistät, sininen ruutu ilmestyy."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:487
+msgid "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+msgstr ""
+"Valitse 'Rekisteröi MOK' → 'Jatka' → 'Kyllä', ja syötä salasana: 123456"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:491
+msgid "Certificate Created"
+msgstr "Sertifikaatti luotu"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:494
+msgid "Later"
+msgstr "Myöhemmin"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:523
+msgid "Secure Boot Trust Not Required"
+msgstr "Secure Boot Luottamusta ei vaadita"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:524
+msgid "Firmware signature enforcement is not active."
+msgstr "Laiteohjelmiston allekirjoituksen valvonta ei ole aktiivinen."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:478
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:526
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:544
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:552
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:560
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:576
+msgid "OK"
+msgstr "OK"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:534
+msgid ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt."
+" You can repair them after enrollment."
+msgstr ""
+"Varmenne on valmis, mutta yhtä tai useampaa DKMS-moduulia ei voitu rakentaa "
+"uudelleen. Voit korjata ne ilmoittautumisen jälkeen."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:542
+msgid "Configuration needs attention"
+msgstr "Kokoonpano vaatii huomiota"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:549
+msgid "System Trust Established"
+msgstr "Järjestelmän luottamus perustettu"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:557
+msgid "Driver Signature Trusted"
+msgstr "Ajamin allekirjoituksen luotettu"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:573
+msgid "Configuration failed. Please try again."
+msgstr "Määritys epäonnistui. Yritä uudelleen."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:574
+msgid "Please check the advanced output."
+msgstr "Tarkista lisätulosteet."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:585
+msgid "Generating & Signing..."
+msgstr "Luodaan ja allekirjoitetaan..."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:156
+msgid "Local MOK Certificate"
+msgstr "Paikallinen MOK-sertifikaatti"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:155
+msgid "Secure Boot Enabled"
+msgstr "Secure Boot käytössä"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:158
+msgid "Third-party Drivers"
+msgstr "Kolmannen osapuolen ajurit"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:157
+msgid "UEFI Firmware Trust"
+msgstr "UEFI-laitteiston luottamus"
+
+#: data/synos-oobe.desktop:112
+msgid "welcome;oobe;setup;tutorial;first-run;"
+msgstr "tervetuloa;oobe;asetukset;opas;ensimmäinen käynnistys;"
+
+#: synos-oobe/data/com.synos.oobe.policy:9
+msgid "Manage local network discovery"
+msgstr "Hallitse paikallisen verkon havaitsemista"
+
+#: synos-oobe/data/com.synos.oobe.policy:11
+msgid "Authentication is required to change local network discovery"
+msgstr "Paikallisen verkon havaitsemisen muuttaminen vaatii todennuksen"
+
+#: data/synos-oobe.desktop:55
+msgid "Welcome Center"
+msgstr "Tervetuloakeskus"
+
+#: assets/synos-oobe-autostart.desktop:55
+msgid "Complete your SynOS setup"
+msgstr "Viimeittele SynOS:n määritys"
+
+#: data/synos-oobe.desktop:82
+msgid "Explore and configure your SynOS system"
+msgstr "Tutki ja määritä SynOS-järjestelmääsi"
+
+#~ msgid "Unleash Your Graphics Hardware"
+#~ msgstr "Vapauta grafiikkakarttasi teho"
+
+#, python-brace-format
+#~ msgid "NVIDIA proprietary driver is already installed. (Version: {})"
+#~ msgstr "NVIDIA:n suljettu lähdekoodin ajuri on jo asennettu. (Versio: {})"
+
+#~ msgid "✗ Installation encountered an issue."
+#~ msgstr "✌ Asennuksessa ilmeni ongelmia."
+
+#~ msgid "An NVIDIA dedicated graphics card was detected in your system."
+#~ msgstr "Järjestelmässäsi havaittiin NVIDIA:n omistama erillinen näytönohjain."
+
+#~ msgid ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate desktop"
+#~ msgstr ""
+#~ "\tVarmistaaksesi äärimmäisen sujuvuuden peleissä, 3D-renderöinnissä ja "
+#~ "korkean virkistystaajuuden työpöydässä"
+
+#~ msgid "experiences, we recommend installing the proprietary driver."
+#~ msgstr "kokemuksiin, suosittelemme omistajia olevan ajurin asentamista."
+
+#~ msgid "  Check for Driver Updates  "
+#~ msgstr "Tarkista ajupäivitykset"
+
+#~ msgid "Repair & Reinstall"
+#~ msgstr "Korjaa ja asenna uudelleen"
+
+#~ msgid "  One-Click NVIDIA Driver Install  "
+#~ msgstr "Yhden klikkauksen NVIDIA-ajurin asennus"
+
+#~ msgid "Installing NVIDIA driver…"
+#~ msgstr "Asennetaan NVIDIA-ajuria…"
+
+#~ msgid "This may take several minutes."
+#~ msgstr "Tämä voi kestää useita minuutteja."
+
+#~ msgid "✓ Driver installed successfully!"
+#~ msgstr "✓ Ajuri asennettu onnistuneesti!"
+
+#~ msgid "You can install drivers later from Settings."
+#~ msgstr "Voit asentaa ajureita myöhemmin Asetuksista."
+
+#~ msgid "Xbox Controller Support"
+#~ msgstr "Xbox-ohjaimen tuki"
+
+#~ msgid "Xbox controller driver (xpadneo) is already installed."
+#~ msgstr "Xbox-ohjaimen ajuri (xpadneo) on jo asennettu."
+
+#~ msgid ""
+#~ "Enjoy seamless Xbox controller support with rumble and accurate inputs."
+#~ msgstr ""
+#~ "Nauti saumattomasta Xbox-ohjaimen tuesta värinätoiminnoilla ja tarkalla "
+#~ "syötteellä."
+
+#~ msgid "SynOS provides native support for Xbox controllers via Bluetooth."
+#~ msgstr ""
+#~ "SynOS tarjoaa natiin tuen Xbox-ohjaimille Bluetooth-yhteyden kautta."
+
+#~ msgid "The advanced xpadneo driver is already set up and ready for gaming."
+#~ msgstr "Edistynyt xpadneo-ajuri on jo valmiina ja pelikäyttöön valmis."
+
+#~ msgid ""
+#~ "For advanced features like rumble and accurate mapping, we recommend "
+#~ "installing the xpadneo driver."
+#~ msgstr ""
+#~ "Edistyneempien ominaisuuksien kuten tärinän ja tarkan kartoituksen "
+#~ "käyttämiseksi suosittelemme xpadneo-ajurin asentamista."
+
+#~ msgid "Xbox Controller Driver Installed"
+#~ msgstr "Xbox-ohjaimen ajuri asennettu"
+
+#~ msgid "The xpadneo driver is currently installed"
+#~ msgstr "xpadneo-ajuri on tällä hetkellä asennettuna"
+
+#~ msgid "The driver is not installed"
+#~ msgstr "Ajuria ei ole asennettu"
+
+#~ msgid "Driver not installed, signature missing"
+#~ msgstr "Ajuria ei ole asennettu, allekirjoitus puuttuu"
+
+#~ msgid "Kernel module"
+#~ msgstr "Ydinmoduuli"
+
+#~ msgid "Not detected"
+#~ msgstr "Ei havaittu"
+
+#~ msgid "Driver is NOT signed"
+#~ msgstr "Ajuria EI ole allekirjoitettu"
+
+#~ msgid "Signed with current trusted certificate"
+#~ msgstr "Allekirjoitettu nykyisellä luotetulla sertifikaatilla"
+
+#~ msgid "Signed with current certificate, but not enrolled"
+#~ msgstr ""
+#~ "Allekirjoitettu nykyisellä sertifikaatilla, mutta sitä ei ole rekisteröity"
+
+#~ msgid "Signed with an unknown or outdated certificate"
+#~ msgstr "Allekirjoitettu tuntemattomalla tai vanhentuneella sertifikaatilla"
+
+#~ msgid "Controller Status"
+#~ msgstr "Ohjaimen tila"
+
+#~ msgid "Driver loaded and active. Ready to play!"
+#~ msgstr "Ajuri ladattu ja aktiivinen. Valmis pelaamiseen!"
+
+#~ msgid "Driver standing by. Waiting for controller connection..."
+#~ msgstr "Ajuri odottaa. Odottaa ohjaimen yhteyttä..."
+
+#~ msgid "Driver cannot load due to missing signature trust"
+#~ msgstr "Ajuria ei voi ladata puuttuvan allekirjoitusluottamuksen vuoksi"
+
+#~ msgid "Pair your controller"
+#~ msgstr "Yhdistä ohjain"
+
+#~ msgid "Test your controller"
+#~ msgstr "Testaa ohjainta"
+
+#~ msgid "  Install Xbox Driver  "
+#~ msgstr "Asenna Xbox-ajuri"
+
+#~ msgid ""
+#~ "⚠️ The driver signature does not match your system certificate. Click Fix & "
+#~ "Reinstall to repair the driver."
+#~ msgstr ""
+#~ "⚠️ Ajurin allekirjoitus ei vastaa järjestelmäsertifikaattiasi. Napsauta "
+#~ "Korjaa ja asenna uudelleen korjatakseen ajurin."
+
+#~ msgid "Installing Xbox controller driver…"
+#~ msgstr "Asennetaan Xbox-ohjaimen ajuria…"
+
+#~ msgid "This may take a minute."
+#~ msgstr "Tämä voi kestää minuutin."
+
+#~ msgid "Repairing driver signature…"
+#~ msgstr "Korjataan ajurin allekirjoitusta…"
+
+#~ msgid "A reboot is recommended to apply changes."
+#~ msgstr ""
+#~ "Järjestelmän uudelleenkäynnistys on suositeltavaa muutosten voimaantuloon."
+
+#~ msgid "  Fix & Reinstall Driver  "
+#~ msgstr "Asenna Xbox-ajuri"
+
+#~ msgid "(Reboot recommended)"
+#~ msgstr "(Käynnistä uudelleen suositeltu)"
+
+#~ msgid "Cannot sign drivers without a certificate"
+#~ msgstr "Ajureita ei voi allekirjoittaa ilman sertifikaattia"
+
+#~ msgid ""
+#~ "Enable low-level network protection — silently blocks all unauthorized "
+#~ "inbound connections."
+#~ msgstr ""
+#~ "Ota käyttöön matalan tason verkkosuojaus — estää hiljaa kaikki luvattomat "
+#~ "sisäänmenevät yhteydet."
+
+#~ msgid "Firewall"
+#~ msgstr "Palomuuri"
+
+#~ msgid ""
+#~ "Please configure Secure Boot in the previous step before installing this "
+#~ "driver."
+#~ msgstr ""
+#~ "Käynnistä uudelleen varmistaaksesi sertifikaatin rekisteröinnin ennen tämän "
+#~ "ajurin asennusta."
+
+#~ msgid "Please reboot to enroll the certificate before installing this driver."
+#~ msgstr ""
+#~ "Käynnistä uudelleen varmistaaksesi sertifikaatin rekisteröinnin ennen tämän "
+#~ "ajurin asennusta."
+
+#~ msgid "Scanning for installed drivers..."
+#~ msgstr "Skannataan asennettuja ajureita..."
+
+#~ msgid "The local trust certificate is missing or not yet enrolled."
+#~ msgstr ""
+#~ "Paikallinen luottamussertifikaatti puuttuu tai sitä ei ole vielä "
+#~ "rekisteröity."
+
+#~ msgid ""
+#~ "⚠️ Secure Boot is enabled but the custom certificate is not yet enrolled."
+#~ msgstr ""
+#~ "⚠️ Suojattu käynnistys on käytössä, mutta mukautettua sertifikaattia ei ole "
+#~ "vielä rekisteröity."
+
+#~ msgid "✓ Xbox controller driver installed successfully!"
+#~ msgstr "✓ Xbox-ohjaimen ajuri asennettu onnistuneesti!"
+
+#~ msgid "✗ Repair failed."
+#~ msgstr "✗ Vienti epäonnistui."
+
+#~ msgid "⚡ The following apps are provided by the Spark Store community."
+#~ msgstr "⚡ Seuraavat sovellukset tarjoaa Spark Store -yhteisö."
+
+#~ msgid "Great for connecting to local services."
+#~ msgstr "Hyvä tapa yhdistää paikallisiin palveluihin."
+
+#~ msgid "Spark Store"
+#~ msgstr "Spark Store"
+
+#~ msgid "Community app store for Chinese Linux users"
+#~ msgstr "Kiinalaisten Linux-käyttäjien yhteisön sovelluskauppa"
+
+#~ msgid "Note: These apps link to their official or community download pages."
+#~ msgstr ""
+#~ "Huom: Nämä sovellukset linkittävät niiden virallisiin tai yhteisön "
+#~ "lataussivuihin."
+
+#~ msgid " SynOS is not affiliated with these vendors."
+#~ msgstr "SynOS ei ole yhteydessä näihin valmistajiin."
+
+#~ msgid ""
+#~ "SynOS is ready. Just a few steps to shape it\n"
+#~ "into the perfect system tailored to your habits."
+#~ msgstr ""
+#~ "SynOS on valmis. Vain muutama vaihe muokata se täydelliseksi "
+#~ "järjestelmäksi, joka räätälöidään tapojesi mukaiseksi."
+
+#~ msgid "=== Testing mirror speeds ===\n"
+#~ msgstr "=== Peilien nopeuksien testausta ==="
+
+#~ msgid ""
+#~ "\n"
+#~ "No mirrors reachable.\n"
+#~ msgstr ""
+#~ "\n"
+#~ "Ei saavutettavia peilejä.\n"
+
+#~ msgid ""
+#~ "\n"
+#~ "=== Applying mirror switch ===\n"
+#~ msgstr ""
+#~ "\n"
+#~ "=== Sovelletaan peilipalvelimen vaihtoa ===\n"
+
+#~ msgid ""
+#~ "\n"
+#~ "✓ Mirror switched and system updated.\n"
+#~ msgstr ""
+#~ "\n"
+#~ "✓ Peilipalvelin vaihdettu ja järjestelmä päivitetty.\n"
+
+#~ msgid ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate desktop\n"
+#~ "experiences, we recommend installing the proprietary driver."
+#~ msgstr ""
+#~ "Suosittelemme asentamaan suljetun lähdekoodin ajurin pelien sujuvuuden, "
+#~ "3D-renderöinnin ja korkean kuvataajuuden työpöytäkokemuksen parantamiseksi."
+
+#~ msgid ""
+#~ "Installing NVIDIA driver…\n"
+#~ "This may take several minutes."
+#~ msgstr ""
+#~ "Asennetaan NVIDIA-ajuria…\n"
+#~ "Tämä voi kestää muutaman minuutin."
+
+#~ msgid ""
+#~ "✗ Installation encountered an issue.\n"
+#~ "You can install drivers later from Settings."
+#~ msgstr ""
+#~ "✗ Asennuksessa ilmeni ongelma.\n"
+#~ "Voit asentaa ajurit myöhemmin Asetuksista."
+
+#~ msgid ""
+#~ "Powered by Wine and Bottles technology, running classic Windows applications\n"
+#~ "is now easier than ever."
+#~ msgstr ""
+#~ "Wine- ja Bottles-teknologian avulla klassisten Windows-sovellusten "
+#~ "suorittaminen on nyt helpompaa kuin koskaan."
+
+#~ msgid ""
+#~ "Deploying compatibility sandbox via Flatpak…\n"
+#~ "This may take a few minutes."
+#~ msgstr ""
+#~ "Muodostetaan yhteensopivuussandia Flatpakin kautta…\n"
+#~ "Tämä voi kestää muutaman minuutin."
+
+#~ msgid ""
+#~ "✓ Sandbox deployed successfully!\n"
+#~ "You can now double-click .exe files to run them."
+#~ msgstr ""
+#~ "✓ Sandbox muodostettu onnistuneesti!\n"
+#~ "Voit nyt kaksoisnapsauttaa .exe-tiedostoja suorittaaksesi ne."
+
+#~ msgid ""
+#~ "✗ Deployment failed.\n"
+#~ "You can install Bottles later from the App Store."
+#~ msgstr ""
+#~ "✗ Muodostaminen epäonnistui.\n"
+#~ "Voit asentaa Bottlesin myöhemmin Sovelluskaupasta."
+
+#~ msgid ""
+#~ "Essential productivity and entertainment tools, hand-picked for you.\n"
+#~ "Click any app to open its details in the App Store."
+#~ msgstr ""
+#~ "Välttämättömät tuottavuus- ja viihdettyökalut, huolella valittuja sinulle.\n"
+#~ "Napsauta mitä tahansa sovellusta avataksesi sen tiedot App Store -sovelluksessa."
+
+#~ msgid ""
+#~ "⚡ The following apps are provided by the Spark Store community.\n"
+#~ "Great for connecting to local services."
+#~ msgstr ""
+#~ "⚡ Seuraavat sovellukset on tarjonnut Spark Store -yhteisö.\n"
+#~ "Erinomainen paikallisten palveluiden yhdistämiseen."
+
+#~ msgid ""
+#~ "Pro tip: You can explore these apps in the App Store,\n"
+#~ "and continue with the system setup while they download."
+#~ msgstr ""
+#~ "Pro-vinkki: Voit tutustua näihin sovelluksiin Sovelluskaupassa,\n"
+#~ "jatkaa järjestelmän asetusten määritystä niiden latautuessa."
+
+#~ msgid ""
+#~ "Note: These apps link to their official or community download pages. "
+#~ "SynOS is not affiliated with these vendors."
+#~ msgstr ""
+#~ "Huom: Nämä sovellukset linkittävät virallisiin tai yhteisön lataussivuille. "
+#~ "SynOS ei ole sidoksissa näiden toimittajiin."
+
+#~ msgid ""
+#~ "Connect your Google, Microsoft,\n"
+#~ "or Nextcloud accounts to sync\n"
+#~ "files, contacts, and calendar."
+#~ msgstr ""
+#~ "Yhdistä Google-, Microsoft-\n"
+#~ "tai Nextcloud-tilisi synkronoidaksesi\n"
+#~ "tiedostoja, kontakteja ja kalenteria."
+
+#~ msgid ""
+#~ "Use Deja Dup to protect your\n"
+#~ "important files with automated,\n"
+#~ "secure local or remote backups."
+#~ msgstr ""
+#~ "Käytä Deja Duplea suojataksesi\n"
+#~ "tärkeät tiedostosi automaattisilla,\n"
+#~ "varmoilla paikallisilla tai etävarmuuskopioilla."
+
+#~ msgid ""
+#~ "SynOS disables all system-level telemetry by default.\n"
+#~ "We do not collect your usage habits.\n"
+#~ "We do not upload your search history.\n"
+#~ "There are no pervasive advertisements."
+#~ msgstr ""
+#~ "SynOS estää oletuksena kaikki järjestelmätason telemetrian.\n"
+#~ "Emme kerää käyttötottumuksiasi.\n"
+#~ "Emme lataa hakuhistoriaasi ylös.\n"
+#~ "Laajamittaisia mainoksia ei ole."
+
+#~ msgid ""
+#~ "In an era ruled by algorithms and surveillance,\n"
+#~ "this is our firmest commitment to you."
+#~ msgstr ""
+#~ "Tietyssä algoritmeihin ja valvontaan perustuvassa aikakaudessa\n"
+#~ "tämä on sitoutumistemme vahvin lupaus sinulle."
+
+#~ msgid ""
+#~ "Whether you're a Windows refugee seeking shelter,\n"
+#~ "or a hardcore geek developer — you'll find your tribe here.\n"
+#~ "Found a bug? Want a feature? Tell us anytime."
+#~ msgstr ""
+#~ "Oletko Windows-pakolainen etsimässä turvaa,\n"
+#~ "tai kovaotteinen geek-kehittäjä — löydät tästä heimosi.\n"
+#~ "Löysitkö virheen? Haluatko uuden ominaisuuden? Kerro meille milloin tahansa."
+
+#~ msgid ""
+#~ "💡 SynOS is compatible with Ubuntu's entire ecosystem.\n"
+#~ "You can rely on Ubuntu's vast documentation and expertise."
+#~ msgstr ""
+#~ "💡 SynOS on yhteensopiva Ubuntun koko ekosysteemin kanssa.\n"
+#~ "Voit luottaa Ubuntun laajaan dokumentaatioon ja asiantuntemukseen."
+
+#~ msgid ""
+#~ "\n"
+#~ "=== Testing bandwidth of top 3 mirrors (3 s each) ===\n"
+#~ msgstr ""
+#~ "\n"
+#~ "=== Nopeimman 3 peilin kaistanleveyden testausta (3 s kpl) ===\n"
+
+#~ msgid ""
+#~ "✓ Driver installed successfully!\n"
+#~ "A reboot is recommended to apply changes."
+#~ msgstr ""
+#~ "✓ Ajuri asennettu onnistuneesti!\n"
+#~ "Suosittelemme uudelleenkäynnistystä muutosten ottamiseksi käyttöön."

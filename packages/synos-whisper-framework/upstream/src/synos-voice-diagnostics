@@ -1,0 +1,4 @@
+#!/usr/bin/python3
+from synos_whisper_framework.diagnostic_cli import main
+
+raise SystemExit(main())

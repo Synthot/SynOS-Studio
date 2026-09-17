@@ -1,0 +1,2 @@
+# kind	source (relative to upstream/)	target	mode
+folder	deploy/ucm2/	/usr/share/alsa/ucm2	644

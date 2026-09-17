@@ -1,0 +1,11 @@
+Package: synos-installer-beta
+Version: 2.0.2-20+synos1
+Section: admin
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: python3, synos-live-settings, python3-unidecode, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-nm-1.0, libxkbcommon0, xkb-data, parted, ntfs-3g, btrfs-progs, xfsprogs, f2fs-tools, dosfstools, efibootmgr, grub-pc-bin, grub-efi-amd64-bin, grub-efi-amd64-signed, grub2-common, dracut, synos-swap-config, shim-signed, mokutil, openssl, sbsigntool, squashfs-tools, util-linux, ubuntu-drivers-common, network-manager, netplan.io, polkitd, libglib2.0-bin
+Depends[debian]: python3, synos-live-settings, python3-unidecode, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gir1.2-nm-1.0, libxkbcommon0, xkb-data, parted, ntfs-3g, btrfs-progs, xfsprogs, f2fs-tools, dosfstools, efibootmgr, grub-pc-bin, grub-efi-amd64-bin, grub-efi-amd64-signed, grub2-common, dracut, synos-swap-config, shim-signed, mokutil, openssl, sbsigntool, squashfs-tools, util-linux, network-manager, netplan.io, polkitd, libglib2.0-bin
+Suggests: synos-multimedia-codecs
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} GTK4 native installer — ground-up rewrite replacing Ubiquity

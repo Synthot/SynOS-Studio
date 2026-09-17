@@ -1,0 +1,9 @@
+Package: synos-whisper-gtk
+Version: 2.0.2-22+synos1
+Section: gnome
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-whisper-framework, python3, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, gnome-shell (>= 49), dconf-gsettings-backend | gsettings-backend
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Voice Typing settings, microphone training, GNOME shortcut, and non-focusing floating microphone bar.

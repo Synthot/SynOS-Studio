@@ -1,0 +1,25 @@
+# generated from manifest.yml by tools/render_manifest.py
+/args.sh
+/.build/
+# build outputs
+/dist/
+/new_building_os/
+/image/
+/test-results/
+*.iso
+*.torrent
+__pycache__/
+*.pyc
+keys/private/
+# build-time outputs inside vendored package recipes
+packages/*/upstream/deploy/
+packages/*/upstream/obj/
+packages/*/upstream/target/
+packages/*/upstream/src/target/
+packages/*/upstream/locale/
+packages/*/upstream/**/__pycache__/
+packages/*/upstream/**/target/
+packages/*/upstream/**/*.rlib
+packages/*/upstream/**/*.rmeta
+packages/.build/
+*.log

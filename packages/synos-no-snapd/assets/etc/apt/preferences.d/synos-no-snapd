@@ -1,0 +1,3 @@
+Package: snapd snap-store ubuntu-pro-client ubuntu-advantage-tools ubuntu-advantage-desktop-daemon ubuntu-report popularity-contest apport whoopsie
+Pin: release *
+Pin-Priority: -1

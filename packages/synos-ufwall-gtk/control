@@ -1,0 +1,9 @@
+Package: synos-ufwall-gtk
+Version: 2.0.2-7+synos1
+Section: admin
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: ufw, polkitd, libpcap0.8t64
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Firewall Configuration — a modern GTK4 and Libadwaita frontend for monitoring firewall activity and managing UFW status, rules, and application profiles.

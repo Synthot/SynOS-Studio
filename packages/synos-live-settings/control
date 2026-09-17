@@ -1,0 +1,9 @@
+Package: synos-live-settings
+Version: 2.0.2-4+synos1
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-live-layers, adduser, locales, xkb-data, sudo, openssh-server
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Dracut Live session policy and regional settings (removed after installation)

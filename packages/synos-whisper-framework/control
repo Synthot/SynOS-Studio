@@ -1,0 +1,9 @@
+Package: synos-whisper-framework
+Version: 2.0.2-13+synos1
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: python3, python3-gi, dconf-gsettings-backend | gsettings-backend, gir1.2-gstreamer-1.0, gir1.2-gst-plugins-base-1.0, gstreamer1.0-pipewire, gstreamer1.0-plugins-base, gstreamer1.0-plugins-good, gstreamer1.0-plugins-bad, synos-whisper-worker, pipewire-bin, sound-theme-freedesktop, libopencc1.1
+Homepage: ${BRAND_URL_HOME}
+Description: Offline voice-typing engine for ${BRAND_NAME}, using PipeWire and whisper.cpp.

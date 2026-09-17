@@ -1,0 +1,9 @@
+id: fr
+name: France
+locales: [fr_FR.UTF-8]
+keyboard: fr
+timezone: Europe/Paris
+mirror: http://ftp.fr.debian.org/debian/
+compliance: anssi-bp028-intermediate
+eid: []
+paper: a4

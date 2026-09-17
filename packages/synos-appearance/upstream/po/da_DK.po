@@ -1,0 +1,513 @@
+# SynOS Appearance — Danish translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: Danish\n"
+"Language: da_DK\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "Om SynOS Udseende"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "Avanceret"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "SynOS Udseende"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "SynOS-teamet"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "Udseende"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "Anvend på loginskærm"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "Bund"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "Annuller"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "Vælg et billede til GDM-loginskærmens baggrund."
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "Vælg det visuelle stil af din opgavelinje."
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "Vælg…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "Klassisk"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr "Saml flere vinduer fra én app i ét ikon"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "Farezone"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "Vis aktivitetsknappen på proceslinjen"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "Aktivér gruppering"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "Udvidelsesindstillinger"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "GDM-baggrund"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "Gruppér apps"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "Billeder"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "Adskil startikoner fra kørende apps"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "Layout"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "Venstre"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "Baggrund for loginskærm"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "Åbn"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "Åbn præferencevinduerne for paneludvidelser."
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "Panelindikatorer"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "Panelwidgetter"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "Forhåndsvisning"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "Nulstil"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "Nulstil skrivebordsindstillinger"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "Nulstil skrivebordsindstillinger?"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "Gendan skrivebordets udseende, søgning, appmapper og privatliv til fabriksindstillingerne"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "Højre"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "Vælg billede"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "Adskilt"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "Vis aktivitetsknap"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "Vis skrivebordsikoner"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "Vis netværk"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "Vis vejr"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "Vis eller skjul indbyggede panelelementer."
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "Proceslinjeelementer"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "Opgavelinjestil"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr "Slå panelindikatorwidgetter til eller fra."
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "Top"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "Justeringer"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "Vista-proceslinjeopførsel"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "Baggrundsbillede"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "Centreret"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ Anvendt — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ Skrivebordsindstillingerne er nulstillet. Log ud og ind igen for at anvende alle ændringer."
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ GDM-baggrund anvendt"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ Kunne ikke anvende position"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ Kunne ikke anvende stil"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ Kunne ikke nulstille"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ Kunne ikke indstille GDM-baggrund"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ Kunne ikke skifte aktivitetsknap"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ Vælg venligst et billede først"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "Dette gendanner udvidelser, panellayout, søgeindstillinger, appmapper, baggrund, grænseflade og privatlivsindstillinger til fabriksindstillingerne."
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "Netværksstatistik"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Simple Weather"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr "Opdater omtrentlig vejrplacering"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "Privatlivsaftale for vejrtjenester"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. Omtrentlig placering (ipapi.co)\n"
+"SynOS foretager én HTTPS-anmodning til ipapi.co. Operatøren, Kloudend, Inc., kan se din offentlige IP-adresse og bruge den til at anslå din by, dit land og dine omtrentlige koordinater.\n"
+"\n"
+"2. Vejrdata (Open-Meteo)\n"
+"Vejrudvidelsen sender de valgte omtrentlige koordinater til Open-Meteo, som drives af OpenMeteo GmbH. Tjenesten kan også se din offentlige IP-adresse og gemme API-logfiler i op til 90 dage.\n"
+"\n"
+"SynOS er hverken tilknyttet, sponsoreret eller godkendt af nogen af de to tredjepartstjenester. Hvis positionsbestemmelsen mislykkes, bruger SynOS et offlineestimat baseret på systemets tidszone.\n"
+"\n"
+"Privatlivspolitikker:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "Afvis"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "Acceptér alle"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr ""
+"Vejrfunktionen blev ikke aktiveret, fordi der ikke blev givet tilladelse."
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "Kunne ikke gemme tilladelsen til vejrfunktionen."
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "Bestemmer din omtrentlige placering…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "Kunne ikke konfigurere vejrudvidelsen."
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "Vejrplaceringen er indstillet til {location}."
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr ""
+"Placeringstjenesten er utilgængelig; derfor bruges {location} fra din "
+"tidszone."
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr ""
+"Vejrfunktionen blev deaktiveret, men den gemte tilladelse kunne ikke "
+"slettes."
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"Sikkerhedskopiér GNOME-indstillinger, layout og udvidelsespræferencer. "
+"Personlige filer medtages ikke."
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "Sikkerhedskopiering og genoprettelse"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "Eksportér GNOME-indstillinger"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "Eksportér GNOME-indstillinger"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "Eksportér…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "Hvordan skal disse indstillinger importeres?"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "INI-indstillingsfiler"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "Importér GNOME-indstillinger"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "Importér GNOME-indstillinger"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "Importér…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "Flet import"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"Ved import med fletning bevares de aktuelle værdier, som ikke findes i filen.\n"
+"\n"
+"Fuld gendannelse nulstiller først alle indstillinger under /org/gnome/; værdier, som ikke findes i filen, vender tilbage til deres standardværdier. Der gemmes en sikkerhedskopi før hver af de to handlinger."
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "Gendan indstillinger fra en dconf INI-fil"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr "Gem de nuværende indstillinger som en læsbar INI-fil"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "Fuld gendannelse"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ GNOME-indstillinger eksporteret"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ Indstillinger importeret. Log ud og ind igen for at anvende alle "
+"ændringer."
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ Kunne ikke eksportere GNOME-indstillinger"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ Kunne ikke importere GNOME-indstillinger"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ Kunne ikke læse indstillingsfilen"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr "✗ Både importen og den automatiske tilbagerulning mislykkedes"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr "✗ Import mislykkedes; tidligere indstillinger blev gendannet"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ Den valgte fil er ikke en gyldig dconf-INI-fil"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "proceslinje;panel;layout;stil;vinduer;udseende;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr "Skift mellem Centreret og klassisk proceslinjelayout"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ Aktivitetsknap skjult"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ Aktivitetsknap vist"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ {label} deaktiveret"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ {label} aktiveret"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ Kunne ikke deaktivere {label}"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ Kunne ikke aktivere {label}"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ Aktivitetsknap — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action}et"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ Kunne ikke {action} {label}"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "Opgavelinjeposition"
+
+#~ msgid "Panel Position"
+#~ msgstr "Panelposition"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "Vælg hvor din opgavelinje sidder på skærmen."

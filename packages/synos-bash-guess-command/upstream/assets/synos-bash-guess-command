@@ -1,0 +1,52 @@
+# shellcheck shell=bash
+# Quiet Bash ghost text. Readline remains the only line editor: this loader
+# never replaces paste, multiline, Enter, history, or terminal key handling.
+[[ $- == *i* ]] || return 0
+[[ ${BASH_VERSINFO[0]:-0} -ge 4 ]] || return 0
+[[ ${SYNOS_GUESS_COMMAND:-1} != 0 ]] || return 0
+[[ -t 0 && -t 1 ]] || return 0
+[[ ${TERM:-dumb} != dumb ]] || return 0
+[[ ${_SYNOS_GUESS_COMMAND_LOADED:-0} != 1 ]] || return 0
+
+_synos_guess_lib=/usr/lib/synos-bash-guess-command
+
+# The native module only wraps Readline redisplay, Right Arrow and End. Failure is
+# silent and leaves an entirely stock Bash session.
+if [[ ${SYNOS_GUESS_ENGINE:-1} != 0 &&
+      -r $_synos_guess_lib/synos-ghost.so &&
+      -x $_synos_guess_lib/synos-quietd ]]; then
+    if enable -f "$_synos_guess_lib/synos-ghost.so" synos_ghost \
+        2>/dev/null; then
+        synos_ghost configure-history "${HISTFILE-}"
+        _synos_guess_prompt_observe() {
+            local _synos_guess_status=$?
+            synos_ghost observe "$_synos_guess_status" "$PWD"
+            return "$_synos_guess_status"
+        }
+
+        # Run first so $? is the command's real status. Preserve both Bash's
+        # array form and the traditional string form of PROMPT_COMMAND.
+        if [[ ${PROMPT_COMMAND@a} == *a* ]]; then
+            _synos_guess_seen=0
+            for _synos_guess_item in "${PROMPT_COMMAND[@]}"; do
+                if [[ $_synos_guess_item == _synos_guess_prompt_observe ]]; then
+                    _synos_guess_seen=1
+                    break
+                fi
+            done
+            if (( !_synos_guess_seen )); then
+                PROMPT_COMMAND=(_synos_guess_prompt_observe "${PROMPT_COMMAND[@]}")
+            fi
+        elif [[ ${PROMPT_COMMAND-} ]]; then
+            if [[ ";${PROMPT_COMMAND// /};" != *";_synos_guess_prompt_observe;"* ]]; then
+                PROMPT_COMMAND="_synos_guess_prompt_observe; $PROMPT_COMMAND"
+            fi
+        else
+            PROMPT_COMMAND=_synos_guess_prompt_observe
+        fi
+        _SYNOS_GUESS_COMMAND_LOADED=1
+        unset _synos_guess_seen _synos_guess_item
+    fi
+fi
+
+unset _synos_guess_lib

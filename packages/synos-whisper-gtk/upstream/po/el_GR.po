@@ -1,0 +1,533 @@
+# synos-whisper-gtk translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-whisper-gtk.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-whisper-gtk\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-31 15:23+0000\n"
+"PO-Revision-Date: 2026-08-31 15:23+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: el_GR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos_whisper_gtk/app.py:29
+msgid "Automatic detection"
+msgstr "Αυτόματη ανίχνευση"
+
+#: src/synos_whisper_gtk/app.py:30
+#: data/voice-typing@synos.com/extension.js:77
+#: data/voice-typing@synos.com/extension.js:78
+msgid "Simplified Chinese"
+msgstr "Απλοποιημένα κινέζικα"
+
+#: src/synos_whisper_gtk/app.py:31
+#: data/voice-typing@synos.com/extension.js:78
+msgid "Traditional Chinese"
+msgstr "Παραδοσιακά κινέζικα"
+
+#: src/synos_whisper_gtk/app.py:32
+#: data/voice-typing@synos.com/extension.js:79
+msgid "English"
+msgstr "Αγγλικά"
+
+#: src/synos_whisper_gtk/app.py:33
+#: data/voice-typing@synos.com/extension.js:79
+msgid "Spanish"
+msgstr "Ισπανικά"
+
+#: src/synos_whisper_gtk/app.py:34
+#: data/voice-typing@synos.com/extension.js:80
+msgid "French"
+msgstr "Γαλλικά"
+
+#: src/synos_whisper_gtk/app.py:35
+#: data/voice-typing@synos.com/extension.js:80
+msgid "German"
+msgstr "Γερμανικά"
+
+#: src/synos_whisper_gtk/app.py:36
+#: data/voice-typing@synos.com/extension.js:80
+msgid "Japanese"
+msgstr "Ιαπωνικά"
+
+#: src/synos_whisper_gtk/app.py:37
+#: data/voice-typing@synos.com/extension.js:80
+msgid "Korean"
+msgstr "Κορεατικά"
+
+#: src/synos_whisper_gtk/app.py:38
+#: data/voice-typing@synos.com/extension.js:81
+msgid "Russian"
+msgstr "Ρωσικά"
+
+#: src/synos_whisper_gtk/app.py:39
+#: data/voice-typing@synos.com/extension.js:81
+msgid "Portuguese"
+msgstr "Πορτογαλικά"
+
+#: src/synos_whisper_gtk/app.py:43 src/synos_whisper_gtk/app.py:66
+#: src/synos_whisper_gtk/app.py:96 src/synos_whisper_gtk/app.py:313
+#: data/com.synos.VoiceTyping.Settings.desktop:2
+msgid "Voice Typing"
+msgstr "Φωνητική πληκτρολόγηση"
+
+#: src/synos_whisper_gtk/app.py:44
+#: data/voice-typing@synos.com/extension.js:68
+#: data/voice-typing@synos.com/extension.js:92
+#: data/voice-typing@synos.com/extension.js:147
+#: data/voice-typing@synos.com/extension.js:296
+#: data/voice-typing@synos.com/extension.js:361
+#: data/voice-typing@synos.com/extension.js:399
+#: data/voice-typing@synos.com/extension.js:434
+#: data/voice-typing@synos.com/extension.js:459
+msgid "Ready"
+msgstr "Έτοιμο"
+
+#: src/synos_whisper_gtk/app.py:45
+#: data/voice-typing@synos.com/extension.js:69
+#: data/voice-typing@synos.com/extension.js:354
+#: data/voice-typing@synos.com/extension.js:436
+#: data/voice-typing@synos.com/extension.js:437
+msgid "Listening…"
+msgstr "Ακρόαση…"
+
+#: src/synos_whisper_gtk/app.py:46
+msgid "Sign out required"
+msgstr "Απαιτείται αποσύνδεση"
+
+#: src/synos_whisper_gtk/app.py:47
+msgid "Needs attention"
+msgstr "Απαιτείται προσοχή"
+
+#: src/synos_whisper_gtk/app.py:51
+msgid "Sign out and back in to finish enabling Voice Typing."
+msgstr ""
+"Αποσυνδεθείτε και συνδεθείτε ξανά για να ολοκληρωθεί η ενεργοποίηση της "
+"φωνητικής πληκτρολόγησης."
+
+#: src/synos_whisper_gtk/app.py:91
+msgid "Settings"
+msgstr "Ρυθμίσεις"
+
+#: src/synos_whisper_gtk/app.py:98
+msgid ""
+"Use the keyboard shortcut to dictate into the focused application. Speech is"
+" processed locally and is never uploaded."
+msgstr ""
+"Χρησιμοποιήστε τη συντόμευση πληκτρολογίου για να υπαγορεύσετε στην εφαρμογή"
+" που έχει εστίαση. Η ομιλία επεξεργάζεται σε αυτόν τον υπολογιστή και δεν "
+"αποστέλλεται ποτέ."
+
+#: src/synos_whisper_gtk/app.py:103
+msgid "Status"
+msgstr "Κατάσταση"
+
+#: src/synos_whisper_gtk/app.py:103
+msgid "Checking the local service…"
+msgstr "Έλεγχος της τοπικής υπηρεσίας…"
+
+#: src/synos_whisper_gtk/app.py:107 src/synos_whisper_gtk/app.py:307
+msgid "Start"
+msgstr "Έναρξη"
+
+#: src/synos_whisper_gtk/app.py:116
+msgid "Input"
+msgstr "Είσοδος"
+
+#: src/synos_whisper_gtk/app.py:117
+msgid "System default"
+msgstr "Προεπιλογή συστήματος"
+
+#: src/synos_whisper_gtk/app.py:120
+msgid "Microphone"
+msgstr "Μικρόφωνο"
+
+#: src/synos_whisper_gtk/app.py:131
+msgid "Language"
+msgstr "Γλώσσα"
+
+#: src/synos_whisper_gtk/app.py:142
+msgid "Behavior"
+msgstr "Συμπεριφορά"
+
+#: src/synos_whisper_gtk/app.py:144
+msgid "Keyboard shortcut"
+msgstr "Συντόμευση πληκτρολογίου"
+
+#: src/synos_whisper_gtk/app.py:145
+msgid "Activate voice typing from anywhere"
+msgstr "Ενεργοποίηση φωνητικής πληκτρολόγησης από οπουδήποτε"
+
+#: src/synos_whisper_gtk/app.py:149
+msgid "Disabled"
+msgstr "Απενεργοποιημένο"
+
+#: src/synos_whisper_gtk/app.py:153
+msgid "Change…"
+msgstr "Αλλαγή…"
+
+#: src/synos_whisper_gtk/app.py:164
+msgid "Automatic punctuation"
+msgstr "Αυτόματη στίξη"
+
+#: src/synos_whisper_gtk/app.py:165
+msgid "Keep punctuation recognized from speech"
+msgstr "Διατήρηση της στίξης που αναγνωρίζεται από την ομιλία"
+
+#: src/synos_whisper_gtk/app.py:169
+msgid "Voice commands"
+msgstr "Φωνητικές εντολές"
+
+#: src/synos_whisper_gtk/app.py:170
+msgid "Recognize commands such as “new line” and “comma”"
+msgstr "Αναγνώριση εντολών όπως «νέα γραμμή» και «κόμμα»"
+
+#: src/synos_whisper_gtk/app.py:174
+msgid "Live transcription"
+msgstr "Μεταγραφή σε πραγματικό χρόνο"
+
+#: src/synos_whisper_gtk/app.py:175
+msgid "Show words in the microphone bar while you speak"
+msgstr "Εμφάνιση λέξεων στη μπάρα μικροφώνου ενώ μιλάτε"
+
+#: src/synos_whisper_gtk/app.py:179
+msgid "Final result preview"
+msgstr "Προεπισκόπηση τελικού αποτελέσματος"
+
+#: src/synos_whisper_gtk/app.py:180
+msgid "Pause briefly before inserting the completed phrase"
+msgstr ""
+"Κάντε μια σύντομη παύση πριν από την εισαγωγή της ολοκληρωμένης φράσης"
+
+#: src/synos_whisper_gtk/app.py:184
+msgid "Start and stop sounds"
+msgstr "Ήχοι έναρξης και λήξης"
+
+#: src/synos_whisper_gtk/app.py:185
+msgid "Play a subtle microphone cue"
+msgstr "Αναπαραγωγή διακριτικού ηχητικού σήματος μικροφώνου"
+
+#: src/synos_whisper_gtk/app.py:195
+msgid "Models"
+msgstr "Μοντέλα"
+
+#: src/synos_whisper_gtk/app.py:198
+msgid "Offline speech models"
+msgstr "Μοντέλα αναγνώρισης ομιλίας εκτός σύνδεσης"
+
+#: src/synos_whisper_gtk/app.py:200
+msgid ""
+"The Base multilingual model is installed with Voice Typing. Optional models "
+"are verified before use."
+msgstr ""
+"Το πολυγλωσσικό μοντέλο Base εγκαθίσταται μαζί με τη φωνητική πληκτρολόγηση."
+" Τα προαιρετικά μοντέλα επαληθεύονται πριν χρησιμοποιηθούν."
+
+#: src/synos_whisper_gtk/app.py:213
+msgid "Remove downloaded model"
+msgstr "Αφαίρεση του κατεβασμένου μοντέλου"
+
+#: src/synos_whisper_gtk/app.py:216
+#, python-format
+msgid "Remove %s"
+msgstr "Αφαίρεση του %s"
+
+#: src/synos_whisper_gtk/app.py:230
+msgid "Microphone Training"
+msgstr "Βαθμονόμηση μικροφώνου"
+
+#: src/synos_whisper_gtk/app.py:234
+msgid "Calibrate your speaking setup"
+msgstr "Βαθμονομήστε το περιβάλλον ομιλίας σας"
+
+#: src/synos_whisper_gtk/app.py:236
+msgid ""
+"Whisper does not need a personal voice profile. Use this page to check "
+"microphone level, distance, and background noise."
+msgstr ""
+"Το Whisper δεν απαιτεί προσωπικό προφίλ φωνής. Χρησιμοποιήστε αυτήν τη "
+"σελίδα για να ελέγξετε τη στάθμη εισόδου του μικροφώνου, την απόσταση από το"
+" μικρόφωνο και τον θόρυβο φόντου."
+
+#: src/synos_whisper_gtk/app.py:242
+msgid "Practice phrase"
+msgstr "Φράση εξάσκησης"
+
+#: src/synos_whisper_gtk/app.py:243
+msgid "“Voice typing makes writing faster and more accessible.”"
+msgstr ""
+"«Η φωνητική πληκτρολόγηση κάνει τη γραφή ταχύτερη και πιο προσβάσιμη.»"
+
+#: src/synos_whisper_gtk/app.py:249
+msgid "Input level"
+msgstr "Στάθμη εισόδου"
+
+#: src/synos_whisper_gtk/app.py:250
+msgid "Speak normally; aim for the middle of the meter"
+msgstr ""
+"Μιλήστε φυσιολογικά· διατηρήστε τη στάθμη εισόδου κοντά στο κέντρο του "
+"μετρητή"
+
+#: src/synos_whisper_gtk/app.py:254
+msgid "Microphone input level"
+msgstr "Στάθμη εισόδου μικροφώνου"
+
+#: src/synos_whisper_gtk/app.py:260
+msgid "Microphone test"
+msgstr "Δοκιμή μικροφώνου"
+
+#: src/synos_whisper_gtk/app.py:261
+msgid "No audio is saved during this test"
+msgstr "Δεν αποθηκεύονται δεδομένα ήχου κατά τη διάρκεια αυτής της δοκιμής"
+
+#: src/synos_whisper_gtk/app.py:263 src/synos_whisper_gtk/app.py:559
+msgid "Start Test"
+msgstr "Έναρξη δοκιμής"
+
+#: src/synos_whisper_gtk/app.py:268
+msgid "Tips for better recognition"
+msgstr "Συμβουλές για καλύτερη αναγνώριση"
+
+#: src/synos_whisper_gtk/app.py:271
+msgid "Speak naturally"
+msgstr "Μιλήστε φυσικά"
+
+#: src/synos_whisper_gtk/app.py:272
+msgid "Use short phrases and pause briefly between sentences"
+msgstr ""
+"Χρησιμοποιήστε σύντομες φράσεις και κάντε μικρή παύση μεταξύ των προτάσεων"
+
+#: src/synos_whisper_gtk/app.py:276
+msgid "Reduce background noise"
+msgstr "Μείωση του θορύβου φόντου"
+
+#: src/synos_whisper_gtk/app.py:277
+msgid "Keep the microphone close without speaking directly into it"
+msgstr "Κρατήστε το μικρόφωνο κοντά, χωρίς να μιλάτε απευθείας σε αυτό"
+
+#: src/synos_whisper_gtk/app.py:281
+msgid "Choose the language"
+msgstr "Επιλέξτε τη γλώσσα"
+
+#: src/synos_whisper_gtk/app.py:282
+msgid "A fixed language is faster than automatic detection"
+msgstr "Η σταθερή γλώσσα είναι ταχύτερη από την αυτόματη ανίχνευση"
+
+#: src/synos_whisper_gtk/app.py:305
+msgid "Stop"
+msgstr "Διακοπή"
+
+#: src/synos_whisper_gtk/app.py:343
+msgid "Set Keyboard Shortcut"
+msgstr "Ορισμός συντόμευσης πληκτρολογίου"
+
+#: src/synos_whisper_gtk/app.py:365
+msgid "Press the new shortcut"
+msgstr "Πατήστε τη νέα συντόμευση"
+
+#: src/synos_whisper_gtk/app.py:369
+msgid "The keys you press will be used to start or stop Voice Typing."
+msgstr ""
+"Τα πλήκτρα που θα πατήσετε θα χρησιμοποιηθούν για την έναρξη ή τη διακοπή "
+"της φωνητικής πληκτρολόγησης."
+
+#: src/synos_whisper_gtk/app.py:377
+msgid "Waiting for input…"
+msgstr "Αναμονή εισόδου…"
+
+#: src/synos_whisper_gtk/app.py:383
+msgid "Esc cancels · Backspace disables the shortcut"
+msgstr "Esc ακυρώνει · Backspace απενεργοποιεί τη συντόμευση"
+
+#: src/synos_whisper_gtk/app.py:445
+#, python-format
+msgid "Download %s from Hugging Face?"
+msgstr "Λήψη του %s από το Hugging Face;"
+
+#: src/synos_whisper_gtk/app.py:447
+msgid ""
+"This optional model is hosted by Hugging Face, a third-party service. SynOS is not affiliated with, sponsored by, or partnered with Hugging Face.\n"
+"\n"
+"If you continue, your computer will connect directly to huggingface.co. Hugging Face will receive your public IP address and that address may reveal your approximate location.\n"
+"\n"
+"Privacy policy: https://huggingface.co/privacy"
+msgstr ""
+"Αυτό το προαιρετικό μοντέλο φιλοξενείται από το Hugging Face, μια υπηρεσία τρίτου μέρους. Το SynOS δεν συνδέεται με το Hugging Face, δεν χρηματοδοτείται από αυτό και δεν διατηρεί σχέση συνεργασίας μαζί του.\n"
+"\n"
+"Αν συνεχίσετε, ο υπολογιστής σας θα συνδεθεί απευθείας στο huggingface.co. Το Hugging Face θα λάβει τη δημόσια διεύθυνση IP σας, η οποία ενδέχεται να αποκαλύψει την κατά προσέγγιση τοποθεσία σας.\n"
+"\n"
+"Πολιτική απορρήτου: https://huggingface.co/privacy"
+
+#: src/synos_whisper_gtk/app.py:456 src/synos_whisper_gtk/app.py:510
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+#: src/synos_whisper_gtk/app.py:457
+msgid "Continue Download"
+msgstr "Συνέχεια λήψης"
+
+#: src/synos_whisper_gtk/app.py:479 src/synos_whisper_gtk/app.py:538
+msgid "Downloading…"
+msgstr "Λήψη…"
+
+#: src/synos_whisper_gtk/app.py:497
+msgid "Retry"
+msgstr "Επαναδοκιμή"
+
+#: src/synos_whisper_gtk/app.py:498
+msgid "Model download failed"
+msgstr "Η λήψη του μοντέλου απέτυχε"
+
+#: src/synos_whisper_gtk/app.py:499
+msgid "Close"
+msgstr "Κλείσιμο"
+
+#: src/synos_whisper_gtk/app.py:507
+#, python-format
+msgid "Remove %s model?"
+msgstr "Αφαίρεση του μοντέλου %s;"
+
+#: src/synos_whisper_gtk/app.py:508
+msgid "The model can be downloaded again later."
+msgstr "Το μοντέλο μπορεί να ληφθεί ξανά αργότερα."
+
+#: src/synos_whisper_gtk/app.py:511
+msgid "Remove"
+msgstr "Αφαίρεση"
+
+#: src/synos_whisper_gtk/app.py:547
+msgid "In Use"
+msgstr "Σε χρήση"
+
+#: src/synos_whisper_gtk/app.py:550
+msgid "Use"
+msgstr "Χρήση"
+
+#: src/synos_whisper_gtk/app.py:553
+msgid "Download"
+msgstr "Λήψη"
+
+#: src/synos_whisper_gtk/app.py:559
+msgid "Stop Test"
+msgstr "Διακοπή δοκιμής"
+
+#: src/synos_whisper_gtk/app.py:593
+msgid "SynOS Voice Typing"
+msgstr "Φωνητική πληκτρολόγηση SynOS"
+
+#: src/synos_whisper_gtk/app.py:595
+msgid "SynOS Team"
+msgstr "Ομάδα SynOS"
+
+#: src/synos_whisper_gtk/app.py:597
+msgid "Private, offline speech-to-text for the whole desktop."
+msgstr ""
+"Ιδιωτική αναγνώριση ομιλίας εκτός σύνδεσης για ολόκληρη την επιφάνεια "
+"εργασίας."
+
+#: src/synos_whisper_gtk/app.py:605
+#, python-format
+msgid "%.0f MB"
+msgstr "%.0f MB"
+
+#: data/voice-typing@synos.com/extension.js:70
+msgid "Recognizing…"
+msgstr "Αναγνώριση…"
+
+#: data/voice-typing@synos.com/extension.js:71
+msgid "Testing microphone…"
+msgstr "Δοκιμή μικροφώνου…"
+
+#: data/voice-typing@synos.com/extension.js:72
+msgid "No speech detected"
+msgstr "Δεν ανιχνεύθηκε ομιλία"
+
+#: data/voice-typing@synos.com/extension.js:73
+msgid "Microphone unavailable"
+msgstr "Το μικρόφωνο δεν είναι διαθέσιμο"
+
+#: data/voice-typing@synos.com/extension.js:77
+#: data/voice-typing@synos.com/extension.js:314
+msgid "Auto"
+msgstr "Αυτόματο"
+
+#: data/voice-typing@synos.com/extension.js:371
+#: data/voice-typing@synos.com/extension.js:432
+msgid "Off"
+msgstr "Απενεργοποιημένο"
+
+#: data/voice-typing@synos.com/extension.js:544
+msgid "Voice typing is disabled in password fields"
+msgstr ""
+"Η φωνητική πληκτρολόγηση είναι απενεργοποιημένη σε πεδία κωδικού πρόσβασης"
+
+#: data/voice-typing@synos.com/extension.js:549
+msgid "Select a text field before dictating"
+msgstr "Επιλέξτε ένα πεδίο κειμένου πριν υπαγορεύσετε"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:34
+msgid "Briefly preview recognized text before inserting it"
+msgstr ""
+"Σύντομη προεπισκόπηση του αναγνωρισμένου κειμένου πριν από την εισαγωγή του"
+
+#: data/com.synos.VoiceTyping.Settings.desktop:3
+msgid "Configure offline system-wide dictation"
+msgstr "Ρύθμιση της φωνητικής πληκτρολόγησης εκτός σύνδεσης σε όλο το σύστημα"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:26
+msgid "Enable exact-match punctuation and layout commands"
+msgstr ""
+"Ενεργοποίηση εντολών ακριβούς αντιστοίχισης για στίξη και μορφοποίηση "
+"κειμένου"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:6
+msgid "Global voice typing shortcut"
+msgstr "Καθολική συντόμευση για τη φωνητική πληκτρολόγηση"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:52
+msgid "Horizontal offset from the centered overlay position"
+msgstr "Οριζόντια μετατόπιση από την κεντραρισμένη θέση της επικάλυψης"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:22
+msgid "Keep punctuation recognized by Whisper"
+msgstr "Διατήρηση της στίξης που αναγνωρίζεται από το Whisper"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:10
+msgid "PipeWire node name, or empty for the system default"
+msgstr "Όνομα κόμβου PipeWire ή κενό για την προεπιλογή του συστήματος"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:30
+msgid "Play a subtle sound when listening starts or stops"
+msgstr ""
+"Αναπαραγωγή διακριτικού ήχου κατά την έναρξη ή τη διακοπή της λήψης ήχου από"
+" το μικρόφωνο"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:43
+msgid "Preview duration in milliseconds"
+msgstr "Διάρκεια προεπισκόπησης σε χιλιοστά του δευτερολέπτου"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:14
+msgid "Recognition language and Chinese output script"
+msgstr "Γλώσσα αναγνώρισης και σύστημα γραφής για την κινεζική έξοδο"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:38
+msgid "Show periodically refreshed partial transcripts while speaking"
+msgstr ""
+"Εμφάνιση τμηματικών μεταγραφών που ανανεώνονται περιοδικά κατά την ομιλία"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:18
+msgid "Speech recognition model"
+msgstr "Μοντέλο αναγνώρισης ομιλίας"
+
+#: synos-whisper-framework/data/com.synos.voice-typing.gschema.xml:48
+msgid "Voice activity threshold in decibels"
+msgstr "Όριο ενεργότητας φωνής σε ντεσιμπέλ"
+
+#: data/com.synos.VoiceTyping.Settings.desktop:9
+msgid "voice;typing;dictation;speech;microphone;accessibility;"
+msgstr "φωνή;πληκτρολόγηση;υπαγόρευση;ομιλία;μικρόφωνο;προσβασιμότητα;"

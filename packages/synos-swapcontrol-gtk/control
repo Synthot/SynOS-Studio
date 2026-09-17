@@ -1,0 +1,10 @@
+Package: synos-swapcontrol-gtk
+Version: 2.0.2-8+synos1
+Section: admin
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: util-linux, polkitd
+Recommends: synos-swap-config
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Virtual Memory Configuration — modern GTK4/Libadwaita frontend for swap, zswap, and zram management

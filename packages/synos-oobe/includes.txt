@@ -1,0 +1,9 @@
+# kind	source (relative to upstream/)	target	mode
+file	assets/synos-oobe	/usr/bin/synos-oobe	755
+file	assets/synos-oobe-autostart.desktop	/etc/xdg/autostart/synos-oobe.desktop	644
+folder	resources/icons	/usr/share/synos-oobe/icons	644
+folder	locale	/usr/share/locale	644
+file	scripts/network-service-helper	/usr/libexec/synos-oobe/network-service-helper	755
+file	data/com.synos.oobe.policy	/usr/share/polkit-1/actions/com.synos.oobe.policy	644
+file	data/synos-oobe.desktop	/usr/share/applications/synos-oobe.desktop	644
+file	data/synos-oobe.svg	/usr/share/icons/hicolor/scalable/apps/synos-oobe.svg	644

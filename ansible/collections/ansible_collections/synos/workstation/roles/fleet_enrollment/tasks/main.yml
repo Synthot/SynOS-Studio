@@ -1,0 +1,34 @@
+- name: ansible-pull is available on the machine
+  ansible.builtin.apt:
+    name: [ansible-core, git, curl]
+    state: present
+    install_recommends: false
+  when: fleet_enrollment_pull_url | length > 0
+
+- name: First boot environment
+  ansible.builtin.copy:
+    dest: /etc/synos/first-boot.env
+    mode: "0600"
+    content: |
+      PULL_URL={{ fleet_enrollment_pull_url }}
+      PLAYBOOK={{ fleet_enrollment_playbook }}
+      INVENTORY_URL={{ fleet_enrollment_inventory_url }}
+      ROLES={{ fleet_enrollment_roles | join(',') }}
+
+- name: First boot script
+  ansible.builtin.template:
+    src: synos-first-boot.j2
+    dest: /usr/local/sbin/synos-first-boot
+    mode: "0755"
+
+- name: First boot unit
+  ansible.builtin.template:
+    src: synos-first-boot.service.j2
+    dest: /etc/systemd/system/synos-first-boot.service
+    mode: "0644"
+
+- name: Enable the unit (symlink works without a running systemd, so it also works in the chroot)
+  ansible.builtin.file:
+    src: /etc/systemd/system/synos-first-boot.service
+    dest: /etc/systemd/system/multi-user.target.wants/synos-first-boot.service
+    state: link

@@ -1,0 +1,9 @@
+id: be
+name: Belgique / België
+locales: [fr_BE.UTF-8, nl_BE.UTF-8]
+keyboard: be
+timezone: Europe/Brussels
+mirror: http://ftp.be.debian.org/debian/
+compliance: cis-level1
+eid: [eid-mw, eid-viewer]
+paper: a4

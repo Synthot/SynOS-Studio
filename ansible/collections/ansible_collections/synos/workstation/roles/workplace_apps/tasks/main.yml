@@ -1,0 +1,43 @@
+- name: Install packages
+  ansible.builtin.apt:
+    name: "{{ workplace_apps_packages }}"
+    state: present
+    install_recommends: false
+  when: workplace_apps_packages | length > 0
+
+- name: Remove excluded packages
+  ansible.builtin.apt:
+    name: "{{ workplace_apps_remove }}"
+    state: absent
+    purge: true
+  when: workplace_apps_remove | length > 0
+
+- name: Flatpak
+  ansible.builtin.apt:
+    name: flatpak
+    state: present
+  when: workplace_apps_flatpak_apps | length > 0 or workplace_apps_flatpak_remotes | length > 0
+
+- name: Flatpak remotes
+  community.general.flatpak_remote:
+    name: "{{ item.name }}"
+    flatpakrepo_url: "{{ item.url }}"
+    state: present
+  loop: "{{ workplace_apps_flatpak_remotes }}"
+
+- name: Flatpak applications
+  community.general.flatpak:
+    name: "{{ workplace_apps_flatpak_apps }}"
+    state: present
+  when: workplace_apps_flatpak_apps | length > 0
+
+- name: Default browser
+  ansible.builtin.copy:
+    dest: /usr/share/applications/synos-defaults.list
+    mode: "0644"
+    content: |
+      [Default Applications]
+      x-scheme-handler/http={{ workplace_apps_default_browser }}
+      x-scheme-handler/https={{ workplace_apps_default_browser }}
+      text/html={{ workplace_apps_default_browser }}
+  when: workplace_apps_default_browser | length > 0

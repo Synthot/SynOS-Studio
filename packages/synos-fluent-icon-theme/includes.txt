@@ -1,0 +1,2 @@
+# kind	source (relative to upstream/)	target	mode
+folder	deploy/icons/	/usr/share/icons/	644

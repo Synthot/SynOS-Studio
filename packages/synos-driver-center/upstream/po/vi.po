@@ -1,0 +1,1358 @@
+# synos-driver-center translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-driver-center.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-driver-center\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-11 16:11+0800\n"
+"PO-Revision-Date: 2026-08-06 07:08+0000\n"
+"Last-Translator: AnduinOS Team <anduin@aiursoft.com>\n"
+"Language-Team: vi\n"
+"Language: vi_VN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: src/synos_driver_center/app.py:123 src/synos_driver_center/app.py:221
+#: src/synos_driver_center/app.py:295
+#: src/synos_driver_center/app.py:2278
+#: data/com.synos.DriverCenter.desktop:2
+msgid "SynOS Driver Center"
+msgstr "Trung tâm tài xế SynOS"
+
+#: src/synos_driver_center/app.py:242 src/synos_driver_center/app.py:340
+#: src/synos_driver_center/app.py:342
+msgid "Home"
+msgstr "Trang chủ"
+
+#: src/synos_driver_center/app.py:245 src/synos_driver_center/app.py:802
+#: src/synos_driver_center/app.py:1073
+#: src/synos_driver_center/app.py:1641
+#: src/synos_driver_center/app.py:1803
+msgid "Scan again"
+msgstr "Quét lại"
+
+#: src/synos_driver_center/app.py:250
+msgid "About Driver Center"
+msgstr "Giới thiệu về Trung tâm Lái xe"
+
+#: src/synos_driver_center/app.py:252
+msgid "Main Menu"
+msgstr "Menu chính"
+
+#: src/synos_driver_center/app.py:297
+msgid "Scanning for drivers"
+msgstr "Đang quét tìm trình điều khiển"
+
+#: src/synos_driver_center/app.py:298
+msgid "Checking hardware and Secure Boot status…"
+msgstr "Đang kiểm tra phần cứng và trạng thái Secure Boot…"
+
+#: src/synos_driver_center/app.py:340 src/synos_driver_center/app.py:878
+#: src/synos_driver_center/app.py:1218
+#: src/synos_driver_center/app.py:1951
+msgid "System status"
+msgstr "Trạng thái hệ thống"
+
+#: src/synos_driver_center/app.py:359 src/synos_driver_center/app.py:363
+msgid "Audio"
+msgstr "Âm thanh"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:942
+msgid "Audio support ready"
+msgstr "Sẵn sàng hỗ trợ âm thanh"
+
+#: src/synos_driver_center/app.py:360 src/synos_driver_center/app.py:375
+#: src/synos_driver_center/app.py:402 src/synos_driver_center/app.py:496
+#: src/synos_driver_center/app.py:845 src/synos_driver_center/app.py:848
+#: src/synos_driver_center/app.py:912 src/synos_driver_center/app.py:942
+#: src/synos_driver_center/app.py:972 src/synos_driver_center/app.py:997
+#: src/synos_driver_center/app.py:1013
+msgid "Support needs attention"
+msgstr "Cần chú ý hỗ trợ"
+
+#: src/synos_driver_center/app.py:370
+msgid "Printing service stopped"
+msgstr "Dịch vụ in đã dừng"
+
+#: src/synos_driver_center/app.py:372 src/synos_driver_center/app.py:956
+#: src/synos_driver_center/app.py:2118
+msgid "Printing support disabled."
+msgstr "Hỗ trợ in bị vô hiệu hóa."
+
+#: src/synos_driver_center/app.py:377
+msgid "Some queues are paused"
+msgstr "Một số hàng đợi bị tạm dừng"
+
+#: src/synos_driver_center/app.py:379 src/synos_driver_center/app.py:967
+msgid "No printers configured"
+msgstr "Không có máy in nào được định cấu hình"
+
+#: src/synos_driver_center/app.py:382 src/synos_driver_center/app.py:962
+#, python-format
+msgid "%d printer configured"
+msgid_plural "%d printers configured"
+msgstr[0] "%d máy in đã được định cấu hình"
+
+#: src/synos_driver_center/app.py:387 src/synos_driver_center/app.py:390
+msgid "Printers"
+msgstr "Máy in"
+
+#: src/synos_driver_center/app.py:395 src/synos_driver_center/app.py:407
+msgid "Xbox Controller"
+msgstr "Bộ điều khiển Xbox"
+
+#: src/synos_driver_center/app.py:397 src/synos_driver_center/app.py:995
+msgid "xpadneo installed"
+msgstr "Đã cài đặt xpadneo"
+
+#: src/synos_driver_center/app.py:400 src/synos_driver_center/app.py:996
+msgid "Optional Bluetooth driver"
+msgstr "Trình điều khiển Bluetooth tùy chọn"
+
+#: src/synos_driver_center/app.py:413 src/synos_driver_center/app.py:417
+#: src/synos_driver_center/app.py:807 src/synos_driver_center/app.py:811
+#: src/synos_driver_center/app.py:1011
+#: src/synos_driver_center/app.py:1105
+#: src/synos_driver_center/app.py:1570
+#: src/synos_driver_center/app.py:1761
+#: src/synos_driver_center/app.py:1766
+#: src/synos_driver_center/app.py:1771
+#: src/synos_driver_center/app.py:1782
+msgid "Secure Boot"
+msgstr "Secure Boot"
+
+#: src/synos_driver_center/app.py:414
+#: src/synos_driver_center/app.py:1013
+msgid "Trust established"
+msgstr "Niềm tin được thiết lập"
+
+#: src/synos_driver_center/app.py:414 src/synos_driver_center/app.py:798
+#: src/synos_driver_center/app.py:805 src/synos_driver_center/app.py:892
+#: src/synos_driver_center/app.py:1012
+msgid "Action required"
+msgstr "Hành động cần thiết"
+
+#: src/synos_driver_center/app.py:424 src/synos_driver_center/app.py:428
+#: src/synos_driver_center/app.py:1025
+#: src/synos_driver_center/app.py:1172
+msgid "Device Firmware"
+msgstr "Phần mềm thiết bị"
+
+#: src/synos_driver_center/app.py:494
+#: src/synos_driver_center/app.py:1203
+msgid "Checking for updates…"
+msgstr "Đang kiểm tra cập nhật…"
+
+#: src/synos_driver_center/app.py:498 src/synos_driver_center/app.py:520
+#: src/synos_driver_center/app.py:644
+msgid "Shutdown Required"
+msgstr "Yêu cầu tắt máy"
+
+#: src/synos_driver_center/app.py:500 src/synos_driver_center/app.py:522
+#: src/synos_driver_center/app.py:840 src/synos_driver_center/app.py:907
+#: src/synos_driver_center/app.py:1052
+#: src/synos_driver_center/app.py:1471
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:429
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:443
+msgid "Reboot Required"
+msgstr "Yêu cầu khởi động lại"
+
+#: src/synos_driver_center/app.py:504 src/synos_driver_center/app.py:526
+#: src/synos_driver_center/app.py:627
+#, python-format
+msgid "%d firmware update available"
+msgid_plural "%d firmware updates available"
+msgstr[0] "%d bản cập nhật chương trình cơ sở có sẵn"
+
+#: src/synos_driver_center/app.py:509
+msgid "No supported devices"
+msgstr "Không có thiết bị được hỗ trợ"
+
+#: src/synos_driver_center/app.py:510
+msgid "Firmware is up to date"
+msgstr "Firmware đã được cập nhật"
+
+#: src/synos_driver_center/app.py:516
+msgid "Checking…"
+msgstr "Đang kiểm tra…"
+
+#: src/synos_driver_center/app.py:516
+msgid "Contacting the firmware service"
+msgstr "Liên hệ với dịch vụ phần mềm"
+
+#: src/synos_driver_center/app.py:518 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:971 src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1440
+msgid "Needs attention"
+msgstr "Cần chú ý"
+
+#: src/synos_driver_center/app.py:520 src/synos_driver_center/app.py:601
+#: src/synos_driver_center/app.py:1453
+msgid "Shutdown required after installation"
+msgstr "Yêu cầu tắt máy sau khi cài đặt"
+
+#: src/synos_driver_center/app.py:522
+msgid "Restart to finish the firmware update"
+msgstr "Khởi động lại để hoàn tất cập nhật firmware"
+
+#: src/synos_driver_center/app.py:530 src/synos_driver_center/app.py:828
+#: src/synos_driver_center/app.py:902
+#: src/synos_driver_center/app.py:1049
+#: src/synos_driver_center/app.py:1269
+#: src/synos_driver_center/app.py:1404
+msgid "Update available"
+msgstr "Có bản cập nhật"
+
+#: src/synos_driver_center/app.py:532 src/synos_driver_center/app.py:893
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1757
+#: src/synos_driver_center/app.py:1801
+#: src/synos_driver_center/app.py:1910
+msgid "Not detected"
+msgstr "Không được phát hiện"
+
+#: src/synos_driver_center/app.py:532
+#: src/synos_driver_center/app.py:1341
+msgid "No supported firmware devices"
+msgstr "Không có thiết bị phần mềm được hỗ trợ"
+
+#: src/synos_driver_center/app.py:535
+#, python-format
+msgid "%d device is up to date"
+msgid_plural "%d devices are up to date"
+msgstr[0] "%d thiết bị đã được cập nhật"
+
+#: src/synos_driver_center/app.py:539 src/synos_driver_center/app.py:853
+#: src/synos_driver_center/app.py:917 src/synos_driver_center/app.py:941
+#: src/synos_driver_center/app.py:959 src/synos_driver_center/app.py:992
+#: src/synos_driver_center/app.py:1055
+#: src/synos_driver_center/app.py:1269
+msgid "Ready"
+msgstr "Sẵn sàng"
+
+#: src/synos_driver_center/app.py:568
+msgid "Scheduling firmware update…"
+msgstr "Đang lên lịch cập nhật chương trình cơ sở…"
+
+#: src/synos_driver_center/app.py:569
+msgid "Downloading firmware…"
+msgstr "Đang tải xuống chương trình cơ sở…"
+
+#: src/synos_driver_center/app.py:570
+msgid "Installing firmware…"
+msgstr "Đang cài đặt chương trình cơ sở…"
+
+#: src/synos_driver_center/app.py:571
+msgid "Verifying firmware…"
+msgstr "Đang xác minh chương trình cơ sở…"
+
+#: src/synos_driver_center/app.py:572
+msgid "Waiting for authentication…"
+msgstr "Đang chờ xác thực…"
+
+#: src/synos_driver_center/app.py:573
+msgid "Waiting for user action…"
+msgstr "Đang chờ hành động của người dùng…"
+
+#: src/synos_driver_center/app.py:577
+msgid "Updating firmware…"
+msgstr "Đang cập nhật chương trình cơ sở…"
+
+#: src/synos_driver_center/app.py:598
+#: src/synos_driver_center/app.py:2123
+#: src/synos_driver_center/app.py:2252
+msgid "unknown error"
+msgstr "lỗi không xác định"
+
+#: src/synos_driver_center/app.py:603
+#: src/synos_driver_center/app.py:1455
+msgid "Restart required after installation"
+msgstr "Yêu cầu khởi động lại sau khi cài đặt"
+
+#: src/synos_driver_center/app.py:607 src/synos_driver_center/app.py:680
+#: src/synos_driver_center/app.py:686
+msgid "Firmware operation failed"
+msgstr "Hoạt động của phần mềm không thành công"
+
+#: src/synos_driver_center/app.py:610
+#: src/synos_driver_center/app.py:2260
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:478
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:526
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:544
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:552
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:560
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:576
+msgid "OK"
+msgstr "Được"
+
+#: src/synos_driver_center/app.py:621
+msgid "Firmware metadata refreshed."
+msgstr "Siêu dữ liệu chương trình cơ sở được làm mới."
+
+#: src/synos_driver_center/app.py:632
+msgid "No firmware updates are available."
+msgstr "Không có bản cập nhật firmware có sẵn."
+
+#: src/synos_driver_center/app.py:639
+msgid "Firmware update completed."
+msgstr "Cập nhật chương trình cơ sở đã hoàn tất."
+
+#: src/synos_driver_center/app.py:644
+msgid "Restart Required"
+msgstr "Yêu cầu khởi động lại"
+
+#: src/synos_driver_center/app.py:647
+msgid ""
+"The firmware update has been prepared. Save your work and shut down the "
+"computer to finish installing it."
+msgstr ""
+"Bản cập nhật firmware đã được chuẩn bị. Hãy lưu công việc và tắt máy tính để"
+" hoàn tất cài đặt."
+
+#: src/synos_driver_center/app.py:652
+msgid ""
+"The firmware update has been prepared. Save your work and restart the "
+"computer to finish installing it."
+msgstr ""
+"Bản cập nhật firmware đã được chuẩn bị. Lưu công việc của bạn và khởi động "
+"lại máy tính để hoàn tất cài đặt."
+
+#: src/synos_driver_center/app.py:657
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:494
+msgid "Later"
+msgstr "Sau đó"
+
+#: src/synos_driver_center/app.py:660
+msgid "Shut Down Now"
+msgstr "Tắt ngay bây giờ"
+
+#: src/synos_driver_center/app.py:660
+msgid "Restart Now"
+msgstr "Khởi động lại ngay bây giờ"
+
+#: src/synos_driver_center/app.py:766
+#: src/synos_driver_center/app.py:1361
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1616
+#: src/synos_driver_center/app.py:1741
+msgid "Installed"
+msgstr "Đã cài đặt"
+
+#: src/synos_driver_center/app.py:768
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Available"
+msgstr "Khả dụng"
+
+#: src/synos_driver_center/app.py:800 src/synos_driver_center/app.py:858
+#: src/synos_driver_center/app.py:1063
+#: src/synos_driver_center/app.py:1736
+msgid "Driver status"
+msgstr "Trạng thái trình điều khiển"
+
+#: src/synos_driver_center/app.py:801
+#: src/synos_driver_center/app.py:1652
+#: src/synos_driver_center/app.py:2252
+msgid "Driver operation failed: "
+msgstr "Thao tác trình điều khiển không thành công: "
+
+#: src/synos_driver_center/app.py:809
+#: src/synos_driver_center/app.py:1568
+msgid ""
+"Secure Boot status or trust must be resolved before installing a third-party"
+" driver."
+msgstr ""
+"Trạng thái hoặc độ tin cậy của Secure Boot phải được giải quyết trước khi "
+"cài đặt trình điều khiển bên thứ ba."
+
+#: src/synos_driver_center/app.py:814 src/synos_driver_center/app.py:897
+#: src/synos_driver_center/app.py:1046
+#: src/synos_driver_center/app.py:1618
+msgid "Recommended"
+msgstr "Được đề xuất"
+
+#: src/synos_driver_center/app.py:818
+#: src/synos_driver_center/app.py:1557
+msgid ""
+"Choose the driver used by this device. SynOS marks the hardware-tested "
+"recommendation."
+msgstr ""
+"Chọn trình điều khiển được thiết bị này sử dụng. SynOS đánh dấu đề xuất "
+"đã được kiểm tra phần cứng."
+
+#: src/synos_driver_center/app.py:820 src/synos_driver_center/app.py:832
+#: src/synos_driver_center/app.py:1097
+#: src/synos_driver_center/app.py:1533
+#: src/synos_driver_center/app.py:1578
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1667
+#: src/synos_driver_center/app.py:2007
+msgid "Apply Changes"
+msgstr "Áp dụng Thay đổi"
+
+#: src/synos_driver_center/app.py:843
+#: src/synos_driver_center/app.py:2250
+msgid "Driver changes completed. Restart may be required."
+msgstr "Đã hoàn tất thay đổi trình điều khiển. Có thể cần phải khởi động lại."
+
+#: src/synos_driver_center/app.py:849 src/synos_driver_center/app.py:928
+#: src/synos_driver_center/app.py:1036
+#: src/synos_driver_center/app.py:1563
+msgid "Available drivers"
+msgstr "Trình điều khiển có sẵn"
+
+#: src/synos_driver_center/app.py:860 src/synos_driver_center/app.py:921
+msgid "No additional drivers are needed."
+msgstr "Không cần trình điều khiển bổ sung."
+
+#: src/synos_driver_center/app.py:940
+#: src/synos_driver_center/app.py:1846
+msgid "Audio Support"
+msgstr "Hỗ trợ âm thanh"
+
+#: src/synos_driver_center/app.py:955
+#: src/synos_driver_center/app.py:1969
+msgid "Disabled"
+msgstr "Đã tắt"
+
+#: src/synos_driver_center/app.py:977
+#: src/synos_driver_center/app.py:1918
+msgid "Printing Support"
+msgstr "Hỗ trợ in ấn"
+
+#: src/synos_driver_center/app.py:991
+#: src/synos_driver_center/app.py:1732
+msgid "Xbox Controller Support"
+msgstr "Hỗ trợ Bộ điều khiển Xbox"
+
+#: src/synos_driver_center/app.py:993
+#: src/synos_driver_center/app.py:1741
+#: src/synos_driver_center/app.py:1825
+#: src/synos_driver_center/app.py:1869
+#: src/synos_driver_center/app.py:1877
+#: src/synos_driver_center/app.py:2059
+msgid "Not installed"
+msgstr "Chưa được cài đặt"
+
+#: src/synos_driver_center/app.py:1012
+#: src/synos_driver_center/app.py:1749
+msgid "Trusted"
+msgstr "đáng tin cậy"
+
+#: src/synos_driver_center/app.py:1065
+msgid "Check for Driver Updates"
+msgstr "Kiểm tra cập nhật trình điều khiển"
+
+#: src/synos_driver_center/app.py:1067
+msgid "Refresh software sources and compare the recommended driver version."
+msgstr ""
+"Làm mới các nguồn phần mềm và so sánh phiên bản trình điều khiển được đề "
+"xuất."
+
+#: src/synos_driver_center/app.py:1079
+msgid "Driver information updated."
+msgstr "Đã cập nhật thông tin trình điều khiển."
+
+#: src/synos_driver_center/app.py:1088
+#: src/synos_driver_center/app.py:1535
+msgid ""
+"SynOS will update software sources and install the drivers recommended "
+"for this hardware."
+msgstr ""
+"SynOS sẽ cập nhật các nguồn phần mềm và cài đặt trình điều khiển được đề "
+"xuất cho phần cứng này."
+
+#: src/synos_driver_center/app.py:1174
+msgid ""
+"Keep system firmware and supported hardware up to date through the Linux "
+"Vendor Firmware Service."
+msgstr ""
+"Luôn cập nhật chương trình cơ sở hệ thống và phần cứng được hỗ trợ thông qua"
+" Linux Vendor Firmware Service."
+
+#: src/synos_driver_center/app.py:1186
+msgid "Firmware operation failed: "
+msgstr "Hoạt động của phần sụn không thành công: "
+
+#: src/synos_driver_center/app.py:1187
+#: src/synos_driver_center/app.py:1296
+msgid "Check Again"
+msgstr "Kiểm tra lại"
+
+#: src/synos_driver_center/app.py:1193
+msgid "Firmware operation"
+msgstr "Hoạt động phần mềm"
+
+#: src/synos_driver_center/app.py:1220
+msgid "Firmware service"
+msgstr "Dịch vụ phần mềm"
+
+#: src/synos_driver_center/app.py:1224
+msgid "Not available"
+msgstr "Không có sẵn"
+
+#: src/synos_driver_center/app.py:1238
+msgid "Not refreshed in this session"
+msgstr "Không được làm mới trong phiên này"
+
+#: src/synos_driver_center/app.py:1241
+msgid "Firmware metadata"
+msgstr "Siêu dữ liệu phần sụn"
+
+#: src/synos_driver_center/app.py:1250
+msgid "Supported devices"
+msgstr "Thiết bị được hỗ trợ"
+
+#: src/synos_driver_center/app.py:1252
+#, python-format
+msgid "%d device detected"
+msgid_plural "%d devices detected"
+msgstr[0] "Đã phát hiện %d thiết bị"
+
+#: src/synos_driver_center/app.py:1262
+msgid "Available firmware updates"
+msgstr "Cập nhật chương trình cơ sở có sẵn"
+
+#: src/synos_driver_center/app.py:1264
+#, python-format
+msgid "%d update available"
+msgid_plural "%d updates available"
+msgstr[0] "%d bản cập nhật có sẵn"
+
+#: src/synos_driver_center/app.py:1276
+msgid "Firmware actions"
+msgstr "Hành động phần sụn"
+
+#: src/synos_driver_center/app.py:1278
+msgid "Refresh Firmware Metadata"
+msgstr "Làm mới siêu dữ liệu phần sụn"
+
+#: src/synos_driver_center/app.py:1279
+msgid "Download the latest metadata from enabled firmware sources."
+msgstr ""
+"Tải xuống siêu dữ liệu mới nhất từ ​​các nguồn chương trình cơ sở được kích "
+"hoạt."
+
+#: src/synos_driver_center/app.py:1282
+msgid "Refresh"
+msgstr "Làm mới"
+
+#: src/synos_driver_center/app.py:1292
+msgid "Check for Firmware Updates"
+msgstr "Kiểm tra cập nhật chương trình cơ sở"
+
+#: src/synos_driver_center/app.py:1293
+msgid "Compare connected devices with the available metadata."
+msgstr "So sánh các thiết bị được kết nối với siêu dữ liệu có sẵn."
+
+#: src/synos_driver_center/app.py:1307
+msgid "Update All Firmware"
+msgstr "Cập nhật tất cả phần sụn"
+
+#: src/synos_driver_center/app.py:1309
+#, python-format
+msgid "Install %d available update."
+msgid_plural "Install all %d available updates."
+msgstr[0] "Cài đặt %d bản cập nhật có sẵn."
+
+#: src/synos_driver_center/app.py:1315
+msgid "Update All"
+msgstr "Cập nhật tất cả"
+
+#: src/synos_driver_center/app.py:1330
+msgid "Firmware Devices"
+msgstr "Thiết bị phần sụn"
+
+#: src/synos_driver_center/app.py:1332
+msgid "Expand a device to inspect installed and available firmware versions."
+msgstr ""
+"Mở rộng thiết bị để kiểm tra các phiên bản chương trình cơ sở đã cài đặt và "
+"có sẵn."
+
+#: src/synos_driver_center/app.py:1342
+msgid "The firmware service did not report any manageable devices."
+msgstr ""
+"Dịch vụ phần sụn không báo cáo bất kỳ thiết bị nào có thể quản lý được."
+
+#: src/synos_driver_center/app.py:1348
+msgid "Firmware Update History"
+msgstr "Lịch sử cập nhật chương trình cơ sở"
+
+#: src/synos_driver_center/app.py:1349
+msgid "Results reported by the fwupd service."
+msgstr "Kết quả được báo cáo bởi dịch vụ fwupd."
+
+#: src/synos_driver_center/app.py:1357
+msgid "Unknown time"
+msgstr "thời gian không xác định"
+
+#: src/synos_driver_center/app.py:1373
+msgid "No firmware update history"
+msgstr "Không có lịch sử cập nhật firmware"
+
+#: src/synos_driver_center/app.py:1374
+msgid "Completed firmware operations will appear here."
+msgstr "Các hoạt động phần sụn đã hoàn thành sẽ xuất hiện ở đây."
+
+#: src/synos_driver_center/app.py:1387
+#: src/synos_driver_center/app.py:1399
+#: src/synos_driver_center/app.py:1415
+#: src/synos_driver_center/app.py:1426
+#: src/synos_driver_center/app.py:1473
+#: src/synos_driver_center/app.py:1489
+#: src/synos_driver_center/app.py:1490
+msgid "Unknown"
+msgstr "Không xác định"
+
+#: src/synos_driver_center/app.py:1398
+msgid "Current version"
+msgstr "Phiên bản hiện tại"
+
+#: src/synos_driver_center/app.py:1405
+#: src/synos_driver_center/app.py:1518
+msgid "Update"
+msgstr "cập nhật"
+
+#: src/synos_driver_center/app.py:1414
+msgid "Available version"
+msgstr "Phiên bản có sẵn"
+
+#: src/synos_driver_center/app.py:1419
+msgid "Low"
+msgstr "Thấp"
+
+#: src/synos_driver_center/app.py:1420
+msgid "Medium"
+msgstr "Trung bình"
+
+#: src/synos_driver_center/app.py:1421
+msgid "High"
+msgstr "Cao"
+
+#: src/synos_driver_center/app.py:1422
+msgid "Critical"
+msgstr "Quan trọng"
+
+#: src/synos_driver_center/app.py:1425
+msgid "Update urgency"
+msgstr "Cập nhật tính khẩn cấp"
+
+#: src/synos_driver_center/app.py:1436
+msgid "Release notes"
+msgstr "Ghi chú phát hành"
+
+#: src/synos_driver_center/app.py:1443
+msgid "Firmware status"
+msgstr "Trạng thái chương trình cơ sở"
+
+#: src/synos_driver_center/app.py:1447
+msgid "Up to date"
+msgstr "Cập nhật"
+
+#: src/synos_driver_center/app.py:1451
+msgid "Connect the computer to AC power"
+msgstr "Kết nối máy tính với nguồn điện AC"
+
+#: src/synos_driver_center/app.py:1459
+msgid "Installation requirements"
+msgstr "Yêu cầu cài đặt"
+
+#: src/synos_driver_center/app.py:1468
+msgid "Pending"
+msgstr "Đang chờ xử lý"
+
+#: src/synos_driver_center/app.py:1469
+msgid "Success"
+msgstr "thành công"
+
+#: src/synos_driver_center/app.py:1470
+#: src/synos_driver_center/app.py:1472
+msgid "Failed"
+msgstr "thất bại"
+
+#: src/synos_driver_center/app.py:1486
+#, python-format
+msgid "Install firmware for %(device)s from %(current)s to %(available)s?"
+msgstr "Cài đặt firmware cho %(device)s từ %(current)s sang %(available)s?"
+
+#: src/synos_driver_center/app.py:1494
+#, python-format
+msgid "Install %d available firmware update?"
+msgid_plural "Install all %d available firmware updates?"
+msgstr[0] "Cài đặt %d bản cập nhật chương trình cơ sở có sẵn?"
+
+#: src/synos_driver_center/app.py:1500
+msgid "Keep the computer connected to AC power."
+msgstr "Giữ máy tính kết nối với nguồn điện AC."
+
+#: src/synos_driver_center/app.py:1504
+msgid ""
+"This update may invalidate full-disk encryption secrets. Make sure you have "
+"the volume recovery key before continuing."
+msgstr ""
+"Bản cập nhật này có thể làm mất hiệu lực các bí mật mã hóa toàn bộ ổ đĩa. "
+"Hãy bảo đảm bạn có khóa khôi phục ổ đĩa trước khi tiếp tục."
+
+#: src/synos_driver_center/app.py:1509
+msgid "A restart may be required to finish installation."
+msgstr "Có thể cần phải khởi động lại để hoàn tất cài đặt."
+
+#: src/synos_driver_center/app.py:1510
+msgid "Do not disconnect devices or turn off the computer."
+msgstr "Không ngắt kết nối các thiết bị hoặc tắt máy tính."
+
+#: src/synos_driver_center/app.py:1514
+msgid "Install Firmware Update"
+msgstr "Cài đặt Cập nhật chương trình cơ sở"
+
+#: src/synos_driver_center/app.py:1517
+#: src/synos_driver_center/app.py:1539
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:432
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:446
+msgid "Cancel"
+msgstr "Hủy bỏ"
+
+#: src/synos_driver_center/app.py:1540
+#: src/synos_driver_center/app.py:2210
+msgid "Apply"
+msgstr "Đăng ký"
+
+#: src/synos_driver_center/app.py:1587
+msgid "open source"
+msgstr "nguồn mở"
+
+#: src/synos_driver_center/app.py:1587
+msgid "proprietary"
+msgstr "độc quyền"
+
+#: src/synos_driver_center/app.py:1589
+msgid "built in"
+msgstr "được tích hợp sẵn"
+
+#: src/synos_driver_center/app.py:1613
+msgid "In use"
+msgstr "Đang sử dụng"
+
+#: src/synos_driver_center/app.py:1640
+#: src/synos_driver_center/app.py:1651
+#: src/synos_driver_center/app.py:1666
+#: src/synos_driver_center/app.py:1831
+msgid "Kernel module"
+msgstr "Mô-đun hạt nhân"
+
+#: src/synos_driver_center/app.py:1654
+#: src/synos_driver_center/app.py:1777
+#: src/synos_driver_center/app.py:1796
+#: src/synos_driver_center/app.py:1860
+#: src/synos_driver_center/app.py:1890
+#: src/synos_driver_center/app.py:1898
+msgid "Repair & Reinstall"
+msgstr "Sửa chữa & Cài đặt lại"
+
+#: src/synos_driver_center/app.py:1675
+msgid "Advanced driver versions"
+msgstr "Phiên bản trình điều khiển nâng cao"
+
+#: src/synos_driver_center/app.py:1676
+msgid "Older, newer, and server-oriented packages"
+msgstr "Các gói cũ hơn, mới hơn và hướng tới máy chủ"
+
+#: src/synos_driver_center/app.py:1697
+msgid "Select another driver to apply changes."
+msgstr "Chọn trình điều khiển khác để áp dụng các thay đổi."
+
+#: src/synos_driver_center/app.py:1733
+msgid ""
+"xpadneo improves Bluetooth mapping, rumble, battery reporting and "
+"compatibility for modern Xbox controllers."
+msgstr ""
+"xpadneo cải thiện ánh xạ Bluetooth, tiếng ồn, báo cáo pin và khả năng tương "
+"thích cho bộ điều khiển Xbox hiện đại."
+
+#: src/synos_driver_center/app.py:1740
+msgid "Driver package"
+msgstr "Gói trình điều khiển"
+
+#: src/synos_driver_center/app.py:1743
+msgid "Install Driver"
+msgstr "Cài đặt trình điều khiển"
+
+#: src/synos_driver_center/app.py:1760
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:242
+msgid "Secure Boot state could not be determined"
+msgstr "Không thể xác định trạng thái Secure Boot"
+
+#: src/synos_driver_center/app.py:1765
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:285
+msgid "Pending enrollment in blue screen (MOKManager)"
+msgstr "Chờ đăng ký trong màn hình xanh (MOKManager)"
+
+#: src/synos_driver_center/app.py:1770
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:290
+msgid "Certificate is not trusted by motherboard"
+msgstr "Chứng chỉ không được bo mạch chủ tin cậy"
+
+#: src/synos_driver_center/app.py:1775
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:318
+msgid "Some DKMS modules need to be re-signed"
+msgstr "Một số mô-đun DKMS cần được ký lại"
+
+#: src/synos_driver_center/app.py:1786
+msgid "Module signature"
+msgstr "Chữ ký mô-đun"
+
+#: src/synos_driver_center/app.py:1794
+#: src/synos_driver_center/app.py:1888
+#: src/synos_driver_center/app.py:1896
+msgid "Missing"
+msgstr "Thiếu"
+
+#: src/synos_driver_center/app.py:1806
+msgid "Loaded"
+msgstr "Đã tải"
+
+#: src/synos_driver_center/app.py:1811
+msgid "Standing by"
+msgstr "Sẵn sàng chờ đợi"
+
+#: src/synos_driver_center/app.py:1838
+msgid "Bluetooth Settings"
+msgstr "Cài đặt Bluetooth"
+
+#: src/synos_driver_center/app.py:1847
+msgid ""
+"SynOS provides Intel SOF firmware and ALSA UCM profiles for reliable "
+"audio initialization and routing."
+msgstr ""
+"SynOS cung cấp chương trình cơ sở Intel SOF và cấu hình ALSA UCM để khởi "
+"tạo và định tuyến âm thanh đáng tin cậy."
+
+#: src/synos_driver_center/app.py:1850
+msgid "Support packages"
+msgstr "Gói hỗ trợ"
+
+#: src/synos_driver_center/app.py:1858
+msgid "Install Audio Support"
+msgstr "Hỗ trợ cài đặt âm thanh"
+
+#: src/synos_driver_center/app.py:1868
+msgid "Intel SOF firmware"
+msgstr "Phần mềm Intel SOF"
+
+#: src/synos_driver_center/app.py:1876
+msgid "ALSA UCM profiles"
+msgstr "Hồ sơ ALSA UCM"
+
+#: src/synos_driver_center/app.py:1883
+msgid "Runtime status"
+msgstr "Trạng thái thời gian chạy"
+
+#: src/synos_driver_center/app.py:1887
+msgid "SOF firmware files"
+msgstr "Tệp chương trình cơ sở SOF"
+
+#: src/synos_driver_center/app.py:1895
+msgid "UCM configuration files"
+msgstr "Tệp cấu hình UCM"
+
+#: src/synos_driver_center/app.py:1903
+msgid "SOF kernel modules"
+msgstr "mô-đun hạt nhân SOF"
+
+#: src/synos_driver_center/app.py:1904
+msgid "Not currently loaded"
+msgstr "Hiện chưa được tải"
+
+#: src/synos_driver_center/app.py:1909
+msgid "Active audio drivers"
+msgstr "Trình điều khiển âm thanh đang hoạt động"
+
+#: src/synos_driver_center/app.py:1919
+msgid ""
+"Inspect the local print service, configured queues, and the packages that "
+"provide modern and legacy printer support."
+msgstr ""
+"Kiểm tra dịch vụ in cục bộ, hàng đợi được định cấu hình và các gói cung cấp "
+"hỗ trợ máy in hiện đại và cũ."
+
+#: src/synos_driver_center/app.py:1924
+#: src/synos_driver_center/app.py:1958
+msgid "Enable Printing Support"
+msgstr "Bật hỗ trợ in"
+
+#: src/synos_driver_center/app.py:1925
+msgid "Allow local, network, and USB printing services to run."
+msgstr "Cho phép chạy các dịch vụ in cục bộ, mạng và USB."
+
+#: src/synos_driver_center/app.py:1955
+msgid "CUPS service"
+msgstr "Dịch vụ CUPS"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Running"
+msgstr "Đang chạy"
+
+#: src/synos_driver_center/app.py:1956
+msgid "Stopped"
+msgstr "Đã dừng"
+
+#: src/synos_driver_center/app.py:1968
+msgid "Start at boot"
+msgstr "Bắt đầu khi khởi động"
+
+#: src/synos_driver_center/app.py:1969
+msgid "Enabled"
+msgstr "Đã bật"
+
+#: src/synos_driver_center/app.py:1974
+#, python-format
+msgid "%d configured printer"
+msgid_plural "%d configured printers"
+msgstr[0] "%d máy in được định cấu hình"
+
+#: src/synos_driver_center/app.py:1980
+msgid "Configured printers"
+msgstr "Máy in được định cấu hình"
+
+#: src/synos_driver_center/app.py:1986
+msgid "Default printer"
+msgstr "Máy in mặc định"
+
+#: src/synos_driver_center/app.py:1987
+msgid "Not set"
+msgstr "Chưa được đặt"
+
+#: src/synos_driver_center/app.py:1991
+msgid "No configured queues"
+msgstr "Không có hàng đợi được định cấu hình"
+
+#: src/synos_driver_center/app.py:1996
+#, python-format
+msgid "%d queue paused"
+msgid_plural "%d queues paused"
+msgstr[0] "%d hàng đợi bị tạm dừng"
+
+#: src/synos_driver_center/app.py:2000
+msgid "All queues enabled"
+msgstr "Đã bật tất cả hàng đợi"
+
+#: src/synos_driver_center/app.py:2004
+msgid "Print queues"
+msgstr "Hàng đợi in"
+
+#: src/synos_driver_center/app.py:2015
+msgid "Core printing"
+msgstr "In lõi"
+
+#: src/synos_driver_center/app.py:2016
+msgid "Required for the local print service and command-line clients."
+msgstr "Cần thiết cho dịch vụ in cục bộ và máy khách dòng lệnh."
+
+#: src/synos_driver_center/app.py:2023
+msgid "Driverless printing"
+msgstr "In không cần trình điều khiển"
+
+#: src/synos_driver_center/app.py:2024
+msgid "Modern IPP drivers, document filters, and capability tools."
+msgstr "Trình điều khiển IPP hiện đại, bộ lọc tài liệu và công cụ chức năng."
+
+#: src/synos_driver_center/app.py:2031
+msgid "Network discovery"
+msgstr "Khám phá mạng"
+
+#: src/synos_driver_center/app.py:2032
+msgid "Automatic discovery of printers advertised on the local network."
+msgstr "Tự động phát hiện các máy in được quảng cáo trên mạng cục bộ."
+
+#: src/synos_driver_center/app.py:2039
+msgid "Optional compatibility"
+msgstr "Khả năng tương thích tùy chọn"
+
+#: src/synos_driver_center/app.py:2040
+msgid ""
+"USB IPP, administrative authorization, legacy drivers, and network scanning."
+msgstr "USB IPP, ủy quyền quản trị, trình điều khiển cũ và quét mạng."
+
+#: src/synos_driver_center/app.py:2063
+msgid "Install Missing Packages"
+msgstr "Cài đặt các gói bị thiếu"
+
+#: src/synos_driver_center/app.py:2116
+msgid "Printing support enabled."
+msgstr "Đã bật hỗ trợ in."
+
+#: src/synos_driver_center/app.py:2122
+msgid "Printing operation failed: "
+msgstr "Thao tác in không thành công: "
+
+#: src/synos_driver_center/app.py:2211
+msgid "Working…"
+msgstr "Đang hoạt động…"
+
+#: src/synos_driver_center/app.py:2280
+msgid "SynOS Team"
+msgstr "Đội ngũ SynOS"
+
+#: src/synos_driver_center/app.py:2283
+msgid "Install, inspect, and repair hardware drivers on SynOS."
+msgstr ""
+"Cài đặt, kiểm tra và sửa chữa trình điều khiển phần cứng trên SynOS."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:121
+msgid "Secure Boot Configuration"
+msgstr "Cấu hình Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:129
+msgid ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+msgstr ""
+"Secure Boot là tiêu chuẩn bảo mật bo mạch chủ đảm bảo chỉ phần mềm đáng tin "
+"cậy được tải khi khởi động."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:132
+msgid "It protects your system from low-level malware and rootkits."
+msgstr "Nó bảo vệ hệ thống của bạn khỏi mã độc cấp thấp và rootkit."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:141
+msgid "System Trust Status"
+msgstr "Tình trạng Tin cậy Hệ thống"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:183
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:325
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:509
+msgid "Create & Enroll Certificate"
+msgstr "Tạo & Đăng ký Chứng chỉ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:189
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:338
+msgid "Repair Module Signatures"
+msgstr "Chữ ký mô-đun sửa chữa"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:197
+msgid "Note: Use password <b>123456</b> after rebooting."
+msgstr "Lưu ý: Sử dụng mật khẩu <b>123456</b> sau khi khởi động lại."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:202
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:495
+msgid "Reboot & Configure Secure Boot"
+msgstr "Khởi động lại & Cấu hình Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:210
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:419
+msgid "  Check Again  "
+msgstr "  Kiểm tra lại  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:236
+msgid "Motherboard hardware protection is active"
+msgstr "Bảo cứng bo mạch chủ đang hoạt động"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:239
+msgid "Firmware does not support Secure Boot"
+msgstr "Phần sụn không hỗ trợ Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:245
+msgid "Secure Boot is disabled"
+msgstr "Secure Boot bị tắt"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:251
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:253
+msgid "Not required without firmware enforcement"
+msgstr "Không bắt buộc nếu không thực thi chương trình cơ sở"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:257
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:261
+msgid "Not checked because Secure Boot state is unknown"
+msgstr "Không được kiểm tra vì trạng thái Secure Boot không xác định"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:266
+msgid "Certificate generated locally"
+msgstr "Chứng chỉ được tạo cục bộ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:268
+msgid "Missing local certificate"
+msgstr "Thiếu chứng chỉ cục bộ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:281
+msgid "Certificate is trusted by motherboard"
+msgstr "Bo mạch chủ tin cậy chứng chỉ này"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:296
+msgid "Kernel signature enforcement is inactive"
+msgstr "Thực thi chữ ký hạt nhân không hoạt động"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:299
+msgid "Driver trust cannot be verified"
+msgstr "Không thể xác minh độ tin cậy của trình điều khiển"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:303
+msgid ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+msgstr ""
+"Niềm tin Secure Boot đã sẵn sàng. Hiện tại không có mô-đun hạt nhân của bên "
+"thứ ba nào được cài đặt."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:307
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:550
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:558
+msgid "Drivers are signed and ready to load"
+msgstr "Trình điều khiển đã được ký và sẵn sàng tải"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:311
+msgid "Drivers are trusted, but automatic DKMS signing needs repair"
+msgstr "Trình điều khiển được tin cậy nhưng việc ký DKMS tự động cần sửa chữa"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:315
+msgid "No signed third-party drivers detected"
+msgstr "Không phát hiện trình điều khiển bên thứ ba đã ký"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:323
+msgid "Enroll Existing Certificate"
+msgstr "Đăng ký chứng chỉ hiện có"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:336
+msgid "Repair Automatic DKMS Signing"
+msgstr "Sửa chữa chữ ký DKMS tự động"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:356
+msgid ""
+"This firmware does not provide Secure Boot. No certificate is required."
+msgstr ""
+"Phần sụn này không cung cấp Secure Boot. Không có giấy chứng nhận được yêu "
+"cầu."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:363
+msgid ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+msgstr ""
+"Không thể đọc được trạng thái Secure Boot. Hoạt động tin cậy của trình điều "
+"khiển bị chặn cho đến khi phát hiện thành công."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:369
+msgid "No certificate is required while Secure Boot is disabled."
+msgstr "Không cần chứng chỉ khi Secure Boot bị tắt."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:375
+msgid "System Trust Established. Third-party drivers will load securely."
+msgstr ""
+"Nhật ký tin cậy hệ thống đã được thiết lập. Trình điều khiển bên thứ ba sẽ "
+"tải an toàn."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:379
+msgid "The certificate is enrolled and current drivers are trusted."
+msgstr "Chứng chỉ đã được đăng ký và trình điều khiển hiện tại được tin cậy."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:381
+msgid "Repair automatic DKMS signing before future driver updates."
+msgstr ""
+"Sửa chữa ký DKMS tự động trước khi cập nhật trình điều khiển trong tương "
+"lai."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:386
+msgid "The certificate is enrolled, but some modules are not signed with it."
+msgstr "Chứng chỉ đã được đăng ký nhưng một số mô-đun chưa được ký với nó."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:391
+msgid "A certificate is waiting for enrollment."
+msgstr "Chứng chỉ đang chờ đăng ký."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:393
+msgid "Restart and enter password 123456 in MOKManager."
+msgstr "Khởi động lại và nhập mật khẩu 123456 vào MOKManager."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:398
+msgid "The local trust certificate is not yet enrolled."
+msgstr "Chứng chỉ tin cậy cục bộ chưa được đăng ký."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:400
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:407
+msgid "You must configure this to use third-party drivers like NVIDIA."
+msgstr ""
+"Bạn phải cấu hình cái này để sử dụng các trình điều khiển bên thứ ba như "
+"NVIDIA."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:405
+msgid "The local trust certificate is missing."
+msgstr "Chứng chỉ tin cậy cục bộ bị thiếu."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:423
+msgid "  Checking...  "
+msgstr "  Đang kiểm tra...  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:430
+msgid "Please trust the certificate upon reboot using password 123456."
+msgstr ""
+"Vui lòng tin tưởng chứng chỉ này khi khởi động lại bằng mật khẩu 123456."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:447
+msgid "Reboot"
+msgstr "Khởi động lại"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:483
+msgid "Success! When you reboot, a blue screen will appear."
+msgstr "Thành công! Khi bạn khởi động lại, một màn hình xanh sẽ xuất hiện."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:487
+msgid "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+msgstr "Chọn 'Enroll MOK' → 'Continue' → 'Yes', và nhập mật khẩu: 123456"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:491
+msgid "Certificate Created"
+msgstr "Chứng chỉ đã được tạo"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:523
+msgid "Secure Boot Trust Not Required"
+msgstr "Secure Boot Không cần tin cậy"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:524
+msgid "Firmware signature enforcement is not active."
+msgstr "Thực thi chữ ký chương trình cơ sở không hoạt động."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:534
+msgid ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt."
+" You can repair them after enrollment."
+msgstr ""
+"Chứng chỉ đã sẵn sàng nhưng không thể xây dựng lại một hoặc nhiều mô-đun "
+"DKMS. Bạn có thể sửa chữa chúng sau khi đăng ký."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:542
+msgid "Configuration needs attention"
+msgstr "Cấu hình cần chú ý"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:549
+msgid "System Trust Established"
+msgstr "Đã thành lập hệ thống tin cậy"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:557
+msgid "Driver Signature Trusted"
+msgstr "Chữ ký trình điều khiển được tin cậy"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:573
+msgid "Configuration failed. Please try again."
+msgstr "Cấu hình không thành công. Vui lòng thử lại."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:574
+msgid "Please check the advanced output."
+msgstr "Vui lòng kiểm tra đầu ra nâng cao."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:585
+msgid "Generating & Signing..."
+msgstr "Đang tạo & Ký..."
+
+#: src/synos_driver_center/app.py:1940
+msgid "Add Printer"
+msgstr "Thêm máy in"
+
+#: src/synos_driver_center/app.py:1365
+#: src/synos_driver_center/app.py:1390
+#: src/synos_driver_center/app.py:1488
+msgid "Firmware device"
+msgstr "Thiết bị firmware"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:156
+msgid "Local MOK Certificate"
+msgstr "Chứng chỉ MOK cục bộ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:155
+msgid "Secure Boot Enabled"
+msgstr "Đã bật Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:158
+msgid "Third-party Drivers"
+msgstr "Trình điều khiển bên thứ ba"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:157
+msgid "UEFI Firmware Trust"
+msgstr "Nhật ký Tin cậy UEFI Firmware"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:10
+msgid "Authentication is required to change hardware drivers"
+msgstr "Yêu cầu xác thực để thay đổi trình điều khiển phần cứng"
+
+#: data/com.synos.DriverCenter.desktop:12
+msgid "driver;firmware;fwupd;nvidia;graphics;xbox;secure boot;hardware;"
+msgstr ""
+"trình điều khiển;firmware;fwupd;nvidia;đồ họa;Xbox;Secure Boot;phần cứng;"
+
+#: synos-driver-center/data/com.synos.DriverCenter.policy:8
+msgid "Install and repair hardware drivers"
+msgstr "Cài đặt và sửa chữa trình điều khiển phần cứng"
+
+#: data/com.synos.DriverCenter.desktop:4
+msgid "Manage hardware drivers and device firmware"
+msgstr "Quản lý trình điều khiển phần cứng và firmware thiết bị"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:8
+msgid "Configure Secure Boot trust and repair DKMS signatures"
+msgstr "Cấu hình độ tin cậy của Secure Boot và sửa chữa chữ ký DKMS"
+
+#: synos-secureboot-toolkit/data/com.synos.SecureBootToolkit.policy:10
+msgid "Authentication is required to configure Secure Boot trust"
+msgstr "Yêu cầu xác thực để cấu hình độ tin cậy của Secure Boot"
+
+#~ msgid "Download the latest metadata from enabled firmware remotes."
+#~ msgstr ""
+#~ "Tải xuống siêu dữ liệu mới nhất từ ​​điều khiển từ xa phần sụn được kích "
+#~ "hoạt."
+
+#~ msgid "Driver Center"
+#~ msgstr "Giới thiệu về Trung tâm Lái xe"
+
+#~ msgid "Secure Boot needs attention"
+#~ msgstr "Cần chú ý hỗ trợ"
+
+#~ msgid "Establish system trust before installing a third-party driver."
+#~ msgstr ""
+#~ "Trạng thái hoặc độ tin cậy của Secure Boot phải được giải quyết trước khi "
+#~ "cài đặt trình điều khiển bên thứ ba."
+
+#, python-format
+#~ msgid "%d recommended driver is available"
+#~ msgid_plural "%d recommended drivers are available"
+#~ msgstr[0] "Tính năng phát hiện thiết bị FIDO không khả dụng"
+
+#~ msgid "Install Recommended Drivers"
+#~ msgstr "Cài đặt trình điều khiển"
+
+#~ msgid "Driver changes are ready"
+#~ msgstr "Chữ ký trình điều khiển được tin cậy"
+
+#~ msgid "A graphics driver needs attention"
+#~ msgstr "Cấu hình cần chú ý"
+
+#~ msgid "Your drivers are ready"
+#~ msgstr "Chữ ký trình điều khiển được tin cậy"
+
+#~ msgid "Recommended changes"
+#~ msgstr "Được đề xuất"
+
+#~ msgid "Install Recommended Drivers?"
+#~ msgstr "Cài đặt trình điều khiển"
+
+#~ msgid "Install"
+#~ msgstr "Đã cài đặt"
+
+#~ msgid "Hardware"
+#~ msgstr "Phần cứng"
+
+#~ msgid "Blocked by Secure Boot"
+#~ msgstr "Bị chặn bởi Secure Boot"
+
+#~ msgid "Complete printing support"
+#~ msgstr "Hỗ trợ in ấn hoàn chỉnh"
+
+#~ msgid "Install missing printing packages"
+#~ msgstr "Cài đặt các gói in bị thiếu"
+
+#, python-format
+#~ msgid "%d package is missing"
+#~ msgid_plural "%d packages are missing"
+#~ msgstr[0] "Gói %d bị thiếu"

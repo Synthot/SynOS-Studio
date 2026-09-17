@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+# systemd units (generated)
+if [ "$1" = "remove" ] && [ -d /run/systemd/system ]; then systemctl stop synos-live-session.service >/dev/null 2>&1 || true; fi

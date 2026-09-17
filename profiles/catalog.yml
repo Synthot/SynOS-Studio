@@ -1,0 +1,122 @@
+# Text and catalog data the configurator shows. Everything structural
+# (bases, profiles, bundles, regions, package maps, stack roles, schemas)
+# is read from the repository by tools/export_catalog.py; this file
+# only carries descriptions and the searchable package catalog.
+bundles:
+  desktop-core: Desktop shell, firmware, translations, hardening baseline (always on)
+  office: Office suite, PDF, calendar
+  communication: Mail and browser
+  remote-access: RDP and VDI clients
+  printing: CUPS and driverless printing
+  vpn: WireGuard and OpenVPN
+  smartcard: OpenSC, PC/SC, eID readers
+  directory: Domain join stack
+  compliance: OpenSCAP and content
+  containers: Podman and Buildah
+  build-tools: Compilers, CMake, debugger
+  media: Video and image tools
+  web-admin: Cockpit web administration (services, storage, containers, terminal)
+  virtualization: KVM virtual machines with libvirt
+  ai-dev: PyTorch, Python tooling and llama.cpp for local model work
+
+compliance:
+  - {id: none, name: None}
+  - {id: cis-level1, name: CIS Level 1}
+  - {id: cis-level2, name: CIS Level 2}
+  - {id: anssi-bp028-intermediate, name: ANSSI BP-028 intermediate (FR)}
+  - {id: anssi-bp028-enhanced, name: ANSSI BP-028 enhanced (FR)}
+  - {id: bsi-sys-1-3, name: BSI SYS.1.3 (DE)}
+  - {id: bio, name: BIO (NL)}
+  - {id: ncsc-eud, name: NCSC EUD (UK)}
+  - {id: itsg-33, name: ITSG-33 (CA)}
+  - {id: nist-800-171, name: NIST 800-171 (US)}
+
+# Recommended packages, shown first on the applications screen: servers,
+# command-line tools and other packages with no desktop entry, plus a few
+# well-known applications. The full application list is generated from the
+# base archives into catalog.apps.yml by tools/build_catalog.py.
+packages:
+  - {name: libreoffice, category: Office, summary: Office suite}
+  - {name: gnucash, category: Finance, summary: Double-entry accounting}
+  - {name: keepassxc, category: Security, summary: Password manager}
+  - {name: opensc, category: Security, summary: Smart card and eID middleware}
+  - {name: remmina, category: Remote, summary: RDP, VNC and SSH client}
+  - {name: freerdp3-x11, category: Remote, summary: RDP client}
+  - {name: thunderbird, category: Mail, summary: Mail client}
+  - {name: evolution, category: Mail, summary: Mail and calendar with Exchange support}
+  - {name: nextcloud-desktop, category: Files, summary: Nextcloud sync client}
+  - {name: wireguard-tools, category: VPN, summary: WireGuard VPN}
+  - {name: gimp, category: Media, summary: Image editor}
+  - {name: inkscape, category: Media, summary: Vector editor}
+  - {name: vlc, category: Media, summary: Media player}
+  - {name: obs-studio, category: Media, summary: Screen recording}
+  - {name: code-oss, category: Developer, summary: Code editor}
+  - {name: git, category: Developer, summary: Version control}
+  - {name: podman, category: Developer, summary: Containers without a daemon}
+  - {name: python3, category: Developer, summary: Python runtime}
+  - {name: gnome-boxes, category: Virtualisation, summary: Simple virtual machines}
+  - {name: virt-manager, category: Virtualisation, summary: KVM management}
+  - {name: qgis, category: GIS, summary: Geographic information system}
+  - {name: scribus, category: Publishing, summary: Desktop publishing}
+  - {name: zotero, category: Research, summary: Reference manager (Flatpak)}
+  - {name: eid-mw, category: Security, summary: Belgian eID middleware}
+  - {name: cockpit, category: Server, summary: Web administration on port 9090}
+  - {name: cockpit-machines, category: Server, summary: Virtual machines in Cockpit}
+  - {name: nginx, category: Server, summary: Web server and reverse proxy}
+  - {name: samba, category: Server, summary: Windows-compatible file sharing}
+  - {name: nfs-kernel-server, category: Server, summary: NFS file sharing}
+  - {name: mariadb-server, category: Server, summary: MariaDB database}
+  - {name: postgresql, category: Server, summary: PostgreSQL database}
+  - {name: docker.io, category: Server, summary: Docker engine (podman is included by default)}
+  - {name: fail2ban, category: Security, summary: Bans hosts that fail to log in}
+  - {name: borgbackup, category: Server, summary: Deduplicating backups}
+  - {name: llama.cpp, category: AI, summary: Run GGUF models locally from the command line}
+  - {name: python3-torch, category: AI, summary: PyTorch (CPU build from the archive)}
+  - {name: nvidia-cuda-toolkit, category: AI, summary: CUDA compiler and libraries}
+  - {name: rocminfo, category: AI, summary: ROCm device information}
+
+# Containers offered as system services (software.services in a profile). The
+# page picks the image for the chosen GPU; gpu_required lists the GPUs a
+# service cannot run without.
+services:
+  - id: ollama
+    title: Ollama
+    summary: Local inference with a command line and an API on port 11434; pulls models on demand
+    ports: ["11434:11434"]
+    volumes: ["ollama:/root/.ollama"]
+    gpu: true
+    images: {default: docker.io/ollama/ollama:latest, amd: docker.io/ollama/ollama:rocm}
+  - id: open-webui
+    title: Open WebUI
+    summary: Chat interface for Ollama on port 3000, in the browser
+    ports: ["3000:8080"]
+    volumes: ["open-webui:/app/backend/data"]
+    env: {OLLAMA_BASE_URL: "http://host.containers.internal:11434"}
+    gpu: false
+    images: {default: ghcr.io/open-webui/open-webui:main}
+    needs: [ollama]
+  - id: vllm
+    title: vLLM server
+    summary: OpenAI-compatible inference server on port 8000 for production workloads (NVIDIA or AMD)
+    ports: ["8000:8000"]
+    volumes: ["vllm:/root/.cache/huggingface"]
+    gpu: true
+    gpu_required: [nvidia, amd]
+    exec: "--model Qwen/Qwen2.5-1.5B-Instruct"
+    images: {nvidia: docker.io/vllm/vllm-openai:latest, amd: docker.io/rocm/vllm:latest}
+
+# GPU compute stacks a profile may ship (hardware.gpu); what each adds is in the
+# bases' package maps (gpu-nvidia, gpu-amd, gpu-intel).
+gpus:
+  - id: none
+    name: No GPU stack
+    summary: "Open drivers only. NVIDIA can still be added later by the installer's driver step."
+  - id: nvidia
+    name: NVIDIA
+    summary: "Open kernel driver, CUDA toolkit and the container toolkit from NVIDIA's repository."
+  - id: amd
+    name: AMD Radeon
+    summary: "In-kernel driver and ROCm tools; the ROCm runtime runs inside the containers."
+  - id: intel
+    name: Intel Arc
+    summary: "OpenCL and Level Zero runtime on Ubuntu; Debian ships the loader only."

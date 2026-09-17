@@ -1,0 +1,5 @@
+# kind	source (relative to upstream/)	target	mode
+file	obj/amd64/synos-whisper-worker	/usr/libexec/synos-whisper-worker	755
+file	obj/amd64/synos-whisper/libsynos-whisper.so.1	/usr/libexec/synos-whisper/libsynos-whisper.so.1	644
+file	obj/state-metrics/LICENSE	/usr/share/doc/synos-whisper-worker/WHISPER-LICENSE	644
+file	NOTICE	/usr/share/doc/synos-whisper-worker/NOTICE	644

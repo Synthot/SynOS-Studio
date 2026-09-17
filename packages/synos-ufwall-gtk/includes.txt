@@ -1,0 +1,9 @@
+# kind	source (relative to upstream/)	target	mode
+file	obj/ufwall-gtk	/usr/bin/ufwall-gtk	755
+file	obj/ufwall-auditor	/usr/libexec/ufwall-gtk/ufwall-auditor	755
+file	scripts/network-service-helper	/usr/libexec/ufwall-gtk/network-service-helper	755
+file	data/com.synos.ufwall.policy	/usr/share/polkit-1/actions/com.synos.ufwall.policy	644
+folder	data/app_profiles	/usr/share/ufwall-gtk/app_profiles	644
+folder	locale	/usr/share/locale	644
+file	data/com.synos.ufwall.desktop	/usr/share/applications/com.synos.ufwall.desktop	644
+file	data/com.synos.ufwall.svg	/usr/share/icons/hicolor/scalable/apps/com.synos.ufwall.svg	644

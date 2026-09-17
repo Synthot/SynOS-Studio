@@ -1,0 +1,13 @@
+Package: gnome-shell-extension-desktop-icons-ng-synos
+Version: 2.0.2-2+synos1
+Section: gnome
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-dconf-runtime, gnome-shell, synos-appearance, gir1.2-gnomedesktop-3.0, gjs, dconf-gsettings-backend | gsettings-backend
+Recommends: gnome-shell-extension-prefs | gnome-shell-extension-manager
+Provides: gnome-shell-extension-desktop-icons-ng
+Conflicts: gnome-shell-extension-desktop-icons-ng
+Replaces: gnome-shell-extension-desktop-icons-ng
+Homepage: ${BRAND_URL_HOME}
+Description: Desktop Icons NG (DING) — adds icons to the desktop. Patched for ${BRAND_NAME}: the right-click "Desktop Icons Settings" entry is renamed to "${BRAND_NAME} Appearance Settings" and launches the ${BRAND_NAME} Appearance configuration tool. For the best support, please report any issues on Github.

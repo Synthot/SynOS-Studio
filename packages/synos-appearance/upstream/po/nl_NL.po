@@ -1,0 +1,512 @@
+# SynOS Appearance — Dutch translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: Dutch\n"
+"Language: nl_NL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "Over SynOS Uiterlijk"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "Geavanceerd"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "SynOS Uiterlijk"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "SynOS-team"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "Uiterlijk"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "Toepassen op inlogscherm"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "Onder"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "Annuleren"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "Kies een afbeelding voor de achtergrond van het GDM-inlogscherm."
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "Kies de visuele stijl van je taakbalk."
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "Kiezen…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "Klassiek"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr "Meerdere vensters van één app combineren in één pictogram"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "Gevarenzone"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "De Activiteitenknop op de taakbalk weergeven"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "Groepering inschakelen"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "Extensie-instellingen"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "GDM-achtergrond"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "Apps groeperen"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "Afbeeldingen"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "Starters scheiden van actieve apps"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "Indeling"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "Links"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "Achtergrond inlogscherm"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "Openen"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "Open de voorkeursvensters van de panelextensies."
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "Paneelindicatoren"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "Paneelwidgets"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "Voorbeeld"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "Resetten"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "Bureaubladinstellingen resetten"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "Bureaubladinstellingen resetten?"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "Bureaubladuiterlijk, zoeken, appmappen en privacy herstellen naar de fabrieksinstellingen"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "Rechts"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "Afbeelding selecteren"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "Gescheiden"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "Activiteitenknop weergeven"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "Bureaubladpictogrammen tonen"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "Toon netwerk"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "Toon weer"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "Ingebouwde panelelementen weergeven of verbergen."
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "Taakbalkelementen"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "Taakbalkstijl"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr "Schakel paneelindicatoren widgets in of uit."
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "Boven"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "Aanpassingen"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "Vista-taakbalkgedrag"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "Achtergrondafbeelding"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "Gecentreerd"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ Toegepast — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ Bureaubladinstellingen hersteld. Meld u af en weer aan om alle wijzigingen toe te passen."
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ GDM-achtergrond toegepast"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ Positie kan niet worden toegepast"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ Stijl kan niet worden toegepast"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ Kan niet resetten"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ Instellen GDM-achtergrond mislukt"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ Kon activiteitenknop niet schakelen"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ Selecteer eerst een afbeelding"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "Hiermee worden uitbreidingen, paneelindeling, zoekvoorkeuren, appmappen, achtergrond, interface en privacyvoorkeuren hersteld naar de fabrieksinstellingen."
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "Netwerkstatistieken"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Eenvoudige Weerbericht"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr "Geschatte locatie voor de weerfunctie bijwerken"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "Privacyovereenkomst voor weerdiensten"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. Geschatte locatie (ipapi.co)\n"
+"SynOS doet één HTTPS-verzoek aan ipapi.co. De beheerder, Kloudend, Inc., ziet uw openbare IP-adres en kan dit gebruiken om uw stad, land en geschatte coördinaten te bepalen.\n"
+"\n"
+"2. Weergegevens (Open-Meteo)\n"
+"De weersextensie stuurt de geselecteerde geschatte coördinaten naar Open-Meteo, dat wordt beheerd door OpenMeteo GmbH. De dienst ziet ook uw openbare IP-adres en kan API-logboeken maximaal 90 dagen bewaren.\n"
+"\n"
+"SynOS is niet gelieerd aan, wordt niet gesponsord door en wordt niet aanbevolen door een van beide diensten van derden. Als de locatie niet kan worden bepaald, gebruikt SynOS een offline schatting op basis van de tijdzone van uw systeem.\n"
+"\n"
+"Privacybeleid:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "Weigeren"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "Alles accepteren"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr ""
+"De weerfunctie is niet ingeschakeld omdat de toestemming is geweigerd."
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "Het opslaan van de toestemming voor de weerfunctie is mislukt."
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "Uw geschatte locatie wordt bepaald…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "Configureren van de weersextensie is mislukt."
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "Weerlocatie ingesteld op {location}."
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr ""
+"Locatieservice niet beschikbaar; {location} uit uw tijdzone wordt gebruikt."
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr ""
+"De weerfunctie is uitgeschakeld, maar de opgeslagen toestemming kon niet "
+"worden gewist."
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"Maak een back-up van GNOME-instellingen, indelingen en extensievoorkeuren. "
+"Persoonlijke bestanden worden niet meegenomen."
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "Back-up en herstel"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "GNOME-instellingen exporteren"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "GNOME-instellingen exporteren"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "Exporteren…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "Hoe moeten deze instellingen worden geïmporteerd?"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "INI-instellingsbestanden"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "GNOME-instellingen importeren"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "GNOME-instellingen importeren"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "Importeren…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "Importeren en samenvoegen"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"Bij importeren met samenvoegen blijven huidige waarden behouden die niet in het bestand staan.\n"
+"\n"
+"Bij volledig herstellen worden eerst alle instellingen onder /org/gnome/ teruggezet; waarden die niet in het bestand staan, keren terug naar hun standaardwaarden. Vóór elk van beide bewerkingen wordt een veiligheidsback-up gemaakt."
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "Instellingen herstellen uit een INI-bestand van dconf"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr "Sla de huidige instellingen op als een leesbaar INI-bestand"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "Volledig herstellen"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ GNOME-instellingen geëxporteerd"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ Instellingen geïmporteerd. Meld u af en meld u daarna opnieuw aan om alle "
+"wijzigingen toe te passen."
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ Het exporteren van GNOME-instellingen is mislukt"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ Het importeren van GNOME-instellingen is mislukt"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ Lezen van het instellingenbestand mislukt"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr "✗ Zowel het importeren als het automatische herstel zijn mislukt"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr "✗ Het importeren is mislukt; de eerdere instellingen zijn hersteld"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ Het geselecteerde bestand is geen geldig INI-bestand van dconf"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "taakbalk;paneel;indeling;stijl;vensters;uiterlijk;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr "Schakelen tussen gecentreerde en klassieke taakbalkindeling"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ Activiteitenknop verborgen"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ Activiteitenknop weergegeven"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ {label} uitgeschakeld"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ {label} ingeschakeld"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ Het uitschakelen van {label} is mislukt"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ Het inschakelen van {label} is mislukt"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ Activiteitenknop — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action}"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ Kan {label} niet {action}"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "Taakbalkpositie"
+
+#~ msgid "Panel Position"
+#~ msgstr "Panneelpositie"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "Kies waar je taakbalk op het scherm komt te zitten."

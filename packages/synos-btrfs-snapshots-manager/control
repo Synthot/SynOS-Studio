@@ -1,0 +1,9 @@
+Package: synos-btrfs-snapshots-manager
+Version: 2.0.2-16+synos1
+Section: admin
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-core-system, libgtk-4-1, libadwaita-1-0, btrfs-progs, util-linux, polkitd, dbus-bin, jq, systemd, apt, dpkg, dracut, grub2-common, synos-secureboot-toolkit, kmod, sbsigntool, python3-nautilus, smartmontools
+Homepage: ${BRAND_URL_HOME}
+Description: Disk Snapshots Manager — graphical Btrfs system recovery and Personal Files history

@@ -1,0 +1,18 @@
+{
+  "uuid": "proxy-switcher@synos.com",
+  "name": "Proxy Switcher",
+  "description": "Control the system proxy and show when it is active.",
+  "shell-version": [
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50"
+  ],
+  "url": "https://source.synos.example/packages",
+  "gettext-domain": "proxy-switcher@synos.com",
+  "settings-schema": "org.synos.shell.extensions.proxy-switcher",
+  "version": 29,
+  "version-name": "2.0.2-synos.3"
+}

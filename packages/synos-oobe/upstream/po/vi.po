@@ -1,0 +1,1813 @@
+# synos-oobe translations.
+# Copyright (C) 2026 SynOS contributors
+# This file is distributed under the same license as synos-oobe.
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-oobe\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-09 15:16+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: vi <LL@li.org>\n"
+"Language: vi_VN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: assets/synos-oobe:371
+msgid "Disk Snapshots Manager"
+msgstr "Trình quản lý ảnh chụp đĩa"
+
+#: assets/synos-oobe:373
+msgid "Protect your system with automatic Btrfs snapshots and smart cleanup."
+msgstr ""
+"Bảo vệ hệ thống của bạn bằng ảnh chụp nhanh Btrfs tự động và dọn dẹp thông "
+"minh."
+
+#: assets/synos-oobe:375
+msgid "Configure Automatic Snapshots"
+msgstr "Định cấu hình ảnh chụp nhanh tự động"
+
+#: assets/synos-oobe:380
+msgid "System Backup"
+msgstr "Sao lưu Hệ thống"
+
+#: assets/synos-oobe:382
+msgid "Use Deja Dup to protect your"
+msgstr "Sử dụng Deja Dup để bảo vệ"
+
+#: assets/synos-oobe:383
+msgid "important files with automated,"
+msgstr "các tệp quan trọng với việc tự động hóa,"
+
+#: assets/synos-oobe:384
+msgid "secure local or remote backups."
+msgstr "sao lưu cục bộ hoặc từ xa an toàn."
+
+#: assets/synos-oobe:386
+msgid "Get Deja Dup"
+msgstr "Tải về Deja Dup"
+
+#: assets/synos-oobe:443
+msgid "NetworkManager could not scan Wi-Fi."
+msgstr "Trình quản lý mạng không thể quét Wi-Fi."
+
+#: assets/synos-oobe:506
+msgid "Could not inspect network adapters."
+msgstr "Không thể kiểm tra bộ điều hợp mạng."
+
+#: assets/synos-oobe:516
+msgid "Could not read the Wi-Fi radio state."
+msgstr "Không thể đọc trạng thái sóng Wi-Fi."
+
+#: assets/synos-oobe:522
+msgid "Unknown Wi-Fi radio state: {}"
+msgstr "Trạng thái sóng Wi-Fi không xác định: {}"
+
+#: assets/synos-oobe:523
+msgid "empty"
+msgstr "trống"
+
+#: assets/synos-oobe:532
+msgid "Could not change the Wi-Fi radio state."
+msgstr "Không thể thay đổi trạng thái sóng Wi-Fi."
+
+#: assets/synos-oobe:634
+msgid "Welcome Home."
+msgstr "Chào mừng bạn về nhà."
+
+#: assets/synos-oobe:644
+msgid "SynOS is ready. Just a few steps to shape it"
+msgstr "SynOS đã sẵn sàng. Chỉ vài bước nữa là hoàn tất"
+
+#: assets/synos-oobe:644
+msgid "into the perfect system tailored to your habits."
+msgstr "thành hệ thống hoàn hảo được tùy chỉnh theo thói quen của bạn."
+
+#: assets/synos-oobe:654
+msgid "  Start Setup  "
+msgstr "  Bắt đầu thiết lập  "
+
+#: assets/synos-oobe:701
+msgid "Connect to the Internet"
+msgstr "Kết nối với Internet"
+
+#: assets/synos-oobe:709
+msgid ""
+"Connect now so SynOS can safely check for updates, drivers, and apps."
+msgstr ""
+"Kết nối ngay bây giờ để SynOS có thể kiểm tra các bản cập nhật, trình "
+"điều khiển và ứng dụng một cách an toàn."
+
+#: assets/synos-oobe:717
+msgid "Internet Connection"
+msgstr "Kết nối Internet"
+
+#: assets/synos-oobe:724
+msgid "Network Hardware"
+msgstr "Phần cứng mạng"
+
+#: assets/synos-oobe:732
+msgid "Available Wi-Fi Networks"
+msgstr "Mạng Wi-Fi khả dụng"
+
+#: assets/synos-oobe:734
+msgid "Wi-Fi"
+msgstr "Wi-Fi"
+
+#: assets/synos-oobe:737
+msgid "Scan Again"
+msgstr "Quét lại"
+
+#: assets/synos-oobe:746 assets/synos-oobe:818 assets/synos-oobe:826
+#: assets/synos-oobe:841
+msgid "Open Network Settings"
+msgstr "Mở cài đặt mạng"
+
+#: assets/synos-oobe:755
+msgid "Could not open network settings: {}"
+msgstr "Không thể mở cài đặt mạng: {}"
+
+#: assets/synos-oobe:765
+msgid "Continue Offline"
+msgstr "Tiếp tục ngoại tuyến"
+
+#: assets/synos-oobe:769
+msgid "Skip updates, online drivers, apps, and account setup."
+msgstr ""
+"Bỏ qua các bản cập nhật, trình điều khiển trực tuyến, ứng dụng và thiết lập "
+"tài khoản."
+
+#: assets/synos-oobe:785
+msgid "Internet connection is ready. Choose Next to continue."
+msgstr "Kết nối Internet đã sẵn sàng. Chọn Tiếp theo để tiếp tục."
+
+#: assets/synos-oobe:792
+msgid "Connect to Wi-Fi or a wired network to continue."
+msgstr "Kết nối với Wi-Fi hoặc mạng có dây để tiếp tục."
+
+#: assets/synos-oobe:815
+msgid "No network adapters detected."
+msgstr "Không phát hiện thấy bộ điều hợp mạng nào."
+
+#: assets/synos-oobe:817
+msgid "Connect a network adapter or continue offline."
+msgstr "Kết nối bộ điều hợp mạng hoặc tiếp tục ngoại tuyến."
+
+#: assets/synos-oobe:822
+msgid "Wired Network"
+msgstr "Mạng có dây"
+
+#: assets/synos-oobe:824
+msgid "Cable connected."
+msgstr "Đã kết nối cáp."
+
+#: assets/synos-oobe:825
+msgid "Plug in a network cable to connect."
+msgstr "Cắm cáp mạng để kết nối."
+
+#: assets/synos-oobe:830
+msgid "Wireless Network"
+msgstr "Mạng không dây"
+
+#: assets/synos-oobe:831
+msgid "Wi-Fi adapter detected."
+msgstr "Đã phát hiện bộ điều hợp Wi-Fi."
+
+#: assets/synos-oobe:832
+msgid "Open Wi-Fi Settings"
+msgstr "Mở cài đặt Wi-Fi"
+
+#: assets/synos-oobe:836
+msgid "Wired and Wireless Networks"
+msgstr "Mạng có dây và không dây"
+
+#: assets/synos-oobe:838
+msgid "Cable connected and Wi-Fi available."
+msgstr "Đã kết nối cáp và có Wi-Fi."
+
+#: assets/synos-oobe:840
+msgid "Wi-Fi is available; the network cable is disconnected."
+msgstr "Wi-Fi có sẵn; cáp mạng bị ngắt kết nối."
+
+#: assets/synos-oobe:852
+msgid "Wi-Fi is turned off."
+msgstr "Wi-Fi đã tắt."
+
+#: assets/synos-oobe:856
+msgid "No Wi-Fi networks found."
+msgstr "Không tìm thấy mạng Wi-Fi nào."
+
+#: assets/synos-oobe:885
+msgid "Wi-Fi unavailable: {}"
+msgstr "Wi-Fi không có sẵn: {}"
+
+#: assets/synos-oobe:967
+msgid "Define Your Visual Order"
+msgstr "Xác định trật tự hình ảnh của bạn"
+
+#: assets/synos-oobe:977
+msgid "Light and Shadow"
+msgstr "Ánh sáng và Bóng tối"
+
+#: assets/synos-oobe:978
+msgid "Choose a crisp light theme, or an immersive dark experience."
+msgstr "Chọn giao diện sáng sắc nét, hoặc trải nghiệm tối đắm chìm."
+
+#: assets/synos-oobe:997
+msgid "Light"
+msgstr "Sáng"
+
+#: assets/synos-oobe:1009
+msgid "Dark"
+msgstr "Tối"
+
+#: assets/synos-oobe:1040
+msgid "Workflow Layout"
+msgstr "Bố cục Công việc"
+
+#: assets/synos-oobe:1041
+msgid "Prefer modern centered alignment, or classic left-docked?"
+msgstr "Bạn thích căn giữa hiện đại, hay neo trái cổ điển?"
+
+#: assets/synos-oobe:1075
+msgid "Taskbar Layout"
+msgstr "Bố cục Thanh tác vụ"
+
+#: assets/synos-oobe:1076
+msgid "Choose your workflow."
+msgstr "Chọn cách làm việc của bạn."
+
+#: assets/synos-oobe:1085
+msgid " Modern "
+msgstr " Hiện đại "
+
+#: assets/synos-oobe:1086
+msgid " Classic "
+msgstr " Cổ điển "
+
+#: assets/synos-oobe:1115
+msgid "Show Virtual Desktop Switch Button"
+msgstr "Hiển thị nút chuyển đổi Màn hình ảo"
+
+#: assets/synos-oobe:1116
+msgid "Display the Activities button on the taskbar"
+msgstr "Hiển thị nút Hoạt động trên thanh tác vụ"
+
+#: assets/synos-oobe:1168
+msgid "Digital Sovereignty, Under Your Control"
+msgstr "Chủ quyền Số, Trong tầm kiểm soát của bạn"
+
+#: assets/synos-oobe:1176
+msgid "We deeply value privacy. Here, you hold absolute authority."
+msgstr ""
+"Chúng tôi rất trân trọng quyền riêng tư. Tại đây, bạn nắm giữ quyền lực "
+"tuyệt đối."
+
+#: assets/synos-oobe:1186
+msgid "Network Security"
+msgstr "An ninh mạng"
+
+#: assets/synos-oobe:1188
+msgid ""
+"Control inbound protection and whether this computer participates in local "
+"network discovery."
+msgstr ""
+"Kiểm soát việc bảo vệ gửi đến và liệu máy tính này có tham gia khám phá mạng"
+" cục bộ hay không."
+
+#: assets/synos-oobe:1193
+msgid "Network Firewall (UFW)"
+msgstr "Tường lửa Mạng (UFW)"
+
+#: assets/synos-oobe:1246
+msgid "Local Network Discovery (mDNS)"
+msgstr "Khám phá mạng cục bộ (mDNS)"
+
+#: assets/synos-oobe:1248
+msgid ""
+"Find printers and nearby devices, and make .local names available on trusted"
+" networks."
+msgstr ""
+"Tìm máy in và các thiết bị lân cận, đồng thời cung cấp tên .local trên các "
+"mạng đáng tin cậy."
+
+#: assets/synos-oobe:1260
+msgid "Local network discovery controls are not installed."
+msgstr "Kiểm soát khám phá mạng cục bộ chưa được cài đặt."
+
+#: assets/synos-oobe:1295
+msgid "Location Services"
+msgstr "Dịch vụ vị trí"
+
+#: assets/synos-oobe:1297
+msgid ""
+"Allow apps like weather and clock to access your approximate geographic "
+"location."
+msgstr ""
+"Cho phép các ứng dụng như thời tiết và đồng hồ truy cập vị trí địa lý gần "
+"đúng của bạn."
+
+#: assets/synos-oobe:1301
+msgid "Location Access"
+msgstr "Truy cập Vị trí"
+
+#: assets/synos-oobe:1319
+msgid "Power Settings"
+msgstr "Cài đặt nguồn"
+
+#: assets/synos-oobe:1320
+msgid "Manage idle behavior to balance energy saving and convenience."
+msgstr ""
+"Quản lý hành vi chờ để cân bằng giữa tiết kiệm năng lượng và sự tiện lợi."
+
+#: assets/synos-oobe:1324
+msgid "Auto Sleep"
+msgstr "Tự động Ngủ"
+
+#: assets/synos-oobe:1353
+msgid "Command-line Assistance"
+msgstr "Hỗ trợ dòng lệnh"
+
+#: assets/synos-oobe:1354
+msgid "Control local bash predictions."
+msgstr "Kiểm soát dự đoán bash cục bộ."
+
+#: assets/synos-oobe:1358
+msgid "Bash Command Predictions"
+msgstr "Dự đoán lệnh Bash"
+
+#: assets/synos-oobe:1359
+msgid "Show command suggestions in bash"
+msgstr "Hiển thị gợi ý lệnh trong bash"
+
+#: assets/synos-oobe:1376
+msgid ""
+"Could not update your Bash configuration. Your previous setting was kept."
+msgstr ""
+"Không thể cập nhật cấu hình Bash. Cài đặt trước đó đã được giữ nguyên."
+
+#: assets/synos-oobe:1414
+msgid "Keep Your System Up to Date"
+msgstr "Giữ cho Hệ thống của Bạn luôn Cập nhật"
+
+#: assets/synos-oobe:1423
+msgid "Security patches and the latest features are just a click away."
+msgstr ""
+"Bản vá bảo mật và các tính năng mới nhất chỉ cách bạn một cú nhấp chuột."
+
+#: assets/synos-oobe:1433
+msgid "Terminal Output"
+msgstr "Kết quả Terminal"
+
+#: assets/synos-oobe:1470
+msgid "  Do It Later  "
+msgstr "  Thực hiện sau  "
+
+#: assets/synos-oobe:1473
+msgid "  Find Fastest Mirror  "
+msgstr "  Tìm máy chủ phản chiếu nhanh nhất  "
+
+#: assets/synos-oobe:1476
+msgid "  Check for Updates  "
+msgstr "  Kiểm tra cập nhật  "
+
+#: assets/synos-oobe:1510
+msgid "Checking for updates…"
+msgstr "Đang kiểm tra cập nhật…"
+
+#: assets/synos-oobe:1542
+msgid "Updates are available."
+msgstr "Có bản cập nhật sẵn sàng."
+
+#: assets/synos-oobe:1543
+msgid "  Install Updates  "
+msgstr "  Cài đặt cập nhật  "
+
+#: assets/synos-oobe:1550
+msgid "✓ System is up to date."
+msgstr "✓ Hệ thống đã được cập nhật."
+
+#: assets/synos-oobe:1552 assets/synos-oobe:1582
+msgid "  Continue  "
+msgstr "  Tiếp tục  "
+
+#: assets/synos-oobe:1559
+msgid "✗ Check failed: "
+msgstr "✗ Kiểm tra thất bại: "
+
+#: assets/synos-oobe:1565
+msgid "Installing updates…"
+msgstr "Đang cài đặt cập nhật…"
+
+#: assets/synos-oobe:1580
+msgid "✓ Updates installed successfully!"
+msgstr "✓ Đã cài đặt cập nhật thành công!"
+
+#: assets/synos-oobe:1591
+msgid "✗ Installation failed: "
+msgstr "✗ Cài đặt thất bại: "
+
+#: assets/synos-oobe:1630
+msgid "Testing mirrors…"
+msgstr "Đang kiểm tra các máy chủ phản chiếu…"
+
+#: assets/synos-oobe:1631
+msgid "=== Testing mirror speeds ==="
+msgstr "=== Đang kiểm tra tốc độ kho lưu trữ phản chiếu ==="
+
+#: assets/synos-oobe:1756 assets/synos-oobe:1764
+#, python-brace-format
+msgid "Testing mirrors… ({c}/{t})"
+msgstr "Đang kiểm tra các máy chủ phản chiếu… ({c}/{t})"
+
+#: assets/synos-oobe:1772
+msgid "No mirrors reachable."
+msgstr "Không tìm thấy kho lưu trữ phản chiếu nào."
+
+#: assets/synos-oobe:1774
+msgid "✗ No mirrors reachable. Check your connection."
+msgstr ""
+"✗ Không có máy chủ phản chiếu nào khả dụng. Hãy kiểm tra kết nối mạng của "
+"bạn."
+
+#: assets/synos-oobe:1782
+msgid "=== Testing bandwidth of top 5 mirrors "
+msgstr "=== Đang kiểm tra băng thông của 5 kho lưu trữ hàng đầu === "
+
+#: assets/synos-oobe:1783
+msgid "(3 s each) ==="
+msgstr "(3 s mỗi mục) ==="
+
+#: assets/synos-oobe:1837
+msgid "Best mirror by bandwidth"
+msgstr "Máy chủ phản chiếu tốt nhất theo băng thông"
+
+#: assets/synos-oobe:1839 assets/synos-oobe:1860
+#: assets/synos-oobe:1867
+msgid "Latency"
+msgstr "Độ trễ"
+
+#: assets/synos-oobe:1840 assets/synos-oobe:1861
+#: assets/synos-oobe:1868
+msgid "Bandwidth"
+msgstr "Băng thông"
+
+#: assets/synos-oobe:1862
+msgid "This is already your current mirror."
+msgstr "Đây đã là mirror hiện tại của bạn."
+
+#: assets/synos-oobe:1872
+msgid "Current mirror"
+msgstr "Mirror hiện tại"
+
+#: assets/synos-oobe:1876
+msgid "Switch to this mirror and run apt update?"
+msgstr "Chuyển sang mirror này và chạy apt update?"
+
+#: assets/synos-oobe:1881
+msgid "Fastest Mirror Found"
+msgstr "Khám phá mirror nhanh nhất"
+
+#: assets/synos-oobe:1884
+msgid "Keep Current"
+msgstr "Giữ nguyên"
+
+#: assets/synos-oobe:1885
+msgid "Switch"
+msgstr "Chuyển đổi"
+
+#: assets/synos-oobe:1907
+msgid "✗ Mirror test failed: "
+msgstr "✗ Kiểm tra mirror thất bại: "
+
+#: assets/synos-oobe:1913
+msgid "Switching mirror…"
+msgstr "Đang chuyển đổi mirror…"
+
+#: assets/synos-oobe:1914
+msgid "=== Applying mirror switch ==="
+msgstr "=== Đang chuyển đổi kho lưu trữ phản chiếu ==="
+
+#: assets/synos-oobe:1989
+msgid "✓ Mirror switched and system updated."
+msgstr "✓ Đã chuyển đổi kho lưu trữ phản chiếu và cập nhật hệ thống."
+
+#: assets/synos-oobe:1992
+msgid "✓ Switched to "
+msgstr "✓ Đã chuyển sang "
+
+#: assets/synos-oobe:2005
+msgid "✗ Switch failed: "
+msgstr "✗ Chuyển đổi thất bại: "
+
+#: assets/synos-oobe:2045
+msgid "Could not open SynOS Driver Center: {}"
+msgstr "Không thể mở Trung tâm Trình điều khiển SynOS: {}"
+
+#: assets/synos-oobe:2078
+msgid "Configure Hardware Drivers?"
+msgstr "Cấu hình trình điều khiển phần cứng?"
+
+#: assets/synos-oobe:2088
+msgid ""
+"Open SynOS Driver Center now to manage graphics cards, Xbox controllers, "
+"and other hardware."
+msgstr ""
+"Mở Trung tâm Trình điều khiển SynOS ngay để quản lý card đồ họa, tay cầm "
+"Xbox và các phần cứng khác."
+
+#: assets/synos-oobe:2111
+msgid "Skip"
+msgstr "Bỏ qua"
+
+#: assets/synos-oobe:2116
+msgid "Open Driver Center"
+msgstr "Mở Trung tâm Trình điều khiển"
+
+#: assets/synos-oobe:2152
+msgid "Run Windows Apps, with ease"
+msgstr "Chạy ứng dụng Windows dễ dàng"
+
+#: assets/synos-oobe:2161
+msgid ""
+"Powered by Wine and Bottles technology, running classic Windows applications"
+msgstr ""
+"Được cung cấp bởi công nghệ Wine và Bottles, chạy các ứng dụng Windows cổ "
+"điển"
+
+#: assets/synos-oobe:2161
+msgid "is now easier than ever."
+msgstr "trở nên dễ dàng hơn bao giờ hết."
+
+#: assets/synos-oobe:2177
+msgid "✓ Windows compatibility sandbox is already installed."
+msgstr "✓ Môi trường cách ly tương thích Windows đã được cài đặt."
+
+#: assets/synos-oobe:2193
+msgid "  Skip  "
+msgstr "  Bỏ qua  "
+
+#: assets/synos-oobe:2197
+msgid "  Enable Windows Compatibility Sandbox  "
+msgstr "  Bật Hộp cát tương thích Windows  "
+
+#: assets/synos-oobe:2207
+msgid "Configure Bottles"
+msgstr "Định cấu hình Bottles"
+
+#: assets/synos-oobe:2222
+msgid "Advanced Output"
+msgstr "Đầu ra nâng cao"
+
+#: assets/synos-oobe:2251
+msgid "Deploying compatibility sandbox via Flatpak…"
+msgstr "Đang triển khai hộp cát tương thích qua Flatpak…"
+
+#: assets/synos-oobe:2251
+msgid "This may take a few minutes."
+msgstr "Việc này có thể mất vài phút."
+
+#: assets/synos-oobe:2286
+msgid "✓ Sandbox deployed successfully!"
+msgstr "✓ Đã triển khai hộp cát thành công!"
+
+#: assets/synos-oobe:2286
+msgid "You can now double-click .exe files to run them."
+msgstr "Bây giờ bạn có thể nhấp đúp vào các tệp .exe để chạy chúng."
+
+#: assets/synos-oobe:2295
+msgid "✗ Deployment failed."
+msgstr "✗ Triển khai không thành công."
+
+#: assets/synos-oobe:2295
+msgid "You can install Bottles later from the App Store."
+msgstr "Bạn có thể cài đặt Bottles sau này từ Cửa hàng Ứng dụng."
+
+#: assets/synos-oobe:2303
+msgid "✗ Error: "
+msgstr "✗ Lỗi: "
+
+#: assets/synos-oobe:2334
+msgid "The Magic at Your Fingertips"
+msgstr "Nghệ thuật ngay trong tầm tay bạn"
+
+#: assets/synos-oobe:2342
+msgid "Skip tedious clicking. Capture inspiration with elegance."
+msgstr ""
+"Bỏ qua những cú nhấp chuột nhàm chán. Chụp lấy cảm hứng với sự thanh lịch."
+
+#: assets/synos-oobe:2365
+msgid "Screenshot"
+msgstr "Chụp màn hình"
+
+#: assets/synos-oobe:2366
+msgid "Select, annotate, copy — all in one motion"
+msgstr "Chọn, chú thích, sao chép — tất cả chỉ trong một thao tác"
+
+#: assets/synos-oobe:2384
+msgid "Screen Recording"
+msgstr "Ghi màn hình"
+
+#: assets/synos-oobe:2385
+msgid "Seamless start, instant capture"
+msgstr "Bắt đầu mượt mà, chụp ngay lập tức"
+
+#: assets/synos-oobe:2405
+msgid "More Essential Shortcuts"
+msgstr "Các phím tắt thiết yếu khác"
+
+#: assets/synos-oobe:2408
+msgid "Open File Manager"
+msgstr "Mở Trình quản lý tệp"
+
+#: assets/synos-oobe:2409
+msgid "Open Terminal"
+msgstr "Mở Terminal"
+
+#: assets/synos-oobe:2410
+msgid "Task Manager"
+msgstr "Trình quản lý tác vụ"
+
+#: assets/synos-oobe:2411
+msgid "View Clipboard History"
+msgstr "Xem lịch sử khay nhớ tạm"
+
+#: assets/synos-oobe:2412
+msgid "Lock Screen"
+msgstr "Khóa màn hình"
+
+#: assets/synos-oobe:2413
+msgid "Action Center"
+msgstr "Trung tâm hành động"
+
+#: assets/synos-oobe:2414
+msgid "Notification Center"
+msgstr "Trung tâm thông báo"
+
+#: assets/synos-oobe:2415
+msgid "Toggle Network Stats Display"
+msgstr "Bật/tắt hiển thị thống kê mạng"
+
+#: assets/synos-oobe:2416
+msgid "Switch Between Windows"
+msgstr "Chuyển đổi giữa các cửa sổ"
+
+#: assets/synos-oobe:2417
+msgid "Close Current Window"
+msgstr "Đóng cửa sổ hiện tại"
+
+#: assets/synos-oobe:2418
+msgid "Snap Windows"
+msgstr "Ghim cửa sổ"
+
+#: assets/synos-oobe:2419
+msgid "Switch Virtual Desktop"
+msgstr "Chuyển đổi Máy ảo Desktop"
+
+#: assets/synos-oobe:2420
+msgid "Show Desktop"
+msgstr "Hiển thị màn hình máy tính"
+
+#: assets/synos-oobe:2421
+msgid "System Settings"
+msgstr "Cài đặt hệ thống"
+
+#: assets/synos-oobe:2422
+msgid "Emoji and Characters"
+msgstr "Biểu tượng cảm xúc và Ký tự"
+
+#: assets/synos-oobe:2423
+msgid "Minimize Window"
+msgstr "Thu nhỏ cửa sổ"
+
+#: assets/synos-oobe:2441
+msgid ""
+"You can view and customize all shortcuts anytime in Settings → Keyboard."
+msgstr ""
+"Bạn có thể xem và tùy chỉnh tất cả phím tắt bất cứ lúc nào trong Cài đặt → "
+"Bàn phím."
+
+#: assets/synos-oobe:2478
+msgid "In China? Use USTC mirror for App Store!"
+msgstr "Bạn ở Trung Quốc? Sử dụng máy chủ gương USTC cho App Store!"
+
+#: assets/synos-oobe:2484
+msgid ""
+"Flathub access can be slow from China. Switch to the USTC mirror for faster "
+"downloads."
+msgstr ""
+"Truy cập Flathub có thể chậm từ Trung Quốc. Chuyển sang máy chủ gương USTC "
+"để tải xuống nhanh hơn."
+
+#: assets/synos-oobe:2591
+msgid "✓ Already using Chinese mirror — downloads are fast."
+msgstr "✓ Đã đang sử dụng máy chủ gương Trung Quốc — tốc độ tải xuống nhanh."
+
+#: assets/synos-oobe:2594
+msgid "Switch Back to International"
+msgstr "Chuyển lại về Quốc tế"
+
+#: assets/synos-oobe:2597
+msgid "Flathub is using the international server."
+msgstr "Flathub đang sử dụng máy chủ quốc tế."
+
+#: assets/synos-oobe:2600
+msgid "🚀 Switch to USTC Mirror"
+msgstr "🚀 Chuyển sang Máy chủ Gương USTC"
+
+#: assets/synos-oobe:2613
+msgid "Testing USTC mirror..."
+msgstr "Kiểm tra gương USTC..."
+
+#: assets/synos-oobe:2657
+msgid "Switching back..."
+msgstr "Đang chuyển lại..."
+
+#: assets/synos-oobe:2684
+msgid "✗ Failed: "
+msgstr "✗ Không thành công: "
+
+#: assets/synos-oobe:2687
+msgid "Retry"
+msgstr "Thử lại"
+
+#: assets/synos-oobe:2713
+msgid "Productive From Day One"
+msgstr "Hiệu quả ngay từ ngày đầu tiên"
+
+#: assets/synos-oobe:2722
+msgid "Essential productivity and entertainment tools, hand-picked for you."
+msgstr ""
+"Công cụ năng suất và giải trí thiết yếu, được chọn lọc kỹ lưỡng cho bạn."
+
+#: assets/synos-oobe:2722
+msgid "Click any app to open its details in the App Store."
+msgstr ""
+"Nhấp vào bất kỳ ứng dụng nào để xem chi tiết của nó trong Cửa hàng Ứng dụng."
+
+#: assets/synos-oobe:2734
+msgid "WeChat"
+msgstr "WeChat"
+
+#: assets/synos-oobe:2735
+msgid "Most popular messaging app in China"
+msgstr "Ứng dụng nhắn tin phổ biến nhất tại Trung Quốc"
+
+#: assets/synos-oobe:2736
+msgid "QQ"
+msgstr "QQ"
+
+#: assets/synos-oobe:2737
+msgid "Tencent QQ instant messenger"
+msgstr "Trình nhắn tin tức thời Tencent QQ"
+
+#: assets/synos-oobe:2738
+msgid "WPS Office"
+msgstr "WPS Office"
+
+#: assets/synos-oobe:2739
+msgid "Best office suite for Chinese documents"
+msgstr "Bộ ứng dụng văn phòng tốt nhất cho tài liệu Trung Quốc"
+
+#: assets/synos-oobe:2744
+msgid "Google Chrome"
+msgstr "Google Chrome"
+
+#: assets/synos-oobe:2745
+msgid "The world's most popular web browser"
+msgstr "Truyền trình web phổ biến nhất thế giới"
+
+#: assets/synos-oobe:2746
+msgid "Visual Studio Code"
+msgstr "Visual Studio Code"
+
+#: assets/synos-oobe:2747
+msgid "Code editing. Redefined."
+msgstr "Soạn thảo mã. Được định nghĩa lại."
+
+#: assets/synos-oobe:2748
+msgid "Steam"
+msgstr "Steam"
+
+#: assets/synos-oobe:2749
+msgid "Your portal to the gaming universe"
+msgstr "Cổng vào vũ trụ trò chơi của bạn"
+
+#: assets/synos-oobe:2750
+msgid "Discord"
+msgstr "Discord"
+
+#: assets/synos-oobe:2751
+msgid "Chat, voice, and video for communities"
+msgstr "Trò chuyện, thoại và video cho cộng đồng"
+
+#: assets/synos-oobe:2752
+msgid "Spotify"
+msgstr "Spotify"
+
+#: assets/synos-oobe:2753
+msgid "Music for everyone"
+msgstr "Nhạc dành cho mọi người"
+
+#: assets/synos-oobe:2754
+msgid "OnlyOffice"
+msgstr "OnlyOffice"
+
+#: assets/synos-oobe:2755
+msgid "Best Microsoft Office-compatible suite"
+msgstr "Bộ ứng dụng tương thích tốt nhất với Microsoft Office"
+
+#: assets/synos-oobe:2756
+msgid "Thunderbird"
+msgstr "Thunderbird"
+
+#: assets/synos-oobe:2757
+msgid "Secure, fast, and easy email client"
+msgstr "Client email bảo mật, nhanh chóng và dễ sử dụng"
+
+#: assets/synos-oobe:2758
+msgid "Nextcloud"
+msgstr "Nextcloud"
+
+#: assets/synos-oobe:2759
+msgid "Sync and collaborate on your desktop or laptop"
+msgstr "Đồng bộ và cộng tác trên máy tính để bàn hoặc máy tính xách tay"
+
+#: assets/synos-oobe:2760
+msgid "Blender"
+msgstr "Blender"
+
+#: assets/synos-oobe:2761
+msgid "Professional 3D creation suite"
+msgstr "Bộ công cụ sáng tạo 3D chuyên nghiệp"
+
+#: assets/synos-oobe:2762
+msgid "GNOME Boxes"
+msgstr "GNOME Boxes"
+
+#: assets/synos-oobe:2763
+msgid "Virtualization made simple"
+msgstr "Khả năng ảo hóa trở nên đơn giản hơn"
+
+#: assets/synos-oobe:2764
+msgid "VLC"
+msgstr "VLC"
+
+#: assets/synos-oobe:2765
+msgid "The versatile media player that plays everything"
+msgstr "Cầu nối đa năng phát mọi định dạng media"
+
+#: assets/synos-oobe:2766
+msgid "Krita"
+msgstr "Krita"
+
+#: assets/synos-oobe:2767
+msgid "Professional free and open source painting program"
+msgstr "Chương trình vẽ chuyên nghiệp miễn phí và mã nguồn mở"
+
+#: assets/synos-oobe:2768
+msgid "OBS Studio"
+msgstr "OBS Studio"
+
+#: assets/synos-oobe:2769
+msgid "Free and open source software for video recording and live streaming"
+msgstr "Phần mềm miễn phí và mã nguồn mở để ghi video và phát trực tiếp"
+
+#: assets/synos-oobe:2831
+msgid "Installed"
+msgstr "Đã cài đặt"
+
+#: assets/synos-oobe:2833
+msgid "Click to open in App Store"
+msgstr "Nhấn để mở trong App Store"
+
+#: assets/synos-oobe:2841
+msgid "Opening…"
+msgstr "Đang mở…"
+
+#: assets/synos-oobe:2860
+msgid "Pro tip: You can explore these apps in the App Store,"
+msgstr ""
+"Mẹo nhỏ: Bạn có thể khám phá các ứng dụng này trong Cửa hàng Ứng dụng,"
+
+#: assets/synos-oobe:2860
+msgid "and continue with the system setup while they download."
+msgstr "và tiếp tục thiết lập hệ thống trong khi chúng tải xuống."
+
+#: assets/synos-oobe:2870
+msgid "  Browse Store  "
+msgstr "  Duyệt Cửa Hàng  "
+
+#: assets/synos-oobe:2902
+msgid "Connect & Protect Your Data"
+msgstr "Kết nối & Bảo vệ Dữ liệu của Bạn"
+
+#: assets/synos-oobe:2926
+msgid "Online Accounts"
+msgstr "Tài khoản Trực tuyến"
+
+#: assets/synos-oobe:2932
+msgid "Connect your Google, Microsoft,"
+msgstr "Kết nối với Google, Microsoft,"
+
+#: assets/synos-oobe:2932
+msgid "or Nextcloud accounts to sync"
+msgstr "hoặc tài khoản Nextcloud để đồng bộ hóa"
+
+#: assets/synos-oobe:2933
+msgid "files, contacts, and calendar."
+msgstr "tệp tin, liên lạc và lịch."
+
+#: assets/synos-oobe:2943
+msgid "Connect Accounts"
+msgstr "Kết nối Tài khoản"
+
+#: assets/synos-oobe:3013
+msgid "Your Data. Your Rules. Period."
+msgstr "Dữ liệu của Bạn. Quy tắc của Bạn. Hết."
+
+#: assets/synos-oobe:3022
+msgid "SynOS disables all system-level telemetry by default."
+msgstr ""
+"SynOS vô hiệu hóa tất cả các công cụ theo dõi hệ thống ở cấp độ hệ thống "
+"theo mặc định."
+
+#: assets/synos-oobe:3022
+msgid "We do not collect your usage habits."
+msgstr "Chúng tôi không thu thập thói quen sử dụng của bạn."
+
+#: assets/synos-oobe:3023
+msgid "We do not upload your search history."
+msgstr "Chúng tôi không tải lên lịch sử tìm kiếm của bạn."
+
+#: assets/synos-oobe:3023
+msgid "There are no pervasive advertisements."
+msgstr "Không có quảng cáo lan tràn."
+
+#: assets/synos-oobe:3034
+msgid "In an era ruled by algorithms and surveillance,"
+msgstr "Trong kỷ nguyên bị thống trị bởi thuật toán và giám sát,"
+
+#: assets/synos-oobe:3034
+msgid "this is our firmest commitment to you."
+msgstr "đây là cam kết mạnh mẽ nhất của chúng tôi dành cho bạn."
+
+#: assets/synos-oobe:3052
+msgid "✓ Zero telemetry — your activity is yours alone"
+msgstr "✓ Không telemetry — hoạt động của bạn chỉ thuộc về riêng bạn"
+
+#: assets/synos-oobe:3053
+msgid "✓ No data collection — your files stay on your device"
+msgstr "✓ Không thu thập dữ liệu — tệp của bạn vẫn ở trên thiết bị"
+
+#: assets/synos-oobe:3054
+msgid "✓ No ads in your operating system"
+msgstr "✓ Không quảng cáo trong hệ điều hành của bạn"
+
+#: assets/synos-oobe:3055
+msgid "✓ Full root access — you truly own your machine"
+msgstr "✓ Truy cập root đầy đủ — bạn thực sự sở hữu máy tính của mình"
+
+#: assets/synos-oobe:3056
+msgid "✓ UFW firewall — your digital perimeter, defended"
+msgstr "✓ UFW firewall — hàng rào kỹ thuật số của bạn, được bảo vệ vững chắc"
+
+#: assets/synos-oobe:3057
+msgid "✓ Open source — the code is yours to inspect and modify"
+msgstr "✓ Mã nguồn mở — mã nguồn thuộc về bạn để kiểm tra và sửa đổi"
+
+#: assets/synos-oobe:3098
+msgid "Welcome to the SynOS Community"
+msgstr "Chào mừng đến với Cộng đồng SynOS"
+
+#: assets/synos-oobe:3107
+msgid "Whether you're a Windows refugee seeking shelter,"
+msgstr "Dù bạn là người tị nạn Windows đang tìm nơi trú ẩn,"
+
+#: assets/synos-oobe:3108
+msgid "or a hardcore geek developer — you'll find your tribe here."
+msgstr ""
+"hoặc một lập trình viên đam mê công nghệ — bạn sẽ tìm thấy cộng đồng của "
+"mình ở đây."
+
+#: assets/synos-oobe:3109
+msgid "Found a bug? Want a feature? Tell us anytime."
+msgstr ""
+"Tìm thấy lỗi? Muốn một tính năng? Hãy cho chúng tôi biết bất cứ lúc nào."
+
+#: assets/synos-oobe:3121
+msgid "Official Documentation"
+msgstr "Tài liệu chính thức"
+
+#: assets/synos-oobe:3122
+msgid "Comprehensive guides and troubleshooting — covers everything you need"
+msgstr "Hướng dẫn toàn diện và khắc phục sự cố — bao phủ mọi thứ bạn cần"
+
+#: assets/synos-oobe:3124
+msgid "Community Forums"
+msgstr "Diễn đàn cộng đồng"
+
+#: assets/synos-oobe:3125
+msgid "Discuss with other SynOS users and developers"
+msgstr "Thảo luận với những người dùng và nhà phát triển SynOS khác"
+
+#: assets/synos-oobe:3127
+msgid "Discord Server"
+msgstr "Máy chủ Discord"
+
+#: assets/synos-oobe:3128
+msgid "Join our official Discord server for real-time chat and support"
+msgstr ""
+"Tham gia máy chủ Discord chính thức của chúng tôi để trò chuyện và hỗ trợ "
+"theo thời gian thực"
+
+#: assets/synos-oobe:3130
+msgid "Report an Issue"
+msgstr "Báo cáo vấn đề"
+
+#: assets/synos-oobe:3131
+msgid "Found a bug or have a feature request? Let us know!"
+msgstr "Phát hiện lỗi hoặc có yêu cầu tính năng? Hãy cho chúng tôi biết!"
+
+#: assets/synos-oobe:3133
+msgid "Buy SynOS Enterprise Edition"
+msgstr "Mua SynOS Enterprise Edition"
+
+#: assets/synos-oobe:3134
+msgid ""
+"Get enterprise-grade support and advanced features for your organization"
+msgstr ""
+"Nhận hỗ trợ cấp doanh nghiệp và các tính năng nâng cao cho tổ chức của bạn"
+
+#: assets/synos-oobe:3136
+msgid "Ask Ubuntu"
+msgstr "Ask Ubuntu"
+
+#: assets/synos-oobe:3137
+msgid "Almost all Ubuntu solutions apply directly to SynOS"
+msgstr ""
+"Gần như tất cả các giải pháp Ubuntu đều áp dụng trực tiếp cho SynOS"
+
+#: assets/synos-oobe:3139
+msgid "Source Code"
+msgstr "Mã nguồn"
+
+#: assets/synos-oobe:3140
+msgid "SynOS is open-source. Explore the code and contribute!"
+msgstr "SynOS là mã nguồn mở. Khám phá mã nguồn và đóng góp!"
+
+#: assets/synos-oobe:3152
+msgid "Open"
+msgstr "Mở"
+
+#: assets/synos-oobe:3162
+msgid "💡 SynOS is compatible with Ubuntu's entire ecosystem."
+msgstr "💡 SynOS tương thích với toàn bộ hệ sinh thái của Ubuntu."
+
+#: assets/synos-oobe:3163
+msgid "You can rely on Ubuntu's vast documentation and expertise."
+msgstr "Bạn có thể dựa vào tài liệu phong phú và chuyên môn của Ubuntu."
+
+#: assets/synos-oobe:3196
+msgid "All Set."
+msgstr "Hoàn tất."
+
+#: assets/synos-oobe:3205
+msgid "  Start Your SynOS Journey  "
+msgstr "  Bắt đầu hành trình SynOS của bạn  "
+
+#: assets/synos-oobe:3239 assets/synos-oobe-autostart.desktop:28
+msgid "SynOS Setup"
+msgstr "Cài đặt SynOS"
+
+#: assets/synos-oobe:3242
+msgid "SynOS Welcome Center"
+msgstr "Trung tâm chào mừng SynOS"
+
+#: assets/synos-oobe:3295
+msgid "← Back"
+msgstr "← Quay lại"
+
+#: assets/synos-oobe:3304 assets/synos-oobe:3423
+msgid "Next →"
+msgstr "Tiếp theo →"
+
+#: assets/synos-oobe:3421
+msgid "Finish"
+msgstr "Hoàn tất"
+
+#: assets/synos-oobe:3488 data/synos-oobe.desktop:28
+msgid "SynOS Welcome"
+msgstr "Chào mừng đến với SynOS"
+
+#: assets/synos-oobe:3490
+msgid "SynOS Team"
+msgstr "Đội ngũ SynOS"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:121
+msgid "Secure Boot Configuration"
+msgstr "Cấu hình Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:129
+msgid ""
+"Secure Boot is a motherboard security standard that ensures only trusted "
+"software loads at startup."
+msgstr ""
+"Secure Boot là tiêu chuẩn bảo mật bo mạch chủ đảm bảo chỉ phần mềm đáng tin "
+"cậy được tải khi khởi động."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:132
+msgid "It protects your system from low-level malware and rootkits."
+msgstr "Nó bảo vệ hệ thống của bạn khỏi mã độc cấp thấp và rootkit."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:141
+msgid "System Trust Status"
+msgstr "Tình trạng Tin cậy Hệ thống"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:183
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:325
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:509
+msgid "Create & Enroll Certificate"
+msgstr "Tạo & Đăng ký Chứng chỉ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:189
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:338
+msgid "Repair Module Signatures"
+msgstr "Chữ ký mô-đun sửa chữa"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:197
+msgid "Note: Use password <b>123456</b> after rebooting."
+msgstr "Lưu ý: Sử dụng mật khẩu <b>123456</b> sau khi khởi động lại."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:202
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:495
+msgid "Reboot & Configure Secure Boot"
+msgstr "Khởi động lại & Cấu hình Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:210
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:419
+msgid "  Check Again  "
+msgstr "  Kiểm tra lại  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:236
+msgid "Motherboard hardware protection is active"
+msgstr "Bảo cứng bo mạch chủ đang hoạt động"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:239
+msgid "Firmware does not support Secure Boot"
+msgstr "Phần sụn không hỗ trợ Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:242
+msgid "Secure Boot state could not be determined"
+msgstr "Không thể xác định trạng thái Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:245
+msgid "Secure Boot is disabled"
+msgstr "Secure Boot bị tắt"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:251
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:253
+msgid "Not required without firmware enforcement"
+msgstr "Không bắt buộc nếu không thực thi chương trình cơ sở"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:257
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:261
+msgid "Not checked because Secure Boot state is unknown"
+msgstr "Không được kiểm tra vì trạng thái Secure Boot không xác định"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:266
+msgid "Certificate generated locally"
+msgstr "Chứng chỉ được tạo cục bộ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:268
+msgid "Missing local certificate"
+msgstr "Thiếu chứng chỉ cục bộ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:281
+msgid "Certificate is trusted by motherboard"
+msgstr "Bo mạch chủ tin cậy chứng chỉ này"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:285
+msgid "Pending enrollment in blue screen (MOKManager)"
+msgstr "Chờ đăng ký trong màn hình xanh (MOKManager)"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:290
+msgid "Certificate is not trusted by motherboard"
+msgstr "Chứng chỉ không được bo mạch chủ tin cậy"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:296
+msgid "Kernel signature enforcement is inactive"
+msgstr "Thực thi chữ ký hạt nhân không hoạt động"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:299
+msgid "Driver trust cannot be verified"
+msgstr "Không thể xác minh độ tin cậy của trình điều khiển"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:303
+msgid ""
+"Secure Boot trust is ready. No third-party kernel modules are currently "
+"installed."
+msgstr ""
+"Niềm tin Secure Boot đã sẵn sàng. Hiện tại không có mô-đun hạt nhân của bên "
+"thứ ba nào được cài đặt."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:307
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:550
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:558
+msgid "Drivers are signed and ready to load"
+msgstr "Trình điều khiển đã được ký và sẵn sàng tải"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:311
+msgid "Drivers are trusted, but automatic DKMS signing needs repair"
+msgstr "Trình điều khiển được tin cậy nhưng việc ký DKMS tự động cần sửa chữa"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:315
+msgid "No signed third-party drivers detected"
+msgstr "Không phát hiện trình điều khiển bên thứ ba đã ký"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:318
+msgid "Some DKMS modules need to be re-signed"
+msgstr "Một số mô-đun DKMS cần được ký lại"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:323
+msgid "Enroll Existing Certificate"
+msgstr "Đăng ký chứng chỉ hiện có"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:336
+msgid "Repair Automatic DKMS Signing"
+msgstr "Sửa chữa chữ ký DKMS tự động"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:356
+msgid ""
+"This firmware does not provide Secure Boot. No certificate is required."
+msgstr ""
+"Phần sụn này không cung cấp Secure Boot. Không có giấy chứng nhận được yêu "
+"cầu."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:363
+msgid ""
+"Secure Boot status could not be read. Driver trust operations are blocked "
+"until detection succeeds."
+msgstr ""
+"Không thể đọc được trạng thái Secure Boot. Hoạt động tin cậy của trình điều "
+"khiển bị chặn cho đến khi phát hiện thành công."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:369
+msgid "No certificate is required while Secure Boot is disabled."
+msgstr "Không cần chứng chỉ khi Secure Boot bị tắt."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:375
+msgid "System Trust Established. Third-party drivers will load securely."
+msgstr ""
+"Nhật ký tin cậy hệ thống đã được thiết lập. Trình điều khiển bên thứ ba sẽ "
+"tải an toàn."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:379
+msgid "The certificate is enrolled and current drivers are trusted."
+msgstr "Chứng chỉ đã được đăng ký và trình điều khiển hiện tại được tin cậy."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:381
+msgid "Repair automatic DKMS signing before future driver updates."
+msgstr ""
+"Sửa chữa ký DKMS tự động trước khi cập nhật trình điều khiển trong tương "
+"lai."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:386
+msgid "The certificate is enrolled, but some modules are not signed with it."
+msgstr "Chứng chỉ đã được đăng ký nhưng một số mô-đun chưa được ký với nó."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:391
+msgid "A certificate is waiting for enrollment."
+msgstr "Chứng chỉ đang chờ đăng ký."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:393
+msgid "Restart and enter password 123456 in MOKManager."
+msgstr "Khởi động lại và nhập mật khẩu 123456 vào MOKManager."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:398
+msgid "The local trust certificate is not yet enrolled."
+msgstr "Chứng chỉ tin cậy cục bộ chưa được đăng ký."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:400
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:407
+msgid "You must configure this to use third-party drivers like NVIDIA."
+msgstr ""
+"Bạn phải cấu hình cái này để sử dụng các trình điều khiển bên thứ ba như "
+"NVIDIA."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:405
+msgid "The local trust certificate is missing."
+msgstr "Chứng chỉ tin cậy cục bộ bị thiếu."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:423
+msgid "  Checking...  "
+msgstr "  Đang kiểm tra...  "
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:429
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:443
+msgid "Reboot Required"
+msgstr "Yêu cầu khởi động lại"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:430
+msgid "Please trust the certificate upon reboot using password 123456."
+msgstr ""
+"Vui lòng tin tưởng chứng chỉ này khi khởi động lại bằng mật khẩu 123456."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:432
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:446
+msgid "Cancel"
+msgstr "Hủy bỏ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:447
+msgid "Reboot"
+msgstr "Khởi động lại"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:483
+msgid "Success! When you reboot, a blue screen will appear."
+msgstr "Thành công! Khi bạn khởi động lại, một màn hình xanh sẽ xuất hiện."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:487
+msgid "Select 'Enroll MOK' → 'Continue' → 'Yes', and enter password: 123456"
+msgstr "Chọn 'Enroll MOK' → 'Continue' → 'Yes', và nhập mật khẩu: 123456"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:491
+msgid "Certificate Created"
+msgstr "Chứng chỉ đã được tạo"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:494
+msgid "Later"
+msgstr "Sau đó"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:523
+msgid "Secure Boot Trust Not Required"
+msgstr "Secure Boot Không cần tin cậy"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:524
+msgid "Firmware signature enforcement is not active."
+msgstr "Thực thi chữ ký chương trình cơ sở không hoạt động."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:478
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:526
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:544
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:552
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:560
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:576
+msgid "OK"
+msgstr "Được"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:534
+msgid ""
+"The certificate is ready, but one or more DKMS modules could not be rebuilt."
+" You can repair them after enrollment."
+msgstr ""
+"Chứng chỉ đã sẵn sàng nhưng không thể xây dựng lại một hoặc nhiều mô-đun "
+"DKMS. Bạn có thể sửa chữa chúng sau khi đăng ký."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:542
+msgid "Configuration needs attention"
+msgstr "Cấu hình cần chú ý"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:549
+msgid "System Trust Established"
+msgstr "Đã thành lập hệ thống tin cậy"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:557
+msgid "Driver Signature Trusted"
+msgstr "Chữ ký trình điều khiển được tin cậy"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:573
+msgid "Configuration failed. Please try again."
+msgstr "Cấu hình không thành công. Vui lòng thử lại."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:574
+msgid "Please check the advanced output."
+msgstr "Vui lòng kiểm tra đầu ra nâng cao."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:585
+msgid "Generating & Signing..."
+msgstr "Đang tạo & Ký..."
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:156
+msgid "Local MOK Certificate"
+msgstr "Chứng chỉ MOK cục bộ"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:155
+msgid "Secure Boot Enabled"
+msgstr "Đã bật Secure Boot"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:158
+msgid "Third-party Drivers"
+msgstr "Trình điều khiển bên thứ ba"
+
+#: ../synos-secureboot-toolkit/src/synos_secureboot/ui.py:157
+msgid "UEFI Firmware Trust"
+msgstr "Nhật ký Tin cậy UEFI Firmware"
+
+#: data/synos-oobe.desktop:112
+msgid "welcome;oobe;setup;tutorial;first-run;"
+msgstr "chào mừng;oobe;cài đặt;hướng dẫn;sử dụng lần đầu;"
+
+#: synos-oobe/data/com.synos.oobe.policy:9
+msgid "Manage local network discovery"
+msgstr "Quản lý khám phá mạng cục bộ"
+
+#: synos-oobe/data/com.synos.oobe.policy:11
+msgid "Authentication is required to change local network discovery"
+msgstr "Yêu cầu xác thực để thay đổi khám phá mạng cục bộ"
+
+#: data/synos-oobe.desktop:55
+msgid "Welcome Center"
+msgstr "Trung tâm Chào mừng"
+
+#: assets/synos-oobe-autostart.desktop:55
+msgid "Complete your SynOS setup"
+msgstr "Hoàn tất thiết lập SynOS của bạn"
+
+#: data/synos-oobe.desktop:82
+msgid "Explore and configure your SynOS system"
+msgstr "Khám phá và định cấu hình hệ thống SynOS của bạn"
+
+#~ msgid "Unleash Your Graphics Hardware"
+#~ msgstr "Khơi phá sức mạnh phần cứng đồ họa của bạn"
+
+#, python-brace-format
+#~ msgid "NVIDIA proprietary driver is already installed. (Version: {})"
+#~ msgstr "Triển trình độc quyền NVIDIA đã được cài đặt. (Phiên bản: {})"
+
+#~ msgid "✗ Installation encountered an issue."
+#~ msgstr "✗ Gặp sự cố khi cài đặt."
+
+#~ msgid "An NVIDIA dedicated graphics card was detected in your system."
+#~ msgstr ""
+#~ "Một card đồ họa chuyên dụng NVIDIA đã được phát hiện trong hệ thống của bạn."
+
+#~ msgid ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate desktop"
+#~ msgstr ""
+#~ "\tĐể có độ mượt mà tối ưu trong chơi game, dựng hình 3D và máy tính để bàn "
+#~ "tốc độ cao"
+
+#~ msgid "experiences, we recommend installing the proprietary driver."
+#~ msgstr ""
+#~ "trải nghiệm, chúng tôi khuyên bạn nên cài đặt trình điều khiển độc quyền."
+
+#~ msgid "  Check for Driver Updates  "
+#~ msgstr "Kiểm tra cập nhật trình điều khiển"
+
+#~ msgid "Repair & Reinstall"
+#~ msgstr "Sửa chữa & Cài đặt lại"
+
+#~ msgid "  One-Click NVIDIA Driver Install  "
+#~ msgstr "Cài đặt trình điều khiển NVIDIA chỉ với một cú nhấp chuột"
+
+#~ msgid "Installing NVIDIA driver…"
+#~ msgstr "Đang cài đặt trình điều khiển NVIDIA…"
+
+#~ msgid "This may take several minutes."
+#~ msgstr "Việc này có thể mất vài phút."
+
+#~ msgid "✓ Driver installed successfully!"
+#~ msgstr "✓ Đã cài đặt trình điều khiển thành công!"
+
+#~ msgid "You can install drivers later from Settings."
+#~ msgstr "Bạn có thể cài đặt trình điều khiển sau này từ Cài đặt."
+
+#~ msgid "Xbox Controller Support"
+#~ msgstr "Hỗ trợ Bộ điều khiển Xbox"
+
+#~ msgid "Xbox controller driver (xpadneo) is already installed."
+#~ msgstr "Trình điều khiển bộ điều khiển Xbox (xpadneo) đã được cài đặt."
+
+#~ msgid ""
+#~ "Enjoy seamless Xbox controller support with rumble and accurate inputs."
+#~ msgstr ""
+#~ "Hưởng thụ hỗ trợ bộ điều khiển Xbox liền mạch với rung phản hồi và đầu vào "
+#~ "chính xác."
+
+#~ msgid "SynOS provides native support for Xbox controllers via Bluetooth."
+#~ msgstr "SynOS hỗ trợ native bộ điều khiển Xbox qua Bluetooth."
+
+#~ msgid "The advanced xpadneo driver is already set up and ready for gaming."
+#~ msgstr ""
+#~ "Trình điều khiển xpadneo nâng cao đã được thiết lập sẵn và sẵn sàng cho trò "
+#~ "chơi."
+
+#~ msgid ""
+#~ "For advanced features like rumble and accurate mapping, we recommend "
+#~ "installing the xpadneo driver."
+#~ msgstr ""
+#~ "Để có các tính năng nâng cao như rung và ánh xạ chính xác, chúng tôi khuyến "
+#~ "nghị cài đặt trình điều khiển xpadneo."
+
+#~ msgid "Xbox Controller Driver Installed"
+#~ msgstr "Trình điều khiển Xbox Controller đã được cài đặt"
+
+#~ msgid "The xpadneo driver is currently installed"
+#~ msgstr "Trình điều khiển xpadneo hiện đang được cài đặt"
+
+#~ msgid "The driver is not installed"
+#~ msgstr "Trình điều khiển chưa được cài đặt"
+
+#~ msgid "Driver not installed, signature missing"
+#~ msgstr "Chưa cài đặt trình điều khiển, thiếu chữ ký"
+
+#~ msgid "Kernel module"
+#~ msgstr "Mô-đun hạt nhân"
+
+#~ msgid "Not detected"
+#~ msgstr "Không được phát hiện"
+
+#~ msgid "Driver is NOT signed"
+#~ msgstr "Trình điều khiển KHÔNG được ký số"
+
+#~ msgid "Signed with current trusted certificate"
+#~ msgstr "Được ký bằng chứng chỉ tin cậy hiện tại"
+
+#~ msgid "Signed with current certificate, but not enrolled"
+#~ msgstr "Được ký bằng chứng chỉ hiện tại nhưng chưa được đăng ký"
+
+#~ msgid "Signed with an unknown or outdated certificate"
+#~ msgstr "Được ký bằng chứng chỉ không xác định hoặc đã lỗi thời"
+
+#~ msgid "Controller Status"
+#~ msgstr "Trạng thái bộ điều khiển"
+
+#~ msgid "Driver loaded and active. Ready to play!"
+#~ msgstr "Trình điều khiển đã tải và hoạt động. Sẵn sàng để chơi!"
+
+#~ msgid "Driver standing by. Waiting for controller connection..."
+#~ msgstr "Trình điều khiển đang chờ. Đang đợi kết nối bộ điều khiển..."
+
+#~ msgid "Driver cannot load due to missing signature trust"
+#~ msgstr "Không thể tải trình điều khiển do thiếu sự tin cậy của chữ ký"
+
+#~ msgid "Pair your controller"
+#~ msgstr "Ghép nối bộ điều khiển của bạn"
+
+#~ msgid "Test your controller"
+#~ msgstr "Kiểm tra bộ điều khiển của bạn"
+
+#~ msgid "  Install Xbox Driver  "
+#~ msgstr "Cài đặt trình điều khiển Xbox"
+
+#~ msgid ""
+#~ "⚠️ The driver signature does not match your system certificate. Click Fix & "
+#~ "Reinstall to repair the driver."
+#~ msgstr ""
+#~ "⚠️ Chữ ký trình điều khiển không khớp với chứng chỉ hệ thống của bạn. Nhấp "
+#~ "vào Sửa & Cài đặt lại để khắc phục trình điều khiển."
+
+#~ msgid "Installing Xbox controller driver…"
+#~ msgstr "Đang cài đặt trình điều khiển bộ điều khiển Xbox…"
+
+#~ msgid "This may take a minute."
+#~ msgstr "Việc này có thể mất một phút."
+
+#~ msgid "Repairing driver signature…"
+#~ msgstr "Đang sửa chữa chữ ký trình điều khiển…"
+
+#~ msgid "A reboot is recommended to apply changes."
+#~ msgstr "Nên khởi động lại để áp dụng các thay đổi."
+
+#~ msgid "  Fix & Reinstall Driver  "
+#~ msgstr "Cài đặt trình điều khiển Xbox"
+
+#~ msgid "(Reboot recommended)"
+#~ msgstr "(Đã khuyến nghị khởi động lại)"
+
+#~ msgid "Cannot sign drivers without a certificate"
+#~ msgstr "Không thể ký trình điều khiển mà không có chứng chỉ"
+
+#~ msgid ""
+#~ "Enable low-level network protection — silently blocks all unauthorized "
+#~ "inbound connections."
+#~ msgstr "Bật bảo vệ mạng ở mức thấp — lặng lẽ chặn mọi kết nối đến trái phép."
+
+#~ msgid "Firewall"
+#~ msgstr "Tường lửa"
+
+#~ msgid ""
+#~ "Please configure Secure Boot in the previous step before installing this "
+#~ "driver."
+#~ msgstr ""
+#~ "Vui lòng khởi động lại máy để đăng ký chứng chỉ trước khi cài đặt trình điều"
+#~ " khiển này."
+
+#~ msgid "Please reboot to enroll the certificate before installing this driver."
+#~ msgstr ""
+#~ "Vui lòng khởi động lại máy để đăng ký chứng chỉ trước khi cài đặt trình điều"
+#~ " khiển này."
+
+#~ msgid "Scanning for installed drivers..."
+#~ msgstr "Đang quét các trình điều khiển đã cài đặt..."
+
+#~ msgid "The local trust certificate is missing or not yet enrolled."
+#~ msgstr "Chứng chỉ tin cậy cục bộ bị thiếu hoặc chưa được đăng ký."
+
+#~ msgid ""
+#~ "⚠️ Secure Boot is enabled but the custom certificate is not yet enrolled."
+#~ msgstr ""
+#~ "⚠️ Secure Boot đang được bật nhưng chứng chỉ tùy chỉnh chưa được đăng ký."
+
+#~ msgid "✓ Xbox controller driver installed successfully!"
+#~ msgstr "✓ Đã cài đặt trình điều khiển bộ điều khiển Xbox thành công!"
+
+#~ msgid "✗ Repair failed."
+#~ msgstr "✗ Triển khai không thành công."
+
+#~ msgid "⚡ The following apps are provided by the Spark Store community."
+#~ msgstr "⚡ Các ứng dụng sau được cung cấp bởi cộng đồng Spark Store."
+
+#~ msgid "Great for connecting to local services."
+#~ msgstr "Rất tốt để kết nối với các dịch vụ cục bộ."
+
+#~ msgid "Spark Store"
+#~ msgstr "Spark Store"
+
+#~ msgid "Community app store for Chinese Linux users"
+#~ msgstr "Cửa hàng ứng dụng cộng đồng dành cho người dùng Linux Trung Quốc"
+
+#~ msgid "Note: These apps link to their official or community download pages."
+#~ msgstr ""
+#~ "Lưu ý: Các ứng dụng này liên kết đến trang tải xuống chính thức hoặc cộng "
+#~ "đồng của chúng."
+
+#~ msgid " SynOS is not affiliated with these vendors."
+#~ msgstr "SynOS không liên kết với các nhà cung cấp này."
+
+#~ msgid ""
+#~ "SynOS is ready. Just a few steps to shape it\n"
+#~ "into the perfect system tailored to your habits."
+#~ msgstr ""
+#~ "SynOS đã sẵn sàng. Chỉ còn vài bước để định hình hệ thống hoàn hảo, tùy "
+#~ "chỉnh theo thói quen của bạn."
+
+#~ msgid "=== Testing mirror speeds ===\n"
+#~ msgstr "=== Đang kiểm tra tốc độ của máy chủ phản chiếu ==="
+
+#~ msgid ""
+#~ "\n"
+#~ "No mirrors reachable.\n"
+#~ msgstr ""
+#~ "\n"
+#~ "Không có máy chủ phản chiếu nào khả dụng.\n"
+
+#~ msgid ""
+#~ "\n"
+#~ "=== Applying mirror switch ===\n"
+#~ msgstr ""
+#~ "\n"
+#~ "=== Đang áp dụng chuyển đổi mirror ===\n"
+
+#~ msgid ""
+#~ "\n"
+#~ "✓ Mirror switched and system updated.\n"
+#~ msgstr ""
+#~ "\n"
+#~ "✓ Mirror đã được chuyển đổi và hệ thống đã được cập nhật.\n"
+
+#~ msgid ""
+#~ "For ultimate smoothness in gaming, 3D rendering, and high-framerate desktop\n"
+#~ "experiences, we recommend installing the proprietary driver."
+#~ msgstr ""
+#~ "Để có trải nghiệm mượt mà nhất trong game, dựng hình 3D và màn hình desktop có tần số quét cao\n"
+#~ "chúng tôi khuyến nghị cài đặt trình độc quyền."
+
+#~ msgid ""
+#~ "Installing NVIDIA driver…\n"
+#~ "This may take several minutes."
+#~ msgstr ""
+#~ "Đang cài đặt trình điều khiển NVIDIA…\n"
+#~ "Việc này có thể mất vài phút."
+
+#~ msgid ""
+#~ "✗ Installation encountered an issue.\n"
+#~ "You can install drivers later from Settings."
+#~ msgstr ""
+#~ "✗ Quá trình cài đặt gặp sự cố.\n"
+#~ "Bạn có thể cài đặt trình điều khiển sau từ Cài đặt."
+
+#~ msgid ""
+#~ "Powered by Wine and Bottles technology, running classic Windows applications\n"
+#~ "is now easier than ever."
+#~ msgstr ""
+#~ "Được cung cấp bởi công nghệ Wine và Bottles, việc chạy các ứng dụng Windows cổ điển\n"
+#~ "giờ đây dễ dàng hơn bao giờ hết."
+
+#~ msgid ""
+#~ "Deploying compatibility sandbox via Flatpak…\n"
+#~ "This may take a few minutes."
+#~ msgstr ""
+#~ "Đang triển khai hộp cát tương thích qua Flatpak…\n"
+#~ "Quá trình này có thể mất vài phút."
+
+#~ msgid ""
+#~ "✓ Sandbox deployed successfully!\n"
+#~ "You can now double-click .exe files to run them."
+#~ msgstr ""
+#~ "✓ Đã triển khai hộp cát thành công!\n"
+#~ "Bây giờ bạn có thể nhấp đúp vào các tệp .exe để chạy chúng."
+
+#~ msgid ""
+#~ "✗ Deployment failed.\n"
+#~ "You can install Bottles later from the App Store."
+#~ msgstr ""
+#~ "✗ Triển khai không thành công.\n"
+#~ "Bạn có thể cài đặt Bottles sau từ Cửa hàng ứng dụng."
+
+#~ msgid ""
+#~ "Essential productivity and entertainment tools, hand-picked for you.\n"
+#~ "Click any app to open its details in the App Store."
+#~ msgstr ""
+#~ "Các công cụ năng suất và giải trí thiết yếu, được tuyển chọn kỹ lưỡng dành cho bạn.\n"
+#~ "Nhấp vào bất kỳ ứng dụng nào để xem chi tiết trên App Store."
+
+#~ msgid ""
+#~ "⚡ The following apps are provided by the Spark Store community.\n"
+#~ "Great for connecting to local services."
+#~ msgstr ""
+#~ "⚡ Các ứng dụng sau đây được cung cấp bởi cộng đồng Spark Store.\n"
+#~ "Phù hợp để kết nối với các dịch vụ địa phương."
+
+#~ msgid ""
+#~ "Pro tip: You can explore these apps in the App Store,\n"
+#~ "and continue with the system setup while they download."
+#~ msgstr ""
+#~ "Mẹo hay: Bạn có thể khám phá những ứng dụng này trong App Store, \n"
+#~ "và tiếp tục thiết lập hệ thống trong khi chúng tải xuống."
+
+#~ msgid ""
+#~ "Note: These apps link to their official or community download pages. "
+#~ "SynOS is not affiliated with these vendors."
+#~ msgstr ""
+#~ "Lưu ý: Các ứng dụng này liên kết đến trang tải về chính thức hoặc cộng đồng "
+#~ "của họ. SynOS không liên kết với các nhà cung cấp này."
+
+#~ msgid ""
+#~ "Connect your Google, Microsoft,\n"
+#~ "or Nextcloud accounts to sync\n"
+#~ "files, contacts, and calendar."
+#~ msgstr ""
+#~ "Kết nối tài khoản Google, Microsoft,\n"
+#~ "hoặc Nextcloud để đồng bộ hóa\n"
+#~ "tệp tin, danh bạ và lịch trình."
+
+#~ msgid ""
+#~ "Use Deja Dup to protect your\n"
+#~ "important files with automated,\n"
+#~ "secure local or remote backups."
+#~ msgstr ""
+#~ "Sử dụng Deja Dup để bảo vệ các tệp quan trọng\n"
+#~ "bằng cách sao lưu tự động, an toàn\n"
+#~ "tại máy cục bộ hoặc từ xa."
+
+#~ msgid ""
+#~ "SynOS disables all system-level telemetry by default.\n"
+#~ "We do not collect your usage habits.\n"
+#~ "We do not upload your search history.\n"
+#~ "There are no pervasive advertisements."
+#~ msgstr ""
+#~ "SynOS vô hiệu hóa tất cả telemetry ở cấp hệ thống theo mặc định.\n"
+#~ "Chúng tôi không thu thập thói quen sử dụng của bạn.\n"
+#~ "Chúng tôi không tải lên lịch sử tìm kiếm của bạn.\n"
+#~ "Không có quảng cáo lan tỏa."
+
+#~ msgid ""
+#~ "In an era ruled by algorithms and surveillance,\n"
+#~ "this is our firmest commitment to you."
+#~ msgstr ""
+#~ "Trong kỷ nguyên bị chi phối bởi thuật toán và giám sát,\n"
+#~ "đây là cam kết mạnh mẽ nhất của chúng tôi dành cho bạn."
+
+#~ msgid ""
+#~ "Whether you're a Windows refugee seeking shelter,\n"
+#~ "or a hardcore geek developer — you'll find your tribe here.\n"
+#~ "Found a bug? Want a feature? Tell us anytime."
+#~ msgstr ""
+#~ "Dù bạn là người tị nạn từ Windows đang tìm nơi trú ẩn,\n"
+#~ "hay một nhà phát triển lập trình viên chính hiệu — bạn sẽ tìm thấy cộng đồng của mình ở đây.\n"
+#~ "Phát hiện lỗi? Muốn một tính năng? Hãy cho chúng tôi biết bất cứ lúc nào."
+
+#~ msgid ""
+#~ "💡 SynOS is compatible with Ubuntu's entire ecosystem.\n"
+#~ "You can rely on Ubuntu's vast documentation and expertise."
+#~ msgstr ""
+#~ "💡 SynOS tương thích với toàn bộ hệ sinh thái của Ubuntu.\n"
+#~ "Bạn có thể dựa vào tài liệu và chuyên môn rộng lớn của Ubuntu."
+
+#~ msgid ""
+#~ "\n"
+#~ "=== Testing bandwidth of top 3 mirrors (3 s each) ===\n"
+#~ msgstr ""
+#~ "\n"
+#~ "=== Đang kiểm tra băng thông của 3 máy chủ phản chiếu hàng đầu (mỗi mục 3 giây) ===\n"
+
+#~ msgid ""
+#~ "✓ Driver installed successfully!\n"
+#~ "A reboot is recommended to apply changes."
+#~ msgstr ""
+#~ "✓ Cài đặt trình điều khiển thành công!\n"
+#~ "Khởi động lại hệ thống được khuyến nghị để áp dụng các thay đổi."

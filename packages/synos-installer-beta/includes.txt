@@ -1,0 +1,16 @@
+# kind	source (relative to upstream/)	target	mode
+file	assets/synos-installer-beta.desktop	/usr/share/applications/synos-installer-beta.desktop	644
+file	assets/synos-installer-beta.svg	/usr/share/icons/hicolor/scalable/apps/synos-installer-beta.svg	644
+file	assets/synos-installer-beta	/usr/bin/synos-installer-beta	755
+file	assets/synos-installer-beta.svg	/usr/share/icons/hicolor/scalable/apps/synos-installer-beta.svg	644
+file	assets/synos-installer-executor	/usr/bin/synos-installer-executor	755
+file	assets/synos-installer-storage-probe	/usr/bin/synos-installer-storage-probe	755
+file	assets/com.synos.installer-beta.policy	/usr/share/polkit-1/actions/com.synos.installer-beta.policy	644
+file	assets/synos-installer-beta-live-shortcut	/usr/lib/synos-installer-beta/create-live-shortcut	755
+file	assets/synos-installer-beta-live-shortcut.desktop	/etc/xdg/autostart/synos-installer-beta-live-shortcut.desktop	644
+folder	src/	/usr/lib/synos-installer-beta/	644
+file	data/languages.json	/usr/share/synos-installer-beta/languages.json	644
+folder	locale/	/usr/share/locale/	644
+folder	assets/slideshow/	/usr/share/synos-installer-beta/slideshow/	644
+folder	assets/icons/	/usr/share/synos-installer-beta/icons/	644
+file	assets/style.css	/usr/share/synos-installer-beta/style.css	644

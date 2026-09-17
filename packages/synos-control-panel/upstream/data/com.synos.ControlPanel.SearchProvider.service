@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=com.synos.ControlPanel.SearchProvider
+Exec=/usr/libexec/synos-control-panel/search-provider

@@ -1,0 +1,35 @@
+# abstract-name = concrete package(s) on this base
+# Browser and audio firmware come from upstream forks (mod 05) until packages/ ships;
+# the acceptance policy forbids the stock firefox and firmware-sof-signed packages.
+browser            =
+browser-esr        = firefox-esr
+office             = libreoffice libreoffice-gtk4
+mail               = evolution evolution-ews
+firmware-audio     =
+firmware-wifi      = linux-firmware
+translations       = language-pack-${LANG} language-pack-${LANG}-base language-pack-gnome-${LANG} language-pack-gnome-${LANG}-base
+spellcheck         = hunspell-${LANG}
+# The desktop is provided by the upstream metapackage (mod 05) until packages/ ships.
+gnome-desktop      =
+rdp-client         = remmina remmina-plugin-rdp
+vpn                = network-manager-openvpn-gnome wireguard-tools
+printing           = cups printer-driver-all
+smartcard          = opensc pcscd
+directory          = sssd realmd adcli krb5-user libpam-sss libnss-sss oddjob-mkhomedir
+hardening          = apparmor-profiles-extra ufw auditd fwupd unattended-upgrades
+usbguard           = usbguard
+openscap           = libopenscap8 ssg-base
+containers         = podman buildah skopeo
+evince             = evince
+gnome-calendar     = gnome-calendar
+build-essential    = build-essential
+gdb                = gdb
+cmake              = cmake
+code-oss           = code
+ssh-server         = openssh-server
+web-admin          = cockpit cockpit-podman cockpit-networkmanager cockpit-storaged
+virtualization     = qemu-system libvirt-daemon-system virtinst
+gpu-nvidia         = nvidia-driver-580-open nvidia-cuda-toolkit nvidia-utils-580
+gpu-amd            = rocminfo rocm-smi
+gpu-intel          = intel-opencl-icd libze-intel-gpu1 libze1 intel-media-va-driver-non-free
+ai-dev             = python3-torch python3-venv python3-pip llama.cpp

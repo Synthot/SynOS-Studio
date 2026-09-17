@@ -1,0 +1,9 @@
+Package: synos-oobe
+Version: 2.0.2-7+synos1
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: python3, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, dconf-cli, ufw, flatpak, pkexec, synos-appearance, network-manager, synos-secureboot-toolkit, synos-driver-center
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} OOBE — First-run setup wizard and Welcome Center

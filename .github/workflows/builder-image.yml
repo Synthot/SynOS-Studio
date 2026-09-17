@@ -1,0 +1,105 @@
+# Publishes the builder container images: one per base and suite, for amd64
+# and arm64, from bases/<base>/Containerfile, to GHCR. Each image carries the
+# engine at /opt/synos, so the launcher in every bundle (docs/BUNDLE.md)
+# builds with it and `tools/synos build --pull` uses it from a checkout.
+#   ghcr.io/<owner>/synos-builder:<base>-<suite>          multi-arch, latest master
+#   ghcr.io/<owner>/synos-builder:<base>-<suite>-<tag>    multi-arch, pinned by release tag (v*)
+# Set SYNOS_IMAGE_REPOSITORY on a fork to point the launchers at your registry.
+name: Builder image
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  BASES: |
+    ubuntu resolute
+    debian trixie
+
+jobs:
+  image:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {base: ubuntu, suite: resolute}
+          - {base: debian, suite: trixie}
+    runs-on: ubuntu-24.04
+    env: { ARCH: amd64 }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release tags must match VERSION (the launchers pin images by it)
+        if: github.ref_type == 'tag'
+        run: test "v$(cat VERSION)" = "${{ github.ref_name }}" || { echo "tag ${{ github.ref_name }} but VERSION is $(cat VERSION)"; exit 1; }
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build
+        run: |
+          owner=$(echo "${{ github.repository_owner }}" | tr 'A-Z' 'a-z')
+          image="ghcr.io/$owner/synos-builder:${{ matrix.base }}-${{ matrix.suite }}-$ARCH"
+          podman build --build-arg SUITE=${{ matrix.suite }} -t "$image" -f bases/${{ matrix.base }}/Containerfile .
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+      - name: Smoke test
+        run: podman run --rm "$IMAGE" sh -c 'debootstrap --version && python3 -c "import yaml, jsonschema" && fakeroot true && synos version'
+      - name: Push the per-architecture image
+        run: podman push "$IMAGE"
+
+  image-arm64:
+    # arm64 runners are free for public repositories; set the repository
+    # variable SYNOS_ARM64=true to build the arm64 images as well.
+    if: vars.SYNOS_ARM64 == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {base: ubuntu, suite: resolute}
+          - {base: debian, suite: trixie}
+    runs-on: ubuntu-24.04-arm
+    env: { ARCH: arm64 }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build
+        run: |
+          owner=$(echo "${{ github.repository_owner }}" | tr 'A-Z' 'a-z')
+          image="ghcr.io/$owner/synos-builder:${{ matrix.base }}-${{ matrix.suite }}-$ARCH"
+          podman build --build-arg SUITE=${{ matrix.suite }} -t "$image" -f bases/${{ matrix.base }}/Containerfile .
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+      - name: Smoke test
+        run: podman run --rm "$IMAGE" sh -c 'debootstrap --version && synos version'
+      - name: Push the per-architecture image
+        run: podman push "$IMAGE"
+
+  manifest:
+    needs: [image, image-arm64]
+    if: ${{ !cancelled() && needs.image.result == 'success' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Multi-architecture manifests from the architectures that were built
+        run: |
+          set -e
+          owner=$(echo "${{ github.repository_owner }}" | tr 'A-Z' 'a-z')
+          echo "$BASES" | while read -r base suite; do
+            [ -n "$base" ] || continue
+            name="ghcr.io/$owner/synos-builder:$base-$suite"
+            members=""
+            for arch in amd64 arm64; do
+              if skopeo inspect "docker://$name-$arch" >/dev/null 2>&1; then members="$members docker://$name-$arch"; fi
+            done
+            if [ -z "$members" ]; then echo "no image built for $base $suite"; exit 1; fi
+            podman manifest rm "$name" 2>/dev/null || true
+            podman manifest create "$name" $members
+            podman manifest push --all "$name" "docker://$name"
+            if [ "${{ github.ref_type }}" = tag ]; then
+              podman manifest push --all "$name" "docker://$name-${{ github.ref_name }}"
+            fi
+            echo "published $name ($members)"
+          done

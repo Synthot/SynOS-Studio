@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+# systemd units (generated)
+if [ "$1" = "remove" ] && [ -d /run/systemd/system ]; then systemctl stop synos-zram.service >/dev/null 2>&1 || true; fi
+if [ "$1" = "remove" ] && [ -d /run/systemd/system ]; then systemctl stop synos-zswap.service >/dev/null 2>&1 || true; fi

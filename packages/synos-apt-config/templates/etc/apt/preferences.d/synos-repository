@@ -1,0 +1,5 @@
+# ${BRAND_NAME} packages win over same-named base archive packages
+# (forks and metapackages).
+Package: *
+Pin: origin ${REPO_HOST}
+Pin-Priority: 1001

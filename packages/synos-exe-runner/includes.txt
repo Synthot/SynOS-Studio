@@ -1,0 +1,7 @@
+# kind	source (relative to upstream/)	target	mode
+file	assets/synos-exe-runner	/usr/bin/synos-exe-runner	755
+file	assets/configure-bottles.py	/usr/share/synos-exe-runner/configure-bottles.py	644
+file	assets/recommendations.json	/usr/share/synos-exe-runner/recommendations.json	644
+folder	locale	/usr/share/locale	644
+file	data/com.synos.ExeRunner.desktop	/usr/share/applications/com.synos.ExeRunner.desktop	644
+file	data/synos-exe-runner.svg	/usr/share/icons/hicolor/scalable/apps/synos-exe-runner.svg	644

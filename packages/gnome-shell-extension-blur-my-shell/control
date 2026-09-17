@@ -1,0 +1,10 @@
+Package: gnome-shell-extension-blur-my-shell
+Version: 2.0.2-1+synos1
+Section: gnome
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-dconf-runtime, gnome-shell, dconf-gsettings-backend | gsettings-backend, gir1.2-adw-1, gir1.2-gtk-4.0
+Recommends: gnome-shell-extension-prefs | gnome-shell-extension-manager
+Homepage: ${BRAND_URL_HOME}
+Description: Adds a blur look to different parts of the GNOME Shell, including the top panel, dash and overview. You can support my work by sponsoring me on: - github: https://github.com/sponsors/aunetx - ko-fi: https://ko-fi.com/aunetx If you use Ubuntu, you may want to change the radius of the corner effect for Dash-to-Dock in preferences, else you may see unpleasantly mixed radii in your dock. Note: if the extension shows an error after updating, please make sure to restart your session to see if it persists. This is due to a bug in gnome shell, which I can't fix by myself. — packaged for ${BRAND_NAME}

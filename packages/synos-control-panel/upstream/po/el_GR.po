@@ -1,0 +1,672 @@
+# Greek translations for synos-control-panel package.
+# Copyright (C) 2026 THE synos-control-panel'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the synos-control-panel package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-control-panel\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-31 15:21+0000\n"
+"PO-Revision-Date: 2026-08-31 15:21+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: el_GR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/synos_control_panel/app.py:77 src/synos_control_panel/app.py:95
+#: data/com.synos.ControlPanel.desktop:3
+msgid "Control Panel"
+msgstr "Πίνακας ελέγχου"
+
+#: src/synos_control_panel/app.py:95
+msgid "SynOS"
+msgstr "SynOS"
+
+#: src/synos_control_panel/app.py:99 src/synos_control_panel/app.py:1750
+msgid "Search Control Panel"
+msgstr "Αναζήτηση στον πίνακα ελέγχου"
+
+#: src/synos_control_panel/app.py:100
+msgid "Search settings"
+msgstr "Αναζήτηση ρυθμίσεων"
+
+#: src/synos_control_panel/app.py:107
+msgid "About Control Panel"
+msgstr "Σχετικά με τον πίνακα ελέγχου"
+
+#: src/synos_control_panel/app.py:109
+msgid "Main Menu"
+msgstr "Κύριο μενού"
+
+#: src/synos_control_panel/app.py:131
+msgid "Adjust your computer's settings"
+msgstr "Προσαρμόστε τις ρυθμίσεις του υπολογιστή σας"
+
+#: src/synos_control_panel/app.py:134
+msgid "Choose a category below, or search for a setting."
+msgstr "Επιλέξτε μια κατηγορία παρακάτω ή αναζητήστε μια ρύθμιση."
+
+#: src/synos_control_panel/app.py:150
+msgid "No settings found"
+msgstr "Δεν βρέθηκαν ρυθμίσεις"
+
+#: src/synos_control_panel/app.py:151
+msgid "Try a different search."
+msgstr "Δοκιμάστε διαφορετική αναζήτηση."
+
+#: src/synos_control_panel/app.py:236
+msgid "Configure NetworkManager connection profiles"
+msgstr "Διαμόρφωση προφίλ συνδέσεων του NetworkManager"
+
+#: src/synos_control_panel/app.py:238
+msgid "Install Advanced Network Configuration"
+msgstr "Εγκατάσταση προηγμένης διαμόρφωσης δικτύου"
+
+#: src/synos_control_panel/app.py:245
+msgid "System"
+msgstr "Σύστημα"
+
+#: src/synos_control_panel/app.py:250
+msgid "Security"
+msgstr "Ασφάλεια"
+
+#: src/synos_control_panel/app.py:255
+msgid "Network and Internet"
+msgstr "Δίκτυο και Διαδίκτυο"
+
+#: src/synos_control_panel/app.py:260
+msgid "User Accounts"
+msgstr "Λογαριασμοί χρηστών"
+
+#: src/synos_control_panel/app.py:268
+msgid "Hardware and Drivers"
+msgstr "Υλικό και οδηγοί"
+
+#: src/synos_control_panel/app.py:276
+msgid "Scan documents and select a scanner"
+msgstr "Σάρωση εγγράφων και επιλογή σαρωτή"
+
+#: src/synos_control_panel/app.py:278
+msgid "Install Document Scanner"
+msgstr "Εγκατάσταση σαρωτή εγγράφων"
+
+#: src/synos_control_panel/app.py:284
+msgid "Appearance"
+msgstr "Εμφάνιση"
+
+#: src/synos_control_panel/app.py:292
+msgid "Programs"
+msgstr "Εφαρμογές"
+
+#: src/synos_control_panel/app.py:299
+msgid "Manage application permissions with Flatseal"
+msgstr "Διαχείριση αδειών εφαρμογών με το Flatseal"
+
+#: src/synos_control_panel/app.py:301
+msgid "Install Flatseal to manage application permissions"
+msgstr "Εγκατάσταση του Flatseal για τη διαχείριση των αδειών εφαρμογών"
+
+#: src/synos_control_panel/app.py:307
+msgid "AI Stack"
+msgstr "Στοίβα τεχνητής νοημοσύνης"
+
+#: src/synos_control_panel/app.py:312
+msgid "Installed"
+msgstr "Εγκατεστημένο"
+
+#: src/synos_control_panel/app.py:312
+msgid "Not installed"
+msgstr "Μη εγκατεστημένο"
+
+#: src/synos_control_panel/app.py:317
+msgid "Configure microphone, language, shortcut, and training"
+msgstr "Διαμόρφωση μικροφώνου, γλώσσας, συντόμευσης και εκπαίδευσης"
+
+#: src/synos_control_panel/app.py:319
+msgid "Install private, offline speech-to-text"
+msgstr "Εγκατάσταση ιδιωτικής, εκτός σύνδεσης αναγνώρισης ομιλίας"
+
+#: src/synos_control_panel/app.py:325 src/synos_control_panel/app.py:860
+msgid "Windows Compatibility"
+msgstr "Συμβατότητα με Windows"
+
+#: src/synos_control_panel/app.py:331
+msgid "Open your Windows application environments"
+msgstr "Άνοιγμα των περιβαλλόντων εφαρμογών Windows"
+
+#: src/synos_control_panel/app.py:333
+msgid "Install Bottles to run Windows applications"
+msgstr "Εγκατάσταση του Bottles για την εκτέλεση εφαρμογών Windows"
+
+#: src/synos_control_panel/app.py:339
+msgid "Backup and Recovery"
+msgstr "Αντίγραφα ασφαλείας και επαναφορά"
+
+#: src/synos_control_panel/app.py:371
+msgid "Open Deja Dup backups"
+msgstr "Άνοιγμα αντιγράφων ασφαλείας Deja Dup"
+
+#: src/synos_control_panel/app.py:373
+msgid "Install Deja Dup from the app store"
+msgstr "Εγκατάσταση του Deja Dup από το κατάστημα εφαρμογών"
+
+#: src/synos_control_panel/app.py:384 src/synos_control_panel/app.py:398
+#: src/synos_control_panel/app.py:412
+#: src/synos_control_panel/app.py:1781
+msgid "Setting not found"
+msgstr "Η ρύθμιση δεν βρέθηκε"
+
+#: src/synos_control_panel/app.py:520 src/synos_control_panel/app.py:531
+#: src/synos_control_panel/app.py:540
+msgid "Could not open this setting"
+msgstr "Δεν ήταν δυνατό το άνοιγμα αυτής της ρύθμισης"
+
+#: src/synos_control_panel/app.py:539
+msgid "The application exited before it could be opened."
+msgstr "Η εφαρμογή τερματίστηκε πριν μπορέσει να ανοίξει."
+
+#: src/synos_control_panel/app.py:546
+msgid "OK"
+msgstr "Εντάξει"
+
+#: src/synos_control_panel/app.py:552 src/synos_control_panel/app.py:830
+#, python-format
+msgid "Install %s?"
+msgstr "Εγκατάσταση του %s;"
+
+#: src/synos_control_panel/app.py:554
+#, python-format
+msgid ""
+"%s is a recommended component, but it is not installed. You can reinstall it"
+" now."
+msgstr ""
+"Το προτεινόμενο στοιχείο δεν είναι εγκατεστημένο: %s. Μπορείτε να το "
+"εγκαταστήσετε ξανά τώρα."
+
+#: src/synos_control_panel/app.py:559 src/synos_control_panel/app.py:833
+#: src/synos_control_panel/app.py:934
+#: src/synos_control_panel/app.py:1141
+#: src/synos_control_panel/app.py:1332
+#: src/synos_control_panel/app.py:1538
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+#: src/synos_control_panel/app.py:560
+#: src/synos_control_panel/app.py:1334
+msgid "Install"
+msgstr "Εγκατάσταση"
+
+#: src/synos_control_panel/app.py:569
+#, python-format
+msgid "Installing %s…"
+msgstr "Εγκατάσταση του %s…"
+
+#: src/synos_control_panel/app.py:578
+#, python-format
+msgid "%s installed"
+msgstr "Η εγκατάσταση ολοκληρώθηκε: %s"
+
+#: src/synos_control_panel/app.py:585 src/synos_control_panel/app.py:798
+msgid "Authentication was cancelled."
+msgstr "Η πιστοποίηση ακυρώθηκε."
+
+#: src/synos_control_panel/app.py:587
+msgid "The recommended component could not be installed."
+msgstr "Δεν ήταν δυνατή η εγκατάσταση του προτεινόμενου στοιχείου."
+
+#: src/synos_control_panel/app.py:588
+msgid "Installation failed"
+msgstr "Η εγκατάσταση απέτυχε"
+
+#: src/synos_control_panel/app.py:635
+msgid "Startup and Boot"
+msgstr "Έναρξη εφαρμογών και εκκίνηση συστήματος"
+
+#: src/synos_control_panel/app.py:653
+msgid "Boot menu"
+msgstr "Μενού εκκίνησης"
+
+#: src/synos_control_panel/app.py:655
+msgid ""
+"Choose how long the boot menu waits before starting the default system."
+msgstr ""
+"Επιλέξτε πόσο χρόνο θα περιμένει το μενού εκκίνησης πριν εκκινήσει το "
+"προεπιλεγμένο σύστημα."
+
+#: src/synos_control_panel/app.py:659
+msgid "Boot menu wait time"
+msgstr "Χρόνος αναμονής μενού εκκίνησης"
+
+#: src/synos_control_panel/app.py:661
+msgid "The same delay is used after an interrupted or unsuccessful startup."
+msgstr ""
+"Η ίδια καθυστέρηση χρησιμοποιείται και μετά από διακοπή ή αποτυχημένη "
+"εκκίνηση."
+
+#: src/synos_control_panel/app.py:668
+#, python-format
+msgid "%d seconds"
+msgstr "%d s"
+
+#: src/synos_control_panel/app.py:676
+msgid "Boot display"
+msgstr "Οθόνη εκκίνησης"
+
+#: src/synos_control_panel/app.py:678
+msgid "Choose the size of the GRUB menu and startup logo."
+msgstr "Επιλέξτε το μέγεθος του μενού GRUB και του λογότυπου εκκίνησης."
+
+#: src/synos_control_panel/app.py:682
+msgid "Display mode"
+msgstr "Λειτουργία προβολής"
+
+#: src/synos_control_panel/app.py:684
+msgid "Native resolution shows more detail; large text is easier to read."
+msgstr ""
+"Η εγγενής ανάλυση δείχνει περισσότερες λεπτομέρειες· το μεγάλο κείμενο είναι"
+" πιο εύκολο να διαβαστεί."
+
+#: src/synos_control_panel/app.py:692
+msgid "Native resolution"
+msgstr "Εγγενής ανάλυση"
+
+#: src/synos_control_panel/app.py:692
+msgid "Large text mode"
+msgstr "Λειτουργία μεγάλου κειμένου"
+
+#: src/synos_control_panel/app.py:714
+#: src/synos_control_panel/app.py:1007
+#: src/synos_control_panel/app.py:1214
+#: src/synos_control_panel/app.py:1431
+#: src/synos_control_panel/app.py:1623
+msgid "Close"
+msgstr "Κλείσιμο"
+
+#: src/synos_control_panel/app.py:716
+#: src/synos_control_panel/app.py:1540
+#: src/synos_control_panel/app.py:1544
+msgid "Apply"
+msgstr "Εφαρμογή"
+
+#: src/synos_control_panel/app.py:776
+msgid "Updating the boot menu…"
+msgstr "Ενημέρωση του μενού εκκίνησης…"
+
+#: src/synos_control_panel/app.py:790
+msgid "Boot settings updated. The change applies on the next startup."
+msgstr ""
+"Οι ρυθμίσεις εκκίνησης ενημερώθηκαν. Η αλλαγή ισχύει την επόμενη εκκίνηση."
+
+#: src/synos_control_panel/app.py:793
+msgid "Boot settings updated"
+msgstr "Οι ρυθμίσεις εκκίνησης ενημερώθηκαν"
+
+#: src/synos_control_panel/app.py:800
+msgid "The boot setting could not be changed."
+msgstr "Δεν ήταν δυνατή η αλλαγή της ρύθμισης εκκίνησης."
+
+#: src/synos_control_panel/app.py:831
+msgid "This application is available from the app store."
+msgstr "Αυτή η εφαρμογή είναι διαθέσιμη από το κατάστημα εφαρμογών."
+
+#: src/synos_control_panel/app.py:834
+msgid "Open App Store"
+msgstr "Άνοιγμα καταστήματος εφαρμογών"
+
+#: src/synos_control_panel/app.py:878
+msgid "Bottles"
+msgstr "Bottles"
+
+#: src/synos_control_panel/app.py:880
+msgid ""
+"Run Windows applications in isolated compatibility environments powered by "
+"Wine and Bottles."
+msgstr ""
+"Εκτέλεση εφαρμογών Windows σε απομονωμένα περιβάλλοντα συμβατότητας με τη "
+"χρήση του Wine και του Bottles."
+
+#: src/synos_control_panel/app.py:885
+msgid "Install Bottles"
+msgstr "Εγκατάσταση του Bottles"
+
+#: src/synos_control_panel/app.py:886
+msgid "Downloads Bottles and its runtime from Flathub"
+msgstr "Λήψη του Bottles και του περιβάλλοντος εκτέλεσής του από το Flathub"
+
+#: src/synos_control_panel/app.py:902
+#: src/synos_control_panel/app.py:1109
+#: src/synos_control_panel/app.py:1302
+#: src/synos_control_panel/app.py:1506
+msgid "Advanced Output"
+msgstr "Αναλυτικές πληροφορίες"
+
+#: src/synos_control_panel/app.py:936
+#: src/synos_control_panel/app.py:1143
+msgid "Start"
+msgstr "Έναρξη"
+
+#: src/synos_control_panel/app.py:978
+#: src/synos_control_panel/app.py:1185
+#: src/synos_control_panel/app.py:1371
+msgid "Installing…"
+msgstr "Εγκατάσταση…"
+
+#: src/synos_control_panel/app.py:980
+msgid "Downloading and installing Bottles… This may take a few minutes."
+msgstr "Λήψη και εγκατάσταση του Bottles… Αυτό μπορεί να πάρει μερικά λεπτά."
+
+#: src/synos_control_panel/app.py:985
+msgid "Preparing Flathub and Bottles installation…"
+msgstr "Προετοιμασία εγκατάστασης του Flathub και του Bottles…"
+
+#: src/synos_control_panel/app.py:999
+msgid "✓ Bottles is ready."
+msgstr "✓ Το Bottles είναι έτοιμο."
+
+#: src/synos_control_panel/app.py:1003
+#: src/synos_control_panel/app.py:1210
+#: src/synos_control_panel/app.py:1398
+#: src/synos_control_panel/app.py:1619
+msgid "✓ Installation completed successfully."
+msgstr "✓ Η εγκατάσταση ολοκληρώθηκε επιτυχώς."
+
+#: src/synos_control_panel/app.py:1005
+msgid "Open Bottles"
+msgstr "Άνοιγμα του Bottles"
+
+#: src/synos_control_panel/app.py:1010
+msgid "Bottles installed"
+msgstr "Εγκαταστάθηκε το Bottles"
+
+#: src/synos_control_panel/app.py:1016
+#: src/synos_control_panel/app.py:1223
+#: src/synos_control_panel/app.py:1442
+msgid "✗ Installation failed. Review Advanced Output."
+msgstr "✗ Η εγκατάσταση απέτυχε. Ελέγξτε τις αναλυτικές πληροφορίες."
+
+#: src/synos_control_panel/app.py:1021
+#: src/synos_control_panel/app.py:1228
+#: src/synos_control_panel/app.py:1447
+#: src/synos_control_panel/app.py:1642
+msgid "✗ Operation failed: "
+msgstr "✗ Η λειτουργία απέτυχε: "
+
+#: src/synos_control_panel/app.py:1023
+#: src/synos_control_panel/app.py:1230
+#: src/synos_control_panel/app.py:1449
+#: src/synos_control_panel/app.py:1644
+msgid "Retry"
+msgstr "Επαναδοκιμή"
+
+#: src/synos_control_panel/app.py:1053
+msgid "Deja Dup Backups"
+msgstr "Αντίγραφα ασφαλείας Deja Dup"
+
+#: src/synos_control_panel/app.py:1067
+msgid "Permission Settings"
+msgstr "Ρυθμίσεις δικαιωμάτων"
+
+#: src/synos_control_panel/app.py:1085
+msgid "Flatseal"
+msgstr "Flatseal"
+
+#: src/synos_control_panel/app.py:1087
+msgid ""
+"Review and control what files, devices, network connections, and services "
+"Flatpak applications can access."
+msgstr ""
+"Εξετάστε και ελέγξτε ποια αρχεία, συσκευές, συνδέσεις δικτύου και υπηρεσίες "
+"μπορούν να προσπελάσουν οι εφαρμογές Flatpak."
+
+#: src/synos_control_panel/app.py:1092
+msgid "Install Flatseal"
+msgstr "Εγκατάσταση του Flatseal"
+
+#: src/synos_control_panel/app.py:1094
+msgid "Administrator authentication is required when installation starts"
+msgstr "Απαιτείται πιστοποίηση διαχειριστή κατά την έναρξη της εγκατάστασης"
+
+#: src/synos_control_panel/app.py:1186
+msgid "Downloading and installing Flatseal…"
+msgstr "Λήψη και εγκατάσταση του Flatseal…"
+
+#: src/synos_control_panel/app.py:1191
+msgid "Preparing Flatseal installation…"
+msgstr "Προετοιμασία εγκατάστασης του Flatseal…"
+
+#: src/synos_control_panel/app.py:1206
+msgid "✓ Flatseal is ready."
+msgstr "✓ Το Flatseal είναι έτοιμο."
+
+#: src/synos_control_panel/app.py:1212
+msgid "Open Flatseal"
+msgstr "Άνοιγμα του Flatseal"
+
+#: src/synos_control_panel/app.py:1217
+msgid "Flatseal installed"
+msgstr "Εγκαταστάθηκε το Flatseal"
+
+#: src/synos_control_panel/app.py:1249
+msgid "Install Voice Typing"
+msgstr "Εγκατάσταση φωνητικής πληκτρολόγησης"
+
+#: src/synos_control_panel/app.py:1267
+msgid "Offline Voice Typing"
+msgstr "Φωνητική πληκτρολόγηση εκτός σύνδεσης"
+
+#: src/synos_control_panel/app.py:1269
+msgid ""
+"Press Super + H to dictate into browsers, editors, messages, terminals, and "
+"other applications. Audio stays on this computer."
+msgstr ""
+"Πατήστε Super + H για να υπαγορεύσετε σε προγράμματα περιήγησης, προγράμματα"
+" επεξεργασίας, μηνύματα, τερματικά και άλλες εφαρμογές. Τα δεδομένα ήχου "
+"παραμένουν σε αυτόν τον υπολογιστή."
+
+#: src/synos_control_panel/app.py:1274
+msgid "Private by default"
+msgstr "Ιδιωτικότητα από προεπιλογή"
+
+#: src/synos_control_panel/app.py:1275
+msgid "Speech is recognized locally with whisper.cpp"
+msgstr ""
+"Η αναγνώριση ομιλίας γίνεται σε αυτόν τον υπολογιστή με το whisper.cpp"
+
+#: src/synos_control_panel/app.py:1280
+msgid "About 140 MB to download"
+msgstr "Περίπου 140 MB για λήψη"
+
+#: src/synos_control_panel/app.py:1282
+msgid ""
+"Includes the multilingual Base model; optional models are available later"
+msgstr ""
+"Περιλαμβάνει το πολυγλωσσικό μοντέλο Base· τα προαιρετικά μοντέλα θα είναι "
+"διαθέσιμα αργότερα"
+
+#: src/synos_control_panel/app.py:1291
+msgid "Administrator authentication is required when installation starts."
+msgstr "Απαιτείται πιστοποίηση διαχειριστή κατά την έναρξη της εγκατάστασης."
+
+#: src/synos_control_panel/app.py:1376
+msgid "Downloading the local engine and multilingual speech model…"
+msgstr "Λήψη του τοπικού μηχανισμού και του πολυγλωσσικού μοντέλου ομιλίας…"
+
+#: src/synos_control_panel/app.py:1382
+msgid "Preparing Voice Typing installation…"
+msgstr "Προετοιμασία εγκατάστασης φωνητικής πληκτρολόγησης…"
+
+#: src/synos_control_panel/app.py:1425
+msgid ""
+"✓ Installed. Sign out and back in once, then press Super + H to start Voice "
+"Typing."
+msgstr ""
+"✓ Εγκαταστάθηκε. Αποσυνδεθείτε και συνδεθείτε ξανά μία φορά. Στη συνέχεια, "
+"πατήστε Super + H για να ξεκινήσετε τη φωνητική πληκτρολόγηση."
+
+#: src/synos_control_panel/app.py:1429
+msgid "Open Settings"
+msgstr "Άνοιγμα ρυθμίσεων"
+
+#: src/synos_control_panel/app.py:1435
+msgid "Voice Typing installed — sign out to finish"
+msgstr ""
+"Η φωνητική πληκτρολόγηση εγκαταστάθηκε — αποσυνδεθείτε για να ολοκληρωθεί η "
+"διαδικασία"
+
+#: src/synos_control_panel/app.py:1466
+msgid "On-device AI"
+msgstr "Τεχνητή νοημοσύνη στη συσκευή"
+
+#: src/synos_control_panel/app.py:1484
+msgid "Why AI"
+msgstr "Why AI"
+
+#: src/synos_control_panel/app.py:1486
+msgid ""
+"Run the Why AI assistant locally. The model and runtime are installed only "
+"when this option is enabled."
+msgstr ""
+"Εκτέλεση του βοηθού Why AI σε αυτόν τον υπολογιστή. Το μοντέλο και το "
+"περιβάλλον εκτέλεσης εγκαθίστανται μόνο όταν αυτή η επιλογή είναι "
+"ενεργοποιημένη."
+
+#: src/synos_control_panel/app.py:1491
+msgid "Install on-device AI"
+msgstr "Εγκατάσταση τεχνητής νοημοσύνης στη συσκευή"
+
+#: src/synos_control_panel/app.py:1492
+msgid "Enable the local Why AI stack on this computer"
+msgstr "Ενεργοποίηση της τοπικής στοίβας Why AI σε αυτόν τον υπολογιστή"
+
+#: src/synos_control_panel/app.py:1586
+msgid "Applying…"
+msgstr "Εφαρμογή…"
+
+#: src/synos_control_panel/app.py:1588
+msgid "Downloading and installing Why AI… This may take about 10 minutes."
+msgstr ""
+"Λήψη και εγκατάσταση του Why AI… Αυτό μπορεί να πάρει περίπου 10 λεπτά."
+
+#: src/synos_control_panel/app.py:1590
+msgid "Disabling the local Why AI stack…"
+msgstr "Απενεργοποίηση της τοπικής στοίβας Why AI…"
+
+#: src/synos_control_panel/app.py:1597
+msgid "Preparing package operation…"
+msgstr "Προετοιμασία λειτουργίας πακέτου…"
+
+#: src/synos_control_panel/app.py:1611
+msgid "✓ On-device AI is ready."
+msgstr "✓ Η τεχνητή νοημοσύνη στη συσκευή είναι έτοιμη."
+
+#: src/synos_control_panel/app.py:1613
+msgid "✓ On-device AI is disabled."
+msgstr "✓ Η τεχνητή νοημοσύνη στη συσκευή είναι απενεργοποιημένη."
+
+#: src/synos_control_panel/app.py:1619
+msgid "✓ Change completed successfully."
+msgstr "✓ Η αλλαγή ολοκληρώθηκε επιτυχώς."
+
+#: src/synos_control_panel/app.py:1628
+msgid "On-device AI enabled"
+msgstr "Η τεχνητή νοημοσύνη στη συσκευή ενεργοποιήθηκε"
+
+#: src/synos_control_panel/app.py:1630
+msgid "On-device AI disabled"
+msgstr "Η τεχνητή νοημοσύνη στη συσκευή απενεργοποιήθηκε"
+
+#: src/synos_control_panel/app.py:1638
+msgid "✗ Package operation failed. Review Advanced Output."
+msgstr "✗ Η λειτουργία πακέτου απέτυχε. Ελέγξτε τις αναλυτικές πληροφορίες."
+
+#: src/synos_control_panel/app.py:1715
+#, python-brace-format
+msgid "{command} exited with status {status}"
+msgstr "Η εντολή {command} τερματίστηκε με κωδικό εξόδου {status}"
+
+#: src/synos_control_panel/app.py:1742
+msgid "Open a Control Panel topic"
+msgstr "Άνοιγμα θέματος του πίνακα ελέγχου"
+
+#: src/synos_control_panel/app.py:1743
+msgid "TOPIC"
+msgstr "ΘΕΜΑ"
+
+#: src/synos_control_panel/app.py:1751
+msgid "TERMS"
+msgstr "ΟΡΟΙ"
+
+#: src/synos_control_panel/app.py:1788
+msgid "SynOS Control Panel"
+msgstr "Πίνακας ελέγχου SynOS"
+
+#: src/synos_control_panel/app.py:1790
+msgid "SynOS Team"
+msgstr "Ομάδα SynOS"
+
+#: src/synos_control_panel/app.py:1792
+msgid "Find and manage SynOS system settings."
+msgstr "Αναζήτηση και διαχείριση των ρυθμίσεων συστήματος του SynOS."
+
+#: data/com.synos.ControlPanel.desktop:11
+msgid "settings;control;system;hardware;drivers;accounts;backup;"
+msgstr ""
+"ρυθμίσεις;έλεγχος;σύστημα;υλικό;οδηγοί;λογαριασμοί;αντίγραφα ασφαλείας;"
+
+#: synos-control-panel/data/com.synos.ControlPanel.policy:8
+msgid "Change boot menu settings"
+msgstr "Αλλαγή ρυθμίσεων μενού εκκίνησης"
+
+#: synos-control-panel/data/com.synos.ControlPanel.policy:10
+msgid "Authentication is required to change boot menu settings"
+msgstr ""
+"Απαιτείται έλεγχος ταυτότητας για την αλλαγή των ρυθμίσεων του μενού "
+"εκκίνησης"
+
+#: data/com.synos.ControlPanel.desktop:4
+msgid "Find and manage SynOS system settings"
+msgstr "Αναζήτηση και διαχείριση των ρυθμίσεων συστήματος του SynOS"
+
+#: src/synos_control_panel/app.py
+msgid "Authentication is required to read the boot menu."
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Current setting (unchanged)"
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Custom setting (unchanged)"
+msgstr "Προσαρμοσμένη ρύθμιση (αμετάβλητη)"
+
+#: src/synos_control_panel/app.py
+msgid "Default operating system"
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Load operating systems"
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "No supported operating systems were found in the boot menu."
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Only operating systems already in the boot menu are listed."
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Reading the boot menu…"
+msgstr ""
+
+#: src/synos_control_panel/app.py
+msgid "Starts automatically when the boot menu wait time ends."
+msgstr "Εκκινείται αυτόματα όταν λήξει ο χρόνος αναμονής του μενού εκκίνησης."
+
+#: src/synos_control_panel/app.py
+msgid "The boot menu could not be read."
+msgstr ""

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://synos.example/schema/bundle.schema.json",
+  "title": "SynOS configuration bundle descriptor (bundle.json)",
+  "description": "Written at the root of a configuration bundle by any generator (the web configurator, a script, a person). The build tool refuses bundles whose format it does not know or whose engine requirement it does not meet.",
+  "type": "object",
+  "required": ["format", "manifest"],
+  "additionalProperties": false,
+  "properties": {
+    "format": {"type": "integer", "minimum": 1, "description": "Bundle layout version; 1 is described in docs/BUNDLE.md"},
+    "manifest": {"type": "string", "pattern": "^manifests/[a-z0-9][a-z0-9-]{0,63}\\.yml$", "description": "The manifest to build, relative to the bundle root"},
+    "engine": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "min": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$", "description": "Oldest build engine (VERSION file) that understands this bundle"}
+      }
+    },
+    "generator": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "maxLength": 80},
+        "version": {"type": "string", "maxLength": 40},
+        "url": {"type": "string", "maxLength": 200}
+      }
+    },
+    "created": {"type": "string", "description": "ISO 8601 timestamp"},
+    "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$", "description": "Short name of the configuration (the manifest file name without .yml)"},
+    "description": {"type": "string", "maxLength": 500},
+    "files": {
+      "type": "array", "items": {"type": "string", "minLength": 1},
+      "description": "Optional list of every file in the bundle, for integrity reporting"
+    }
+  }
+}

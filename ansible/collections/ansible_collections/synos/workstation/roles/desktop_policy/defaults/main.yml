@@ -1,0 +1,4 @@
+desktop_policy_dconf: {}        # {"org/gnome/desktop/screensaver/lock-delay": "uint32 300"}
+desktop_policy_locks: []        # ["/org/gnome/desktop/background/picture-uri"]
+desktop_policy_browser_homepage: ""
+desktop_policy_browser_extensions: []

@@ -1,0 +1,14 @@
+id: workstation
+extends: minimal
+description: Office workstation. Office suite, mail, browser, VPN, printing, remote desktop.
+software:
+  bundles: [office, communication, remote-access, printing, vpn]
+  packages:
+    add: [keepassxc]
+  flatpak:
+    apps: []
+    preinstall: true
+  defaults:
+    browser: browser
+    mail: mail
+    pdf: org.gnome.Evince

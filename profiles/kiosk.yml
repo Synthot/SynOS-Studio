@@ -1,0 +1,16 @@
+id: kiosk
+extends: minimal
+description: Single application, automatic login, no shell access, no USB storage.
+software:
+  packages:
+    add: [browser]
+    remove: [gnome-terminal, nautilus]
+installer:
+  automatic_login: true
+  encryption: required
+security:
+  usbguard: true
+policy:
+  kiosk_app: browser
+  dconf:
+    org.gnome.desktop.lockdown.disable-command-line: locked

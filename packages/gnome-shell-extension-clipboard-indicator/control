@@ -1,0 +1,10 @@
+Package: gnome-shell-extension-clipboard-indicator
+Version: 2.0.2-1+synos1
+Section: gnome
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: synos-dconf-runtime, gnome-shell, dconf-gsettings-backend | gsettings-backend, gir1.2-adw-1, gir1.2-gtk-4.0
+Recommends: gnome-shell-extension-prefs | gnome-shell-extension-manager
+Homepage: ${BRAND_URL_HOME}
+Description: The most popular clipboard manager for GNOME, with over 1M downloads — packaged for ${BRAND_NAME}

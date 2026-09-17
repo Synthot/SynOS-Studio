@@ -1,0 +1,23 @@
+# Unattended answer file for the native installer: a VDI or VM template.
+# Served by Packer over HTTP; the same file works for PXE and zero-touch USB.
+# The installer contract (keys, values) is finalised with the installer rebuild
+# in migration step 4; this is the shape the profile schema already uses.
+schema_version: 1
+locale: fr_FR.UTF-8
+keyboard: fr
+timezone: Europe/Paris
+hostname: synos-vdi-template
+storage:
+  disk: auto            # largest disk
+  filesystem: btrfs
+  encryption: off       # templates are cloned; encrypt at clone time or with TPM at first boot
+users:
+  - name: packer        # install-only; removed by the Packer provisioner
+    password_hash: "$6$packerinstall$SnBWRG0clbPpizMveUV/URw0cDyKpajC8QdOyubMq3ztuI0Hyq6OUSyjPVHwjciSVL8S4k1Qq2hcsWr.b0Rxu0"   # packer-install-only
+    sudo: passwordless
+    ssh_authorized_keys: []
+network:
+  dhcp: true
+ssh: enabled            # so Packer can finish; the role turns it off at first boot if the profile says so
+first_boot:
+  ansible_pull: ""      # set by the fleet_enrollment role in the profile

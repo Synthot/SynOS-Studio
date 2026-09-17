@@ -1,0 +1,8 @@
+Package: synos-templates
+Version: 2.0.2-1+synos1
+Section: misc
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Homepage: ${BRAND_URL_HOME}
+Description: Default file templates for new ${BRAND_NAME} users (Text, Markdown)

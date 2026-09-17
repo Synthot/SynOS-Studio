@@ -1,0 +1,11 @@
+Package: synos-apt-config
+Version: ${VERSION}
+Section: admin
+Priority: important
+Architecture: all
+Depends: synos-archive-keyring
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Description: ${BRAND_NAME} package repository configuration
+ Adds the ${BRAND_NAME} package repository to apt. The repository URL is
+ the manifest's packages.repository; the source is shipped disabled when
+ none is configured.

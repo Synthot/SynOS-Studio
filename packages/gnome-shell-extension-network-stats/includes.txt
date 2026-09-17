@@ -1,0 +1,4 @@
+# kind	source (relative to upstream/)	target	mode
+folder	deploy/${SUITE}/network-stats@gnome.noroadsleft.xyz	/usr/share/gnome-shell/extensions/network-stats@gnome.noroadsleft.xyz	644
+file	toggle_network_stats	/usr/local/bin/toggle_network_stats	755
+file	dconf/17-network-stats.conf	/etc/dconf/db/synos.d/17-network-stats.conf	644

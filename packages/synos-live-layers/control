@@ -1,0 +1,10 @@
+Package: synos-live-layers
+Version: 2.0.2-3+synos1
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: dracut, dracut-core, dmsetup, parted, e2fsprogs, util-linux, isomd5sum
+Conflicts: casper, initramfs-tools, initramfs-tools-core, initramfs-tools-bin, busybox-initramfs, finalrd, live-tools
+Homepage: ${BRAND_URL_HOME}
+Description: Dracut-native ${BRAND_NAME} Live root and layer integration

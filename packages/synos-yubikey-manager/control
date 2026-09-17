@@ -1,0 +1,9 @@
+Package: synos-yubikey-manager
+Version: 2.0.2-6+synos1
+Section: admin
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: libpam-u2f, pamu2fcfg, fido2-tools, openssh-client, yubikey-manager, polkitd, python3, gdm3
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} YubiKey Security Center — protect sign-in, sudo, SSH, and Git with security keys

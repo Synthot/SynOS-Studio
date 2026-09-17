@@ -1,0 +1,10 @@
+Package: synos-xbox-controller-driver
+Version: 2.0.2-1+synos1
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: dkms, linux-headers-generic-hwe-26.04, bluez, joystick
+Depends[debian]: dkms, linux-headers-${ARCH}, bluez, joystick
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Xbox Controller Driver (xpadneo) - seamless Bluetooth gamepad support

@@ -1,0 +1,38 @@
+- name: dconf profile consults the brand database
+  ansible.builtin.lineinfile:
+    path: /etc/dconf/profile/user
+    line: "system-db:local"
+    insertafter: "^user-db:user$"
+    create: true
+    mode: "0644"
+  notify: dconf update
+
+- name: dconf defaults
+  ansible.builtin.copy:
+    dest: /etc/dconf/db/local.d/50-policy
+    mode: "0644"
+    content: |
+      {% set groups = {} %}
+      {% for key, value in desktop_policy_dconf.items() %}{% set _ = groups.setdefault(key.rsplit('/', 1)[0], []).append(key.rsplit('/', 1)[1] ~ '=' ~ value) %}{% endfor %}
+      {% for path, entries in groups.items() %}
+      [{{ path }}]
+      {% for entry in entries %}{{ entry }}
+      {% endfor %}
+      {% endfor %}
+  when: desktop_policy_dconf | length > 0
+  notify: dconf update
+
+- name: dconf locks
+  ansible.builtin.copy:
+    dest: /etc/dconf/db/local.d/locks/50-policy
+    mode: "0644"
+    content: "{{ desktop_policy_locks | join('\n') }}\n"
+  when: desktop_policy_locks | length > 0
+  notify: dconf update
+
+- name: Firefox enterprise policy
+  ansible.builtin.copy:
+    dest: /etc/firefox/policies/policies.json
+    mode: "0644"
+    content: "{{ {'policies': {'Homepage': {'URL': desktop_policy_browser_homepage, 'StartPage': 'homepage'}, 'DisableTelemetry': true}} | to_nice_json }}"
+  when: desktop_policy_browser_homepage | length > 0

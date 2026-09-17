@@ -1,0 +1,143 @@
+"""Convert unprivileged wizard choices into a validated installation plan."""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from dataclasses import replace
+
+from languages import DEFAULT_LOCALE, Language, language_for_locale
+
+from .model import (
+    AccessSpec,
+    BootSpec,
+    AuthenticationMode,
+    Firmware,
+    Filesystem,
+    IdentitySpec,
+    InstallMode,
+    InstallPlan,
+    KeyboardSpec,
+    MokPasswordPolicy,
+    PlatformSpec,
+    RegionalSpec,
+    SCHEMA_VERSION,
+    SoftwareSpec,
+    SourceSpec,
+    StorageSpec,
+)
+from .hostnames import normalize_hostname
+from .probe import PlatformProbe
+from .storage_graph_planning import build_erase_disk_storage_graph
+from .storage_inventory import DiskTopologyBinding
+from .swap_policy import (
+    calculate_swap_sizing,
+    probe_physical_memory_bytes,
+    validate_disk_swap_selection,
+)
+from .validation import validate_plan
+from .model import DiskIdentity, SecureBoot
+
+
+def build_plan(
+    choices: Mapping[str, object],
+    disk: DiskIdentity,
+    platform: PlatformProbe,
+    password_hash: str,
+    *,
+    disk_binding: DiskTopologyBinding,
+    inventory_digest: str,
+    physical_memory_probe=probe_physical_memory_bytes,
+) -> InstallPlan:
+    locale = str(choices.get("locale") or DEFAULT_LOCALE)
+    language = language_for_locale(locale)
+    if language is None:
+        raise ValueError(f"Unsupported installer locale: {locale}")
+    swap_sizing = calculate_swap_sizing(
+        physical_memory_probe(),
+        disk.expected_size_bytes,
+    )
+    requested_swap = choices.get("swap_size_mib")
+    swap_size_mib = (
+        swap_sizing.swap_size_mib
+        if requested_swap is None
+        else requested_swap
+    )
+    validate_disk_swap_selection(swap_size_mib, swap_sizing)
+    plan = InstallPlan(
+        schema_version=SCHEMA_VERSION,
+        source=SourceSpec(),
+        storage=StorageSpec(
+            mode=InstallMode.ERASE_DISK,
+            disk=disk,
+            filesystem=Filesystem(str(choices.get("filesystem") or "btrfs")),
+            swap_size_mib=swap_size_mib,
+        ),
+        platform=PlatformSpec(
+            architecture=platform.architecture,
+            firmware=platform.firmware,
+            secure_boot=platform.secure_boot,
+        ),
+        identity=IdentitySpec(
+            hostname=normalize_hostname(str(choices.get("hostname") or "")),
+            username=str(choices.get("username") or ""),
+            full_name=str(choices.get("full_name") or ""),
+            authentication=AuthenticationMode.PASSWORD,
+            password_hash=password_hash,
+        ),
+        access=AccessSpec(
+            sudo_without_password=bool(
+                choices.get("sudo_without_password", False)
+            ),
+            automatic_login=bool(
+                choices.get("automatic_login", False)
+            ),
+            ssh_password_login=bool(
+                choices.get("ssh_password_login", False)
+            ),
+        ),
+        regional=RegionalSpec(
+            locale=locale,
+            timezone=str(choices.get("timezone") or ""),
+            keyboard=KeyboardSpec(
+                str(choices.get("keyboard") or ""),
+                str(choices.get("keyboard_variant") or ""),
+            ),
+            input_methods=_input_method_choices(choices, language),
+        ),
+        software=SoftwareSpec(
+            install_updates=bool(choices.get("install_updates", True)),
+            install_third_party_drivers=bool(
+                choices.get("install_third_party_drivers", False)
+            ),
+            install_multimedia_codecs=bool(
+                choices.get("install_multimedia_codecs", False)
+            ),
+        ),
+        boot=BootSpec(
+            install_fallback_path=platform.firmware is Firmware.BIOS,
+            mok_password_policy=(
+                MokPasswordPolicy.SYNOS_DEFAULT
+                if platform.secure_boot is SecureBoot.ENABLED
+                else MokPasswordPolicy.NOT_APPLICABLE
+            )
+        ),
+    )
+    graph = build_erase_disk_storage_graph(
+        plan,
+        disk_binding,
+        inventory_digest,
+    )
+    plan = replace(plan, storage=replace(plan.storage, graph=graph))
+    validate_plan(plan)
+    return plan
+
+
+def _input_method_choices(
+    choices: Mapping[str, object], language: Language
+) -> tuple[str, ...]:
+    selected = choices.get("input_methods", language.default_input_methods)
+    if not isinstance(selected, (tuple, list)):
+        raise ValueError("Input methods must be a list or tuple")
+    if not all(isinstance(method_id, str) for method_id in selected):
+        raise ValueError("Input method identifiers must be strings")
+    return tuple(selected)

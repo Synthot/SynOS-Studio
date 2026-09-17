@@ -1,0 +1,38 @@
+- name: Directory client packages
+  ansible.builtin.apt:
+    name: [sssd, sssd-tools, realmd, adcli, krb5-user, libpam-sss, libnss-sss, oddjob, oddjob-mkhomedir, packagekit]
+    state: present
+    install_recommends: false
+  when: directory_join_type in ['active-directory', 'freeipa', 'ldap']
+
+- name: Discover the realm
+  ansible.builtin.command: "realm discover {{ directory_join_domain }}"
+  register: directory_join_discover
+  changed_when: false
+  when: directory_join_type in ['active-directory', 'freeipa']
+
+- name: Join the realm
+  ansible.builtin.shell: >
+    printf '%s' "{{ directory_join_password }}" |
+    realm join --user "{{ directory_join_user }}"
+    {% if directory_join_ou %}--computer-ou "{{ directory_join_ou }}"{% endif %}
+    "{{ directory_join_domain }}"
+  no_log: true
+  when: >-
+    directory_join_type in ['active-directory', 'freeipa']
+    and 'configured: no' in directory_join_discover.stdout
+
+- name: Create home directories at first login
+  ansible.builtin.command: pam-auth-update --enable mkhomedir
+  changed_when: false
+  when: directory_join_type != 'none'
+
+- name: Restrict logins to the allowed groups
+  ansible.builtin.command: "realm permit -g {{ item }}"
+  loop: "{{ directory_join_allowed_groups }}"
+  when: directory_join_type in ['active-directory', 'freeipa'] and directory_join_allowed_groups | length > 0
+
+- name: Entra ID needs himmelblau (installed from its own repository)
+  ansible.builtin.debug:
+    msg: "Entra ID join uses himmelblau; add its repository to the profile's software.repositories and configure /etc/himmelblau/himmelblau.conf with domain {{ directory_join_domain }}."
+  when: directory_join_type == 'entra-id'

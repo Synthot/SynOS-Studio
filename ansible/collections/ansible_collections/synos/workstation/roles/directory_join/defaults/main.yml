@@ -1,0 +1,6 @@
+directory_join_type: none          # none | active-directory | freeipa | ldap | entra-id
+directory_join_domain: ""
+directory_join_user: ""            # join credentials, pass via vault or --extra-vars
+directory_join_password: ""
+directory_join_allowed_groups: []
+directory_join_ou: ""

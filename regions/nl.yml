@@ -1,0 +1,9 @@
+id: nl
+name: Nederland
+locales: [nl_NL.UTF-8]
+keyboard: us
+timezone: Europe/Amsterdam
+mirror: http://ftp.nl.debian.org/debian/
+compliance: bio
+eid: []
+paper: a4

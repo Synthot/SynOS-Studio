@@ -1,0 +1,511 @@
+# SynOS Appearance — Hindi translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: Hindi\n"
+"Language: hi_IN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "SynOS की उपस्थिति के बारे में"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "उन्नत"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "SynOS की उपस्थिति"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "SynOS टीम"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "उपस्थिति"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "लॉगिन स्क्रीन पर लागू करें"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "नीचे"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "रद्द करें"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "GDM लॉगिन स्क्रीन पृष्ठभूमि के लिए एक छवि चुनें।"
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "अपने टास्कबार का दृश्य शैली चुनें।"
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "चुनें…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "क्लासिक"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr "एक ही ऐप की कई विंडो को एक आइकन में संयोजित करें"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "खतरनाक क्षेत्र"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "टास्कबार पर गतिविधियाँ बटन प्रदर्शित करें"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "समूहीकरण सक्षम करें"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "एक्सटेंशन सेटिंग्स"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "GDM वॉलपेपर"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "ऐप्स को समूहित करें"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "छवियाँ"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "लॉन्चर को चल रहे ऐप्स से अलग करें"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "लेआउट"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "बाएं"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "लॉगिन स्क्रीन वॉलपेपर"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "खोलें"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "पैनल एक्सटेंशनों की प्राथमिकता विंडो खोलें।"
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "पैनल इंडिकेटर्स"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "पैनल विजेट्स"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "पूर्वावलोकन"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "रीसेट करें"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "डेस्कटॉप सेटिंग्स रीसेट करें"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "डेस्कटॉप सेटिंग्स रीसेट करें?"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "डेस्कटॉप का रूप, खोज, ऐप फ़ोल्डर और गोपनीयता को फ़ैक्टरी डिफ़ॉल्ट पर पुनर्स्थापित करें"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "दाएं"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "छवि चुनें"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "अलग"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "गतिविधियाँ बटन दिखाएँ"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "डेस्कटॉप आइकॉन्स दिखाएं"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "नेटवर्क दिखाएं"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "मौसम दिखाएं"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "अंतर्निहित पैनल तत्वों को दिखाएं या छिपाएं।"
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "टास्कबार तत्व"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "टास्कबार शैली"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr "पैनल इंडिकेटर विजेट्स को चालू या बंद करें।"
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "ऊपर"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "ट्वीक्स"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "Vista टास्कबार व्यवहार"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "वॉलपेपर"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "केंद्रित"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ लागू किया गया — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ डेस्कटॉप सेटिंग रीसेट हो गई हैं। सभी बदलाव लागू करने के लिए लॉग आउट करके फिर से लॉग इन करें।"
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ GDM वॉलपेपर लागू किया गया"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ स्थिति लागू करने में विफल"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ शैली लागू करने में विफल"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ रीसेट करने में विफल"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ GDM वॉलपेपर सेट करने में विफल"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ गतिविधियाँ बटन टॉगल करने में विफल"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ कृपया पहले एक छवि चुनें"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "इससे एक्सटेंशन, पैनल लेआउट, खोज प्राथमिकताएँ, ऐप फ़ोल्डर, वॉलपेपर, इंटरफ़ेस और गोपनीयता प्राथमिकताएँ फ़ैक्टरी डिफ़ॉल्ट पर पुनर्स्थापित हो जाएँगी।"
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "Network Stats"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Simple Weather"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr "मौसम के लिए अनुमानित स्थान अपडेट करें"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "मौसम सेवाओं के लिए गोपनीयता समझौता"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. अनुमानित स्थान (ipapi.co)\n"
+"SynOS ipapi.co पर एक HTTPS अनुरोध करेगा। इसकी संचालक कंपनी, Kloudend, Inc., आपका सार्वजनिक IP पता देखेगी और आपके शहर, देश तथा अनुमानित निर्देशांकों का अनुमान लगाने के लिए इसका उपयोग कर सकती है।\n"
+"\n"
+"2. मौसम डेटा (Open-Meteo)\n"
+"मौसम एक्सटेंशन चुने गए अनुमानित निर्देशांक Open-Meteo को भेजेगा, जिसका संचालन OpenMeteo GmbH करती है। यह सेवा आपका सार्वजनिक IP पता भी देखेगी और API लॉग 90 दिनों तक रख सकती है।\n"
+"\n"
+"SynOS इन दोनों तृतीय-पक्ष सेवाओं में से किसी से संबद्ध नहीं है, न ही उनसे प्रायोजित या समर्थित है। यदि स्थान का पता लगाना विफल रहता है, तो SynOS आपके सिस्टम के समय क्षेत्र के आधार पर ऑफ़लाइन अनुमान का उपयोग करेगा।\n"
+"\n"
+"गोपनीयता नीतियाँ:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "अस्वीकार करें"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "सभी को स्वीकार करें"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr "मौसम सुविधा सक्षम नहीं की गई क्योंकि अनुमति अस्वीकार कर दी गई।"
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "मौसम सुविधा की अनुमति सहेजी नहीं जा सकी।"
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "आपका अनुमानित स्थान निर्धारित किया जा रहा है…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "मौसम एक्सटेंशन को कॉन्फ़िगर नहीं किया जा सका।"
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "मौसम के लिए स्थान {location} पर सेट कर दिया गया है।"
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr ""
+"स्थान सेवा उपलब्ध नहीं है; आपके समय क्षेत्र के आधार पर {location} का उपयोग "
+"किया जा रहा है।"
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr ""
+"मौसम सुविधा अक्षम कर दी गई, लेकिन उसके लिए सहेजी गई अनुमति हटाई नहीं जा सकी।"
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"GNOME सेटिंग्स, लेआउट और एक्सटेंशन प्राथमिकताओं का बैकअप लें। व्यक्तिगत "
+"फ़ाइलें शामिल नहीं हैं।"
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "बैकअप और पुनर्स्थापना"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "GNOME सेटिंग्स निर्यात करें"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "GNOME सेटिंग्स निर्यात करें"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "निर्यात करें…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "इन सेटिंग्स को कैसे आयात किया जाए?"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "INI सेटिंग्स फ़ाइलें"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "GNOME सेटिंग्स आयात करें"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "GNOME सेटिंग्स आयात करें"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "आयात करें…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "मर्ज करके आयात करें"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"मर्ज करके आयात करने पर फ़ाइल में मौजूद न होने वाले वर्तमान मान सुरक्षित रहते हैं।\n"
+"\n"
+"पूर्ण पुनर्स्थापना पहले सभी /org/gnome/ सेटिंग्स को रीसेट करती है; फ़ाइल में मौजूद न होने वाले मान अपने डिफ़ॉल्ट मानों पर लौट जाते हैं। दोनों में से किसी भी कार्रवाई से पहले एक सुरक्षा बैकअप सहेजा जाता है।"
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "dconf INI फ़ाइल से सेटिंग्स पुनर्स्थापित करें"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr "वर्तमान सेटिंग्स को एक पठनीय INI फ़ाइल के रूप में सहेजें"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "पूर्ण पुनर्स्थापना करें"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ GNOME सेटिंग्स निर्यात की गईं"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ सेटिंग्स आयात की गईं। सभी बदलाव लागू करने के लिए लॉग आउट करके फिर से लॉग "
+"इन करें।"
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ GNOME सेटिंग्स निर्यात करने में विफल"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ GNOME सेटिंग्स आयात करने में विफल"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ सेटिंग्स फ़ाइल पढ़ने में विफल"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr "✗ आयात और स्वचालित रोलबैक दोनों विफल रहे"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr "✗ आयात विफल रहा; पिछली सेटिंग्स पुनर्स्थापित कर दी गईं"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ चयनित फ़ाइल एक मान्य dconf INI फ़ाइल नहीं है"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "टास्कबार;पैनल;लेआउट;शैली;विंडो;रूप-रंग;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr "केंद्रित और क्लासिक टास्कबार लेआउट के बीच स्विच करें"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ गतिविधियाँ बटन छिपाया गया"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ गतिविधियाँ बटन दिखाया गया"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ {label} अक्षम किया गया"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ {label} सक्षम किया गया"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ {label} अक्षम करने में विफल"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ {label} सक्षम करने में विफल"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ गतिविधियाँ बटन — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action} किया गया"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ {action} {label} करने में विफल"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "टास्कबार स्थिति"
+
+#~ msgid "Panel Position"
+#~ msgstr "पैनल स्थिति"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "अपने टास्कबार को स्क्रीन पर कहाँ रखें, यह चुनें।"

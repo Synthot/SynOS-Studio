@@ -1,0 +1,516 @@
+# SynOS Appearance — Romanian translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: Romanian\n"
+"Language: ro_RO\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2);\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "Despre aspectul SynOS"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "Avansat"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "Aspectul SynOS"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "Echipa SynOS"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "Aspect"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "Aplicați la ecranul de autentificare"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "Jos"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "Anulează"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "Alegeți o imagine pentru fundalul ecranului de autentificare GDM."
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "Alege stilul vizual al barei de activități."
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "Alegeți…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "Clasic"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr ""
+"Combinați mai multe ferestre ale unei aplicații într-o singură "
+"pictogramăCombină mai multe ferestre ale unei aplicații într-o singură "
+"pictogramă"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "Zona de pericol"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "Afișează butonul Activități pe bara de activități"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "Activează gruparea"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "Setări extensii"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "Fundal GDM"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "Grupează aplicațiile"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "Imagini"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "Separă lansatoarele de aplicațiile în execuție"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "Aranjament"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "Stânga"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "Fundal ecran de autentificare"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "Deschide"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "Deschide ferestrele de preferințe ale extensiilor panoului."
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "Indicatori panou"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "Widget-uri panou"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "Previzualizare"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "Resetează"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "Resetează setările desktopului"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "Resetezi setările desktopului?"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "Restabilește aspectul desktopului, căutarea, dosarele aplicațiilor și confidențialitatea la setările din fabrică"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "Dreapta"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "Selectați imaginea"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "Separat"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "Afișează butonul Activități"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "Afișează pictogramele desktopului"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "Arată rețeaua"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "Arată vremea"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "Afișați sau ascundeți elementele de panou încorporate."
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "Elemente din bara de activități"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "Stilul barei de activități"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr "Activează sau dezactivează widget-urile indicatorului panoului."
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "Sus"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "Optimizări"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "Comportament bară de activități Vista"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "Imagine fundal"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "Centrat"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ Aplicat — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ Setările desktopului au fost resetate. Deconectați-vă și reconectați-vă pentru a aplica toate modificările."
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ Fundal GDM aplicat"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ Nu s-a putut aplica poziția"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ Nu s-a putut aplica stilul"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ Resetare eșuată"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ Eșec la setarea fundalului GDM"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ Nu s-a putut comuta butonul de activități"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ Vă rugăm să selectați mai întâi o imagine"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "Aceasta va restabili extensiile, aranjamentul panoului, preferințele de căutare, dosarele aplicațiilor, fundalul, interfața și preferințele de confidențialitate la setările din fabrică."
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "Statistici de rețea"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Simple Weather"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr "Actualizează locația aproximativă pentru prognoza meteo"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "Acord de confidențialitate pentru serviciile meteo"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. Locație aproximativă (ipapi.co)\n"
+"SynOS va efectua o singură cerere HTTPS către ipapi.co. Operatorul acestuia, Kloudend, Inc., va vedea adresa IP publică și o poate folosi pentru a estima orașul, țara și coordonatele aproximative.\n"
+"\n"
+"2. Date meteo (Open-Meteo)\n"
+"Extensia de prognoză meteo va trimite coordonatele aproximative selectate către Open-Meteo, operat de OpenMeteo GmbH. Serviciul va vedea, de asemenea, adresa IP publică și poate păstra jurnalele API până la 90 de zile.\n"
+"\n"
+"SynOS nu este afiliat, sponsorizat sau recomandat de niciunul dintre aceste servicii terțe. Dacă detectarea locației eșuează, SynOS va folosi o estimare offline bazată pe fusul orar al sistemului.\n"
+"\n"
+"Politici de confidențialitate:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "Respinge"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "Sunt de acord cu toate"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr ""
+"Prognoza meteo nu a fost activată deoarece permisiunea a fost respinsă."
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "Nu s-a putut salva permisiunea pentru funcția meteo."
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "Se determină locația aproximativă…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "Nu s-a putut configura extensia meteo."
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "Locația pentru funcția meteo a fost setată la {location}."
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr ""
+"Serviciul de localizare nu este disponibil; se utilizează {location}, pe "
+"baza fusului orar al sistemului."
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr ""
+"Funcția meteo a fost dezactivată, dar permisiunea salvată nu a putut fi "
+"ștearsă."
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"Creați o copie de rezervă a setărilor GNOME, a aranjamentelor și a "
+"preferințelor extensiilor. Fișierele personale nu sunt incluse."
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "Copie de rezervă și restaurare"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "Exportă setările GNOME"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "Exportă setările GNOME"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "Exportă…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "Cum ar trebui importate aceste setări?"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "Fișiere de setări INI"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "Importă setările GNOME"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "Importă setările GNOME"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "Importă…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "Import cu îmbinare"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"Importul cu îmbinare păstrează valorile curente care nu sunt prezente în fișier.\n"
+"\n"
+"Restaurarea completă resetează mai întâi toate setările din /org/gnome/; valorile care nu sunt prezente în fișier revin la valorile implicite. Înainte de fiecare operație se salvează o copie de rezervă."
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "Restaurează setările dintr-un fișier dconf în format INI"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr "Salvează setările curente într-un fișier INI ușor de citit"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "Restaurare completă"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ Setările GNOME au fost exportate"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ Setările au fost importate. Deconectează-te și reconectează-te pentru a "
+"aplica toate modificările."
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ Eșec la exportul setărilor GNOME"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ Eșec la importul setărilor GNOME"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ Nu s-a putut citi fișierul de setări"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr "✗ Importul și restaurarea automată au eșuat ambele"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr "✗ Importul a eșuat; setările anterioare au fost restaurate"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ Fișierul selectat nu este un fișier dconf valid în format INI"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "bară de activități;panou;dispunere;stil;ferestre;aspect;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr "Comutați între aspectul Centrat și cel clasic al barei de activități"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ Butonul Activități a fost ascuns"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ Butonul Activități a fost afișat"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ {label} dezactivat"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ {label} activat"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ Nu s-a putut dezactiva {label}"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ Nu s-a putut activa {label}"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ Buton activități — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action}"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ Nu s-a putut {action} {label}"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "Poziția barei de activități"
+
+#~ msgid "Panel Position"
+#~ msgstr "Poziție panou"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "Alege unde se află bara de activități pe ecran."

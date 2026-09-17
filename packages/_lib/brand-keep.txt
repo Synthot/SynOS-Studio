@@ -1,0 +1,9 @@
+# Literals that keep the product name even when a brand kit renames the
+# distribution (tools/build_packages.py brand pass). One literal per line.
+# Everything else that reads "SynOS" as a whole word in a text file or a
+# compiled translation becomes the brand's display_name at build time. The
+# lowercase namespace (synos-*, com.synos.*, rd.synos.*, filesystem labels) is
+# never touched.
+#
+# HTTP product tokens may not contain spaces.
+SynOS-Installer/

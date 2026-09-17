@@ -1,0 +1,27 @@
+# First real build. Fewest moving parts: live mirrors, default brand,
+# workstation profile, two regions. Run on a machine with Podman:
+#
+#   make container-build MANIFEST=manifests/test-build.yml 2>&1 | tee test-build.log
+#
+schema_version: 1
+name: synos-test-build
+version: 1.0.0
+
+base: ubuntu
+suite: resolute
+arch: amd64
+
+profile: workstation
+regions: [fr, us]
+brand: synos
+
+mirrors: {}             # live archive; add snapshot: YYYY-MM-DD for reproducible builds
+
+packages:
+  repository: ""        # no published repository yet; the source ships disabled
+  takeover: all
+
+image:
+  squashfs_level: 12   # faster test builds; releases use the default 19
+
+overrides: {}

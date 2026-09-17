@@ -1,0 +1,117 @@
+# Builds this configuration bundle into an installable image (Windows).
+#
+#   .\build.ps1            build; the ISO and its evidence land in .\dist
+#   .\build.ps1 check      only check that this machine can build (installs nothing)
+#   .\build.ps1 -Yes       answer yes to the questions (install Docker Desktop)
+#
+# Needs Docker Desktop or Podman Desktop (WSL 2 backend) and 40 GB free.
+# When neither is present it offers to install Docker Desktop with winget.
+# Nothing else is installed: the SynOS build engine runs inside a container
+# image published for the exact engine version this bundle was made for.
+# Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
+# (another registry, default ghcr.io/synthot/synos-builder), SYNOS_YES=1.
+[CmdletBinding()]
+param([string]$Command = "", [switch]$Yes)
+$ErrorActionPreference = "Stop"
+Set-Location -Path $PSScriptRoot
+if ($env:SYNOS_YES) { $Yes = $true }
+
+function Fail([string]$Message, [int]$Code = 1) { Write-Host "error: $Message" -ForegroundColor Red; exit $Code }
+function Ask([string]$Question) {
+    if ($Yes) { return $true }
+    $answer = Read-Host "$Question [y/N]"
+    return $answer -match '^(y|yes)$'
+}
+function Field([string]$File, [string]$Key) {
+    $line = Get-Content -Path $File | Where-Object { $_ -match "^$Key\s*:" } | Select-Object -First 1
+    if (-not $line) { return "" }
+    return ($line -replace "^$Key\s*:\s*", "" -replace '\s*#.*$', "" -replace '^"|"$', "").Trim()
+}
+
+# ---------------------------------------------------------------- the bundle
+if (-not (Test-Path "bundle.json")) { Fail "bundle.json is missing: run this script from the unzipped bundle folder" }
+$descriptor = Get-Content -Raw -Path "bundle.json" | ConvertFrom-Json
+$manifest = $descriptor.manifest
+if (-not $manifest -or -not (Test-Path $manifest)) { Fail "bundle.json names no manifest, or $manifest is missing" }
+$engine = if ($descriptor.engine -and $descriptor.engine.min) { $descriptor.engine.min } else { "" }
+$base = Field $manifest "base"
+$suite = Field $manifest "suite"
+if (-not $base -or -not $suite) { Fail "$manifest does not name a base and a suite" }
+
+# ---------------------------------------------------------------- the machine
+function Find-Runtime {
+    foreach ($name in "podman", "docker") {
+        $found = Get-Command $name -ErrorAction SilentlyContinue
+        if ($found) { return $found.Source }
+    }
+    return $null
+}
+$runtime = Find-Runtime
+if (-not $runtime) {
+    if ($Command -eq "check") { Fail "Docker Desktop or Podman Desktop is required; .\build.ps1 installs Docker Desktop for you" 2 }
+    Write-Host "No container runtime found. The build runs inside a Linux container, so Docker Desktop (or Podman Desktop) is required."
+    $winget = Get-Command winget -ErrorAction SilentlyContinue
+    if (-not $winget) { Fail "install Docker Desktop from https://www.docker.com/products/docker-desktop/ (WSL 2 backend), start it, then run this script again" 2 }
+    Write-Host "This will run: winget install -e --id Docker.DockerDesktop  (WSL 2 is enabled by the installer; a restart may be needed)"
+    if (-not (Ask "Install Docker Desktop now?")) { Fail "install Docker Desktop, start it, then run this script again" 2 }
+    & winget install -e --id Docker.DockerDesktop --accept-package-agreements --accept-source-agreements
+    if ($LASTEXITCODE -ne 0) { Fail "the installation failed; install Docker Desktop by hand, then run this script again" 2 }
+    Write-Host "Docker Desktop is installed. Start it from the Start menu, wait until it reports 'Engine running', then run this script again."
+    exit 2
+}
+& $runtime info *> $null
+if ($LASTEXITCODE -ne 0) { Fail "$runtime is installed but not running: start Docker Desktop (or Podman Desktop) and wait until the engine is running, then run this script again" 2 }
+$drive = (Get-Item -Path $PSScriptRoot).PSDrive
+$freeGb = [math]::Floor($drive.Free / 1GB)
+if ($freeGb -lt 40) { Fail "at least 40 GB free is needed on drive $($drive.Name): $freeGb GB available" 2 }
+
+# ---------------------------------------------------------------- the image
+$repository = if ($env:SYNOS_IMAGE_REPOSITORY) { $env:SYNOS_IMAGE_REPOSITORY } else { "ghcr.io/synthot/synos-builder" }
+$image = $env:SYNOS_BUILDER_IMAGE
+if (-not $image) {
+    $pinned = if ($engine) { "${repository}:$base-$suite-v$engine" } else { "${repository}:$base-$suite" }
+    $moving = "${repository}:$base-$suite"
+    Write-Host "pulling the build engine $pinned (one-time download, about 1.5 GB)"
+    & $runtime pull $pinned *> $null
+    if ($LASTEXITCODE -eq 0) { $image = $pinned }
+    else {
+        Write-Host "no image pinned to engine $engine; using the current $moving"
+        & $runtime pull $moving *> $null
+        if ($LASTEXITCODE -ne 0) { Fail "cannot pull ${moving}: check the network, or set SYNOS_BUILDER_IMAGE" 2 }
+        $image = $moving
+    }
+}
+
+if ($Command -eq "check") {
+    Write-Host "ready: $runtime, $freeGb GB free, engine image $image"
+    exit 0
+}
+
+# ---------------------------------------------------------------- the build
+New-Item -ItemType Directory -Force -Path "dist" | Out-Null
+Write-Host "building $manifest with $image"
+Write-Host "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
+Write-Host "the full output is kept in dist\build.log"
+& $runtime run --rm --privileged `
+    -v "${PSScriptRoot}:/bundle" `
+    -v "synos-cache-$base-${suite}:/opt/synos/.build" `
+    -v /opt/synos/new_building_os -v /opt/synos/image `
+    -e SYNOS_KEYS_DIR=.build/keys `
+    -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE `
+    $image synos build /bundle --output /bundle/dist --log /bundle/dist/build.log
+$status = $LASTEXITCODE
+if ($status -ne 0) {
+    Write-Host ""
+    Write-Host "the build did not finish (exit code $status). The complete output is in dist\build.log;"
+    Write-Host "search it for the first 'FAILED' or 'error:' line. Running build.cmd again resumes from the cache."
+    exit $status
+}
+$iso = Get-ChildItem -Path "dist" -Filter "*.iso" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+Write-Host ""
+Write-Host "done. Your image: dist\$($iso.Name)"
+Write-Host "next to it: .sha256 (checksum), .packages.lock, .sbom.cdx.json (what is inside), .resolved.json, build.log"
+Write-Host ""
+Write-Host "To install it:"
+Write-Host "  USB stick:       write the ISO with Rufus (https://rufus.ie) or balenaEtcher; keep the default GPT/UEFI settings."
+Write-Host "  Virtual machine: Hyper-V (Generation 2, Secure Boot template 'Microsoft UEFI Certificate Authority') or VirtualBox, 4 GB RAM, 40 GB disk."
+Write-Host "  Boot it, try the live desktop, then run the installer from the menu."

@@ -1,0 +1,11 @@
+id: jp
+name: Japan
+locales: [ja_JP.UTF-8]
+labels:
+  ja_JP: Japanese
+keyboard: jp
+timezone: Asia/Tokyo
+mirror: http://ftp.jp.debian.org/debian/
+compliance: none
+eid: []
+paper: a4

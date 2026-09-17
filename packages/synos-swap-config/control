@@ -1,0 +1,12 @@
+Package: synos-swap-config
+Version: 2.0.2-1+synos1
+Section: admin
+Priority: optional
+Architecture: ${ARCH}
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: util-linux
+Provides: synos-zram-config
+Conflicts: synos-zram-config
+Replaces: synos-zram-config
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Swap default configuration — enables 50%-of-RAM lz4 zram and swappiness=100 on boot. Zswap support is installed but remains opt-in via the GUI. Services are installed to /usr/lib/systemd/system/ so synos-swapcontrol-gtk controls them via declarative config files without dpkg conflicts.

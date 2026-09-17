@@ -1,0 +1,508 @@
+# SynOS Appearance — Thai translation.
+# Copyright (C) 2026 AnduinOS Team
+msgid ""
+msgstr ""
+"Project-Id-Version: synos-appearance\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-27 05:08+0000\n"
+"Language-Team: Thai\n"
+"Language: th_TH\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/synos-appearance:870
+msgid "About SynOS Appearance"
+msgstr "เกี่ยวกับรูปลักษณ์ของ SynOS"
+
+#: src/synos-appearance:504
+msgid "Advanced"
+msgstr "ขั้นสูง"
+
+#: src/synos-appearance:847 src/synos-appearance:907
+#: data/synos-appearance.desktop:26
+msgid "SynOS Appearance"
+msgstr "รูปลักษณ์ของ SynOS"
+
+#: src/synos-appearance:909
+msgid "SynOS Team"
+msgstr "ทีม SynOS"
+
+#: src/synos-appearance:509
+msgid "Appearance"
+msgstr "รูปลักษณ์"
+
+#: src/synos-appearance:789
+msgid "Apply to Login Screen"
+msgstr "นำไปใช้กับหน้าจอเข้าสู่ระบบ"
+
+#: src/synos-appearance:71
+msgid "Bottom"
+msgstr "ล่าง"
+
+#: src/synos-appearance:671 src/synos-appearance:732
+msgid "Cancel"
+msgstr "ยกเลิก"
+
+#: src/synos-appearance:769
+msgid "Choose an image for the GDM login screen background."
+msgstr "เลือกภาพสำหรับพื้นหลังหน้าจอเข้าสู่ระบบ GDM"
+
+#: src/synos-appearance:86
+msgid "Choose the visual style of your taskbar."
+msgstr "เลือกสไตล์ภาพของแถบงานของคุณ"
+
+#: src/synos-appearance:780
+msgid "Choose…"
+msgstr "เลือก…"
+
+#: src/synos-appearance:104 src/synos-appearance:237
+msgid "Classic"
+msgstr "คลาสสิก"
+
+#: src/synos-appearance:134
+msgid "Combine multiple windows of one app into a single icon"
+msgstr "รวมหลายหน้าต่างของแอปเดียวเป็นไอคอนเดียว"
+
+#: src/synos-appearance:587
+msgid "Danger Zone"
+msgstr "โซนอันตราย"
+
+#: src/synos-appearance:294
+msgid "Display the Activities button on the taskbar"
+msgstr "แสดงปุ่มกิจกรรมบนแถบงาน"
+
+#: src/synos-appearance:136
+msgid "Enable grouping"
+msgstr "เปิดใช้งานการจัดกลุ่ม"
+
+#: src/synos-appearance:533
+msgid "Extension Settings"
+msgstr "การตั้งค่าส่วนขยาย"
+
+#: src/synos-appearance:763
+msgid "GDM Wallpaper"
+msgstr "วอลเปเปอร์ GDM"
+
+#: src/synos-appearance:133
+msgid "Group apps"
+msgstr "จัดกลุ่มแอป"
+
+#: src/synos-appearance:801
+msgid "Images"
+msgstr "รูปภาพ"
+
+#: src/synos-appearance:144
+msgid "Keep launchers separate from running apps"
+msgstr "แยกตัวเรียกใช้งานออกจากแอปที่กำลังทำงาน"
+
+#: src/synos-appearance:99
+msgid "Layout"
+msgstr "เลย์เอาต์"
+
+#: src/synos-appearance:71
+msgid "Left"
+msgstr "ซ้าย"
+
+#: src/synos-appearance:768
+msgid "Login Screen Wallpaper"
+msgstr "วอลเปเปอร์หน้าจอเข้าสู่ระบบ"
+
+#: src/synos-appearance:513 src/synos-appearance:523
+#: src/synos-appearance:546
+msgid "Open"
+msgstr "เปิด"
+
+#: src/synos-appearance:534
+msgid "Open the preference windows of the panel extensions."
+msgstr "เปิดหน้าต่างการตั้งค่าของส่วนขยายแผง"
+
+#: src/synos-appearance:259
+msgid "Panel Indicators"
+msgstr "ตัวบ่งชี้แผง"
+
+#: src/synos-appearance:255
+msgid "Panel Widgets"
+msgstr "วิดเจ็ตแผง"
+
+#: src/synos-appearance:85
+msgid "Preview"
+msgstr "ตัวอย่าง"
+
+#: src/synos-appearance:592 src/synos-appearance:733
+msgid "Reset"
+msgstr "รีเซ็ต"
+
+#: src/synos-appearance:590
+msgid "Reset desktop settings"
+msgstr "รีเซ็ตการตั้งค่าเดสก์ท็อป"
+
+#: src/synos-appearance:728
+msgid "Reset desktop settings?"
+msgstr "รีเซ็ตการตั้งค่าเดสก์ท็อปหรือไม่?"
+
+#: src/synos-appearance:591
+msgid "Restore desktop appearance, search, app folders, and privacy to factory defaults"
+msgstr "คืนค่ารูปลักษณ์เดสก์ท็อป การค้นหา โฟลเดอร์แอป และความเป็นส่วนตัวเป็นค่าเริ่มต้นจากโรงงาน"
+
+#: src/synos-appearance:71
+msgid "Right"
+msgstr "ขวา"
+
+#: src/synos-appearance:779
+msgid "Select image"
+msgstr "เลือกภาพ"
+
+#: src/synos-appearance:106 src/synos-appearance:236
+msgid "Separated"
+msgstr "แยก"
+
+#: src/synos-appearance:293
+msgid "Show Activities Button"
+msgstr "แสดงปุ่มกิจกรรม"
+
+#: src/synos-appearance:245
+msgid "Show Desktop Icons"
+msgstr "แสดงไอคอนบนเดสก์ท็อป"
+
+#: src/synos-appearance:244
+msgid "Show Network"
+msgstr "แสดงเครือข่าย"
+
+#: src/synos-appearance:243
+msgid "Show Weather"
+msgstr "แสดงสภาพอากาศ"
+
+#: src/synos-appearance:290
+msgid "Show or hide built-in panel elements."
+msgstr "แสดงหรือซ่อนองค์ประกอบแผงในตัว"
+
+#: src/synos-appearance:289
+msgid "Taskbar Elements"
+msgstr "องค์ประกอบแถบงาน"
+
+#: src/synos-appearance:80 data/synos-appearance.desktop:49
+msgid "Taskbar Style"
+msgstr "สไตล์แถบงาน"
+
+#: src/synos-appearance:260
+msgid "Toggle panel indicator widgets on or off."
+msgstr "เปิดหรือปิดวิดเจ็ตตัวบ่งชี้แผง"
+
+#: src/synos-appearance:71
+msgid "Top"
+msgstr "บน"
+
+#: src/synos-appearance:522
+msgid "Tweaks"
+msgstr "การปรับแต่ง"
+
+#: src/synos-appearance:143
+msgid "Use Vista taskbar behavior"
+msgstr "พฤติกรรมแถบงานแบบ Vista"
+
+#: src/synos-appearance:512
+msgid "Wallpaper"
+msgstr "วอลเปเปอร์"
+
+#: src/synos-appearance:102 src/synos-appearance:234
+msgid "Centered"
+msgstr "กึ่งกลาง"
+
+#: src/synos-appearance:165 src/synos-appearance:200
+msgid "✓ Applied — {style} | {pos}"
+msgstr "✓ นำไปใช้แล้ว — {style} | {pos}"
+
+#: src/synos-appearance:722
+msgid "✓ Desktop settings reset. Log out and back in to apply all changes."
+msgstr "✓ รีเซ็ตการตั้งค่าเดสก์ท็อปแล้ว ออกจากระบบแล้วเข้าสู่ระบบอีกครั้งเพื่อใช้การเปลี่ยนแปลงทั้งหมด"
+
+#: src/synos-appearance:837
+msgid "✓ GDM wallpaper applied"
+msgstr "✓ ใช้วอลเปเปอร์ GDM แล้ว"
+
+#: src/synos-appearance:202
+msgid "✗ Failed to apply position"
+msgstr "✗ ล้มเหลวในการนำตำแหน่งไปใช้"
+
+#: src/synos-appearance:167
+msgid "✗ Failed to apply style"
+msgstr "✗ ล้มเหลวในการนำสไตล์ไปใช้"
+
+#: src/synos-appearance:724
+msgid "✗ Failed to reset"
+msgstr "✗ ล้มเหลวในการรีเซ็ต"
+
+#: src/synos-appearance:839
+msgid "✗ Failed to set GDM wallpaper"
+msgstr "✗ ไม่สามารถตั้งค่าวอลเปเปอร์ GDM ได้"
+
+#: src/synos-appearance:315
+msgid "✗ Failed to toggle activities button"
+msgstr "✗ ไม่สามารถสลับปุ่มกิจกรรมได้"
+
+#: src/synos-appearance:822
+msgid "✗ Please select an image first"
+msgstr "✗ กรุณาเลือกภาพก่อน"
+
+#: src/synos-appearance:729
+msgid "This will restore extensions, panel layout, search preferences, app folders, wallpaper, interface, and privacy preferences to factory defaults."
+msgstr "การดำเนินการนี้จะคืนค่าส่วนขยาย เค้าโครงแผง การตั้งค่าการค้นหา โฟลเดอร์แอป ภาพพื้นหลัง ส่วนติดต่อ และการตั้งค่าความเป็นส่วนตัวเป็นค่าเริ่มต้นจากโรงงาน"
+
+#: src/synos-appearance:537
+msgid "ArcMenu"
+msgstr "ArcMenu"
+
+#: src/synos-appearance:538
+msgid "Dash-to-Panel"
+msgstr "Dash-to-Panel"
+
+#: src/synos-appearance:540
+msgid "Network Stats"
+msgstr "สถิติเครือข่าย"
+
+#: src/synos-appearance:539
+msgid "Simple Weather"
+msgstr "Simple Weather"
+
+#: src/synos-appearance:275
+msgid "Update approximate weather location"
+msgstr "อัปเดตตำแหน่งสภาพอากาศโดยประมาณ"
+
+#: src/synos-appearance:379
+msgid "Weather Services Privacy Agreement"
+msgstr "ข้อตกลงความเป็นส่วนตัวของบริการสภาพอากาศ"
+
+#: src/synos-appearance:362
+msgid ""
+"1. Approximate location (ipapi.co)\n"
+"SynOS will make one HTTPS request to ipapi.co. Its operator, Kloudend, Inc., will see your public IP address and may use it to estimate your city, country, and approximate coordinates.\n"
+"\n"
+"2. Weather data (Open-Meteo)\n"
+"The weather extension will send the selected approximate coordinates to Open-Meteo, operated by OpenMeteo GmbH. The service will also see your public IP address and may retain API logs for up to 90 days.\n"
+"\n"
+"SynOS is not affiliated with, sponsored by, or endorsed by either third-party service. If location detection fails, SynOS will use an offline estimate based on your system timezone.\n"
+"\n"
+"Privacy policies:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+msgstr ""
+"1. ตำแหน่งโดยประมาณ (ipapi.co)\n"
+"SynOS จะส่งคำขอ HTTPS เพียงครั้งเดียวไปยัง ipapi.co ผู้ดำเนินการคือ Kloudend, Inc. ซึ่งจะเห็นที่อยู่ IP สาธารณะของคุณ และอาจใช้ข้อมูลนี้เพื่อประมาณเมือง ประเทศ และพิกัดโดยประมาณของคุณ\n"
+"\n"
+"2. ข้อมูลสภาพอากาศ (Open-Meteo)\n"
+"ส่วนขยายสภาพอากาศจะส่งพิกัดโดยประมาณที่คุณเลือกไปยัง Open-Meteo ซึ่งดำเนินการโดย OpenMeteo GmbH บริการนี้จะเห็นที่อยู่ IP สาธารณะของคุณเช่นกัน และอาจเก็บบันทึก API ไว้ได้นานถึง 90 วัน\n"
+"\n"
+"SynOS ไม่มีส่วนเกี่ยวข้อง ไม่ได้รับการสนับสนุน และไม่ได้รับการรับรองจากบริการของบุคคลที่สามทั้งสองนี้ หากการตรวจจับตำแหน่งล้มเหลว SynOS จะใช้ค่าประมาณแบบออฟไลน์โดยอิงจากเขตเวลาของระบบของคุณ\n"
+"\n"
+"นโยบายความเป็นส่วนตัว:\n"
+"https://ipapi.co/privacy/\n"
+"https://open-meteo.com/en/terms"
+
+#: src/synos-appearance:382
+msgid "Decline"
+msgstr "ปฏิเสธ"
+
+#: src/synos-appearance:383
+msgid "Agree to All"
+msgstr "ยอมรับทั้งหมด"
+
+#: src/synos-appearance:402
+msgid "Weather was not enabled because permission was declined."
+msgstr "ไม่ได้เปิดใช้งานฟีเจอร์สภาพอากาศเนื่องจากคุณปฏิเสธการอนุญาต"
+
+#: src/synos-appearance:423
+msgid "Failed to save weather permission."
+msgstr "ไม่สามารถบันทึกการอนุญาตสำหรับฟีเจอร์สภาพอากาศได้"
+
+#: src/synos-appearance:432
+msgid "Determining your approximate location…"
+msgstr "กำลังระบุตำแหน่งโดยประมาณของคุณ…"
+
+#: src/synos-appearance:481
+msgid "Failed to configure the weather extension."
+msgstr "ไม่สามารถกำหนดค่าส่วนขยายสภาพอากาศได้"
+
+#: src/synos-appearance:487
+#, python-brace-format
+msgid "Weather location set to {location}."
+msgstr "ตั้งค่าตำแหน่งสภาพอากาศเป็น {location} แล้ว"
+
+#: src/synos-appearance:491
+#, python-brace-format
+msgid "Location service unavailable; using {location} from your timezone."
+msgstr "บริการระบุตำแหน่งไม่พร้อมใช้งาน จึงใช้ {location} จากเขตเวลาของคุณแทน"
+
+#: src/synos-appearance:353
+msgid "Weather was disabled, but its saved permission could not be cleared."
+msgstr "ปิดใช้งานคุณสมบัติสภาพอากาศแล้ว แต่ไม่สามารถล้างสิทธิ์ที่บันทึกไว้ได้"
+
+#: src/synos-appearance:561
+msgid ""
+"Back up GNOME settings, layouts, and extension preferences. Personal files "
+"are not included."
+msgstr ""
+"สำรองข้อมูลการตั้งค่า GNOME เค้าโครง และการกำหนดค่าส่วนขยาย "
+"ไฟล์ส่วนตัวจะไม่รวมอยู่ในข้อมูลสำรอง"
+
+#: src/synos-appearance:559
+msgid "Backup and Restore"
+msgstr "สำรองข้อมูลและกู้คืน"
+
+#: src/synos-appearance:616
+msgid "Export GNOME Settings"
+msgstr "ส่งออกการตั้งค่า GNOME"
+
+#: src/synos-appearance:566
+msgid "Export GNOME settings"
+msgstr "ส่งออกการตั้งค่า GNOME"
+
+#: src/synos-appearance:568
+msgid "Export…"
+msgstr "ส่งออก…"
+
+#: src/synos-appearance:665
+msgid "How should these settings be imported?"
+msgstr "ควรนำเข้าการตั้งค่าเหล่านี้อย่างไร?"
+
+#: src/synos-appearance:608
+msgid "INI settings files"
+msgstr "ไฟล์การตั้งค่า INI"
+
+#: src/synos-appearance:642
+msgid "Import GNOME Settings"
+msgstr "นำเข้าการตั้งค่า GNOME"
+
+#: src/synos-appearance:575
+msgid "Import GNOME settings"
+msgstr "นำเข้าการตั้งค่า GNOME"
+
+#: src/synos-appearance:577
+msgid "Import…"
+msgstr "นำเข้า…"
+
+#: src/synos-appearance:672
+msgid "Merge Import"
+msgstr "นำเข้าแบบรวม"
+
+#: src/synos-appearance:666
+msgid ""
+"Merge import keeps current values that are absent from the file.\n"
+"\n"
+"Strict restore resets all /org/gnome/ settings first; values absent from the file return to their defaults. A safety backup is saved before either operation."
+msgstr ""
+"การนำเข้าแบบผสานจะคงค่าปัจจุบันที่ไม่มีอยู่ในไฟล์ไว้\n"
+"\n"
+"การคืนค่าแบบสมบูรณ์จะรีเซ็ตการตั้งค่า /org/gnome/ ทั้งหมดก่อน ค่าที่ไม่มีอยู่ในไฟล์จะกลับเป็นค่าเริ่มต้น ระบบจะสร้างข้อมูลสำรองเพื่อความปลอดภัยก่อนดำเนินการแต่ละแบบ"
+
+#: src/synos-appearance:576
+msgid "Restore settings from a dconf INI file"
+msgstr "กู้คืนการตั้งค่าจากไฟล์ dconf INI"
+
+#: src/synos-appearance:567
+msgid "Save the current settings as a readable INI file"
+msgstr "บันทึกการตั้งค่าปัจจุบันเป็นไฟล์ INI ที่อ่านง่าย"
+
+#: src/synos-appearance:673
+msgid "Strict Restore"
+msgstr "คืนค่าแบบสมบูรณ์"
+
+#: src/synos-appearance:638
+msgid "✓ GNOME settings exported"
+msgstr "✓ ส่งออกการตั้งค่า GNOME แล้ว"
+
+#: src/synos-appearance:715
+msgid "✓ Settings imported. Log out and back in to apply all changes."
+msgstr ""
+"✓ นำเข้าการตั้งค่าแล้ว "
+"ออกจากระบบแล้วเข้าสู่ระบบอีกครั้งเพื่อให้การเปลี่ยนแปลงทั้งหมดมีผล"
+
+#: src/synos-appearance:631 src/synos-appearance:635
+msgid "✗ Failed to export GNOME settings"
+msgstr "✗ ไม่สามารถส่งออกการตั้งค่า GNOME ได้"
+
+#: src/synos-appearance:708
+msgid "✗ Failed to import GNOME settings"
+msgstr "✗ ไม่สามารถนำเข้าการตั้งค่า GNOME ได้"
+
+#: src/synos-appearance:656 src/synos-appearance:660
+msgid "✗ Failed to read the settings file"
+msgstr "✗ ไม่สามารถอ่านไฟล์การตั้งค่าได้"
+
+#: src/synos-appearance:704
+msgid "✗ Import and automatic rollback both failed"
+msgstr "✗ ทั้งการนำเข้าและการย้อนกลับอัตโนมัติล้มเหลว"
+
+#: src/synos-appearance:702
+msgid "✗ Import failed; previous settings were restored"
+msgstr "✗ นำเข้าไม่สำเร็จ แต่กู้คืนการตั้งค่าเดิมแล้ว"
+
+#: src/synos-appearance:697
+msgid "✗ The selected file is not a valid dconf INI file"
+msgstr "✗ ไฟล์ที่เลือกไม่ใช่ไฟล์ dconf INI ที่ถูกต้อง"
+
+#: data/synos-appearance.desktop:103
+msgid "taskbar;panel;layout;style;windows;appearance;"
+msgstr "แถบงาน;แผง;เลย์เอาต์;สไตล์;วินโดวส์;รูปลักษณ์;"
+
+#: data/synos-appearance.desktop:72
+msgid "Switch between Centered and Classic taskbar layouts"
+msgstr "สลับระหว่างเค้าโครงแถบงาน กึ่งกลาง และคลาสสิก"
+
+#: src/synos-appearance:312
+msgid "✓ Activities button hidden"
+msgstr "✓ ซ่อนปุ่มกิจกรรมแล้ว"
+
+#: src/synos-appearance:311
+msgid "✓ Activities button shown"
+msgstr "✓ แสดงปุ่มกิจกรรมแล้ว"
+
+#: src/synos-appearance:357
+msgid "✓ {label} disabled"
+msgstr "✓ ปิดใช้งาน {label} แล้ว"
+
+#: src/synos-appearance:356
+msgid "✓ {label} enabled"
+msgstr "✓ เปิดใช้งาน {label} แล้ว"
+
+#: src/synos-appearance:341
+msgid "✗ Failed to disable {label}"
+msgstr "✗ ไม่สามารถปิดใช้งาน {label} ได้"
+
+#: src/synos-appearance:340
+msgid "✗ Failed to enable {label}"
+msgstr "✗ ไม่สามารถเปิดใช้งาน {label} ได้"
+
+#~ msgid "✓ Activities button — {action}n"
+#~ msgstr "✓ ปุ่มกิจกรรม — {action}n"
+
+#~ msgid "✓ {label} — {action}d"
+#~ msgstr "✓ {label} — {action}แล้ว"
+
+#~ msgid "✗ Failed to {action} {label}"
+#~ msgstr "✗ ล้มเหลวในการ {action} {label}"
+
+#~ msgid "Effects"
+#~ msgstr "Effects"
+
+#~ msgid "Blur background"
+#~ msgstr "Blur background"
+
+#~ msgid "Apply a subtle blur to the wallpaper"
+#~ msgstr "Apply a subtle blur to the wallpaper"
+
+#~ msgid "Darken background"
+#~ msgstr "Darken background"
+
+#~ msgid "Add a dark overlay to the wallpaper"
+#~ msgstr "Add a dark overlay to the wallpaper"
+
+#~ msgid "Taskbar Position"
+#~ msgstr "ตำแหน่งแถบงาน"
+
+#~ msgid "Panel Position"
+#~ msgstr "ตำแหน่งแผง"
+
+#~ msgid "Choose where your taskbar sits on screen."
+#~ msgstr "เลือกตำแหน่งที่แถบงานจะปรากฏบนหน้าจอ"

@@ -1,0 +1,11 @@
+id: cn
+name: China
+locales: [zh_CN.UTF-8]
+labels:
+  zh_CN: Simplified Chinese (China Mainland)
+keyboard: us
+timezone: Asia/Shanghai
+mirror: http://mirrors.tuna.tsinghua.edu.cn/debian/
+compliance: none
+eid: []
+paper: a4

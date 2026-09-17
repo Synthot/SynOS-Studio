@@ -1,0 +1,5 @@
+# kind	source (relative to upstream/)	target	mode
+folder	assets/proxy-switcher@synos.com	/usr/share/gnome-shell/extensions/proxy-switcher@synos.com	644
+file	COPYING	/usr/share/doc/gnome-shell-extension-proxy-switcher/COPYING	644
+file	UPSTREAM.md	/usr/share/doc/gnome-shell-extension-proxy-switcher/UPSTREAM.md	644
+folder	po	/usr/share/doc/gnome-shell-extension-proxy-switcher/po	644

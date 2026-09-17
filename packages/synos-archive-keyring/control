@@ -1,0 +1,9 @@
+Package: synos-archive-keyring
+Version: ${VERSION}
+Section: misc
+Priority: important
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Description: ${BRAND_NAME} package repository signing key
+ Public key that apt uses to verify the ${BRAND_NAME} package repository.
+ Generated from keys/public/synos-archive-keyring.gpg by tools/build_packages.py.

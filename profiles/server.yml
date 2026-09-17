@@ -1,0 +1,14 @@
+id: server
+extends: minimal
+description: Headless-ready server. SSH and Cockpit web administration, containers, automatic security updates, no office applications. The desktop stays for the installer and local use.
+software:
+  bundles: [containers, web-admin]
+  packages:
+    add: [ssh-server]
+installer:
+  filesystem: btrfs
+  encryption: optional
+  ssh: enabled
+security:
+  firewall: default-deny-inbound
+  open_ports: [22/tcp, 9090/tcp]

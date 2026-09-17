@@ -1,0 +1,9 @@
+Package: synos-driver-center
+Version: 2.0.2-14+synos1
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
+Depends: python3, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, ubuntu-drivers-common, fwupd, gir1.2-fwupd-2.0, synos-secureboot-toolkit, pkexec, pciutils, util-linux, dmidecode
+Homepage: ${BRAND_URL_HOME}
+Description: ${BRAND_NAME} Driver Center — manage hardware drivers, device firmware, printing, controllers, and Secure Boot support.

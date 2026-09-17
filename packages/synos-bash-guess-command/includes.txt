@@ -1,0 +1,7 @@
+# kind	source (relative to upstream/)	target	mode
+file	deploy/amd64/synos-quietd	/usr/lib/synos-bash-guess-command/synos-quietd	755
+file	deploy/amd64/synos-ghost.so	/usr/lib/synos-bash-guess-command/synos-ghost.so	644
+file	assets/synos-bash-guess-command	/etc/bash_completion.d/synos-bash-guess-command	644
+file	README.md	/usr/share/doc/synos-bash-guess-command/README.md	644
+file	UPSTREAMS.md	/usr/share/doc/synos-bash-guess-command/UPSTREAMS.md	644
+file	COPYRIGHT	/usr/share/doc/synos-bash-guess-command/copyright	644

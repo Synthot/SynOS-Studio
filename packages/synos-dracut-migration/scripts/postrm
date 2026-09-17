@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+# systemd units (generated)
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then systemctl disable synos-dracut-migration.service >/dev/null 2>&1 || true; fi
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then systemctl disable synos-dracut-migration.timer >/dev/null 2>&1 || true; fi
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then systemctl disable synos-dracut-confirm-boot.service >/dev/null 2>&1 || true; fi
