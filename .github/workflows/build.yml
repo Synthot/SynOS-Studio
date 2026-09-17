@@ -28,8 +28,10 @@ jobs:
         with: { name: resolved-config, path: .build/ }
 
   build:
-    # A privileged self-hosted runner is required for the chroot build.
+    # A privileged self-hosted runner is required for the chroot build; set the
+    # repository variable SYNOS_SELF_HOSTED=true once such a runner is registered.
     needs: validate
+    if: vars.SYNOS_SELF_HOSTED == 'true'
     runs-on: [self-hosted, synos-builder]
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +48,7 @@ jobs:
 
   acceptance:
     needs: build
+    if: vars.SYNOS_SELF_HOSTED == 'true'
     runs-on: [self-hosted, synos-builder, kvm]
     steps:
       - uses: actions/checkout@v4
