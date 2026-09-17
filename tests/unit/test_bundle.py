@@ -2,6 +2,7 @@
 tools/synos and tools/export_catalog.py."""
 from __future__ import annotations
 
+import hashlib
 import importlib.machinery
 import importlib.util
 import json
@@ -121,6 +122,64 @@ class BundleValidationTests(unittest.TestCase):
             code, payload = run("bundle", "validate", str(archive))
             self.assertEqual(1, code)
             self.assertTrue(any("unsafe path" in e for e in payload["report"]["errors"]), payload["report"]["errors"])
+
+
+class IntegrityTests(unittest.TestCase):
+    FILES = {"manifests/x.yml": "schema_version: 1\nname: x\nversion: 1.0.0\nbase: ubuntu\nsuite: resolute\narch: amd64\n"
+                                "profile: workstation\nregions: [fr]\nbrand: example-acme\n", "README.md": "hello\n"}
+
+    def descriptor(self, files: dict[str, str]) -> dict:
+        digests = [{"path": n, "sha256": hashlib.sha256(t.encode("utf-8")).hexdigest()} for n, t in sorted(files.items())]
+        return {"format": 1, "name": "x", "manifest": "manifests/x.yml", "files": digests}
+
+    def test_digests_report_changed_missing_and_unlisted_files_without_failing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = write_bundle(Path(directory), self.descriptor(self.FILES), self.FILES)
+            code, payload = run("bundle", "validate", str(bundle))
+            self.assertEqual(0, code, payload)
+            integrity = payload["report"]["integrity"]
+            self.assertEqual({"declared": 2, "verified": 2, "modified": [], "missing": [], "undeclared": []}, integrity)
+            self.assertEqual("none", payload["report"]["signature"]["status"])
+            (bundle / "README.md").write_text("edited by hand\n", encoding="utf-8")
+            (bundle / "answers" ).mkdir()
+            (bundle / "answers" / "a.yml").write_text("a: 1\n", encoding="utf-8")
+            code, payload = run("bundle", "validate", str(bundle))
+            self.assertEqual(0, code, "a hand-edited bundle stays valid")
+            integrity = payload["report"]["integrity"]
+            self.assertEqual(["README.md"], integrity["modified"])
+            self.assertEqual(["answers/a.yml"], integrity["undeclared"])
+            self.assertTrue(any("changed after generation" in w for w in payload["report"]["warnings"]))
+
+    def test_a_signature_is_verified_against_trusted_signers(self) -> None:
+        try:
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+            from cryptography.hazmat.primitives import serialization
+        except ImportError:
+            self.skipTest("python3-cryptography is not installed")
+        cli = load_cli()
+        key = Ed25519PrivateKey.generate()
+        public = key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw).hex()
+        descriptor = self.descriptor(self.FILES)
+        descriptor["signature"] = {"alg": "ed25519", "key_id": "test-1", "value": key.sign(cli.signed_message(descriptor)).hex()}
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = write_bundle(Path(directory) / "b", descriptor, self.FILES)
+            signers = Path(directory) / "signers.json"
+            signers.write_text(json.dumps({"signers": {"test-1": {"name": "Test signer", "public_key": public}}}), encoding="utf-8")
+            env = dict(os.environ, SYNOS_TRUSTED_SIGNERS=str(signers))
+
+            def validate() -> dict:
+                result = subprocess.run([sys.executable, str(SYNOS), "--json", "bundle", "validate", str(bundle)],
+                                        capture_output=True, text=True, check=False, cwd=ROOT, env=env)
+                return json.loads(result.stdout)["report"]
+
+            self.assertEqual({"status": "valid", "key_id": "test-1", "signer": "Test signer"}, validate()["signature"])
+            self.assertEqual("unknown-signer", run("bundle", "validate", str(bundle))[1]["report"]["signature"]["status"])
+            descriptor["files"][0]["sha256"] = "0" * 64
+            (bundle / "bundle.json").write_text(json.dumps(descriptor), encoding="utf-8")
+            report = validate()
+            self.assertEqual("invalid", report["signature"]["status"])
+            self.assertTrue(any("signature invalid" in w for w in report["warnings"]))
+            self.assertEqual([], report["errors"], "a bad signature is a warning; the content is validated as usual")
 
 
 class BundleApplyTests(unittest.TestCase):

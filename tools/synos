@@ -18,6 +18,7 @@ bundle ships starts that container, so users never clone anything.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -112,6 +113,72 @@ def schema_errors(instance, schema: dict) -> list[str]:
     return sorted(f"{'/'.join(str(p) for p in e.path) or '.'}: {e.message}" for e in validator.iter_errors(instance))
 
 
+def trusted_signers() -> dict:
+    """key_id -> {name, public_key} from schema/signers.json plus SYNOS_TRUSTED_SIGNERS (a file of the same shape)."""
+    signers: dict = {}
+    paths = [ROOT / "schema" / "signers.json"]
+    extra = os.environ.get("SYNOS_TRUSTED_SIGNERS")
+    if extra:
+        paths.append(Path(extra))
+    for path in paths:
+        if path.is_file():
+            try:
+                signers.update(json.loads(path.read_text(encoding="utf-8")).get("signers") or {})
+            except ValueError:
+                pass
+    return signers
+
+
+def signed_message(descriptor: dict) -> bytes:
+    """What a generator signs: canonical JSON of format, name, manifest and the digest list."""
+    files = sorted(({"path": f["path"], "sha256": f["sha256"]} for f in descriptor.get("files") or [] if isinstance(f, dict)),
+                   key=lambda f: f["path"])
+    body = {"format": descriptor["format"], "name": descriptor.get("name"), "manifest": descriptor["manifest"], "files": files}
+    return json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def integrity_report(bundle: "Bundle", descriptor: dict, names: list[str]) -> dict | None:
+    """Compare the digests declared in bundle.json with the bytes in the bundle. None when nothing is declared."""
+    entries = [f for f in descriptor.get("files") or [] if isinstance(f, dict)]
+    if not entries:
+        return None
+    report = {"declared": len(entries), "verified": 0, "modified": [], "missing": [], "undeclared": []}
+    listed = set()
+    for entry in entries:
+        path = entry["path"]
+        listed.add(path)
+        if path not in names:
+            report["missing"].append(path)
+        elif hashlib.sha256(bundle.read(path)).hexdigest() == entry["sha256"]:
+            report["verified"] += 1
+        else:
+            report["modified"].append(path)
+    report["undeclared"] = sorted(n for n in names if n not in listed and n != "bundle.json")
+    return report
+
+
+def signature_status(descriptor: dict) -> dict:
+    """none | valid | invalid | unknown-signer | unverifiable. Informational: a signature proves who
+    generated the bundle and that it was not changed since, never that its content is safe."""
+    signature = descriptor.get("signature")
+    if not signature:
+        return {"status": "none"}
+    if not any(isinstance(f, dict) for f in descriptor.get("files") or []):
+        return {"status": "invalid", "key_id": signature["key_id"], "reason": "no file digests to sign"}
+    signer = trusted_signers().get(signature["key_id"])
+    if not signer:
+        return {"status": "unknown-signer", "key_id": signature["key_id"]}
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+    except ImportError:
+        return {"status": "unverifiable", "key_id": signature["key_id"], "reason": "python3-cryptography is not installed"}
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(signer["public_key"])).verify(bytes.fromhex(signature["value"]), signed_message(descriptor))
+    except Exception:
+        return {"status": "invalid", "key_id": signature["key_id"], "signer": signer.get("name")}
+    return {"status": "valid", "key_id": signature["key_id"], "signer": signer.get("name")}
+
+
 def load_yaml_bytes(data: bytes):
     import yaml
     return yaml.safe_load(data.decode("utf-8"))
@@ -155,6 +222,17 @@ def inspect_bundle(bundle: Bundle) -> dict:
         report["ignored"] = ignored
         shown = ", ".join(ignored[:5]) + (f" and {len(ignored) - 5} more" if len(ignored) > 5 else "")
         report["warnings"].append(f"not part of a bundle, ignored: {shown} (bundles carry {', '.join(ALLOWED_PREFIXES)}, README.md and the launchers)")
+    integrity = integrity_report(bundle, descriptor, names)
+    if integrity is not None:
+        report["integrity"] = integrity
+        if integrity["modified"]:
+            report["warnings"].append("changed after generation: " + ", ".join(integrity["modified"]))
+        if integrity["missing"]:
+            report["warnings"].append("listed in bundle.json but missing: " + ", ".join(integrity["missing"]))
+    report["signature"] = signature_status(descriptor)
+    if report["signature"]["status"] in ("invalid", "unknown-signer"):
+        report["warnings"].append(f"signature {report['signature']['status']} (key {report['signature'].get('key_id')}); "
+                                  "treat the bundle as hand-made")
     manifest_name = descriptor["manifest"]
     report["manifest"] = manifest_name
     report["name"] = descriptor.get("name") or Path(manifest_name).stem
@@ -415,6 +493,17 @@ def cmd_bundle_validate(args) -> int:
     if not args.json:
         print(f"bundle {bundle.location.name}: {len(report['files'])} file(s), manifest {report.get('manifest') or '?'}, "
               f"needs engine {report.get('engine_required') or 'any'}, this checkout is {report['engine']}")
+        integrity = report.get("integrity")
+        if integrity:
+            print(f"integrity: {integrity['verified']} of {integrity['declared']} file(s) as generated"
+                  + (f", {len(integrity['modified'])} changed" if integrity["modified"] else "")
+                  + (f", {len(integrity['missing'])} missing" if integrity["missing"] else "")
+                  + (f", {len(integrity['undeclared'])} not listed" if integrity["undeclared"] else ""))
+        signature = report.get("signature") or {}
+        if signature.get("status") == "valid":
+            print(f"signed by {signature.get('signer') or signature.get('key_id')}, unchanged since")
+        elif signature.get("status") not in (None, "none"):
+            print(f"signature: {signature['status']}")
         for line in human_lines(report):
             print(line)
         print("valid" if not report["errors"] else f"{len(report['errors'])} error(s)")

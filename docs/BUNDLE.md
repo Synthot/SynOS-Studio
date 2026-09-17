@@ -37,9 +37,25 @@ does not have.
   "generator": {"name": "SynOS configurator", "version": "0.1.0"},
   "created": "2026-09-13T20:00:00Z",
   "description": "Acme Workstation — ubuntu resolute amd64, profile acme-workstation",
-  "files": ["bundle.json", "manifests/acme-workstation.yml", "..."]
+  "files": [{"path": "manifests/acme-workstation.yml", "sha256": "…"}, "..."],
+  "signature": {"alg": "ed25519", "key_id": "studio-2026", "value": "…"}
 }
 ```
+
+`files` may list plain names or objects carrying the SHA-256 of each file's
+bytes (every file except `bundle.json` itself). With digests, `tools/synos
+bundle validate` reports which files were changed after generation, which
+are missing and which are not listed; the bundle stays valid either way,
+because a bundle is data and a person is allowed to edit it by hand.
+
+`signature`, when present, is an Ed25519 signature by the generator's
+service over the canonical JSON (sorted keys, no spaces) of `format`,
+`name`, `manifest` and the digest list sorted by path. The engine reports
+it as `valid`, `invalid`, `unknown-signer` (key not in `schema/signers.json`
+or the file named by `SYNOS_TRUSTED_SIGNERS`) or `unverifiable` (no
+`python3-cryptography`). A signature proves who generated the bundle and
+that nothing changed since; it never proves the content is safe, so the
+engine validates signed and unsigned bundles exactly the same way.
 
 `format` and `manifest` are required. `engine.min` is the oldest engine
 (`VERSION` at the root of this repository) that understands the bundle: the
