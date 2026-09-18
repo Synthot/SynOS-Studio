@@ -136,7 +136,19 @@
           "properties": {
             "kiosk_app": { "type": "string" },
             "dconf": { "type": "object", "additionalProperties": true },
-            "browser": { "type": "object", "properties": { "homepage": { "type": "string", "format": "uri" }, "extensions": { "type": "array", "items": { "type": "string" } } } }
+            "browser": { "type": "object", "properties": { "homepage": { "type": "string", "format": "uri" }, "extensions": { "type": "array", "items": { "type": "string" } } } },
+            "ai": {
+              "type": "object", "additionalProperties": false,
+              "description": "Company control over the assistant (contract C8): can disable it, restrict providers, force local-only, forbid tool classes.",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "providers": { "type": "array", "items": { "type": "string" }, "description": "Allowed provider names; empty means all" },
+                "local_only": { "type": "boolean" },
+                "tools_denied": { "type": "array", "items": { "type": "string" }, "description": "Permission classes or tool names" },
+                "memory": { "enum": ["enabled", "session-only", "disabled"] },
+                "facts": { "enum": ["grounded-only", "any"] }
+              }
+            }
           }
         },
         "ansible": {

@@ -1,0 +1,6 @@
+syn_policy_enabled: true
+syn_policy_providers: []        # allowed provider names (contract C5); empty means all
+syn_policy_local_only: false
+syn_policy_tools_denied: []     # permission classes (read, act, write, destructive) or exact tool names
+syn_policy_memory: enabled      # enabled | session-only | disabled
+syn_policy_facts: ""            # grounded-only | any; empty means the loader's own default (any)

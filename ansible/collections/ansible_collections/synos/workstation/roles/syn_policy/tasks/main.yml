@@ -1,0 +1,16 @@
+# Writes the assistant policy (contract C8) from the profile's policy.ai so
+# syn-core's loader (syn-core/src/policy.rs) reads the company's choices on
+# first boot: whether the assistant runs at all, which providers it may use,
+# whether it must stay local-only, which tool classes or tools are denied,
+# and how memory and facts behave.
+- name: Policy directory
+  ansible.builtin.file:
+    path: /etc/syn
+    state: directory
+    mode: "0755"
+
+- name: /etc/syn/policy.toml from the profile's policy.ai
+  ansible.builtin.template:
+    src: policy.toml.j2
+    dest: /etc/syn/policy.toml
+    mode: "0644"

@@ -42,3 +42,15 @@
         fleet_enrollment_pull_url: "{{ profile.ansible.pull_url | default('') }}"
         fleet_enrollment_roles: "{{ profile.ansible.first_boot_roles | default([]) }}"
       when: profile.ansible is defined and (profile.ansible.pull_url is defined or profile.ansible.first_boot_roles is defined)
+
+    - name: Assistant policy from the profile
+      ansible.builtin.include_role:
+        name: synos.workstation.syn_policy
+      vars:
+        syn_policy_enabled: "{{ profile.policy.ai.enabled | default(true) }}"
+        syn_policy_providers: "{{ profile.policy.ai.providers | default([]) }}"
+        syn_policy_local_only: "{{ profile.policy.ai.local_only | default(false) }}"
+        syn_policy_tools_denied: "{{ profile.policy.ai.tools_denied | default([]) }}"
+        syn_policy_memory: "{{ profile.policy.ai.memory | default('enabled') }}"
+        syn_policy_facts: "{{ profile.policy.ai.facts | default('') }}"
+      when: profile.policy is defined and profile.policy.ai is defined

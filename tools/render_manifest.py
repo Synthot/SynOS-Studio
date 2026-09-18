@@ -462,7 +462,7 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
             raise ManifestError(f"ansible.playbooks entry {playbook!r} does not exist (paths are relative to the repository root)")
     policy = profile.get("policy", {}) or {}
     ansible_required = bool(
-        playbooks or policy.get("dconf") or policy.get("browser")
+        playbooks or policy.get("dconf") or policy.get("browser") or policy.get("ai")
         or security.get("usbguard") or security.get("compliance", "none") != "none"
         or ansible_cfg.get("first_boot_roles") or ansible_cfg.get("pull_url")
         or installer.get("ssh") == "enabled" or security.get("open_ports")
