@@ -803,7 +803,9 @@ def _languages_image_first(languages=None, image_locales=None):
     image_locales = _image_locales() if image_locales is None else image_locales
     if not image_locales:
         return languages
-    rank = {code: index for index, code in enumerate(image_locales)}
+    rank: dict = {}
+    for index, code in enumerate(image_locales):
+        rank.setdefault(code, index)   # first occurrence ranks; the bundle's default region comes first
     def key(language):
         code = language.locale.removesuffix(".UTF-8")
         return (0, rank[code]) if code in rank else (1, 0)

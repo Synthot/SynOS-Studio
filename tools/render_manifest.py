@@ -200,8 +200,12 @@ def live_region_rows(regions: list[dict]) -> list[tuple[str, str, str, str]]:
     """One GRUB Live entry per (region, locale): code|label|timezone|keyboard."""
     rows: list[tuple[str, str, str, str]] = []
     seen: set[str] = set()
+    codes: set[str] = set()
     for region in regions:
         for loc in region["_locales"]:
+            if loc in codes:   # two regions sharing a locale (fr_FR in France and Senegal): the first region, the default, wins
+                continue
+            codes.add(loc)
             lang = LANGUAGE_NAMES.get(loc.split("_")[0], loc.split("_")[0].upper())
             label = f"{region['name']} - {lang}" if len(region["_locales"]) > 1 else region["name"]
             label = str((region.get("labels") or {}).get(loc, label))
