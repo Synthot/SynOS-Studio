@@ -26,6 +26,14 @@ bundle (`..` and absolute paths are rejected). Regions and bases are engine
 data; a bundle references them by id and the engine reports the ones it
 does not have.
 
+## Archive formats
+
+A bundle travels as a zip file (Windows, macOS) or a tar.gz file (Linux),
+so that nobody installs a decompressor: both open with the tools every
+system ships. The content is the same bundle either way; `tools/synos`
+accepts both, plus an unpacked directory. Archives may only contain regular
+files; links and devices are refused.
+
 ## bundle.json
 
 ```json
@@ -91,7 +99,7 @@ catalog and written into the zip by the front end) do this and nothing else:
 Inside the image `synos build` detects `SYNOS_IN_CONTAINER` and runs the
 engine's make directly; the ISO, its evidence files and the log are copied to
 `dist/` next to the bundle and handed to the invoking user (`SYNOS_UID`/`SYNOS_GID`).
-A user therefore unzips and runs one file; the launcher installs the only
+A user therefore unpacks and runs one file; the launcher installs the only
 thing it needs. Releases must be tagged `v<VERSION>` so the pinned image
 exists.
 

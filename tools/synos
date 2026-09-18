@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import tarfile
 import os
 import re
 import shutil
@@ -56,32 +57,53 @@ def version_tuple(text: str) -> tuple[int, ...]:
 
 # ------------------------------------------------------------------ bundles
 class Bundle:
-    """A zip file or a directory; files are addressed by their bundle-relative path."""
+    """A zip file, a tar.gz file or a directory; files are addressed by their bundle-relative path.
+    Both archive kinds open natively on Windows, macOS and Linux; the content is the same bundle."""
 
     def __init__(self, location: Path):
         self.location = location
         self._zip = None
+        self._tar = None
         if location.is_dir():
             self.kind = "directory"
         elif zipfile.is_zipfile(location):
             self.kind = "zip"
             self._zip = zipfile.ZipFile(location)
+        elif tarfile.is_tarfile(location):
+            self.kind = "tar"
+            self._tar = tarfile.open(location, "r:*")
+            self._members = {}
+            for member in self._tar.getmembers():
+                name = member.name[2:] if member.name.startswith("./") else member.name
+                if member.isdir() or not name:
+                    continue
+                if not member.isfile():   # links and devices are never part of a bundle
+                    self._tar.close()
+                    raise Failure(f"{location}: {member.name} is not a regular file")
+                self._members[name] = member
         else:
-            raise Failure(f"{location} is neither a directory nor a zip file")
+            raise Failure(f"{location} is neither a directory, a zip file nor a tar.gz file")
 
     def names(self) -> list[str]:
         if self._zip is not None:
             return sorted(n for n in self._zip.namelist() if not n.endswith("/"))
+        if self._tar is not None:
+            return sorted(self._members)
         return sorted(str(p.relative_to(self.location)) for p in self.location.rglob("*") if p.is_file())
 
     def read(self, name: str) -> bytes:
         if self._zip is not None:
             return self._zip.read(name)
+        if self._tar is not None:
+            handle = self._tar.extractfile(self._members[name])
+            return handle.read() if handle else b""
         return (self.location / name).read_bytes()
 
     def close(self) -> None:
         if self._zip is not None:
             self._zip.close()
+        if self._tar is not None:
+            self._tar.close()
 
 
 def safe_relative(name: str) -> bool:

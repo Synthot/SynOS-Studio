@@ -42,7 +42,7 @@ docker, 40 GB of free disk and a network connection. Nothing else is
 installed on your machine: the engine runs inside a published container
 image made for the exact engine version of the bundle.
 
-**From a bundle** (what most people do): unzip it and run the launcher
+**From a bundle** (what most people do): unpack it (zip on Windows and macOS, tar.gz on Linux, nothing to install) and run the launcher
 inside, `./build.sh` on Linux, `build.cmd` on Windows, `build.command` on
 macOS. It offers to install podman if you have no runtime, builds the image,
 and tells you how to write it to a USB stick or boot it in a virtual

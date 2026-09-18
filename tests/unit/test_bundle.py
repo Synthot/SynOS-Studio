@@ -10,6 +10,8 @@ import os
 import shutil
 import subprocess
 import sys
+import io
+import tarfile
 import tempfile
 import unittest
 import zipfile
@@ -122,6 +124,42 @@ class BundleValidationTests(unittest.TestCase):
             code, payload = run("bundle", "validate", str(archive))
             self.assertEqual(1, code)
             self.assertTrue(any("unsafe path" in e for e in payload["report"]["errors"]), payload["report"]["errors"])
+
+
+class TarBundleTests(unittest.TestCase):
+    def tar_with(self, path: Path, files: dict[str, str], extra=None) -> Path:
+        with tarfile.open(path, "w:gz") as tf:
+            for name, text in files.items():
+                data = text.encode("utf-8")
+                info = tarfile.TarInfo(name); info.size = len(data); info.mode = 0o755 if name.endswith(".sh") else 0o644
+                tf.addfile(info, io.BytesIO(data))
+            if extra:
+                extra(tf)
+        return path
+
+    def test_a_tar_gz_bundle_validates_like_a_zip(self) -> None:
+        files = {"bundle.json": json.dumps({"format": 1, "manifest": "manifests/x.yml"}), "manifests/x.yml": MANIFEST, "build.sh": "#!/bin/sh\n"}
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = self.tar_with(Path(tmp) / "b.tar.gz", files)
+            code, payload = run("bundle", "validate", str(archive))
+            self.assertEqual(0, code, payload)
+            self.assertEqual(sorted(files), payload["report"]["files"])
+
+    def test_tar_traversal_links_and_devices_are_refused(self) -> None:
+        files = {"bundle.json": json.dumps({"format": 1, "manifest": "manifests/x.yml"}), "manifests/x.yml": MANIFEST}
+        with tempfile.TemporaryDirectory() as tmp:
+            evil = self.tar_with(Path(tmp) / "evil.tar.gz", dict(files, **{"manifests/../../etc/passwd": "x"}))
+            code, payload = run("bundle", "validate", str(evil))
+            self.assertEqual(1, code)
+            self.assertTrue(any("unsafe path" in e for e in payload["report"]["errors"]))
+
+            def add_link(tf):
+                info = tarfile.TarInfo("keys/link.asc"); info.type = tarfile.SYMTYPE; info.linkname = "/etc/passwd"
+                tf.addfile(info)
+            linked = self.tar_with(Path(tmp) / "link.tar.gz", files, add_link)
+            code, payload = run("bundle", "validate", str(linked))
+            self.assertNotEqual(0, code)
+            self.assertIn("not a regular file", json.dumps(payload))
 
 
 class IntegrityTests(unittest.TestCase):
