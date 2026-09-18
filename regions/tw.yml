@@ -1,0 +1,10 @@
+id: tw
+name: 臺灣
+locales: [zh_TW.UTF-8]
+keyboard: us
+timezone: Asia/Taipei
+mirror: http://ftp.tw.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: asia-pacific

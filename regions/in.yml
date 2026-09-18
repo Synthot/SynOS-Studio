@@ -1,0 +1,10 @@
+id: in
+name: India / भारत
+locales: [en_IN.UTF-8, hi_IN.UTF-8]
+keyboard: in
+timezone: Asia/Kolkata
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: asia-pacific

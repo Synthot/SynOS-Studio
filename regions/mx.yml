@@ -1,0 +1,10 @@
+id: mx
+name: México
+locales: [es_MX.UTF-8]
+keyboard: latam
+timezone: America/Mexico_City
+mirror: http://ftp.mx.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: letter
+group: americas

@@ -1,0 +1,10 @@
+id: pl
+name: Polska
+locales: [pl_PL.UTF-8]
+keyboard: pl
+timezone: Europe/Warsaw
+mirror: http://ftp.pl.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

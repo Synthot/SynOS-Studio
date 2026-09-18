@@ -7,3 +7,4 @@ mirror: http://ftp.fr.debian.org/debian/
 compliance: anssi-bp028-intermediate
 eid: []
 paper: a4
+group: europe

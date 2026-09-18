@@ -1,0 +1,10 @@
+id: pt
+name: Portugal
+locales: [pt_PT.UTF-8]
+keyboard: pt
+timezone: Europe/Lisbon
+mirror: http://ftp.pt.debian.org/debian/
+compliance: cis-level1
+eid: [opensc, pcscd]
+paper: a4
+group: europe

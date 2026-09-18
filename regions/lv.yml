@@ -1,0 +1,10 @@
+id: lv
+name: Latvija
+locales: [lv_LV.UTF-8]
+keyboard: lv
+timezone: Europe/Riga
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: [opensc, pcscd]
+paper: a4
+group: europe

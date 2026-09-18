@@ -1,0 +1,10 @@
+id: ch
+name: Schweiz / Suisse / Svizzera
+locales: [de_CH.UTF-8, fr_CH.UTF-8, it_CH.UTF-8]
+keyboard: ch
+timezone: Europe/Zurich
+mirror: http://ftp.ch.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

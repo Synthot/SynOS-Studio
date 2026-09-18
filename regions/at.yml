@@ -1,0 +1,10 @@
+id: at
+name: Österreich
+locales: [de_AT.UTF-8]
+keyboard: at
+timezone: Europe/Vienna
+mirror: http://ftp.at.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

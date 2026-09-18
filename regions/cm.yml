@@ -1,0 +1,10 @@
+id: cm
+name: Cameroun / Cameroon
+locales: [fr_FR.UTF-8, en_GB.UTF-8]
+keyboard: fr
+timezone: Africa/Douala
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: middle-east-africa

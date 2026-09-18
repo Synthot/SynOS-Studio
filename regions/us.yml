@@ -7,3 +7,4 @@ mirror: http://ftp.us.debian.org/debian/
 compliance: cis-level1
 eid: []
 paper: letter
+group: americas

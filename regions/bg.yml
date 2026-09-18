@@ -1,0 +1,10 @@
+id: bg
+name: България
+locales: [bg_BG.UTF-8]
+keyboard: bg
+timezone: Europe/Sofia
+mirror: http://ftp.bg.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

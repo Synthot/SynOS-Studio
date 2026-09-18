@@ -1,0 +1,10 @@
+id: pe
+name: Perú
+locales: [es_PE.UTF-8]
+keyboard: latam
+timezone: America/Lima
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: americas

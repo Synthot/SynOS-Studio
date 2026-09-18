@@ -1,0 +1,10 @@
+id: fi
+name: Suomi / Finland
+locales: [fi_FI.UTF-8, sv_FI.UTF-8]
+keyboard: fi
+timezone: Europe/Helsinki
+mirror: http://ftp.fi.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

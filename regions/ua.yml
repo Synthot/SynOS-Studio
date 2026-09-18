@@ -1,0 +1,10 @@
+id: ua
+name: Україна
+locales: [uk_UA.UTF-8]
+keyboard: ua
+timezone: Europe/Kyiv
+mirror: http://ftp.ua.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

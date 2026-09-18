@@ -1,0 +1,10 @@
+id: es
+name: España
+locales: [es_ES.UTF-8]
+keyboard: es
+timezone: Europe/Madrid
+mirror: http://ftp.es.debian.org/debian/
+compliance: cis-level1
+eid: [opensc, pcscd]
+paper: a4
+group: europe

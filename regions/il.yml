@@ -1,0 +1,10 @@
+id: il
+name: ישראל
+locales: [he_IL.UTF-8]
+keyboard: il
+timezone: Asia/Jerusalem
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: middle-east-africa

@@ -1,0 +1,10 @@
+id: tr
+name: Türkiye
+locales: [tr_TR.UTF-8]
+keyboard: tr
+timezone: Europe/Istanbul
+mirror: http://ftp.tr.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

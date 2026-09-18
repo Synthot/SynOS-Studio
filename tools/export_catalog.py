@@ -112,7 +112,7 @@ def collect() -> dict:
             "locales": [loc.replace(".UTF-8", "") for loc in data.get("locales", [])],
             "keyboard": str(data.get("keyboard", "")), "timezone": data.get("timezone", ""),
             "compliance": data.get("compliance", "none"), "eid": data.get("eid", []) or [],
-            "paper": data.get("paper", "a4"),
+            "paper": data.get("paper", "a4"), "group": data.get("group", "other"),
         })
 
     stack = load_yaml(ROOT / "packages" / "stack.yml")

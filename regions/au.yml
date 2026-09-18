@@ -1,0 +1,10 @@
+id: au
+name: Australia
+locales: [en_AU.UTF-8]
+keyboard: us
+timezone: Australia/Sydney
+mirror: http://ftp.au.debian.org/debian/
+compliance: e8
+eid: []
+paper: a4
+group: asia-pacific

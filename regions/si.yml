@@ -1,0 +1,10 @@
+id: si
+name: Slovenija
+locales: [sl_SI.UTF-8]
+keyboard: si
+timezone: Europe/Ljubljana
+mirror: http://ftp.si.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

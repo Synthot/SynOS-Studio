@@ -1,0 +1,10 @@
+id: ro
+name: România
+locales: [ro_RO.UTF-8]
+keyboard: ro
+timezone: Europe/Bucharest
+mirror: http://ftp.ro.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

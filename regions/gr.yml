@@ -1,0 +1,10 @@
+id: gr
+name: Ελλάδα
+locales: [el_GR.UTF-8]
+keyboard: gr
+timezone: Europe/Athens
+mirror: http://ftp.gr.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

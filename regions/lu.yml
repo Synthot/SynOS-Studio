@@ -1,0 +1,10 @@
+id: lu
+name: Luxembourg
+locales: [fr_LU.UTF-8, de_LU.UTF-8, lb_LU.UTF-8]
+keyboard: ch
+timezone: Europe/Luxembourg
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

@@ -1,0 +1,10 @@
+id: 'no'
+name: Norge
+locales: [nb_NO.UTF-8]
+keyboard: 'no'
+timezone: Europe/Oslo
+mirror: http://ftp.no.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

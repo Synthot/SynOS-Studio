@@ -1,0 +1,10 @@
+id: nz
+name: New Zealand / Aotearoa
+locales: [en_NZ.UTF-8]
+keyboard: us
+timezone: Pacific/Auckland
+mirror: http://ftp.nz.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: asia-pacific

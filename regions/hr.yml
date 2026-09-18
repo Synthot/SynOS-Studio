@@ -1,0 +1,10 @@
+id: hr
+name: Hrvatska
+locales: [hr_HR.UTF-8]
+keyboard: hr
+timezone: Europe/Zagreb
+mirror: http://ftp.hr.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

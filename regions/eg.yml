@@ -1,0 +1,10 @@
+id: eg
+name: مصر
+locales: [ar_EG.UTF-8]
+keyboard: ara
+timezone: Africa/Cairo
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: middle-east-africa

@@ -1,0 +1,10 @@
+id: kr
+name: 대한민국
+locales: [ko_KR.UTF-8]
+keyboard: kr
+timezone: Asia/Seoul
+mirror: http://ftp.kr.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: asia-pacific

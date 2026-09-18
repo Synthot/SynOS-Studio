@@ -1,0 +1,10 @@
+id: cz
+name: Česko
+locales: [cs_CZ.UTF-8]
+keyboard: cz
+timezone: Europe/Prague
+mirror: http://ftp.cz.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

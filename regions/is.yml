@@ -1,0 +1,10 @@
+id: is
+name: Ísland
+locales: [is_IS.UTF-8]
+keyboard: is
+timezone: Atlantic/Reykjavik
+mirror: http://ftp.is.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

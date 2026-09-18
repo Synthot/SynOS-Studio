@@ -1,0 +1,10 @@
+id: lt
+name: Lietuva
+locales: [lt_LT.UTF-8]
+keyboard: lt
+timezone: Europe/Vilnius
+mirror: http://ftp.lt.debian.org/debian/
+compliance: cis-level1
+eid: [opensc, pcscd]
+paper: a4
+group: europe

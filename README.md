@@ -24,7 +24,7 @@ and installs from there. Inside:
   updates, without snaps. The same profile builds on either.
 - **Regions, not just languages.** A country adds its languages, keyboard,
   time zone, paper size, compliance baseline (CIS, ANSSI, BSI, BIO, NCSC,
-  ITSG-33, NIST) and national eID support. Nine are included today.
+  ITSG-33, NIST) and national eID support. Sixty-two countries are defined today; nine of them have been exercised in QEMU.
 - **Machine roles.** Office workstation, developer, AI workstation (GPU
   stack and inference services), thin client, kiosk, server, minimal; a
   company derives its own profile from one of them.

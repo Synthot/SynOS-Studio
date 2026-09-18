@@ -1,0 +1,10 @@
+id: ar
+name: Argentina
+locales: [es_AR.UTF-8]
+keyboard: latam
+timezone: America/Argentina/Buenos_Aires
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: americas

@@ -1,0 +1,10 @@
+id: br
+name: Brasil
+locales: [pt_BR.UTF-8]
+keyboard: br
+timezone: America/Sao_Paulo
+mirror: http://ftp.br.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: americas

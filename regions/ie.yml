@@ -1,0 +1,10 @@
+id: ie
+name: Ireland / Éire
+locales: [en_IE.UTF-8, ga_IE.UTF-8]
+keyboard: ie
+timezone: Europe/Dublin
+mirror: http://ftp.ie.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

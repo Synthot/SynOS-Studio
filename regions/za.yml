@@ -1,0 +1,10 @@
+id: za
+name: South Africa
+locales: [en_ZA.UTF-8]
+keyboard: za
+timezone: Africa/Johannesburg
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: middle-east-africa

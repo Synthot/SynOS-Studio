@@ -1,0 +1,10 @@
+id: hu
+name: Magyarország
+locales: [hu_HU.UTF-8]
+keyboard: hu
+timezone: Europe/Budapest
+mirror: http://ftp.hu.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

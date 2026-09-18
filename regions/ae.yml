@@ -1,0 +1,10 @@
+id: ae
+name: الإمارات
+locales: [ar_AE.UTF-8]
+keyboard: ara
+timezone: Asia/Dubai
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: middle-east-africa

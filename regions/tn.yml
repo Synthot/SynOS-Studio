@@ -1,0 +1,10 @@
+id: tn
+name: تونس / Tunisie
+locales: [ar_TN.UTF-8, fr_FR.UTF-8]
+keyboard: ara
+timezone: Africa/Tunis
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: middle-east-africa

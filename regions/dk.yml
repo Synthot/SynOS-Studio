@@ -1,0 +1,10 @@
+id: dk
+name: Danmark
+locales: [da_DK.UTF-8]
+keyboard: dk
+timezone: Europe/Copenhagen
+mirror: http://ftp.dk.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

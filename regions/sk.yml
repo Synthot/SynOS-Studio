@@ -1,0 +1,10 @@
+id: sk
+name: Slovensko
+locales: [sk_SK.UTF-8]
+keyboard: sk
+timezone: Europe/Bratislava
+mirror: http://ftp.sk.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

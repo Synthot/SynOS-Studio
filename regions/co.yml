@@ -1,0 +1,10 @@
+id: co
+name: Colombia
+locales: [es_CO.UTF-8]
+keyboard: latam
+timezone: America/Bogota
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: letter
+group: americas

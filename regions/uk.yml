@@ -7,3 +7,4 @@ mirror: http://ftp.uk.debian.org/debian/
 compliance: ncsc-eud
 eid: []
 paper: a4
+group: europe

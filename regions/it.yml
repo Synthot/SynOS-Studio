@@ -1,0 +1,10 @@
+id: it
+name: Italia
+locales: [it_IT.UTF-8]
+keyboard: it
+timezone: Europe/Rome
+mirror: http://ftp.it.debian.org/debian/
+compliance: cis-level1
+eid: [opensc, pcscd]
+paper: a4
+group: europe

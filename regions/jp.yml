@@ -9,3 +9,4 @@ mirror: http://ftp.jp.debian.org/debian/
 compliance: none
 eid: []
 paper: a4
+group: asia-pacific

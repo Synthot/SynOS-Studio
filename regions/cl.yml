@@ -1,0 +1,10 @@
+id: cl
+name: Chile
+locales: [es_CL.UTF-8]
+keyboard: latam
+timezone: America/Santiago
+mirror: http://ftp.cl.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: letter
+group: americas

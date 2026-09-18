@@ -1,0 +1,10 @@
+id: vn
+name: Việt Nam
+locales: [vi_VN.UTF-8]
+keyboard: vn
+timezone: Asia/Ho_Chi_Minh
+mirror: http://deb.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: asia-pacific

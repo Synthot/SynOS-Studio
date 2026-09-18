@@ -1,0 +1,10 @@
+id: se
+name: Sverige
+locales: [sv_SE.UTF-8]
+keyboard: se
+timezone: Europe/Stockholm
+mirror: http://ftp.se.debian.org/debian/
+compliance: cis-level1
+eid: []
+paper: a4
+group: europe

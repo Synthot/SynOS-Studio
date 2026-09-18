@@ -1,0 +1,10 @@
+id: ee
+name: Eesti
+locales: [et_EE.UTF-8]
+keyboard: ee
+timezone: Europe/Tallinn
+mirror: http://ftp.ee.debian.org/debian/
+compliance: cis-level1
+eid: [opensc, pcscd]
+paper: a4
+group: europe
