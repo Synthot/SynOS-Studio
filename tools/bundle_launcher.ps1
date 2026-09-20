@@ -8,7 +8,8 @@
 # When neither is present it offers to install Docker Desktop with winget.
 # Nothing else is installed: the SynOS build engine runs inside a container
 # image published for the exact engine version this bundle was made for.
-# Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
+# Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY,
+#   SYNOS_ENGINE_SOURCE (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive)
 # (another registry, default ghcr.io/synthot/synos-builder), SYNOS_YES=1.
 [CmdletBinding()]
 param([string]$Command = "", [switch]$Yes)
@@ -66,6 +67,34 @@ $freeGb = [math]::Floor($drive.Free / 1GB)
 if ($freeGb -lt 40) { Fail "at least 40 GB free is needed on drive $($drive.Name): $freeGb GB available" 2 }
 
 # ---------------------------------------------------------------- the image
+# The published image is preferred. When none can be pulled (not published yet,
+# a registry that refuses anonymous pulls, no network to it), the same image is
+# built here from the engine source, once, and kept as synos-builder:<base>-<suite>-local.
+function Build-EngineImage {
+    $localTag = "synos-builder:$base-$suite-local"
+    & $runtime image inspect $localTag *> $null
+    if ($LASTEXITCODE -eq 0) { Write-Host "using the engine image built earlier on this machine: $localTag"; return $localTag }
+    $src = $env:SYNOS_ENGINE_SOURCE
+    if (-not $src) {
+        $url = if ($env:SYNOS_ENGINE_URL) { $env:SYNOS_ENGINE_URL } else { "https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.zip" }
+        Write-Host "downloading the engine source from $url"
+        New-Item -ItemType Directory -Force -Path ".build" | Out-Null
+        Invoke-WebRequest -Uri $url -OutFile ".build\engine-src.zip"
+        if (Test-Path ".build\engine-src") { Remove-Item -Recurse -Force ".build\engine-src" }
+        Expand-Archive -Path ".build\engine-src.zip" -DestinationPath ".build\engine-src"
+        $src = (Get-ChildItem -Path ".build\engine-src" -Directory | Select-Object -First 1).FullName
+    }
+    if (-not (Test-Path (Join-Path $src "bases\$base\Containerfile"))) { Fail "$src has no bases\$base\Containerfile: not an engine checkout" 2 }
+    Write-Host "building the engine image $localTag from $src (about 20 minutes, once; output in dist\image-build.log)"
+    New-Item -ItemType Directory -Force -Path "dist" | Out-Null
+    $log = Join-Path $PSScriptRoot "dist\image-build.log"
+    Push-Location $src
+    & $runtime build --build-arg "SUITE=$suite" -t $localTag -f "bases/$base/Containerfile" . 2>&1 | Out-File -FilePath $log -Encoding utf8
+    $code = $LASTEXITCODE
+    Pop-Location
+    if ($code -ne 0) { Fail "building the engine image failed; see dist\image-build.log" 2 }
+    return $localTag
+}
 $repository = if ($env:SYNOS_IMAGE_REPOSITORY) { $env:SYNOS_IMAGE_REPOSITORY } else { "ghcr.io/synthot/synos-builder" }
 $image = $env:SYNOS_BUILDER_IMAGE
 if (-not $image) {
@@ -75,10 +104,14 @@ if (-not $image) {
     & $runtime pull $pinned *> $null
     if ($LASTEXITCODE -eq 0) { $image = $pinned }
     else {
-        Write-Host "no image pinned to engine $engine; using the current $moving"
         & $runtime pull $moving *> $null
-        if ($LASTEXITCODE -ne 0) { Fail "cannot pull ${moving}: check the network, or set SYNOS_BUILDER_IMAGE" 2 }
-        $image = $moving
+        if ($LASTEXITCODE -eq 0) { Write-Host "no image pinned to engine $engine; using the current $moving"; $image = $moving }
+        elseif ($Command -eq "check") { $image = "none published: it will be built here at the first build, about 20 minutes" }
+        else {
+            Write-Host "no published engine image can be pulled from $repository (not published yet, or the registry refused);"
+            Write-Host "the image is built here instead, from the engine source."
+            $image = Build-EngineImage
+        }
     }
 }
 

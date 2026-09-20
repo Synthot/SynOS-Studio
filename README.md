@@ -44,7 +44,9 @@ image made for the exact engine version of the bundle.
 
 **From a bundle** (what most people do): unpack it (zip on Windows and macOS, tar.gz on Linux, nothing to install) and run the launcher
 inside, `./build.sh` on Linux, `build.cmd` on Windows, `build.command` on
-macOS. It offers to install podman if you have no runtime, builds the image,
+macOS. It offers to install podman if you have no runtime, pulls the published
+builder image or builds it locally from this repository's source when none
+can be pulled, builds the image,
 and tells you how to write it to a USB stick or boot it in a virtual
 machine. The first build takes about 40 minutes; later ones reuse a cache.
 `./build.sh check` only verifies your machine. The complete output is kept

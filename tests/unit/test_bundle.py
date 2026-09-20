@@ -345,10 +345,12 @@ class LauncherTests(unittest.TestCase):
         for needle in ("apt-get install -y podman", "dnf install -y podman", "zypper install -y podman", "pacman -S --noconfirm podman",
                        "--yes", "SYNOS_YES", "synos-cache-$base-$suite", "-v /opt/synos/new_building_os -v /opt/synos/image",
                        "--log /bundle/dist/build.log", "dd if=", "podman machine init --rootful", "brew install podman",
-                       '--platform "linux/$arch"', "Use Rosetta"):
+                       '--platform "linux/$arch"', "Use Rosetta", "archive/refs/heads/main.tar.gz", "SYNOS_ENGINE_SOURCE",
+                       "synos-builder:$base-$suite-local", "dist/image-build.log"):
             self.assertIn(needle, text, needle)
         windows = (ROOT / "tools" / "bundle_launcher.ps1").read_text(encoding="utf-8")
-        for needle in ("winget install -e --id Docker.DockerDesktop", "SYNOS_YES", "--log /bundle/dist/build.log", "Rufus"):
+        for needle in ("winget install -e --id Docker.DockerDesktop", "SYNOS_YES", "--log /bundle/dist/build.log", "Rufus",
+                       "archive/refs/heads/main.zip", "Expand-Archive", "Build-EngineImage", "SYNOS_ENGINE_SOURCE"):
             self.assertIn(needle, windows, needle)
 
     def test_launcher_without_a_runtime_explains_and_exits_2(self) -> None:
@@ -375,6 +377,41 @@ class LauncherTests(unittest.TestCase):
             self.assertIn("COPY . /opt/synos", text)
             self.assertIn("/usr/local/bin/synos", text)
         self.assertEqual((ROOT / ".containerignore").read_text(), (ROOT / ".dockerignore").read_text())
+
+    def test_launcher_builds_the_engine_image_when_none_can_be_pulled(self) -> None:
+        """A registry that refuses (or has no image) never stops a build: the launcher
+        builds the image from the engine source and runs the build with it."""
+        work = ROOT / ".build" / "launcher-test"
+        shutil.rmtree(work, ignore_errors=True)
+        work.mkdir(parents=True)
+        if shutil.disk_usage(work).free < 41 * 1024 ** 3:
+            self.skipTest("the launcher needs 40 GB free next to the bundle")
+        try:
+            bundle = write_bundle(work / "bundle", {"format": 1, "manifest": "manifests/x.yml", "engine": {"min": "0.1.0"}},
+                                  {"manifests/x.yml": MANIFEST})
+            shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
+            fake = work / "bin"
+            fake.mkdir()
+            for tool in ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "tr", "dirname", "printf", "mkdir", "rm", "tar"):
+                found = shutil.which(tool)
+                if found:
+                    (fake / tool).symlink_to(found)
+            log = work / "runtime.log"
+            (fake / "docker").write_text("#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$RUNTIME_LOG\"\ncase \"$1\" in pull|image) exit 1;; *) exit 0;; esac\n", encoding="utf-8")
+            (fake / "docker").chmod(0o755)
+            env = {"PATH": str(fake), "HOME": str(work), "RUNTIME_LOG": str(log), "SYNOS_ENGINE_SOURCE": str(ROOT), "SYNOS_YES": "1"}
+            check = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, check.returncode, check.stderr + check.stdout)
+            self.assertIn("built here at the first build", check.stdout)
+            build = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, build.returncode, build.stderr + build.stdout)
+            calls = log.read_text(encoding="utf-8").splitlines()
+            self.assertTrue(any(c.startswith("build --platform linux/amd64 --build-arg SUITE=resolute -t synos-builder:ubuntu-resolute-local -f bases/ubuntu/Containerfile .") for c in calls), calls)
+            self.assertTrue(any(c.startswith("run ") and "synos-builder:ubuntu-resolute-local synos build /bundle" in c for c in calls), calls)
+            self.assertIn("built here instead", build.stdout)
+            self.assertTrue((bundle / "dist" / "image-build.log").is_file())
+        finally:
+            shutil.rmtree(work, ignore_errors=True)
 
     def test_inside_the_image_build_runs_make_directly_and_collects_outputs(self) -> None:
         cli = load_cli()

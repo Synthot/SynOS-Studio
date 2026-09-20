@@ -14,7 +14,8 @@
 # image published for the exact engine version this bundle was made for.
 # 40 GB free are needed for the first build.
 #
-# Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
+# Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY,
+#   SYNOS_ENGINE_SOURCE (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive)
 # (another registry, default ghcr.io/synthot/synos-builder), SYNOS_YES=1
 # (same as --yes).
 set -eu
@@ -142,6 +143,34 @@ free_kb=$(df -Pk . | awk 'NR==2 {print $4}')
 [ "$free_kb" -ge 41943040 ] || fail "at least 40 GB free is needed in $(pwd); $((free_kb / 1048576)) GB available" 2
 
 # ---------------------------------------------------------------- the image
+# The published image is preferred. When none can be pulled (not published yet,
+# a registry that refuses anonymous pulls, no network to it), the same image is
+# built here from the engine source, once, and kept as synos-builder:<base>-<suite>-local.
+build_engine_image() {
+    local_tag="synos-builder:$base-$suite-local"
+    if $run_as "$runtime" image inspect "$local_tag" >/dev/null 2>&1; then
+        say "using the engine image built earlier on this machine: $local_tag"
+        image=$local_tag; return 0
+    fi
+    src=${SYNOS_ENGINE_SOURCE:-}
+    if [ -z "$src" ]; then
+        url=${SYNOS_ENGINE_URL:-https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.tar.gz}
+        say "downloading the engine source from $url"
+        mkdir -p .build/engine-src
+        if command -v curl >/dev/null 2>&1; then curl -fsSL "$url" -o .build/engine-src.tar.gz || fail "downloading $url failed" 2
+        elif command -v wget >/dev/null 2>&1; then wget -q "$url" -O .build/engine-src.tar.gz || fail "downloading $url failed" 2
+        else fail "curl or wget is needed to download the engine source (or set SYNOS_ENGINE_SOURCE to a checkout)" 2; fi
+        rm -rf .build/engine-src/*
+        tar -xzf .build/engine-src.tar.gz -C .build/engine-src || fail "the engine source archive could not be unpacked" 2
+        src=$(ls -d .build/engine-src/*/ | head -n 1)
+    fi
+    [ -f "$src/bases/$base/Containerfile" ] || fail "$src has no bases/$base/Containerfile: not an engine checkout" 2
+    say "building the engine image $local_tag from $src (about 20 minutes, once; output in dist/image-build.log)"
+    mkdir -p dist
+    ( cd "$src" && $run_as "$runtime" build --platform "linux/$arch" --build-arg "SUITE=$suite" -t "$local_tag" -f "bases/$base/Containerfile" . ) >dist/image-build.log 2>&1 \
+        || fail "building the engine image failed; see dist/image-build.log" 2
+    image=$local_tag
+}
 repository=${SYNOS_IMAGE_REPOSITORY:-ghcr.io/synthot/synos-builder}
 image=${SYNOS_BUILDER_IMAGE:-}
 if [ -z "$image" ]; then
@@ -150,11 +179,15 @@ if [ -z "$image" ]; then
     say "pulling the build engine $pinned (one-time download, about 1.5 GB)"
     if $run_as "$runtime" pull --platform "linux/$arch" "$pinned" >/dev/null 2>&1; then
         image=$pinned
-    else
+    elif $run_as "$runtime" pull --platform "linux/$arch" "$moving" >/dev/null 2>&1; then
         say "no image pinned to engine ${engine:-?}; using the current $moving"
-        $run_as "$runtime" pull --platform "linux/$arch" "$moving" >/dev/null \
-            || fail "cannot pull $moving for linux/$arch: check the network, or set SYNOS_BUILDER_IMAGE" 2
         image=$moving
+    elif [ "$command_word" = check ]; then
+        image="none published: it will be built here at the first build, about 20 minutes"
+    else
+        say "no published engine image can be pulled from $repository (not published yet, or the registry refused);"
+        say "the image is built here instead, from the engine source."
+        build_engine_image
     fi
 fi
 
