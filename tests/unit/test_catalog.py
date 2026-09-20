@@ -65,3 +65,14 @@ class CatalogTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DerivedProfileTests(unittest.TestCase):
+    def test_derived_profiles_are_marked_and_archetypes_are_not(self) -> None:
+        import json, subprocess, sys
+        data = json.loads(subprocess.run([sys.executable, str(ROOT / "tools" / "export_catalog.py")], capture_output=True, text=True, check=True).stdout)
+        by_id = {p["id"]: p for p in data["profiles"]}
+        for archetype in ("minimal", "workstation", "developer", "ai-workstation", "thin-client", "kiosk", "server"):
+            self.assertFalse(by_id[archetype]["derived"], archetype)
+        self.assertTrue(by_id["example-acme-finance"]["derived"])
+

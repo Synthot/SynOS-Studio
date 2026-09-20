@@ -84,6 +84,9 @@ def collect() -> dict:
             "package_map": {k: " ".join(v) for k, v in pkg_map.items()},
         })
 
+    # A profile derived from a brand kit (<brand>-<profile>, what the Studio and
+    # `synos bundle apply` write) is a company's own profile, not a machine kind.
+    brand_ids = sorted((p.parent.name for p in (ROOT / "branding").glob("*/brand.yml")), key=len, reverse=True)
     profiles = []
     for path in sorted((ROOT / "profiles").glob("*.yml")):
         if path.name == "bundles.yml":
@@ -97,6 +100,7 @@ def collect() -> dict:
             "extends": data.get("extends"),
             "description": data.get("description", ""),
             "example": data["id"].startswith("example-"),
+            "derived": any(data["id"].startswith(brand + "-") for brand in brand_ids) or data["id"].startswith("example-"),
             "chain": chain,
             "resolved": resolved,
         })
