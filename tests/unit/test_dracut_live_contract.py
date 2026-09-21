@@ -64,7 +64,8 @@ class DracutLiveContractTests(unittest.TestCase):
         self.assertIn("update_initramfs=no", mods)
         self.assertLess(mods.index("update_initramfs=no"), mods.index("# Execute mods"))
         self.assertIn("update_initramfs=yes", live)
-        self.assertIn('update-initramfs -c -k "$kernel_version"', live)
+        self.assertIn('dracut --force "/boot/initrd.img-$kernel_version" "$kernel_version"', live)
+        self.assertNotIn("update-initramfs -", live, "the diverted update-initramfs would run the verifier in the chroot")
         self.assertLess(live.index("update_initramfs=yes"), live.index("live_initrd=/boot/synos-live-initrd.img"))
 
     def test_update_initramfs_wrapper_skips_verification_while_updates_are_off(self) -> None:
