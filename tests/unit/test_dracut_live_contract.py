@@ -67,6 +67,36 @@ class DracutLiveContractTests(unittest.TestCase):
         self.assertIn('update-initramfs -c -k "$kernel_version"', live)
         self.assertLess(live.index("update_initramfs=yes"), live.index("live_initrd=/boot/synos-live-initrd.img"))
 
+    def test_update_initramfs_wrapper_skips_verification_while_updates_are_off(self) -> None:
+        """A package script calling update-initramfs during the image build
+        (updates off) must not trip the boot-proof verifier: nothing was
+        rebuilt. With updates on, the verifier runs as before."""
+        import os
+        import stat
+        import subprocess
+        wrapper = ROOT / "packages/synos-core-system/assets/usr/libexec/synos-update-initramfs"
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            real = tmp / "real"
+            real.write_text('#!/bin/sh\nprintf "real %s\\n" "$*" >> "$SYNOS_TEST_LOG"\nexit 0\n', encoding="utf-8")
+            verify = tmp / "verify"
+            verify.write_text('#!/bin/sh\nprintf "verify %s\\n" "$*" >> "$SYNOS_TEST_LOG"\nexit 1\n', encoding="utf-8")
+            for script in (real, verify):
+                script.chmod(script.stat().st_mode | stat.S_IEXEC)
+            log = tmp / "log"
+            conf = tmp / "update-initramfs.conf"
+            env = dict(os.environ, SYNOS_UPDATE_INITRAMFS_REAL=str(real), SYNOS_MIGRATION_VERIFY=str(verify), SYNOS_UPDATE_INITRAMFS_CONF=str(conf), SYNOS_TEST_LOG=str(log))
+            env.pop("DPKG_MAINTSCRIPT_PACKAGE", None)
+            conf.write_text("update_initramfs=no\n", encoding="utf-8")
+            off = subprocess.run(["sh", str(wrapper), "-u", "-k", "6.8.0-139-generic"], env=env, capture_output=True, text=True)
+            self.assertEqual(0, off.returncode, off.stderr)
+            self.assertEqual(["real -u -k 6.8.0-139-generic"], log.read_text(encoding="utf-8").splitlines())
+            log.write_text("", encoding="utf-8")
+            conf.write_text("update_initramfs=yes\n", encoding="utf-8")
+            on = subprocess.run(["sh", str(wrapper), "-u", "-k", "6.8.0-139-generic"], env=env, capture_output=True, text=True)
+            self.assertEqual(1, on.returncode, "with updates on, the verifier's verdict is the wrapper's")
+            self.assertEqual(["real -u -k 6.8.0-139-generic", "verify --verify"], log.read_text(encoding="utf-8").splitlines())
+
     def test_build_recipe_leaves_artifact_validation_to_tests(self) -> None:
         build = (ROOT / "build.sh").read_text()
         makefile = (ROOT / "makefile").read_text()

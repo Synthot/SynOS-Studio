@@ -28,6 +28,16 @@ done
 
 [ "$maintscript_update" = false ] || exit 0
 [ "$delete" = false ] || exit 0
+# While updates are switched off (the image build installs packages with
+# update_initramfs=no and generates the initrd once at the end), nothing was
+# rebuilt, so there is nothing to verify yet.
+CONF=${SYNOS_UPDATE_INITRAMFS_CONF:-${DPKG_ROOT:-}/etc/initramfs-tools/update-initramfs.conf}
+if [ -r "$CONF" ]; then
+    update_initramfs=yes
+    # shellcheck disable=SC1090
+    . "$CONF"
+    [ "${update_initramfs:-yes}" != no ] || exit 0
+fi
 [ -x "$VERIFY" ] || {
     printf '%s\n' 'synos-update-initramfs: synchronous verifier is missing' >&2
     exit 1
