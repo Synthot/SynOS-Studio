@@ -141,6 +141,15 @@ fi
 
 free_kb=$(df -Pk . | awk 'NR==2 {print $4}')
 [ "$free_kb" -ge 41943040 ] || fail "at least 40 GB free is needed in $(pwd); $((free_kb / 1048576)) GB available" 2
+# The chroot, the image staging and the cache live in the container runtime's own
+# storage, not next to the bundle; a small root partition there fails a build
+# halfway with "No space left on device" while dpkg configures packages.
+store=$($run_as "$runtime" info --format '{{.DockerRootDir}}' 2>/dev/null || true)
+case "$store" in ""|*"{{"*|"<no value>") store=$($run_as "$runtime" info --format '{{.Store.GraphRoot}}' 2>/dev/null || true) ;; esac
+if [ -n "$store" ] && [ -d "$store" ]; then
+    store_kb=$(df -Pk "$store" | awk 'NR==2 {print $4}')
+    [ "$store_kb" -ge 31457280 ] || fail "the container runtime keeps the build under $store, which has $((store_kb / 1048576)) GB free; 30 GB are needed there. Free space, or move the storage (docker: data-root in /etc/docker/daemon.json; podman: graphroot in storage.conf)" 2
+fi
 
 # ---------------------------------------------------------------- the image
 # The published image is preferred. When none can be pulled (not published yet,
@@ -210,7 +219,7 @@ if [ -z "$image" ]; then
 fi
 
 if [ "$command_word" = check ]; then
-    say "ready: $run_as $runtime, $((free_kb / 1048576)) GB free, engine image $image"
+    say "ready: $run_as $runtime, $((free_kb / 1048576)) GB free here${store:+, $((store_kb / 1048576)) GB free in $store}, engine image $image"
     exit 0
 fi
 
@@ -255,8 +264,9 @@ status=$?
 set -e
 if [ "$status" -ne 0 ]; then
     say ""
-    say "the build did not finish (exit code $status). The complete output is in dist/build.log;"
-    say "search it for the first 'FAILED' or 'error:' line. Running ./build.sh again resumes from the cache."
+    say "the build did not finish (exit code $status). The first errors in dist/build.log:"
+    grep -n -m 6 -iE 'No space left on device|dpkg: error|^E: |cannot allocate memory|Killed process|FAILED|error:' dist/build.log 2>/dev/null | cut -c1-200 | sed 's/^/  /'
+    say "The complete output is in dist/build.log. Running ./build.sh again resumes from the cache."
     exit "$status"
 fi
 

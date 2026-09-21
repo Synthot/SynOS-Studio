@@ -163,8 +163,10 @@ Write-Host "the full output is kept in dist\build.log"
 $status = $LASTEXITCODE
 if ($status -ne 0) {
     Write-Host ""
-    Write-Host "the build did not finish (exit code $status). The complete output is in dist\build.log;"
-    Write-Host "search it for the first 'FAILED' or 'error:' line. Running build.cmd again resumes from the cache."
+    Write-Host "the build did not finish (exit code $status). The first errors in dist\build.log:"
+    Select-String -Path "dist\build.log" -Pattern 'No space left on device|dpkg: error|^E: |cannot allocate memory|FAILED|error:' -ErrorAction SilentlyContinue | Select-Object -First 6 | ForEach-Object { Write-Host "  $($_.LineNumber): $($_.Line)" }
+    Write-Host "The complete output is in dist\build.log. Running build.cmd again resumes from the cache."
+    Write-Host "The build runs inside Docker Desktop's Linux disk image: 'No space left on device' means that image is full; enlarge it in Settings > Resources (80 GB or more)."
     exit $status
 }
 $iso = Get-ChildItem -Path "dist" -Filter "*.iso" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
