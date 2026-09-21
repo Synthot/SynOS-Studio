@@ -150,6 +150,15 @@ if (-not $env:SYNOS_LAUNCHER_REFRESHED) {
 
 # ---------------------------------------------------------------- the build
 New-Item -ItemType Directory -Force -Path "dist" | Out-Null
+# One build of a bundle at a time: two builds would share dist\ and the cache
+# volume, and apt in the second stops on the first one's lock.
+if (Test-Path "dist\build.pid") {
+    $other = (Get-Content "dist\build.pid" -ErrorAction SilentlyContinue | Select-Object -First 1)
+    if ($other -and (Get-Process -Id $other -ErrorAction SilentlyContinue)) {
+        Fail "another build of this bundle is already running (process $other, output in dist\build.log); wait for it to finish, or stop it, then run this script again" 2
+    }
+}
+Set-Content -Path "dist\build.pid" -Value $PID
 if (Test-Path "dist\build.log") { Move-Item -Force "dist\build.log" "dist\build.previous.log" }
 Write-Host "building $manifest with $image"
 Write-Host "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
@@ -162,6 +171,7 @@ Write-Host "the full output is kept in dist\build.log"
     -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE `
     $image synos build /bundle --output /bundle/dist --log /bundle/dist/build.log
 $status = $LASTEXITCODE
+Remove-Item -Force "dist\build.pid" -ErrorAction SilentlyContinue
 if ($status -ne 0) {
     Write-Host ""
     Write-Host "the build did not finish (exit code $status). The first errors in dist\build.log:"

@@ -248,6 +248,16 @@ fi
 
 # ---------------------------------------------------------------- the build
 mkdir -p dist
+# One build of a bundle at a time: two builds would share dist/ and the cache
+# volume, and apt in the second stops on the first one's lock ("held by process 0").
+if [ -f dist/build.pid ]; then
+    other=$(cat dist/build.pid 2>/dev/null || true)
+    if [ -n "$other" ] && kill -0 "$other" 2>/dev/null; then
+        fail "another build of this bundle is already running (process $other, output in dist/build.log); wait for it to finish, or stop it, then run this script again" 2
+    fi
+fi
+printf '%s\n' "$$" > dist/build.pid
+trap 'rm -f dist/build.pid' EXIT INT TERM
 # One log per run: the previous one is kept as build.previous.log, so the errors shown below are this run's.
 [ -f dist/build.log ] && mv -f dist/build.log dist/build.previous.log
 say "building $manifest with $image"

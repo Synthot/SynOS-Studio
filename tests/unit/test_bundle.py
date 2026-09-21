@@ -420,6 +420,23 @@ class LauncherTests(unittest.TestCase):
             self.assertIn("was updated to the engine's current launcher", again.stdout)
             self.assertEqual((ROOT / "tools" / "bundle_launcher.sh").read_text(encoding="utf-8"), (bundle / "build.sh").read_text(encoding="utf-8"))
             self.assertTrue(any(c.startswith("run ") for c in log.read_text(encoding="utf-8").splitlines()), "the build ran after the refresh")
+            self.assertFalse((bundle / "dist" / "build.pid").exists(), "the pid file goes with the run")
+            # Two builds of one bundle never run at once: while the first one's process
+            # is alive the second explains and exits 2; once it is gone the build starts.
+            other = subprocess.Popen(["sleep", "60"], stdin=subprocess.DEVNULL)
+            try:
+                (bundle / "dist" / "build.pid").write_text(f"{other.pid}\n", encoding="utf-8")
+                log.write_text("", encoding="utf-8")
+                busy = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                self.assertEqual(2, busy.returncode, busy.stderr + busy.stdout)
+                self.assertIn(f"already running (process {other.pid}", busy.stderr)
+                self.assertFalse(any(c.startswith("run ") for c in log.read_text(encoding="utf-8").splitlines()), "no second build")
+            finally:
+                other.kill()
+                other.wait()
+            after = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, after.returncode, after.stderr + after.stdout)
+            self.assertTrue(any(c.startswith("run ") for c in log.read_text(encoding="utf-8").splitlines()), "a stale pid file never blocks")
         finally:
             shutil.rmtree(work, ignore_errors=True)
 
