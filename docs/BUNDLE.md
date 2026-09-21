@@ -83,8 +83,10 @@ catalog and written into the zip by the front end) do this and nothing else:
    can be pulled (not published yet, a registry refusing anonymous pulls, no
    network to it), build the same image locally from the engine source
    (the public repository's `main` archive, or `SYNOS_ENGINE_SOURCE`) and keep
-   it as `synos-builder:<base>-<suite>-local`, so a bundle never depends on
-   the registry being reachable;
+   it named after that source, so a bundle never depends on the registry
+   being reachable; then compare themselves with the launcher inside that
+   engine and, when it is newer, replace themselves and start again, so a
+   launcher fix reaches bundles downloaded before it;
 2. find podman or docker; when neither exists, offer to install podman with
    the distribution's package manager (apt, dnf, zypper, pacman, apk, brew;
    `--yes` or `SYNOS_YES=1` answers for scripts). On Windows, `build.ps1`

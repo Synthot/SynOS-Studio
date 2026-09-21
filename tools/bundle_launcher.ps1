@@ -129,6 +129,25 @@ if ($Command -eq "check") {
     exit 0
 }
 
+# ---------------------------------------------------------------- this script
+# The engine that builds the image also carries the current launcher. A bundle
+# downloaded before a launcher fix is refreshed here, once, then restarted.
+if (-not $env:SYNOS_LAUNCHER_REFRESHED) {
+    $latest = ""
+    $fromSource = if ($env:SYNOS_ENGINE_SOURCE) { Join-Path $env:SYNOS_ENGINE_SOURCE "tools\bundle_launcher.ps1" } else { Join-Path $PSScriptRoot ".build\engine-src" }
+    $candidate = Get-ChildItem -Path $fromSource -Recurse -Filter "bundle_launcher.ps1" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($candidate) { $latest = Get-Content -Raw $candidate.FullName }
+    else { $latest = (& $runtime run --rm $image cat /opt/synos/tools/bundle_launcher.ps1 2>$null) -join "`n" }
+    $self = Get-Content -Raw $PSCommandPath
+    if ($latest -and $latest.StartsWith("#") -and ($latest.Trim() -ne $self.Trim())) {
+        Set-Content -Path $PSCommandPath -Value $latest -Encoding utf8
+        Write-Host "build.ps1 was updated to the engine's current launcher; starting again."
+        $env:SYNOS_LAUNCHER_REFRESHED = "1"
+        & powershell -ExecutionPolicy Bypass -File $PSCommandPath @args
+        exit $LASTEXITCODE
+    }
+}
+
 # ---------------------------------------------------------------- the build
 New-Item -ItemType Directory -Force -Path "dist" | Out-Null
 Write-Host "building $manifest with $image"

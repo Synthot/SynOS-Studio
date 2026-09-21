@@ -214,6 +214,29 @@ if [ "$command_word" = check ]; then
     exit 0
 fi
 
+# ---------------------------------------------------------------- this script
+# The engine that builds the image also carries the current launcher. A bundle
+# downloaded before a launcher fix is refreshed here, once, then restarted, so
+# a fixed script reaches every bundle without a trip back to the Studio.
+if [ -z "${SYNOS_LAUNCHER_REFRESHED:-}" ]; then
+    latest=""
+    if [ -n "${src:-}" ] && [ -f "$src/tools/bundle_launcher.sh" ]; then
+        latest=$(cat "$src/tools/bundle_launcher.sh")
+    else
+        latest=$($run_as "$runtime" run --rm --platform "linux/$arch" "$image" cat /opt/synos/tools/bundle_launcher.sh 2>/dev/null || true)
+    fi
+    case "$latest" in
+        "#!/bin/sh"*)
+            if [ "$latest" != "$(cat "$0")" ]; then
+                { printf '%s\n' "$latest" > "$0.new" && chmod 755 "$0.new" && mv "$0.new" "$0"; } \
+                    || fail "could not replace $0 with the engine's current launcher (copy tools/bundle_launcher.sh from the engine by hand)" 2
+                say "build.sh was updated to the engine's current launcher; starting again."
+                SYNOS_LAUNCHER_REFRESHED=1 exec sh "$0" "$@"
+            fi
+            ;;
+    esac
+fi
+
 # ---------------------------------------------------------------- the build
 mkdir -p dist
 say "building $manifest with $image"

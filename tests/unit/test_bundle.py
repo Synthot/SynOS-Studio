@@ -392,7 +392,7 @@ class LauncherTests(unittest.TestCase):
             shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
             fake = work / "bin"
             fake.mkdir()
-            for tool in ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "tr", "dirname", "printf", "mkdir", "rm", "tar", "date", "tee"):
+            for tool in ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "tr", "dirname", "printf", "mkdir", "rm", "tar", "date", "tee", "mv", "chmod"):
                 found = shutil.which(tool)
                 if found:
                     (fake / tool).symlink_to(found)
@@ -410,6 +410,16 @@ class LauncherTests(unittest.TestCase):
             self.assertTrue(any(c.startswith("run ") and "synos-builder:ubuntu-resolute-local synos build /bundle" in c for c in calls), calls)
             self.assertIn("built here instead", build.stdout)
             self.assertTrue((bundle / "dist" / "image-build.log").is_file())
+            # A stale launcher (a bundle downloaded before a fix) is replaced by the
+            # engine's current one and the build starts again with it.
+            stale = (ROOT / "tools" / "bundle_launcher.sh").read_text(encoding="utf-8") + "\n# an older release of this script\n"
+            (bundle / "build.sh").write_text(stale, encoding="utf-8")
+            log.write_text("", encoding="utf-8")
+            again = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, again.returncode, again.stderr + again.stdout)
+            self.assertIn("was updated to the engine's current launcher", again.stdout)
+            self.assertEqual((ROOT / "tools" / "bundle_launcher.sh").read_text(encoding="utf-8"), (bundle / "build.sh").read_text(encoding="utf-8"))
+            self.assertTrue(any(c.startswith("run ") for c in log.read_text(encoding="utf-8").splitlines()), "the build ran after the refresh")
         finally:
             shutil.rmtree(work, ignore_errors=True)
 
