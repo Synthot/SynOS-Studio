@@ -1,9 +1,10 @@
 # Containers as system services (podman quadlet). Images are pulled on first
-# start, so the image build stays small and reproducible; GPU access follows
+# start, so the image build stays small and reproducible (netavark carries the
+# container DNS since 1.15; there is no aardvark-dns package any more); GPU access follows
 # the profile's hardware.gpu choice.
 - name: podman for the container services
   ansible.builtin.apt:
-    name: [podman, netavark, aardvark-dns]
+    name: [podman, netavark]
     state: present
     install_recommends: false
   when: container_services | length > 0
