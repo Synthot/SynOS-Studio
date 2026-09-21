@@ -85,13 +85,18 @@ function Build-EngineImage {
         $src = (Get-ChildItem -Path ".build\engine-src" -Directory | Select-Object -First 1).FullName
     }
     if (-not (Test-Path (Join-Path $src "bases\$base\Containerfile"))) { Fail "$src has no bases\$base\Containerfile: not an engine checkout" 2 }
-    Write-Host "building the engine image $localTag from $src (about 20 minutes, once; output in dist\image-build.log)"
+    Write-Host "building the engine image $localTag from $src (about 20 minutes, once)."
+    Write-Host "Each build step and package is shown as it happens; the complete output is kept in dist\image-build.log"
     New-Item -ItemType Directory -Force -Path "dist" | Out-Null
     $log = Join-Path $PSScriptRoot "dist\image-build.log"
+    $started = Get-Date
     Push-Location $src
-    & $runtime build --build-arg "SUITE=$suite" -t $localTag -f "bases/$base/Containerfile" . 2>&1 | Out-File -FilePath $log -Encoding utf8
+    & $runtime build --build-arg "SUITE=$suite" -t $localTag -f "bases/$base/Containerfile" . 2>&1 |
+        Tee-Object -FilePath $log |
+        ForEach-Object { if ("$_" -match '^(STEP \d+/\d+|Step \d+/\d+|#\d+ \[\d+/\d+\]|Get:\d+ |Setting up |Successfully )') { Write-Host "  $_" } }
     $code = $LASTEXITCODE
     Pop-Location
+    Write-Host ("engine image built in {0} min" -f [int]((Get-Date) - $started).TotalMinutes)
     if ($code -ne 0) { Fail "building the engine image failed; see dist\image-build.log" 2 }
     return $localTag
 }

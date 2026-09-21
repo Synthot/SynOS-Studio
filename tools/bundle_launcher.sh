@@ -157,18 +157,30 @@ build_engine_image() {
         url=${SYNOS_ENGINE_URL:-https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.tar.gz}
         say "downloading the engine source from $url"
         mkdir -p .build/engine-src
-        if command -v curl >/dev/null 2>&1; then curl -fsSL "$url" -o .build/engine-src.tar.gz || fail "downloading $url failed" 2
-        elif command -v wget >/dev/null 2>&1; then wget -q "$url" -O .build/engine-src.tar.gz || fail "downloading $url failed" 2
+        if command -v curl >/dev/null 2>&1; then
+            if [ -t 1 ]; then curl -fL --progress-bar "$url" -o .build/engine-src.tar.gz || fail "downloading $url failed" 2
+            else curl -fsSL "$url" -o .build/engine-src.tar.gz || fail "downloading $url failed" 2; fi
+        elif command -v wget >/dev/null 2>&1; then wget -q --show-progress "$url" -O .build/engine-src.tar.gz || fail "downloading $url failed" 2
         else fail "curl or wget is needed to download the engine source (or set SYNOS_ENGINE_SOURCE to a checkout)" 2; fi
         rm -rf .build/engine-src/*
         tar -xzf .build/engine-src.tar.gz -C .build/engine-src || fail "the engine source archive could not be unpacked" 2
         src=$(ls -d .build/engine-src/*/ | head -n 1)
     fi
     [ -f "$src/bases/$base/Containerfile" ] || fail "$src has no bases/$base/Containerfile: not an engine checkout" 2
-    say "building the engine image $local_tag from $src (about 20 minutes, once; output in dist/image-build.log)"
+    say "building the engine image $local_tag from $src (about 20 minutes, once)."
+    say "Each build step and package is shown as it happens; the complete output is kept in dist/image-build.log"
     mkdir -p dist
-    ( cd "$src" && $run_as "$runtime" build --platform "linux/$arch" --build-arg "SUITE=$suite" -t "$local_tag" -f "bases/$base/Containerfile" . ) >dist/image-build.log 2>&1 \
-        || fail "building the engine image failed; see dist/image-build.log" 2
+    started=$(date +%s)
+    # The full output goes to the log; the terminal gets the lines that show progress
+    # (build steps from podman and docker, packages being fetched and set up).
+    status_file=$PWD/dist/.image-build.status
+    ( cd "$src" && $run_as "$runtime" build --platform "linux/$arch" --build-arg "SUITE=$suite" -t "$local_tag" -f "bases/$base/Containerfile" . 2>&1; st=$?; echo "$st" >"$status_file" ) \
+        | tee dist/image-build.log \
+        | awk '/^(STEP [0-9]+\/[0-9]+|Step [0-9]+\/[0-9]+|#[0-9]+ \[[0-9]+\/[0-9]+\]|Get:[0-9]+ |Setting up |Successfully built|Successfully tagged|COMMIT|-->)/ { print "  " $0; fflush() }'
+    status=$(cat "$status_file" 2>/dev/null || echo 1)
+    rm -f "$status_file"
+    [ "$status" -eq 0 ] || fail "building the engine image failed (exit $status); see dist/image-build.log" 2
+    say "engine image built in $(( ($(date +%s) - started) / 60 )) min"
     image=$local_tag
 }
 repository=${SYNOS_IMAGE_REPOSITORY:-ghcr.io/synthot/synos-builder}

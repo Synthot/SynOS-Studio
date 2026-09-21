@@ -392,7 +392,7 @@ class LauncherTests(unittest.TestCase):
             shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
             fake = work / "bin"
             fake.mkdir()
-            for tool in ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "tr", "dirname", "printf", "mkdir", "rm", "tar"):
+            for tool in ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "tr", "dirname", "printf", "mkdir", "rm", "tar", "date", "tee"):
                 found = shutil.which(tool)
                 if found:
                     (fake / tool).symlink_to(found)
