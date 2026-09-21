@@ -346,7 +346,7 @@ class LauncherTests(unittest.TestCase):
                        "--yes", "SYNOS_YES", "synos-cache-$base-$suite", "-v /opt/synos/new_building_os -v /opt/synos/image",
                        "--log /bundle/dist/build.log", "dd if=", "podman machine init --rootful", "brew install podman",
                        '--platform "linux/$arch"', "Use Rosetta", "archive/refs/heads/main.tar.gz", "SYNOS_ENGINE_SOURCE",
-                       "synos-builder:$base-$suite-local", "dist/image-build.log"):
+                       "synos-builder:$base-$suite-$source_id", "dist/image-build.log"):
             self.assertIn(needle, text, needle)
         windows = (ROOT / "tools" / "bundle_launcher.ps1").read_text(encoding="utf-8")
         for needle in ("winget install -e --id Docker.DockerDesktop", "SYNOS_YES", "--log /bundle/dist/build.log", "Rufus",

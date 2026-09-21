@@ -11,11 +11,31 @@ mkdir -p obj/headers obj/downloads "obj/$1"
 # Only compile-time C declarations are taken from these packages. No foreign
 # architecture libraries or binaries are executed or shipped. Pin both inputs
 # so host distribution upgrades cannot silently change the worker ABI.
+# Pinned inputs are fetched from the first mirror that serves them; the digest
+# check below makes the source irrelevant to the result. SYNOS_UBUNTU_MIRROR
+# (a base URL ending in /ubuntu) goes first when set.
+fetch_url() {  # fetch_url <relative path> <destination.part> <url>...
+    local relative="$1" destination="$2" url; shift 2
+    for url in "$@"; do
+        curl --fail --location --silent --show-error --retry 2 --connect-timeout 20 --max-time 180 \
+            "$url" -o "$destination" && return 0
+        echo "  $url: not available, trying the next mirror" >&2
+    done
+    echo "none of the mirrors served $relative" >&2
+    return 22
+}
+ubuntu_urls() {  # ubuntu_urls <pool path> -> one URL per line
+    local relative="$1"
+    [ -n "${SYNOS_UBUNTU_MIRROR:-}" ] && echo "${SYNOS_UBUNTU_MIRROR%/}/$relative"
+    echo "https://archive.ubuntu.com/ubuntu/$relative"
+    echo "https://ports.ubuntu.com/ubuntu-ports/$relative"
+    echo "https://mirror.aiursoft.com/ubuntu/$relative"
+}
 fetch_headers() {
     local path="$1" digest="$2" destination="obj/downloads/${1##*/}"
     if ! echo "$digest  $destination" | sha256sum --check --status 2>/dev/null; then
-        curl --fail --location --retry 3 --connect-timeout 20 --max-time 180 \
-            "https://mirror.aiursoft.com/ubuntu/$path" -o "$destination.part"
+        # shellcheck disable=SC2046
+        fetch_url "$path" "$destination.part" $(ubuntu_urls "$path")
         echo "$digest  $destination.part" | sha256sum --check --status
         mv "$destination.part" "$destination"
     fi

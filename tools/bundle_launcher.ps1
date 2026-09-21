@@ -71,10 +71,8 @@ if ($freeGb -lt 40) { Fail "at least 40 GB free is needed on drive $($drive.Name
 # a registry that refuses anonymous pulls, no network to it), the same image is
 # built here from the engine source, once, and kept as synos-builder:<base>-<suite>-local.
 function Build-EngineImage {
-    $localTag = "synos-builder:$base-$suite-local"
-    & $runtime image inspect $localTag *> $null
-    if ($LASTEXITCODE -eq 0) { Write-Host "using the engine image built earlier on this machine: $localTag"; return $localTag }
     $src = $env:SYNOS_ENGINE_SOURCE
+    $sourceId = "local"
     if (-not $src) {
         $url = if ($env:SYNOS_ENGINE_URL) { $env:SYNOS_ENGINE_URL } else { "https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.zip" }
         Write-Host "downloading the engine source from $url"
@@ -83,8 +81,14 @@ function Build-EngineImage {
         if (Test-Path ".build\engine-src") { Remove-Item -Recurse -Force ".build\engine-src" }
         Expand-Archive -Path ".build\engine-src.zip" -DestinationPath ".build\engine-src"
         $src = (Get-ChildItem -Path ".build\engine-src" -Directory | Select-Object -First 1).FullName
+        # The image carries a copy of the engine, so it is named after the source it was
+        # built from; a changed engine gives a new name and a rebuild (layer cache keeps it short).
+        $sourceId = (Get-FileHash -Algorithm SHA256 ".build\engine-src.zip").Hash.Substring(0, 12).ToLower()
     }
     if (-not (Test-Path (Join-Path $src "bases\$base\Containerfile"))) { Fail "$src has no bases\$base\Containerfile: not an engine checkout" 2 }
+    $localTag = "synos-builder:$base-$suite-$sourceId"
+    & $runtime image inspect $localTag *> $null
+    if ($LASTEXITCODE -eq 0) { Write-Host "using the engine image built earlier on this machine from this engine source: $localTag"; return $localTag }
     Write-Host "building the engine image $localTag from $src (about 20 minutes, once)."
     Write-Host "Each build step and package is shown as it happens; the complete output is kept in dist\image-build.log"
     New-Item -ItemType Directory -Force -Path "dist" | Out-Null

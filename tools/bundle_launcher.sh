@@ -147,11 +147,6 @@ free_kb=$(df -Pk . | awk 'NR==2 {print $4}')
 # a registry that refuses anonymous pulls, no network to it), the same image is
 # built here from the engine source, once, and kept as synos-builder:<base>-<suite>-local.
 build_engine_image() {
-    local_tag="synos-builder:$base-$suite-local"
-    if $run_as "$runtime" image inspect "$local_tag" >/dev/null 2>&1; then
-        say "using the engine image built earlier on this machine: $local_tag"
-        image=$local_tag; return 0
-    fi
     src=${SYNOS_ENGINE_SOURCE:-}
     if [ -z "$src" ]; then
         url=${SYNOS_ENGINE_URL:-https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.tar.gz}
@@ -165,8 +160,19 @@ build_engine_image() {
         rm -rf .build/engine-src/*
         tar -xzf .build/engine-src.tar.gz -C .build/engine-src || fail "the engine source archive could not be unpacked" 2
         src=$(ls -d .build/engine-src/*/ | head -n 1)
+        # The image carries a copy of the engine, so it is named after the source it
+        # was built from; a changed engine gives a new name and a rebuild, which the
+        # container tool's layer cache keeps short (the package layers are unchanged).
+        source_id=$(sha256sum .build/engine-src.tar.gz | cut -c1-12)
+    else
+        source_id="local"
     fi
     [ -f "$src/bases/$base/Containerfile" ] || fail "$src has no bases/$base/Containerfile: not an engine checkout" 2
+    local_tag="synos-builder:$base-$suite-$source_id"
+    if $run_as "$runtime" image inspect "$local_tag" >/dev/null 2>&1; then
+        say "using the engine image built earlier on this machine from this engine source: $local_tag"
+        image=$local_tag; return 0
+    fi
     say "building the engine image $local_tag from $src (about 20 minutes, once)."
     say "Each build step and package is shown as it happens; the complete output is kept in dist/image-build.log"
     mkdir -p dist

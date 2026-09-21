@@ -4,11 +4,32 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 architecture="${1:?Expected amd64 or arm64}"
 mkdir -p obj/state-metrics obj/downloads "obj/$architecture/synos-whisper"
+# Pinned inputs are fetched from the first mirror that serves them; the digest
+# check below makes the source irrelevant to the result. SYNOS_UBUNTU_MIRROR
+# (a base URL ending in /ubuntu) goes first when set.
+fetch_url() {  # fetch_url <relative path> <destination.part> <url>...
+    local relative="$1" destination="$2" url; shift 2
+    for url in "$@"; do
+        curl --fail --location --silent --show-error --retry 2 --connect-timeout 20 --max-time 180 \
+            "$url" -o "$destination" && return 0
+        echo "  $url: not available, trying the next mirror" >&2
+    done
+    echo "none of the mirrors served $relative" >&2
+    return 22
+}
+ubuntu_urls() {  # ubuntu_urls <pool path> -> one URL per line
+    local relative="$1"
+    [ -n "${SYNOS_UBUNTU_MIRROR:-}" ] && echo "${SYNOS_UBUNTU_MIRROR%/}/$relative"
+    echo "https://archive.ubuntu.com/ubuntu/$relative"
+    echo "https://ports.ubuntu.com/ubuntu-ports/$relative"
+    echo "https://mirror.aiursoft.com/ubuntu/$relative"
+}
 fetch() {
     local relative="$1" digest="$2" destination="obj/state-metrics/${1##*/}"
     if ! test -f "$destination" || ! echo "$digest  $destination" | sha256sum --check --status 2>/dev/null; then
-        curl --fail --location --retry 2 --connect-timeout 15 --max-time 90 \
-            "https://raw.githubusercontent.com/ggml-org/whisper.cpp/v1.8.3/$relative" -o "$destination.part"
+        fetch_url "$relative" "$destination.part" \
+            "https://raw.githubusercontent.com/ggml-org/whisper.cpp/v1.8.3/$relative" \
+            "https://github.com/ggml-org/whisper.cpp/raw/v1.8.3/$relative"
         echo "$digest  $destination.part" | sha256sum --check --status
         mv "$destination.part" "$destination"
     fi
@@ -20,8 +41,8 @@ fetch LICENSE e562a2ddfaf8280537795ac5ecd34e3012b6582a147ef69ba6a6a5c08c84757d
 fetch_deb() {
     local relative="$1" digest="$2" destination="obj/downloads/${1##*/}"
     if ! test -f "$destination" || ! echo "$digest  $destination" | sha256sum --check --status 2>/dev/null; then
-        curl --fail --location --retry 2 --connect-timeout 15 --max-time 180 \
-            "https://mirror.aiursoft.com/ubuntu/$relative" -o "$destination.part"
+        # shellcheck disable=SC2046
+        fetch_url "$relative" "$destination.part" $(ubuntu_urls "$relative")
         echo "$digest  $destination.part" | sha256sum --check --status
         mv "$destination.part" "$destination"
     fi
