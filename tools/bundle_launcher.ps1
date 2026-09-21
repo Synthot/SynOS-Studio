@@ -150,6 +150,7 @@ if (-not $env:SYNOS_LAUNCHER_REFRESHED) {
 
 # ---------------------------------------------------------------- the build
 New-Item -ItemType Directory -Force -Path "dist" | Out-Null
+if (Test-Path "dist\build.log") { Move-Item -Force "dist\build.log" "dist\build.previous.log" }
 Write-Host "building $manifest with $image"
 Write-Host "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
 Write-Host "the full output is kept in dist\build.log"
@@ -164,7 +165,7 @@ $status = $LASTEXITCODE
 if ($status -ne 0) {
     Write-Host ""
     Write-Host "the build did not finish (exit code $status). The first errors in dist\build.log:"
-    Select-String -Path "dist\build.log" -Pattern 'No space left on device|dpkg: error|^E: |cannot allocate memory|FAILED|error:' -ErrorAction SilentlyContinue | Select-Object -First 6 | ForEach-Object { Write-Host "  $($_.LineNumber): $($_.Line)" }
+    Select-String -Path "dist\build.log" -Pattern 'No space left on device|dpkg: error|dpkg-query: error|^E: |cannot allocate memory|FAILED|package error|skipped .*prebuild|Traceback|error:' -ErrorAction SilentlyContinue | Where-Object { $_.Line -notmatch 'locale' } | Select-Object -First 6 | ForEach-Object { Write-Host "  $($_.LineNumber): $($_.Line)" }
     Write-Host "The complete output is in dist\build.log. Running build.cmd again resumes from the cache."
     Write-Host "The build runs inside Docker Desktop's Linux disk image: 'No space left on device' means that image is full; enlarge it in Settings > Resources (80 GB or more)."
     exit $status

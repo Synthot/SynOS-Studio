@@ -7,7 +7,7 @@ FROM debian:${SUITE}
 ARG DEBIAN_FRONTEND=noninteractive
 ENV SYNOS_IN_CONTAINER=1 LC_ALL=C.UTF-8
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        sudo lsb-release make python3 python3-yaml python3-jsonschema ansible \
+        sudo lsb-release make python3 python3-yaml python3-jsonschema python3-pil ansible \
         binutils curl debootstrap fonts-unifont gnupg isomd5sum squashfs-tools sbsigntool \
         xorriso grub2-common mtools dosfstools util-linux librsvg2-bin fakeroot \
         debian-archive-keyring ca-certificates git \

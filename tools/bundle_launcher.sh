@@ -248,6 +248,8 @@ fi
 
 # ---------------------------------------------------------------- the build
 mkdir -p dist
+# One log per run: the previous one is kept as build.previous.log, so the errors shown below are this run's.
+[ -f dist/build.log ] && mv -f dist/build.log dist/build.previous.log
 say "building $manifest with $image"
 say "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
 say "the full output is kept in dist/build.log"
@@ -265,8 +267,8 @@ set -e
 if [ "$status" -ne 0 ]; then
     say ""
     say "the build did not finish (exit code $status). The first errors in dist/build.log:"
-    grep -n -m 6 -iE 'No space left on device|dpkg: error|^E: |cannot allocate memory|Killed process|FAILED|error:' dist/build.log 2>/dev/null | cut -c1-200 | sed 's/^/  /'
-    say "The complete output is in dist/build.log. Running ./build.sh again resumes from the cache."
+    grep -n -m 6 -E 'No space left on device|dpkg: error|dpkg-query: error|^E: |cannot allocate memory|Killed process|FAILED|package error|skipped .*prebuild|Traceback|error:' dist/build.log 2>/dev/null | grep -v 'locale' | cut -c1-200 | sed 's/^/  /'
+    say "The complete output is in dist/build.log (the previous run is in dist/build.previous.log). Running ./build.sh again resumes from the cache."
     exit "$status"
 fi
 

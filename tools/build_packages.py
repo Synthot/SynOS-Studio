@@ -480,6 +480,23 @@ def stage_recipe(source: Path, work: Path) -> Path:
     return staged
 
 
+def finish_control(control: str, subs: dict[str, str]) -> str:
+    """The rendered control file as dpkg accepts it. A brand kit may leave its
+    URLs empty; a field with no value (`Homepage: `) makes dpkg's status
+    database unparsable and every later package fails to configure, so such
+    fields are dropped, an empty maintainer address gets a placeholder, and the
+    file ends with exactly one newline."""
+    lines = []
+    for line in control.splitlines():
+        if re.match(r"^[A-Za-z][A-Za-z0-9-]*:\s*$", line):
+            continue
+        if line.startswith("Maintainer:") and re.search(r"<\s*>", line):
+            owner = subs.get("BRAND_ID") or "synos"
+            line = re.sub(r"<\s*>", f"<{owner}@localhost>", line)
+        lines.append(line.rstrip())
+    return "\n".join(lines).rstrip("\n") + "\n"
+
+
 def recipe_fingerprint(source: Path, subs: dict[str, str]) -> str:
     """Hash of everything that influences a package's build: the recipe files
     (not the build outputs under upstream/), the substitutions, the brand kit
@@ -568,7 +585,7 @@ def build_package(source: Path, work: Path, subs: dict[str, str]) -> Path:
 
     debian = pkg / "DEBIAN"
     debian.mkdir(exist_ok=True)
-    (debian / "control").write_text(control if control.endswith("\n") else control + "\n", encoding="utf-8")
+    (debian / "control").write_text(finish_control(control, subs), encoding="utf-8")
     if (source / "conffiles").is_file():
         shutil.copy(source / "conffiles", debian / "conffiles")
     if (source / "triggers").is_file():
