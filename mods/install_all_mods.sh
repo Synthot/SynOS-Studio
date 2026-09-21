@@ -25,6 +25,17 @@ echo "TARGET_BUSINESS_NAME=$TARGET_BUSINESS_NAME"
 echo "TARGET_BUILD_VERSION=$TARGET_BUILD_VERSION"
 
 #==========================
+# One initrd, built once
+#==========================
+# Package scripts call `update-initramfs -u`, and some (the NVIDIA driver's)
+# pass the running kernel, which is the build host's, not the image's; with
+# dracut that is a hard failure. Updates are switched off for the whole
+# package installation and the initrd is generated once, explicitly, by
+# 80-dracut-live-image, which switches them back on for the installed system.
+mkdir -p /etc/initramfs-tools
+printf 'update_initramfs=no\n' > /etc/initramfs-tools/update-initramfs.conf
+
+#==========================
 # Execute mods
 #==========================
 for mod in "$SCRIPT_DIR"/*; do

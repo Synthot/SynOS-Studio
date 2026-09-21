@@ -54,6 +54,19 @@ class DracutLiveContractTests(unittest.TestCase):
         self.assertFalse((ROOT / "mods/46-casper-patch/install.sh").exists())
         self.assertFalse((ROOT / "mods/80-initramfs-update/install.sh").exists())
 
+    def test_initrd_is_generated_once_for_the_image_kernel(self) -> None:
+        """Package scripts must never run dracut for the build host's kernel:
+        updates are off for the whole package installation and the initrd is
+        generated once, explicitly, before the live initrd, then switched
+        back on for the installed system."""
+        mods = (ROOT / "mods/install_all_mods.sh").read_text()
+        live = (ROOT / "mods/80-dracut-live-image/install.sh").read_text()
+        self.assertIn("update_initramfs=no", mods)
+        self.assertLess(mods.index("update_initramfs=no"), mods.index("# Execute mods"))
+        self.assertIn("update_initramfs=yes", live)
+        self.assertIn('update-initramfs -c -k "$kernel_version"', live)
+        self.assertLess(live.index("update_initramfs=yes"), live.index("live_initrd=/boot/synos-live-initrd.img"))
+
     def test_build_recipe_leaves_artifact_validation_to_tests(self) -> None:
         build = (ROOT / "build.sh").read_text()
         makefile = (ROOT / "makefile").read_text()
