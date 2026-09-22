@@ -297,6 +297,17 @@ function prepare_live_grub_font() {
     judge "Prepare readable Live GRUB font"
 }
 
+function write_iso_checksum() {
+    # Writes $2 in the standard `sha256sum` format for $1 (name relative to
+    # $1's own directory), so `sha256sum -c` can verify it from inside dist/.
+    local iso_path="$1"
+    local sha_path="$2"
+    local iso_dir iso_base
+    iso_dir="$(dirname "$iso_path")"
+    iso_base="$(basename "$iso_path")"
+    (cd "$iso_dir" && sha256sum "$iso_base") > "$sha_path"
+}
+
 function build_iso() {
     print_ok "Building ISO image..."
 
@@ -679,8 +690,9 @@ HANDOFF
     judge "Move iso image"
 
     print_ok "Generating sha256 checksum..."
-    HASH=$(sha256sum "$SCRIPT_DIR/dist/$TARGET_FILE_NAME-$TARGET_BUILD_VERSION-$BASE_ID-$TARGET_SUITE-$DATE-$TARGET_ARCH.iso" | cut -d ' ' -f 1)
-    echo "SHA256: $HASH" > "$SCRIPT_DIR/dist/$TARGET_FILE_NAME-$TARGET_BUILD_VERSION-$BASE_ID-$TARGET_SUITE-$DATE-$TARGET_ARCH.sha256"
+    write_iso_checksum \
+        "$SCRIPT_DIR/dist/$TARGET_FILE_NAME-$TARGET_BUILD_VERSION-$BASE_ID-$TARGET_SUITE-$DATE-$TARGET_ARCH.iso" \
+        "$SCRIPT_DIR/dist/$TARGET_FILE_NAME-$TARGET_BUILD_VERSION-$BASE_ID-$TARGET_SUITE-$DATE-$TARGET_ARCH.sha256"
     judge "Generate sha256 checksum"
 
     print_ok "Writing the package lock and CycloneDX SBOM..."

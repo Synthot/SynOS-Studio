@@ -286,6 +286,14 @@ iso=$(ls -t dist/*.iso 2>/dev/null | head -n 1 || true)
 say ""
 say "done. Your image: ${iso:-dist/}"
 say "next to it: .sha256 (checksum), .packages.lock, .sbom.cdx.json (what is inside), .resolved.json, build.log"
+checksum_name="${iso:-image.iso}"
+checksum_name="${checksum_name##*/}"
+checksum_name="${checksum_name%.iso}.sha256"
+if [ -n "$macos" ]; then
+    say "verify it: cd dist && shasum -a 256 -c $checksum_name"
+else
+    say "verify it: cd dist && sha256sum -c $checksum_name"
+fi
 say ""
 say "To install it:"
 if [ -n "$macos" ]; then

@@ -184,6 +184,7 @@ $iso = Get-ChildItem -Path "dist" -Filter "*.iso" | Sort-Object LastWriteTime -D
 Write-Host ""
 Write-Host "done. Your image: dist\$($iso.Name)"
 Write-Host "next to it: .sha256 (checksum), .packages.lock, .sbom.cdx.json (what is inside), .resolved.json, build.log"
+Write-Host "verify it: cd dist; Get-FileHash -Algorithm SHA256 $($iso.Name) (compare with $($iso.BaseName).sha256)"
 Write-Host ""
 Write-Host "To install it:"
 Write-Host "  USB stick:       write the ISO with Rufus (https://rufus.ie) or balenaEtcher; keep the default GPT/UEFI settings."
