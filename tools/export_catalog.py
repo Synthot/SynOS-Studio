@@ -61,8 +61,10 @@ def merged_packages(catalog: dict) -> list[dict]:
 
 def launchers() -> dict[str, str]:
     """The scripts every bundle ships so it builds without a checkout: the
-    engine runs inside the published builder image (docs/BUNDLE.md)."""
-    return {name: (ROOT / "tools" / source).read_text(encoding="utf-8") for name, source in LAUNCHERS.items()}
+    engine runs inside the published builder image (docs/BUNDLE.md). Read as
+    bytes and decoded, not read_text: build.cmd is CRLF, and text mode would
+    translate it to LF, making a downloaded bundle.cmd look stale forever."""
+    return {name: (ROOT / "tools" / source).read_bytes().decode("utf-8") for name, source in LAUNCHERS.items()}
 
 
 def collect() -> dict:

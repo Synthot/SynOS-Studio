@@ -321,6 +321,11 @@ class LauncherTests(unittest.TestCase):
         self.assertIn("exec sh ./build.sh", catalog["launchers"]["build.command"])
         self.assertEqual((ROOT / "tools" / "bundle_launcher.sh").read_text(encoding="utf-8"), catalog["launchers"]["build.sh"])
         self.assertIn("synos build /bundle --output /bundle/dist", catalog["launchers"]["build.sh"])
+        # build.cmd is CRLF in the repo; the export must keep it byte for byte
+        # (read_text would translate CRLF to LF, making every downloaded
+        # bundle.cmd look permanently stale to the update check).
+        self.assertIn("\r\n", catalog["launchers"]["build.cmd"])
+        self.assertEqual((ROOT / "tools" / "bundle_launcher.cmd").read_bytes().decode("utf-8"), catalog["launchers"]["build.cmd"])
         self.assertIn("synos build /bundle --output /bundle/dist", catalog["launchers"]["build.ps1"])
         self.assertIn("build.ps1", catalog["launchers"]["build.cmd"])
         with tempfile.TemporaryDirectory() as tmp:
@@ -392,7 +397,7 @@ class LauncherTests(unittest.TestCase):
             shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
             fake = work / "bin"
             fake.mkdir()
-            for tool in ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "cp", "tr", "dirname", "printf", "mkdir", "rm", "tar", "date", "tee", "mv", "chmod", "cmp"):
+            for tool in ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "cp", "tr", "dirname", "printf", "mkdir", "rm", "tar", "date", "tee", "mv", "chmod", "cmp", "cksum"):
                 found = shutil.which(tool)
                 if found:
                     (fake / tool).symlink_to(found)
@@ -473,7 +478,8 @@ class LauncherTests(unittest.TestCase):
 
 
 LAUNCHER_UPDATE_TOOLS = ("sh", "sed", "head", "awk", "grep", "cat", "cp", "tr", "dirname", "printf",
-                          "mkdir", "rm", "mv", "chmod", "cmp", "curl", "wget", "stat", "ls", "uname")
+                          "mkdir", "rm", "mv", "chmod", "cmp", "cksum", "curl", "wget", "stat", "ls", "uname")
+FULL_BUILD_TOOLS = LAUNCHER_UPDATE_TOOLS + ("df", "id", "tar", "date", "tee")
 
 
 def make_fake_path(directory: Path, tools: tuple[str, ...] = LAUNCHER_UPDATE_TOOLS) -> Path:
@@ -616,6 +622,48 @@ class LauncherUpdateTests(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             self.assertEqual((engine / "tools" / "bundle_launcher.ps1").read_bytes(), (bundle / "build.ps1").read_bytes())
 
+    def test_update_ignores_a_cr_only_difference_in_build_cmd(self) -> None:
+        """A bundle applied on a system that turns build.cmd's CRLF into LF
+        (export_catalog.py used to do this with read_text) must not be
+        reported as stale forever over the line endings alone."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine")  # byte-identical to the bundle, CRLF build.cmd
+            lf_cmd = (bundle / "build.cmd").read_bytes().replace(b"\r\n", b"\n")
+            self.assertNotEqual(lf_cmd, (bundle / "build.cmd").read_bytes(), "the fixture must actually differ by CR")
+            (bundle / "build.cmd").write_bytes(lf_cmd)
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp), "SYNOS_ENGINE_SOURCE": str(engine)}
+            result = self.run_update(bundle, env)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("build.cmd: already current", result.stdout)
+            self.assertNotIn("build.cmd: updated", result.stdout)
+            # left exactly as it was: a CR-only "difference" is not a reason to touch it
+            self.assertEqual(lf_cmd, (bundle / "build.cmd").read_bytes())
+
+    def test_update_failure_message_lists_already_replaced_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            newer = lambda name, data: data + b"\n# a newer release\n"
+            engine = self.make_engine(tmp / "engine", newer)
+            fake = make_fake_path(tmp / "bin")
+            real_chmod = shutil.which("chmod")
+            (fake / "chmod").unlink()
+            (fake / "chmod").write_text(
+                "#!/bin/sh\ncase \"$*\" in\n  *build.cmd.new*) exit 1 ;;\n  *) exec '" + real_chmod + "' \"$@\" ;;\nesac\n",
+                encoding="utf-8")
+            (fake / "chmod").chmod(0o755)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_ENGINE_SOURCE": str(engine)}
+            result = self.run_update(bundle, env)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("could not replace build.cmd", result.stderr)
+            self.assertIn("already replaced: build.sh build.ps1", result.stderr)
+            self.assertIn("run update again", result.stderr)
+            self.assertEqual((engine / "tools" / "bundle_launcher.sh").read_bytes(), (bundle / "build.sh").read_bytes())
+            self.assertEqual((engine / "tools" / "bundle_launcher.ps1").read_bytes(), (bundle / "build.ps1").read_bytes())
+            self.assertNotEqual((engine / "tools" / "bundle_launcher.cmd").read_bytes(), (bundle / "build.cmd").read_bytes())
+
 
 class LauncherUpdateCheckTests(LauncherUpdateTests):
     """The check for a newer launcher at the start of check/build (never for
@@ -728,6 +776,63 @@ class LauncherUpdateCheckTests(LauncherUpdateTests):
             # no docker/podman on this machine either: the check must still have run and restarted first.
             self.assertIn("the launchers were updated", result.stdout, result.stdout + result.stderr)
             self.assertEqual((engine / "tools" / "bundle_launcher.ps1").read_bytes(), (bundle / "build.ps1").read_bytes())
+
+    def test_check_ignores_a_cr_only_difference_in_build_cmd(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine")  # byte-identical to the bundle, CRLF build.cmd
+            lf_cmd = (bundle / "build.cmd").read_bytes().replace(b"\r\n", b"\n")
+            self.assertNotEqual(lf_cmd, (bundle / "build.cmd").read_bytes(), "the fixture must actually differ by CR")
+            (bundle / "build.cmd").write_bytes(lf_cmd)
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp), "SYNOS_ENGINE_SOURCE": str(engine)}
+            result = self.run_check(bundle, env)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)  # stops at the missing runtime
+            self.assertNotIn("a newer launcher is available", result.stdout)
+            self.assertNotIn("Update now", result.stdout)
+            self.assertEqual(lf_cmd, (bundle / "build.cmd").read_bytes())
+
+    def test_late_refresh_is_skipped_once_the_check_has_reached_its_source(self) -> None:
+        """The check compares against SYNOS_LAUNCHER_URL/SYNOS_ENGINE_SOURCE; the
+        late, mid-build self-refresh compares against the pulled image's own
+        copy - a different source. When the check found the launchers already
+        current, the late step must not still swap build.sh for an older
+        image copy and set up an update-then-downgrade loop on the next run."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            # the check's source: byte-identical to what the bundle already has
+            engine = self.make_engine(tmp / "engine")
+            # the "image"'s baked-in copy: older than both, and different
+            older_sh = tmp / "older-build.sh"
+            older_sh.write_bytes((ROOT / "tools" / "bundle_launcher.sh").read_bytes()
+                                  + b"\n# an older release baked into the image\n")
+
+            fake = make_fake_path(tmp / "bin", tools=FULL_BUILD_TOOLS)
+            docker = fake / "docker"
+            docker.write_text(
+                "#!/bin/sh\n"
+                "case \"$1\" in\n"
+                "  pull) exit 0 ;;\n"
+                "  info) exit 0 ;;\n"
+                "  run)\n"
+                "    case \"$*\" in\n"
+                "      *'cat /opt/synos/tools/bundle_launcher.sh'*) cat \"$OLDER_SH\" ;;\n"
+                "      *) exit 0 ;;\n"
+                "    esac\n"
+                "    ;;\n"
+                "  *) exit 0 ;;\n"
+                "esac\n",
+                encoding="utf-8")
+            docker.chmod(0o755)
+
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_LAUNCHER_URL": f"file://{engine}/tools",
+                   "OLDER_SH": str(older_sh), "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True,
+                                    stdin=subprocess.DEVNULL, timeout=30)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertNotIn("was updated to the engine's current launcher", result.stdout)
+            self.assertEqual((ROOT / "tools" / "bundle_launcher.sh").read_bytes(), (bundle / "build.sh").read_bytes())
 
 
 def run_under_pty(bundle: Path, env: dict, argv: list[str], send_when_seen: str, send: bytes, timeout: float = 15) -> str:

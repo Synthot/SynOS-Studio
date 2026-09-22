@@ -40,6 +40,16 @@ function Field([string]$File, [string]$Key) {
 }
 
 # ------------------------------------------------------------- the launchers
+# Two files are "the same" launcher when they agree ignoring CR bytes: a bundle
+# applied on a system that turns build.cmd's CRLF into LF must not be offered
+# an update forever over a line-ending difference alone. A real change is
+# still written with the CRLF bytes exactly as fetched.
+function Test-SameIgnoringCr([string]$PathA, [string]$PathB) {
+    if (-not (Test-Path $PathA -PathType Leaf) -or -not (Test-Path $PathB -PathType Leaf)) { return $false }
+    $a = [System.IO.File]::ReadAllText($PathA) -replace "`r", ""
+    $b = [System.IO.File]::ReadAllText($PathB) -replace "`r", ""
+    return $a -eq $b
+}
 # A fetched launcher never replaces the real one until it looks like the
 # right kind of script: this rules out a captive portal, a registry error
 # page or an empty response silently bricking a bundle's launchers. Returns
@@ -105,17 +115,28 @@ function Invoke-Update {
         }
     }
     $updated = 0
+    $replaced = @()
     foreach ($ext in $launchers.Keys) {
         $target = $launchers[$ext]
         $tmp = Join-Path $workdir $target
         $dest = Join-Path $PSScriptRoot $target
-        if ((Test-Path $dest -PathType Leaf) -and ((Get-FileHash -Algorithm SHA256 $tmp).Hash -eq (Get-FileHash -Algorithm SHA256 $dest).Hash)) {
+        if (Test-SameIgnoringCr $tmp $dest) {
             Write-Host "${target}: already current"
             continue
         }
-        Copy-Item -Path $tmp -Destination $dest -Force
+        try {
+            Copy-Item -Path $tmp -Destination $dest -Force
+        } catch {
+            Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+            if ($replaced.Count -gt 0) {
+                Fail "could not replace ${target} (already replaced: $($replaced -join ' ')); run update again to finish" 2
+            } else {
+                Fail "could not replace $target" 2
+            }
+        }
         Write-Host "${target}: updated"
         $updated++
+        $replaced += $target
     }
     Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
     if ($updated -gt 0) { Write-Host "launchers updated ($updated of 4)." } else { Write-Host "launchers already up to date." }
@@ -150,7 +171,7 @@ function Update-Siblings {
         $target = $siblings[$ext]
         $tmp = Join-Path $workdir $target
         $dest = Join-Path $PSScriptRoot $target
-        if ((Test-Path $dest -PathType Leaf) -and ((Get-FileHash -Algorithm SHA256 $tmp).Hash -eq (Get-FileHash -Algorithm SHA256 $dest).Hash)) { continue }
+        if (Test-SameIgnoringCr $tmp $dest) { continue }
         try { Copy-Item -Path $tmp -Destination $dest -Force }
         catch { Write-Host "warning: could not replace $target with the engine's current version." }
     }
@@ -188,12 +209,17 @@ function Test-ForLauncherUpdate {
             return
         }
         $dest = Join-Path $PSScriptRoot $target
-        if (-not (Test-Path $dest -PathType Leaf) -or (Get-FileHash -Algorithm SHA256 $tmp).Hash -ne (Get-FileHash -Algorithm SHA256 $dest).Hash) {
+        if (-not (Test-SameIgnoringCr $tmp $dest)) {
             $changed += $target
         }
     }
     if ($changed.Count -eq 0) {
+        # The check reached its source and the launchers agree: mark this run
+        # refreshed so the late, mid-build self-refresh (a different source:
+        # the engine image, not SYNOS_LAUNCHER_URL) does not undo this with an
+        # older copy and start a downgrade-then-offer-upgrade loop next time.
         Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+        $env:SYNOS_LAUNCHER_REFRESHED = "1"
         return
     }
     Write-Host "a newer launcher is available: $($changed -join ' ')"
@@ -210,9 +236,20 @@ function Test-ForLauncherUpdate {
         $env:SYNOS_LAUNCHER_REFRESHED = "1"
         return
     }
+    $replaced = @()
     foreach ($ext in $launchers.Keys) {
         $target = $launchers[$ext]
-        Copy-Item -Path (Join-Path $workdir $target) -Destination (Join-Path $PSScriptRoot $target) -Force
+        try {
+            Copy-Item -Path (Join-Path $workdir $target) -Destination (Join-Path $PSScriptRoot $target) -Force
+        } catch {
+            Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+            if ($replaced.Count -gt 0) {
+                Fail "could not replace ${target} (already replaced: $($replaced -join ' ')); run .\build.ps1 update again to finish" 2
+            } else {
+                Fail "could not replace $target" 2
+            }
+        }
+        $replaced += $target
     }
     Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
     Write-Host "the launchers were updated; starting again."

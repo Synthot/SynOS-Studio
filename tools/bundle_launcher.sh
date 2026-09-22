@@ -52,6 +52,14 @@ ask_yes() {  # ask_yes "question" -> returns 0 unless the answer is explicitly n
     case "$answer" in n|N|no|NO|No) return 1 ;; *) return 0 ;; esac
 }
 field() { sed -n "s/^$2:[[:space:]]*\"\{0,1\}\([^\"#]*\)\"\{0,1\}.*/\1/p" "$1" | head -n 1 | sed 's/[[:space:]]*$//'; }
+# Two files are "the same" launcher when they agree ignoring CR bytes: a bundle
+# downloaded (or applied) on a system that turns build.cmd's CRLF into LF must
+# not be offered an update forever over a line-ending difference alone. A real
+# change is still written with the CRLF bytes exactly as fetched.
+same_ignoring_cr() {
+    [ -f "$1" ] && [ -f "$2" ] || return 1
+    [ "$(tr -d '\r' < "$1" | cksum)" = "$(tr -d '\r' < "$2" | cksum)" ]
+}
 
 # ------------------------------------------------------------- the launchers
 LAUNCHER_LIST="sh:build.sh ps1:build.ps1 cmd:build.cmd command:build.command"
@@ -125,10 +133,11 @@ update_launchers() {
         fi
     done
     updated=0
+    replaced=""
     for pair in $LAUNCHER_LIST; do
         ext=${pair%%:*}; target=${pair#*:}
         tmp="$workdir/$target"
-        if [ -f "$target" ] && cmp -s "$tmp" "$target" 2>/dev/null; then
+        if same_ignoring_cr "$tmp" "$target"; then
             say "$target: already current"
             continue
         fi
@@ -136,10 +145,17 @@ update_launchers() {
             build.sh|build.command) mode=755 ;;
             *) if [ -f "$target" ] && [ -x "$target" ]; then mode=755; else mode=644; fi ;;
         esac
-        cp "$tmp" "$target.new" && chmod "$mode" "$target.new" && mv -f "$target.new" "$target" \
-            || { rm -rf "$workdir"; fail "could not replace $target" 2; }
+        if ! { cp "$tmp" "$target.new" && chmod "$mode" "$target.new" && mv -f "$target.new" "$target"; }; then
+            rm -rf "$workdir"
+            if [ -n "$replaced" ]; then
+                fail "could not replace $target (already replaced:$replaced); run update again to finish" 2
+            else
+                fail "could not replace $target" 2
+            fi
+        fi
         say "$target: updated"
         updated=$((updated + 1))
+        replaced="$replaced $target"
     done
     rm -rf "$workdir"
     if [ "$updated" -gt 0 ]; then say "launchers updated ($updated of 4)."; else say "launchers already up to date."; fi
@@ -169,7 +185,7 @@ refresh_siblings() {
     for pair in ps1:build.ps1 cmd:build.cmd command:build.command; do
         ext=${pair%%:*}; target=${pair#*:}
         tmp="$workdir/$target"
-        if [ -f "$target" ] && cmp -s "$tmp" "$target" 2>/dev/null; then continue; fi
+        if same_ignoring_cr "$tmp" "$target"; then continue; fi
         case "$target" in
             build.command) mode=755 ;;
             *) if [ -f "$target" ] && [ -x "$target" ]; then mode=755; else mode=644; fi ;;
@@ -201,10 +217,15 @@ check_for_launcher_update() {
             rm -rf "$workdir"
             return 0
         fi
-        [ -f "$target" ] && cmp -s "$workdir/$target" "$target" 2>/dev/null || changed="$changed $target"
+        same_ignoring_cr "$workdir/$target" "$target" || changed="$changed $target"
     done
     if [ -z "$changed" ]; then
+        # The check reached its source and the launchers agree: mark this run
+        # refreshed so the late, mid-build self-refresh (a different source:
+        # the engine image, not SYNOS_LAUNCHER_URL) does not undo this with an
+        # older copy and start a downgrade-then-offer-upgrade loop next time.
         rm -rf "$workdir"
+        SYNOS_LAUNCHER_REFRESHED=1
         return 0
     fi
     say "a newer launcher is available:$changed"
@@ -221,6 +242,7 @@ check_for_launcher_update() {
         SYNOS_LAUNCHER_REFRESHED=1
         return 0
     fi
+    replaced=""
     for pair in $LAUNCHER_LIST; do
         ext=${pair%%:*}; target=${pair#*:}
         tmp="$workdir/$target"
@@ -228,8 +250,15 @@ check_for_launcher_update() {
             build.sh|build.command) mode=755 ;;
             *) if [ -f "$target" ] && [ -x "$target" ]; then mode=755; else mode=644; fi ;;
         esac
-        cp "$tmp" "$target.new" && chmod "$mode" "$target.new" && mv -f "$target.new" "$target" \
-            || { rm -rf "$workdir"; fail "could not replace $target" 2; }
+        if ! { cp "$tmp" "$target.new" && chmod "$mode" "$target.new" && mv -f "$target.new" "$target"; }; then
+            rm -rf "$workdir"
+            if [ -n "$replaced" ]; then
+                fail "could not replace $target (already replaced:$replaced); run ./build.sh update again to finish" 2
+            else
+                fail "could not replace $target" 2
+            fi
+        fi
+        replaced="$replaced $target"
     done
     rm -rf "$workdir"
     say "the launchers were updated; starting again."
