@@ -2,15 +2,19 @@
 #
 #   .\build.ps1            build; the ISO and its evidence land in .\dist
 #   .\build.ps1 check      only check that this machine can build (installs nothing)
+#   .\build.ps1 update     fetch the latest launcher scripts and replace these four files, then exit
 #   .\build.ps1 -Yes       answer yes to the questions (install Docker Desktop)
 #
 # Needs Docker Desktop or Podman Desktop (WSL 2 backend) and 40 GB free.
 # When neither is present it offers to install Docker Desktop with winget.
 # Nothing else is installed: the SynOS build engine runs inside a container
 # image published for the exact engine version this bundle was made for.
-# Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY,
-#   SYNOS_ENGINE_SOURCE (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive)
-# (another registry, default ghcr.io/synthot/synos-builder), SYNOS_YES=1.
+# Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
+#   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
+#   (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive),
+#   SYNOS_LAUNCHER_URL (source for `update`, default the engine's tools/ on GitHub),
+#   SYNOS_NO_UPDATE_CHECK=1 (skip the launcher update check at the start of
+#   check/build), SYNOS_YES=1.
 [CmdletBinding()]
 param([string]$Command = "", [switch]$Yes)
 $ErrorActionPreference = "Stop"
@@ -23,11 +27,204 @@ function Ask([string]$Question) {
     $answer = Read-Host "$Question [y/N]"
     return $answer -match '^(y|yes)$'
 }
+function AskYes([string]$Question) {  # default: yes
+    if ($Yes) { return $true }
+    if ([Console]::IsInputRedirected) { return $false }
+    $answer = Read-Host "$Question [Y/n]"
+    return -not ($answer -match '^(n|no)$')
+}
 function Field([string]$File, [string]$Key) {
     $line = Get-Content -Path $File | Where-Object { $_ -match "^$Key\s*:" } | Select-Object -First 1
     if (-not $line) { return "" }
     return ($line -replace "^$Key\s*:\s*", "" -replace '\s*#.*$', "" -replace '^"|"$', "").Trim()
 }
+
+# ------------------------------------------------------------- the launchers
+# A fetched launcher never replaces the real one until it looks like the
+# right kind of script: this rules out a captive portal, a registry error
+# page or an empty response silently bricking a bundle's launchers. Returns
+# "" when the file is fine, or the reason it is refused.
+function Test-Launcher([string]$Ext, [string]$Path) {
+    if (-not (Test-Path $Path -PathType Leaf) -or (Get-Item $Path).Length -eq 0) { return "downloaded file is empty" }
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $headLength = [Math]::Min(512, $bytes.Length)
+    $head = [System.Text.Encoding]::ASCII.GetString($bytes, 0, $headLength).ToLowerInvariant()
+    if ($head.Contains("<!doctype html") -or $head.Contains("<html")) { return "downloaded file is an HTML page, not a script" }
+    $text = [System.Text.Encoding]::UTF8.GetString($bytes)
+    $firstLine = ($text -split "`r?`n", 2)[0]
+    switch ($Ext) {
+        "sh"      { if ($firstLine -ne "#!/bin/sh") { return "does not start with #!/bin/sh" } }
+        "command" { if ($firstLine -ne "#!/bin/sh") { return "does not start with #!/bin/sh" } }
+        "cmd"     { if ($firstLine -ne "@echo off") { return "does not start with @echo off" } }
+        "ps1"     {
+            if (-not $firstLine.StartsWith("# Builds this configuration bundle")) { return "does not start with the expected header line" }
+            if ($text -notmatch '(?m)^\s*param\(') { return "has no param( block" }
+        }
+    }
+    return ""
+}
+
+# Fetches one launcher (SYNOS_ENGINE_SOURCE, an engine checkout, when set;
+# otherwise a plain HTTP GET under BaseUrl) into Out. Used by both `update`
+# and the launch-time check below, so they can never drift apart. Throws on
+# any problem; nothing here is ever executed, eval'd or sourced.
+function Get-Launcher([string]$Ext, [string]$Out, [string]$SrcDir, [string]$BaseUrl) {
+    if ($SrcDir) {
+        $from = Join-Path $SrcDir "tools\bundle_launcher.$Ext"
+        if (-not (Test-Path $from -PathType Leaf)) { throw "$from is missing" }
+        Copy-Item -Path $from -Destination $Out -Force
+    } else {
+        Invoke-WebRequest -Uri "$BaseUrl/bundle_launcher.$Ext" -OutFile $Out -UseBasicParsing -TimeoutSec 20
+    }
+}
+
+# .\build.ps1 update: pulls the four current launchers (SYNOS_ENGINE_SOURCE, an
+# engine checkout, when set; otherwise SYNOS_LAUNCHER_URL or the engine's own
+# repository) and replaces the bundle's copies. All four are downloaded and
+# validated before any of them is touched, so a bad source changes nothing.
+function Invoke-Update {
+    $launchers = [ordered]@{ "sh" = "build.sh"; "ps1" = "build.ps1"; "cmd" = "build.cmd"; "command" = "build.command" }
+    $srcDir = $env:SYNOS_ENGINE_SOURCE
+    $baseUrl = if ($env:SYNOS_LAUNCHER_URL) { $env:SYNOS_LAUNCHER_URL } else { "https://raw.githubusercontent.com/Synthot/SynOS-Studio/main/tools" }
+    $workdir = Join-Path $PSScriptRoot ".build\update"
+    if (Test-Path $workdir) { Remove-Item -Recurse -Force $workdir }
+    New-Item -ItemType Directory -Force -Path $workdir | Out-Null
+    foreach ($ext in $launchers.Keys) {
+        $target = $launchers[$ext]
+        $tmp = Join-Path $workdir $target
+        try {
+            Get-Launcher -Ext $ext -Out $tmp -SrcDir $srcDir -BaseUrl $baseUrl
+        } catch {
+            Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+            Fail "${target}: $($_.Exception.Message) (nothing was changed)" 2
+        }
+        $problem = Test-Launcher -Ext $ext -Path $tmp
+        if ($problem) {
+            Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+            Fail "${target}: $problem (nothing was changed)" 2
+        }
+    }
+    $updated = 0
+    foreach ($ext in $launchers.Keys) {
+        $target = $launchers[$ext]
+        $tmp = Join-Path $workdir $target
+        $dest = Join-Path $PSScriptRoot $target
+        if ((Test-Path $dest -PathType Leaf) -and ((Get-FileHash -Algorithm SHA256 $tmp).Hash -eq (Get-FileHash -Algorithm SHA256 $dest).Hash)) {
+            Write-Host "${target}: already current"
+            continue
+        }
+        Copy-Item -Path $tmp -Destination $dest -Force
+        Write-Host "${target}: updated"
+        $updated++
+    }
+    Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+    if ($updated -gt 0) { Write-Host "launchers updated ($updated of 4)." } else { Write-Host "launchers already up to date." }
+}
+
+# Called only when build.ps1 itself was just refreshed, below: pulls the other
+# three launchers from the same source. Best effort and never blocks the
+# build - a problem here is a one-line warning, not a failure.
+function Update-Siblings {
+    $siblings = [ordered]@{ "sh" = "build.sh"; "cmd" = "build.cmd"; "command" = "build.command" }
+    $workdir = Join-Path $PSScriptRoot ".build\sibling-refresh"
+    if (Test-Path $workdir) { Remove-Item -Recurse -Force $workdir }
+    New-Item -ItemType Directory -Force -Path $workdir | Out-Null
+    foreach ($ext in $siblings.Keys) {
+        $target = $siblings[$ext]
+        $tmp = Join-Path $workdir $target
+        $fromSource = if ($env:SYNOS_ENGINE_SOURCE) { Join-Path $env:SYNOS_ENGINE_SOURCE "tools\bundle_launcher.$ext" } else { Join-Path $PSScriptRoot ".build\engine-src" }
+        $candidate = if (Test-Path $fromSource -PathType Leaf) { Get-Item $fromSource } else { Get-ChildItem -Path $fromSource -Recurse -Filter "bundle_launcher.$ext" -ErrorAction SilentlyContinue | Select-Object -First 1 }
+        if ($candidate) {
+            Copy-Item -Path $candidate.FullName -Destination $tmp -Force
+        } else {
+            & $runtime run --rm $image cat "/opt/synos/tools/bundle_launcher.$ext" 2>$null | Set-Content -Path $tmp -Encoding utf8 -NoNewline
+        }
+        $problem = Test-Launcher -Ext $ext -Path $tmp
+        if ($problem) {
+            Write-Host "warning: $target was not refreshed ($problem); it was left unchanged."
+            Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+            return
+        }
+    }
+    foreach ($ext in $siblings.Keys) {
+        $target = $siblings[$ext]
+        $tmp = Join-Path $workdir $target
+        $dest = Join-Path $PSScriptRoot $target
+        if ((Test-Path $dest -PathType Leaf) -and ((Get-FileHash -Algorithm SHA256 $tmp).Hash -eq (Get-FileHash -Algorithm SHA256 $dest).Hash)) { continue }
+        try { Copy-Item -Path $tmp -Destination $dest -Force }
+        catch { Write-Host "warning: could not replace $target with the engine's current version." }
+    }
+    Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+}
+
+# Runs once, for "check" and "build" only (not "update", and never after a
+# restart of this script): looks for newer launchers before anything that
+# needs a runtime, disk space or a registry, and offers to fetch them. A
+# network problem here is a one-line note, never a build failure.
+function Test-ForLauncherUpdate {
+    if ($env:SYNOS_NO_UPDATE_CHECK) { return }
+    if ($env:SYNOS_LAUNCHER_REFRESHED) { return }
+    $launchers = [ordered]@{ "sh" = "build.sh"; "ps1" = "build.ps1"; "cmd" = "build.cmd"; "command" = "build.command" }
+    $srcDir = $env:SYNOS_ENGINE_SOURCE
+    $baseUrl = if ($env:SYNOS_LAUNCHER_URL) { $env:SYNOS_LAUNCHER_URL } else { "https://raw.githubusercontent.com/Synthot/SynOS-Studio/main/tools" }
+    $workdir = Join-Path $PSScriptRoot ".build\update-check"
+    if (Test-Path $workdir) { Remove-Item -Recurse -Force $workdir }
+    New-Item -ItemType Directory -Force -Path $workdir | Out-Null
+    $changed = @()
+    foreach ($ext in $launchers.Keys) {
+        $target = $launchers[$ext]
+        $tmp = Join-Path $workdir $target
+        try {
+            Get-Launcher -Ext $ext -Out $tmp -SrcDir $srcDir -BaseUrl $baseUrl
+        } catch {
+            Write-Host "could not check for a launcher update: ${target}: $($_.Exception.Message); continuing"
+            Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+            return
+        }
+        $problem = Test-Launcher -Ext $ext -Path $tmp
+        if ($problem) {
+            Write-Host "could not check for a launcher update: ${target}: $problem; continuing"
+            Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+            return
+        }
+        $dest = Join-Path $PSScriptRoot $target
+        if (-not (Test-Path $dest -PathType Leaf) -or (Get-FileHash -Algorithm SHA256 $tmp).Hash -ne (Get-FileHash -Algorithm SHA256 $dest).Hash) {
+            $changed += $target
+        }
+    }
+    if ($changed.Count -eq 0) {
+        Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+        return
+    }
+    Write-Host "a newer launcher is available: $($changed -join ' ')"
+    $proceed = $false
+    if ($Yes) {
+        $proceed = $true
+    } elseif ([Console]::IsInputRedirected) {
+        Write-Host "run .\build.ps1 update to apply it."
+    } elseif (AskYes "A newer launcher is available. Update now?") {
+        $proceed = $true
+    }
+    if (-not $proceed) {
+        Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+        $env:SYNOS_LAUNCHER_REFRESHED = "1"
+        return
+    }
+    foreach ($ext in $launchers.Keys) {
+        $target = $launchers[$ext]
+        Copy-Item -Path (Join-Path $workdir $target) -Destination (Join-Path $PSScriptRoot $target) -Force
+    }
+    Remove-Item -Recurse -Force $workdir -ErrorAction SilentlyContinue
+    Write-Host "the launchers were updated; starting again."
+    $env:SYNOS_LAUNCHER_REFRESHED = "1"
+    $reExecArgs = @()
+    if ($Command) { $reExecArgs += $Command }
+    if ($Yes) { $reExecArgs += "-Yes" }
+    & powershell -ExecutionPolicy Bypass -File $PSCommandPath @reExecArgs
+    exit $LASTEXITCODE
+}
+
+if ($Command -eq "update") { Invoke-Update; exit 0 }
 
 # ---------------------------------------------------------------- the bundle
 if (-not (Test-Path "bundle.json")) { Fail "bundle.json is missing: run this script from the unzipped bundle folder" }
@@ -38,6 +235,8 @@ $engine = if ($descriptor.engine -and $descriptor.engine.min) { $descriptor.engi
 $base = Field $manifest "base"
 $suite = Field $manifest "suite"
 if (-not $base -or -not $suite) { Fail "$manifest does not name a base and a suite" }
+
+Test-ForLauncherUpdate
 
 # ---------------------------------------------------------------- the machine
 function Find-Runtime {
@@ -142,6 +341,7 @@ if (-not $env:SYNOS_LAUNCHER_REFRESHED) {
     if ($latest -and $latest.StartsWith("#") -and ($latest.Trim() -ne $self.Trim())) {
         Set-Content -Path $PSCommandPath -Value $latest -Encoding utf8
         Write-Host "build.ps1 was updated to the engine's current launcher; starting again."
+        Update-Siblings
         $env:SYNOS_LAUNCHER_REFRESHED = "1"
         & powershell -ExecutionPolicy Bypass -File $PSCommandPath @args
         exit $LASTEXITCODE

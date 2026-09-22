@@ -85,22 +85,31 @@ catalog and written into the zip by the front end) do this and nothing else:
    (the public repository's `main` archive, or `SYNOS_ENGINE_SOURCE`) and keep
    it named after that source, so a bundle never depends on the registry
    being reachable; then compare themselves with the launcher inside that
-   engine and, when it is newer, replace themselves and start again, so a
-   launcher fix reaches bundles downloaded before it;
-2. find podman or docker; when neither exists, offer to install podman with
+   engine and, when it is newer, replace themselves (and best-effort refresh
+   the other three launcher files from the same source) and start again, so a
+   launcher fix reaches bundles downloaded before it. `./build.sh update` (or
+   `.\build.ps1 update`) does the same fetch-and-replace for all four files on
+   demand, without building: from `SYNOS_ENGINE_SOURCE` when set, otherwise
+   from `SYNOS_LAUNCHER_URL` (default the engine's `tools/` on GitHub);
+2. for `check` and a plain build (not `update`), first look, with a short
+   timeout, for launchers newer than the bundle's own; a difference offers to
+   update now (default yes; `--yes`/`SYNOS_YES=1` updates without asking, no
+   terminal prints how to run `update` and continues); a network problem is a
+   one-line note, never a build failure. `SYNOS_NO_UPDATE_CHECK=1` skips this;
+3. find podman or docker; when neither exists, offer to install podman with
    the distribution's package manager (apt, dnf, zypper, pacman, apk, brew;
    `--yes` or `SYNOS_YES=1` answers for scripts). On Windows, `build.ps1`
    offers Docker Desktop through winget. Rootless podman and an unreachable
    docker socket are used through sudo: the build mounts filesystems and
    loop-mounts the EFI image, which needs a root runtime;
-3. check 40 GB free, then pull the image pinned to the engine version, or the
+4. check 40 GB free, then pull the image pinned to the engine version, or the
    latest one for that base and suite when no pinned image exists;
-4. run it privileged with the bundle mounted at `/bundle`, a named volume
+5. run it privileged with the bundle mounted at `/bundle`, a named volume
    `synos-cache-<base>-<suite>` at `/opt/synos/.build` (package, apt and
    source caches, signing key), anonymous volumes for the chroot and the
    image staging (GRUB must probe a real filesystem, not the container's
    overlay), and `synos build /bundle --output /bundle/dist --log /bundle/dist/build.log`;
-5. print where the ISO is and how to write it to a USB stick or boot it in a
+6. print where the ISO is and how to write it to a USB stick or boot it in a
    virtual machine; on failure, where to look in `build.log` and that running
    again resumes from the cache.
 

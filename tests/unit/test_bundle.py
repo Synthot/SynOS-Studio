@@ -364,7 +364,7 @@ class LauncherTests(unittest.TestCase):
                 found = shutil.which(tool)
                 if found:
                     (fake / tool).symlink_to(found)
-            env = {"PATH": str(fake), "HOME": tmp}
+            env = {"PATH": str(fake), "HOME": tmp, "SYNOS_NO_UPDATE_CHECK": "1"}
             check = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
             self.assertEqual(2, check.returncode, check.stderr)
             self.assertIn("podman or docker is required", check.stderr)
@@ -392,14 +392,15 @@ class LauncherTests(unittest.TestCase):
             shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
             fake = work / "bin"
             fake.mkdir()
-            for tool in ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "tr", "dirname", "printf", "mkdir", "rm", "tar", "date", "tee", "mv", "chmod"):
+            for tool in ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "cp", "tr", "dirname", "printf", "mkdir", "rm", "tar", "date", "tee", "mv", "chmod", "cmp"):
                 found = shutil.which(tool)
                 if found:
                     (fake / tool).symlink_to(found)
             log = work / "runtime.log"
             (fake / "docker").write_text("#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$RUNTIME_LOG\"\ncase \"$1\" in pull|image) exit 1;; *) exit 0;; esac\n", encoding="utf-8")
             (fake / "docker").chmod(0o755)
-            env = {"PATH": str(fake), "HOME": str(work), "RUNTIME_LOG": str(log), "SYNOS_ENGINE_SOURCE": str(ROOT), "SYNOS_YES": "1"}
+            env = {"PATH": str(fake), "HOME": str(work), "RUNTIME_LOG": str(log), "SYNOS_ENGINE_SOURCE": str(ROOT), "SYNOS_YES": "1",
+                   "SYNOS_NO_UPDATE_CHECK": "1"}
             check = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
             self.assertEqual(0, check.returncode, check.stderr + check.stdout)
             self.assertIn("built here at the first build", check.stdout)
@@ -469,3 +470,305 @@ class LauncherTests(unittest.TestCase):
             cli.sys.stderr = sys.stderr
             os.environ.clear()
             os.environ.update(original_env)
+
+
+LAUNCHER_UPDATE_TOOLS = ("sh", "sed", "head", "awk", "grep", "cat", "cp", "tr", "dirname", "printf",
+                          "mkdir", "rm", "mv", "chmod", "cmp", "curl", "wget", "stat", "ls", "uname")
+
+
+def make_fake_path(directory: Path, tools: tuple[str, ...] = LAUNCHER_UPDATE_TOOLS) -> Path:
+    """A PATH with only the given tools symlinked in - in particular, no docker
+    or podman, so ./build.sh update is exercised without a container runtime."""
+    directory.mkdir(parents=True, exist_ok=True)
+    for tool in tools:
+        found = shutil.which(tool)
+        if found:
+            (directory / tool).symlink_to(found)
+    return directory
+
+
+class LauncherUpdateTests(unittest.TestCase):
+    """./build.sh update (and .\\build.ps1 update): pull the four current
+    launchers and replace the bundle's copies, without building."""
+
+    LAUNCHERS = {"build.sh": "bundle_launcher.sh", "build.ps1": "bundle_launcher.ps1",
+                 "build.cmd": "bundle_launcher.cmd", "build.command": "bundle_launcher.command"}
+
+    def make_bundle(self, directory: Path) -> Path:
+        (directory / "manifests").mkdir(parents=True, exist_ok=True)
+        (directory / "manifests" / "x.yml").write_text(MANIFEST, encoding="utf-8")
+        (directory / "bundle.json").write_text(
+            json.dumps({"format": 1, "manifest": "manifests/x.yml", "engine": {"min": "0.1.0"}}), encoding="utf-8")
+        for target, source in self.LAUNCHERS.items():
+            (directory / target).write_bytes((ROOT / "tools" / source).read_bytes())
+            os.chmod(directory / target, 0o755 if target in ("build.sh", "build.command") else 0o644)
+        return directory
+
+    def make_engine(self, directory: Path, mutate=lambda name, data: data) -> Path:
+        """A pretend engine checkout: a tools/ folder with the four current
+        launchers, each optionally mutated (a newer release, or a broken one)."""
+        tools = directory / "tools"
+        tools.mkdir(parents=True, exist_ok=True)
+        for source in self.LAUNCHERS.values():
+            (tools / source).write_bytes(mutate(source, (ROOT / "tools" / source).read_bytes()))
+        return directory
+
+    def run_update(self, bundle: Path, env: dict) -> subprocess.CompletedProcess:
+        return subprocess.run(["sh", "build.sh", "update"], cwd=bundle, env=env, capture_output=True, text=True,
+                              stdin=subprocess.DEVNULL, timeout=30)
+
+    def test_update_from_engine_source_replaces_all_four_launchers(self) -> None:
+        newer = lambda name, data: data + b"\n# a newer release\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine", newer)
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp), "SYNOS_ENGINE_SOURCE": str(engine)}
+            result = self.run_update(bundle, env)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            for target in self.LAUNCHERS:
+                self.assertIn(f"{target}: updated", result.stdout)
+            for target, source in self.LAUNCHERS.items():
+                self.assertEqual((engine / "tools" / source).read_bytes(), (bundle / target).read_bytes(), target)
+            self.assertEqual(0o755, os.stat(bundle / "build.sh").st_mode & 0o777)
+            self.assertEqual(0o755, os.stat(bundle / "build.command").st_mode & 0o777)
+            self.assertIn(b"\r\n", (bundle / "build.cmd").read_bytes(), "the .cmd CRLF is kept")
+            # a second run finds nothing to do
+            again = self.run_update(bundle, env)
+            self.assertEqual(0, again.returncode, again.stdout + again.stderr)
+            for target in self.LAUNCHERS:
+                self.assertIn(f"{target}: already current", again.stdout)
+            self.assertIn("up to date", again.stdout)
+
+    def test_update_via_a_file_url(self) -> None:
+        if not (shutil.which("curl") or shutil.which("wget")):
+            self.skipTest("neither curl nor wget is installed")
+        newer = lambda name, data: data + b"\n# a newer release\n" if name == "bundle_launcher.sh" else data
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine", newer)
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp),
+                   "SYNOS_LAUNCHER_URL": f"file://{engine}/tools"}
+            result = self.run_update(bundle, env)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            for target, source in self.LAUNCHERS.items():
+                self.assertEqual((engine / "tools" / source).read_bytes(), (bundle / target).read_bytes(), target)
+
+    def test_update_refuses_an_html_source_and_changes_nothing(self) -> None:
+        html = lambda name, data: b"<html><body>captive portal</body></html>" if name == "bundle_launcher.cmd" else data
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine", html)
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp), "SYNOS_ENGINE_SOURCE": str(engine)}
+            before = {target: (bundle / target).read_bytes() for target in self.LAUNCHERS}
+            result = self.run_update(bundle, env)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("build.cmd", result.stderr)
+            self.assertIn("HTML", result.stderr)
+            for target in self.LAUNCHERS:
+                self.assertEqual(before[target], (bundle / target).read_bytes(), f"{target} was changed")
+
+    def test_update_with_an_unreachable_url_changes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            # loopback, closed port: refused immediately, never a real host
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp),
+                   "SYNOS_LAUNCHER_URL": "http://127.0.0.1:1/tools"}
+            before = {target: (bundle / target).read_bytes() for target in self.LAUNCHERS}
+            result = self.run_update(bundle, env)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            for target in self.LAUNCHERS:
+                self.assertEqual(before[target], (bundle / target).read_bytes(), f"{target} was changed")
+
+    def test_update_needs_no_container_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine")
+            fake = make_fake_path(tmp / "bin")
+            self.assertIsNone(shutil.which("docker", path=str(fake)))
+            self.assertIsNone(shutil.which("podman", path=str(fake)))
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_ENGINE_SOURCE": str(engine)}
+            result = self.run_update(bundle, env)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_ps1_update_is_handled_before_the_runtime_checks(self) -> None:
+        text = (ROOT / "tools" / "bundle_launcher.ps1").read_text(encoding="utf-8")
+        update_pos = text.index('$Command -eq "update"')
+        runtime_pos = min(p for p in (text.find("docker", 200), text.find("podman", 200)) if p != -1)
+        self.assertLess(update_pos, runtime_pos, "update must be handled before the first docker/podman reference")
+
+    def test_ps1_update_via_pwsh(self) -> None:
+        pwsh = shutil.which("pwsh")
+        if not pwsh:
+            self.skipTest("pwsh is not installed on this machine")
+        newer = lambda name, data: data + b"\n# a newer release\n" if name == "bundle_launcher.ps1" else data
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine", newer)
+            env = dict(os.environ, SYNOS_ENGINE_SOURCE=str(engine))
+            result = subprocess.run([pwsh, "-NoProfile", "-File", "build.ps1", "update"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertEqual((engine / "tools" / "bundle_launcher.ps1").read_bytes(), (bundle / "build.ps1").read_bytes())
+
+
+class LauncherUpdateCheckTests(LauncherUpdateTests):
+    """The check for a newer launcher at the start of check/build (never for
+    update itself): tools/bundle_launcher.sh (dynamic) and .ps1 (static, plus
+    pwsh when installed). Every run here has no docker/podman on PATH and is
+    read up to the point where the missing runtime stops it (exit 2), which
+    is always after the check has had its say."""
+
+    def run_check(self, bundle: Path, env: dict) -> subprocess.CompletedProcess:
+        return subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True,
+                              stdin=subprocess.DEVNULL, timeout=30)
+
+    def test_newer_remote_with_yes_updates_and_restarts_once(self) -> None:
+        newer = lambda name, data: data + b"\n# a newer release\n" if name == "bundle_launcher.sh" else data
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine", newer)
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp),
+                   "SYNOS_ENGINE_SOURCE": str(engine), "SYNOS_YES": "1"}
+            result = self.run_check(bundle, env)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("podman or docker is required", result.stderr)
+            self.assertEqual(1, result.stdout.count("the launchers were updated; starting again."),
+                             "the update-and-restart happens exactly once, never a loop")
+            self.assertEqual((engine / "tools" / "bundle_launcher.sh").read_bytes(), (bundle / "build.sh").read_bytes())
+
+    def test_newer_remote_without_a_tty_leaves_files_unchanged(self) -> None:
+        newer = lambda name, data: data + b"\n# a newer release\n" if name == "bundle_launcher.sh" else data
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine", newer)
+            before = (bundle / "build.sh").read_bytes()
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp), "SYNOS_ENGINE_SOURCE": str(engine)}
+            result = self.run_check(bundle, env)  # stdin is DEVNULL: never a tty
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("a newer launcher is available", result.stdout)
+            self.assertIn("build.sh update", result.stdout)
+            self.assertEqual(before, (bundle / "build.sh").read_bytes())
+
+    def test_same_remote_prompts_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine")
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp), "SYNOS_ENGINE_SOURCE": str(engine)}
+            result = self.run_check(bundle, env)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertNotIn("a newer launcher is available", result.stdout)
+            self.assertNotIn("Update now", result.stdout)
+
+    def test_unreachable_remote_notes_and_continues(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp),
+                   "SYNOS_LAUNCHER_URL": "http://127.0.0.1:1/tools"}
+            result = self.run_check(bundle, env)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("could not check for a launcher update", result.stdout)
+            self.assertIn("continuing", result.stdout)
+
+    def test_no_update_check_env_var_skips_the_fetch_entirely(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            # points at an address that would fail the check; if the check ran
+            # anyway, it would report "could not check" below.
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp),
+                   "SYNOS_LAUNCHER_URL": "http://127.0.0.1:1/tools", "SYNOS_NO_UPDATE_CHECK": "1"}
+            result = self.run_check(bundle, env)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertNotIn("could not check", result.stdout)
+
+    def test_interactive_default_yes_prompt_via_pty(self) -> None:
+        try:
+            import pty  # noqa: F401
+        except ImportError:
+            self.skipTest("the pty module is not available on this platform")
+        newer = lambda name, data: data + b"\n# a newer release\n" if name == "bundle_launcher.sh" else data
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine", newer)
+            env = {"PATH": str(make_fake_path(tmp / "bin")), "HOME": str(tmp), "SYNOS_ENGINE_SOURCE": str(engine)}
+            output = run_under_pty(bundle, env, ["sh", "build.sh", "check"], send_when_seen="[Y/n]", send=b"\n")
+            self.assertIn("[Y/n]", output)
+            self.assertIn("the launchers were updated", output)
+            self.assertEqual((engine / "tools" / "bundle_launcher.sh").read_bytes(), (bundle / "build.sh").read_bytes())
+
+    def test_ps1_update_check_is_handled_before_the_runtime_checks(self) -> None:
+        text = (ROOT / "tools" / "bundle_launcher.ps1").read_text(encoding="utf-8")
+        check_pos = text.index("Test-ForLauncherUpdate")
+        runtime_pos = min(p for p in (text.find("docker", 500), text.find("podman", 500)) if p != -1)
+        self.assertLess(check_pos, runtime_pos, "the update check must run before the first docker/podman reference")
+
+    def test_ps1_update_check_via_pwsh(self) -> None:
+        pwsh = shutil.which("pwsh")
+        if not pwsh:
+            self.skipTest("pwsh is not installed on this machine")
+        newer = lambda name, data: data + b"\n# a newer release\n" if name == "bundle_launcher.ps1" else data
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp / "bundle")
+            engine = self.make_engine(tmp / "engine", newer)
+            env = dict(os.environ, SYNOS_ENGINE_SOURCE=str(engine), SYNOS_YES="1")
+            result = subprocess.run([pwsh, "-NoProfile", "-File", "build.ps1", "check"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60)
+            # no docker/podman on this machine either: the check must still have run and restarted first.
+            self.assertIn("the launchers were updated", result.stdout, result.stdout + result.stderr)
+            self.assertEqual((engine / "tools" / "bundle_launcher.ps1").read_bytes(), (bundle / "build.ps1").read_bytes())
+
+
+def run_under_pty(bundle: Path, env: dict, argv: list[str], send_when_seen: str, send: bytes, timeout: float = 15) -> str:
+    """Runs argv under a pseudo-terminal (so [Console]::IsInputRedirected /
+    `[ -t 0 ]` see a real tty), types `send` once `send_when_seen` appears,
+    and returns everything the child printed."""
+    import pty
+    import select
+    import time
+
+    out = b""
+    pid, fd = pty.fork()
+    if pid == 0:
+        os.chdir(bundle)
+        os.execvpe(argv[0], argv, env)
+    else:
+        needle = send_when_seen.encode()
+        start = time.time()
+        while needle not in out and time.time() - start < timeout:
+            ready, _, _ = select.select([fd], [], [], 1)
+            if ready:
+                try:
+                    out += os.read(fd, 4096)
+                except OSError:
+                    break
+        try:
+            os.write(fd, send)
+        except OSError:
+            pass
+        start = time.time()
+        while time.time() - start < timeout:
+            ready, _, _ = select.select([fd], [], [], 1)
+            if ready:
+                try:
+                    chunk = os.read(fd, 4096)
+                except OSError:
+                    break
+                if not chunk:
+                    break
+                out += chunk
+            elif not os.path.exists(f"/proc/{pid}"):
+                break
+        os.waitpid(pid, 0)
+    return out.decode(errors="replace")

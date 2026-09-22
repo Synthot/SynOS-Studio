@@ -3,6 +3,7 @@
 #
 #   ./build.sh            build; the ISO and its evidence land in ./dist
 #   ./build.sh check      only check that this machine can build (installs nothing)
+#   ./build.sh update     fetch the latest launcher scripts and replace these four files, then exit
 #   ./build.sh --yes      answer yes to the questions (install the container runtime)
 #
 # Works on any Linux distribution (Debian, Ubuntu, Fedora, openSUSE, Arch and
@@ -14,10 +15,12 @@
 # image published for the exact engine version this bundle was made for.
 # 40 GB free are needed for the first build.
 #
-# Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY,
-#   SYNOS_ENGINE_SOURCE (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive)
-# (another registry, default ghcr.io/synthot/synos-builder), SYNOS_YES=1
-# (same as --yes).
+# Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
+#   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
+#   (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive),
+#   SYNOS_LAUNCHER_URL (source for `update`, default the engine's tools/ on GitHub),
+#   SYNOS_NO_UPDATE_CHECK=1 (skip the launcher update check at the start of
+#   check/build), SYNOS_YES=1 (same as --yes).
 set -eu
 cd "$(dirname "$0")"
 
@@ -26,8 +29,8 @@ command_word=""
 for arg in "$@"; do
     case "$arg" in
         --yes|-y) yes_to_all=1 ;;
-        check|build) command_word=$arg ;;
-        -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        check|build|update) command_word=$arg ;;
+        -h|--help) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) printf 'unknown argument: %s\n' "$arg" >&2; exit 1 ;;
     esac
 done
@@ -41,7 +44,199 @@ ask() {  # ask "question" -> returns 0 for yes
     read -r answer
     case "$answer" in y|Y|yes|YES|Yes) return 0 ;; *) return 1 ;; esac
 }
+ask_yes() {  # ask_yes "question" -> returns 0 unless the answer is explicitly no (default: yes)
+    [ -n "$yes_to_all" ] && return 0
+    [ -t 0 ] || return 1
+    printf '%s [Y/n] ' "$1"
+    read -r answer
+    case "$answer" in n|N|no|NO|No) return 1 ;; *) return 0 ;; esac
+}
 field() { sed -n "s/^$2:[[:space:]]*\"\{0,1\}\([^\"#]*\)\"\{0,1\}.*/\1/p" "$1" | head -n 1 | sed 's/[[:space:]]*$//'; }
+
+# ------------------------------------------------------------- the launchers
+LAUNCHER_LIST="sh:build.sh ps1:build.ps1 cmd:build.cmd command:build.command"
+
+# Downloads (or copies, offline via SYNOS_ENGINE_SOURCE) a fresh copy of one
+# launcher into a temporary path. Nothing fetched here is ever executed,
+# eval'd or sourced; it is only written to disk and syntax-checked.
+fetch_launcher() {  # ext out-path
+    ext=$1; out=$2
+    if [ -n "${launcher_src:-}" ]; then
+        from="$launcher_src/tools/bundle_launcher.$ext"
+        [ -f "$from" ] || { fetch_error="$from is missing"; return 1; }
+        cp "$from" "$out" 2>/dev/null || { fetch_error="could not copy $from"; return 1; }
+        return 0
+    fi
+    url="$launcher_url/bundle_launcher.$ext"
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL --connect-timeout 5 --max-time 20 "$url" -o "$out" 2>/dev/null || { fetch_error="downloading $url failed"; return 1; }
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q --timeout=20 "$url" -O "$out" 2>/dev/null || { fetch_error="downloading $url failed"; return 1; }
+    else
+        fetch_error="curl or wget is needed to download launchers (or set SYNOS_ENGINE_SOURCE to a checkout)"
+        return 1
+    fi
+    return 0
+}
+
+# A fetched launcher never replaces the real one until it looks like the
+# right kind of script: this rules out a captive portal, a registry error
+# page or an empty response silently bricking a bundle's launchers.
+validate_launcher() {  # ext path
+    ext=$1; path=$2
+    [ -s "$path" ] || { fetch_error="downloaded file is empty"; return 1; }
+    case "$(head -c 512 "$path" 2>/dev/null | tr 'A-Z' 'a-z')" in
+        *'<!doctype html'*|*'<html'*) fetch_error="downloaded file is an HTML page, not a script"; return 1 ;;
+    esac
+    case "$ext" in
+        sh|command)
+            [ "$(head -n 1 "$path")" = "#!/bin/sh" ] || { fetch_error="does not start with #!/bin/sh"; return 1; }
+            sh -n "$path" 2>/dev/null || { fetch_error="failed a shell syntax check (sh -n)"; return 1; }
+            ;;
+        ps1)
+            case "$(head -n 1 "$path")" in
+                "# Builds this configuration bundle"*) ;;
+                *) fetch_error="does not start with the expected header line"; return 1 ;;
+            esac
+            grep -q 'param(' "$path" || { fetch_error="has no param( block"; return 1; }
+            ;;
+        cmd)
+            [ "$(head -n 1 "$path" | tr -d '\r')" = "@echo off" ] || { fetch_error="does not start with @echo off"; return 1; }
+            ;;
+    esac
+    return 0
+}
+
+# ./build.sh update: pulls the four current launchers (SYNOS_ENGINE_SOURCE, an
+# engine checkout, when set; otherwise SYNOS_LAUNCHER_URL or the engine's own
+# repository) and replaces the bundle's copies. All four are downloaded and
+# validated before any of them is touched, so a bad source changes nothing.
+update_launchers() {
+    launcher_src=${SYNOS_ENGINE_SOURCE:-}
+    launcher_url=${SYNOS_LAUNCHER_URL:-https://raw.githubusercontent.com/Synthot/SynOS-Studio/main/tools}
+    workdir=".build/update.$$"
+    rm -rf "$workdir"
+    mkdir -p "$workdir" || fail "could not create $workdir" 2
+    for pair in $LAUNCHER_LIST; do
+        ext=${pair%%:*}; target=${pair#*:}
+        if ! fetch_launcher "$ext" "$workdir/$target" || ! validate_launcher "$ext" "$workdir/$target"; then
+            rm -rf "$workdir"
+            fail "$target: $fetch_error (nothing was changed)" 2
+        fi
+    done
+    updated=0
+    for pair in $LAUNCHER_LIST; do
+        ext=${pair%%:*}; target=${pair#*:}
+        tmp="$workdir/$target"
+        if [ -f "$target" ] && cmp -s "$tmp" "$target" 2>/dev/null; then
+            say "$target: already current"
+            continue
+        fi
+        case "$target" in
+            build.sh|build.command) mode=755 ;;
+            *) if [ -f "$target" ] && [ -x "$target" ]; then mode=755; else mode=644; fi ;;
+        esac
+        cp "$tmp" "$target.new" && chmod "$mode" "$target.new" && mv -f "$target.new" "$target" \
+            || { rm -rf "$workdir"; fail "could not replace $target" 2; }
+        say "$target: updated"
+        updated=$((updated + 1))
+    done
+    rm -rf "$workdir"
+    if [ "$updated" -gt 0 ]; then say "launchers updated ($updated of 4)."; else say "launchers already up to date."; fi
+}
+
+# Called only when build.sh itself was just refreshed, below: pulls the other
+# three launchers from the same source. Best effort and never blocks the
+# build - a problem here is a one-line warning, not a failure.
+refresh_siblings() {
+    workdir=".build/sibling-refresh.$$"
+    rm -rf "$workdir"
+    mkdir -p "$workdir" 2>/dev/null || { say "warning: could not refresh the other launchers (no $workdir)."; return; }
+    for pair in ps1:build.ps1 cmd:build.cmd command:build.command; do
+        ext=${pair%%:*}; target=${pair#*:}
+        tmp="$workdir/$target"
+        if [ -n "${src:-}" ] && [ -f "$src/tools/bundle_launcher.$ext" ]; then
+            cp "$src/tools/bundle_launcher.$ext" "$tmp" 2>/dev/null
+        else
+            $run_as "$runtime" run --rm --platform "linux/$arch" "$image" cat "/opt/synos/tools/bundle_launcher.$ext" > "$tmp" 2>/dev/null
+        fi
+        if ! validate_launcher "$ext" "$tmp"; then
+            say "warning: $target was not refreshed ($fetch_error); it was left unchanged."
+            rm -rf "$workdir"
+            return
+        fi
+    done
+    for pair in ps1:build.ps1 cmd:build.cmd command:build.command; do
+        ext=${pair%%:*}; target=${pair#*:}
+        tmp="$workdir/$target"
+        if [ -f "$target" ] && cmp -s "$tmp" "$target" 2>/dev/null; then continue; fi
+        case "$target" in
+            build.command) mode=755 ;;
+            *) if [ -f "$target" ] && [ -x "$target" ]; then mode=755; else mode=644; fi ;;
+        esac
+        if ! { cp "$tmp" "$target.new" && chmod "$mode" "$target.new" && mv -f "$target.new" "$target"; }; then
+            say "warning: could not replace $target with the engine's current version."
+        fi
+    done
+    rm -rf "$workdir"
+}
+
+# Runs once, for `check` and `build` only (not `update`, not -h, and never
+# after a restart of this script): looks for newer launchers before anything
+# that needs a runtime, disk space or a registry, and offers to fetch them.
+# A network problem here is a one-line note, never a build failure.
+check_for_launcher_update() {
+    [ -z "${SYNOS_NO_UPDATE_CHECK:-}" ] || return 0
+    [ -z "${SYNOS_LAUNCHER_REFRESHED:-}" ] || return 0
+    launcher_src=${SYNOS_ENGINE_SOURCE:-}
+    launcher_url=${SYNOS_LAUNCHER_URL:-https://raw.githubusercontent.com/Synthot/SynOS-Studio/main/tools}
+    workdir=".build/update-check.$$"
+    rm -rf "$workdir"
+    mkdir -p "$workdir" 2>/dev/null || return 0
+    changed=""
+    for pair in $LAUNCHER_LIST; do
+        ext=${pair%%:*}; target=${pair#*:}
+        if ! fetch_launcher "$ext" "$workdir/$target" || ! validate_launcher "$ext" "$workdir/$target"; then
+            say "could not check for a launcher update: $fetch_error; continuing"
+            rm -rf "$workdir"
+            return 0
+        fi
+        [ -f "$target" ] && cmp -s "$workdir/$target" "$target" 2>/dev/null || changed="$changed $target"
+    done
+    if [ -z "$changed" ]; then
+        rm -rf "$workdir"
+        return 0
+    fi
+    say "a newer launcher is available:$changed"
+    proceed=""
+    if [ -n "$yes_to_all" ]; then
+        proceed=1
+    elif [ ! -t 0 ]; then
+        say "run ./build.sh update to apply it."
+    elif ask_yes "A newer launcher is available. Update now?"; then
+        proceed=1
+    fi
+    if [ -z "$proceed" ]; then
+        rm -rf "$workdir"
+        SYNOS_LAUNCHER_REFRESHED=1
+        return 0
+    fi
+    for pair in $LAUNCHER_LIST; do
+        ext=${pair%%:*}; target=${pair#*:}
+        tmp="$workdir/$target"
+        case "$target" in
+            build.sh|build.command) mode=755 ;;
+            *) if [ -f "$target" ] && [ -x "$target" ]; then mode=755; else mode=644; fi ;;
+        esac
+        cp "$tmp" "$target.new" && chmod "$mode" "$target.new" && mv -f "$target.new" "$target" \
+            || { rm -rf "$workdir"; fail "could not replace $target" 2; }
+    done
+    rm -rf "$workdir"
+    say "the launchers were updated; starting again."
+    SYNOS_LAUNCHER_REFRESHED=1 exec sh "$0" "$@"
+}
+
+[ "$command_word" = update ] && { update_launchers; exit 0; }
 
 # ---------------------------------------------------------------- the bundle
 [ -f bundle.json ] || fail "bundle.json is missing: run this script from the unzipped bundle folder"
@@ -53,6 +248,8 @@ suite=$(field "$manifest" suite)
 arch=$(field "$manifest" arch)
 [ -n "$arch" ] || arch=amd64
 [ -n "$base" ] && [ -n "$suite" ] || fail "$manifest does not name a base and a suite"
+
+check_for_launcher_update "$@"
 
 # ---------------------------------------------------------------- the machine
 uname_s=$(uname -s)
@@ -240,6 +437,7 @@ if [ -z "${SYNOS_LAUNCHER_REFRESHED:-}" ]; then
                 { printf '%s\n' "$latest" > "$0.new" && chmod 755 "$0.new" && mv "$0.new" "$0"; } \
                     || fail "could not replace $0 with the engine's current launcher (copy tools/bundle_launcher.sh from the engine by hand)" 2
                 say "build.sh was updated to the engine's current launcher; starting again."
+                refresh_siblings
                 SYNOS_LAUNCHER_REFRESHED=1 exec sh "$0" "$@"
             fi
             ;;
