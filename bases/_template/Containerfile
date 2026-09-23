@@ -28,8 +28,19 @@ RUN if [ "$(dpkg --print-architecture)" = amd64 ]; then \
             grub-pc-bin grub-efi-amd64 grub-efi-amd64-signed shim-signed \
         && rm -rf /var/lib/apt/lists/*; fi
 # Debian's packaged Rust is older than what the Rust applications use; rustup
-# installs the toolchain the projects pin (rust-toolchain.toml) at build time.
-RUN rustup toolchain install stable --profile minimal && rustup default stable
+# installs the exact toolchain pinned in bases/rust-toolchain.txt (read by
+# every base and suite Containerfile, so the version lives in one place)
+# instead of tracking a moving "stable". `rustup toolchain install` also
+# tries to make itself the shell default and fails on a bare image because
+# this package does not lay out ~/.cargo the way upstream's self-installer
+# does; that failure is harmless (the toolchain is already installed by
+# then). The `rustup default` run right after is what actually has to
+# succeed, so a real problem (network, a changed checksum) still fails
+# the build.
+COPY bases/rust-toolchain.txt /tmp/rust-toolchain.txt
+RUN version="$(cat /tmp/rust-toolchain.txt)" && \
+    rustup toolchain install "$version" --profile minimal --no-self-update; \
+    rustup default "$version" && rm -f /tmp/rust-toolchain.txt
 ENV PATH=/root/.cargo/bin:$PATH
 # The engine itself, so a bundle builds without a checkout (docs/BUNDLE.md):
 #   podman run --rm --privileged -v $PWD:/bundle -e SYNOS_KEYS_DIR=.build/keys <image> \

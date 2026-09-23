@@ -74,8 +74,42 @@ newer catalog fails early instead of producing a wrong image.
 
 The builder container images CI publishes carry the engine itself at
 `/opt/synos` (`bases/<base>/Containerfile`, `COPY . /opt/synos`), tagged
-`<base>-<suite>` (latest) and `<base>-<suite>-v<VERSION>` (per release). The
-launchers every bundle ships (`tools/bundle_launcher.*`, exported in the
+`<base>-<suite>` (latest) and `<base>-<suite>-v<VERSION>` (per release).
+
+Every base's Containerfile installs its own suite's `build-essential` (the
+oldest LTS suite the catalog pins, noble, ships GCC 13; that is fine for the
+C packages), but pins a single Rust toolchain with `rustup` instead of
+whatever `cargo`/`rustc` that suite's archive happens to carry: the engine's
+own Rust packages need a lock-file format and an edition newer than a
+still-supported LTS suite's packaged Rust understands. The version lives in
+one file, `bases/rust-toolchain.txt`, read by every base's Containerfile, so
+bumping it is a one-line change that reaches ubuntu, debian and any base
+added from `bases/_template/Containerfile` the same way. `rustup toolchain
+install` verifies every component it downloads against the signed release
+manifest it fetches from `static.rust-lang.org` before installing it; no
+separate checksum bookkeeping is needed here. `synos-whisper-worker` is the
+one package that also needs a newer C++ frontend (GCC 15, for the pinned
+whisper.cpp release); rather than growing every builder image for one
+package, its `prebuild.sh` fetches the pinned `gcc-15-x86-64-linux-gnu`
+driver, frontend and fixed-include packages itself (checksummed, from the
+Ubuntu archive's pool, which keeps historical `.deb`s regardless of the
+suite you build), and uses them directly instead of assuming the host
+already has GCC 15. GCC 15 also emits assembly (Ubuntu's package-metadata
+notes) that an older suite's own `as` cannot read, so the same recipe pins
+a matching `binutils` and puts it first on `PATH` for that one compile:
+GCC's own `-B` search does not override the assembler path it was
+configured with, but `PATH` does. Three other GTK packages
+(`synos-swapcontrol-gtk`, `synos-ufwall-gtk`, `synos-yubikey-manager`) ask
+Cargo's `libadwaita` binding for its `v1_6` feature although nothing in
+their code needs more than `v1_5`; noble's own libadwaita is 1.5, so their
+`Cargo.toml` requests `v1_5` instead — a dependency pin, not a toolchain
+fetch, since the gap was in what the package asked for rather than in what
+the base image can build. When a future suite's own toolchain is finally
+new enough, the fix is to drop the corresponding fetch (or the whole
+rustup block, once every supported suite's packaged Rust is new enough on
+its own) rather than to keep pinning ahead of it.
+
+The launchers every bundle ships (`tools/bundle_launcher.*`, exported in the
 catalog and written into the zip by the front end) do this and nothing else:
 
 1. read `bundle.json` and the manifest for the engine version, base and suite;
