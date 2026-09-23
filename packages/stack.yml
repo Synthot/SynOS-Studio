@@ -2,8 +2,18 @@
 # system, grouped the way the build installs them. Each entry names the role
 # and the package that fills it: a SynOS package built from packages/<name>/,
 # or a package of the base archive (dracut, os-prober...). `only_base` limits
-# an entry to one base. The manifest key packages.takeover is accepted for
-# compatibility and ignored: every role is served from the SynOS repository.
+# an entry to one base, decided at render time (tools/render_manifest.py) —
+# use it when the two bases genuinely need different packages. `optional:
+# true` is for the narrower case only the target suite's own archive can
+# settle: the package is attempted on every base it is listed for, but
+# install_stack_group (mods/stack.sh), running inside the chroot with a real
+# apt connection to that suite, drops it without failing the group if this
+# suite's archive does not have it under that name at all — for a package
+# folded into a sibling on some releases and not installable on its own
+# there (dracut-install into dracut-core on Ubuntu jammy; dracut-live's
+# dmsquash-live family into dracut-core on Ubuntu resolute). The manifest key
+# packages.takeover is accepted for compatibility and ignored: every role is
+# served from the SynOS repository.
 groups:
   apt:
     description: Package source configuration and archive keyring
@@ -25,9 +35,13 @@ groups:
         package: dracut-core
       - role: dracut-install
         package: dracut-install
+        optional: true                # folded into dracut-core on some Ubuntu suites (jammy); not its own package there
       - role: dracut-live
-        only_base: [debian]
-        package: dracut-live         # Debian ships dmsquash-live in its own package; Ubuntu folds it into dracut-core
+        package: dracut-live          # carries the dmsquash-live family of modules on most suites...
+        optional: true                # ...but not on Ubuntu resolute, where dracut-core already carries them and
+                                       # dracut-live is not an installable package at all; mods/stack.sh's
+                                       # ensure_dracut_live_modules is what actually guarantees the modules are
+                                       # present, on every suite, regardless of which package would have provided them
       - role: live-layers
         package: synos-live-layers
       - role: discover

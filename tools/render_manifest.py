@@ -406,13 +406,23 @@ def resolve_stack(manifest: dict) -> dict[str, dict]:
     """Resolve packages/stack.yml into per-group concrete package lists.
 
     Returns {group: {"packages": [...], "install_recommends": bool, "exclude": [...],
-    "only_arch": [...]}}. packages.takeover in the manifest is accepted for
-    compatibility and ignored: every role has its package in the stack."""
+    "only_arch": [...], "optional": [...]}}. packages.takeover in the manifest is
+    accepted for compatibility and ignored: every role has its package in the stack.
+
+    `only_base` drops an entry entirely for the other base, decided here at
+    render time (this host never has an apt connection to the target suite).
+    `optional: true` is for the case only the target suite's own archive can
+    settle — a base package folded into a sibling on some releases and not
+    installable as its own package there at all (dracut-install into
+    dracut-core on Ubuntu jammy) — so the package stays in the list and
+    install_stack_group (mods/stack.sh) drops it at install time only if this
+    suite's archive does not actually have it."""
     stack = load_yaml(ROOT / "packages" / "stack.yml")
     groups = stack.get("groups") or {}
     resolved: dict[str, dict] = {}
     for group_id, group in groups.items():
         packages: list[str] = []
+        optional: list[str] = []
         for entry in group.get("packages") or []:
             if entry.get("only_base") and manifest["base"] not in entry["only_base"]:
                 continue          # not part of the stack on this base
@@ -420,11 +430,14 @@ def resolve_stack(manifest: dict) -> dict[str, dict]:
             if (ROOT / "packages" / package).is_dir() and not (ROOT / "packages" / package / "control").is_file():
                 raise ManifestError(f"packages/stack.yml names {package!r} but packages/{package}/control does not exist")
             packages.append(package)
+            if entry.get("optional"):
+                optional.append(package)
         resolved[group_id] = {
             "packages": packages,
             "install_recommends": bool(group.get("install_recommends", False)),
             "exclude": list(group.get("exclude") or []),
             "only_arch": list(group.get("only_arch") or []),
+            "optional": optional,
         }
     return resolved
 
@@ -515,6 +528,7 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
         f"export STACK_{gid.upper()}_RECOMMENDS={q('true' if g['install_recommends'] else 'false')}\n"
         f"export STACK_{gid.upper()}_EXCLUDE={q(' '.join(g['exclude']))}\n"
         f"export STACK_{gid.upper()}_ONLY_ARCH={q(' '.join(g['only_arch']))}\n"
+        f"export STACK_{gid.upper()}_OPTIONAL={q(' '.join(g['optional']))}\n"
         for gid, g in stack.items()
     )
     packages_cfg = manifest.get("packages") or {}

@@ -38,15 +38,23 @@ class DracutLiveContractTests(unittest.TestCase):
 
     def test_dedicated_live_initrd_recipe_only_builds_the_image(self) -> None:
         script = (ROOT / "mods/80-dracut-live-image/install.sh").read_text()
+        stack = (ROOT / "mods/stack.sh").read_text()
         self.assertIn("--no-hostonly", script)
         self.assertIn("--no-hostonly-cmdline", script)
+        # The module list lives once, in mods/stack.sh's LIVE_DRACUT_MODULES,
+        # so mod 80's --add and ensure_dracut_live_modules's presence check
+        # can never drift apart (see test_control_dependencies.py's sibling
+        # class of bug: a name hardcoded in one place and never verified
+        # anywhere else).
+        self.assertIn('--add "$LIVE_DRACUT_MODULES"', script)
+        self.assertIn("ensure_dracut_live_modules", script)
         for module in (
             "dmsquash-live",
             "dmsquash-live-autooverlay",
             "overlayfs",
             "synos-live-layers",
         ):
-            self.assertIn(module, script)
+            self.assertIn(module, stack)
         self.assertIn("/boot/synos-live-initrd.img", script)
         self.assertIn('judge "Build dedicated Dracut Live initrd"', script)
         for test_logic in ("dpkg-query", "lsinitrd", "command -v", "test -s", "grep"):

@@ -69,6 +69,47 @@ package indices for every base's `SUPPORTED_SUITES` (all the pockets
 group resolves against at least one of them; it skips cleanly, rather than
 failing, when the archive is unreachable.
 
+### The same shape outside a control file: packages/stack.yml and mods/stack.sh
+
+`packages/stack.yml` has no alternatives syntax at all: each role names one
+concrete package, and `install_stack_group` (`mods/stack.sh`) runs a single
+`apt install -y $packages` for the whole group. Naming a package there that
+does not exist at all on the target suite does not degrade gracefully the
+way a control file's `Depends` does — it aborts the *entire* group, apt's
+usual response to `E: Unable to locate package`.
+
+`dracut-install` and `dracut-live` are both this shape: `dracut-install` is
+its own package on noble and resolute but folded into `dracut-core` on
+jammy; `dracut-live` (which carries the `dmsquash-live` family of dracut
+modules the Live image needs) is its own package on jammy, noble and Debian
+but folded into `dracut-core` on resolute, where it is not an installable
+package name at all — the failure this file's history section above
+describes for `synos-core-system`, one layer further down: `apt install`
+_looked_ satisfied because `dracut-core` was already going in, but the
+module dracut actually needed at Live-image time was not there.
+
+Mark such a role `optional: true` in `stack.yml` instead of restricting it
+with `only_base:` (which only distinguishes Ubuntu from Debian, not one
+Ubuntu suite from another) or leaving it unconditional (which fails the
+whole group on the suite that lacks it). `install_stack_group` checks
+`apt-cache show` for each optional package against *this suite's* real,
+already-configured apt sources before building the install command, and
+drops what is not there — the only place in the pipeline with an actual apt
+connection to the target suite; `tools/render_manifest.py`'s
+`resolve_stack()` runs on the build host and cannot make that call.
+
+That still is not the same as *guaranteeing* the module the Live image
+needs is present — dracut-core might carry it on some future suite without
+dracut-live existing there at all, or vice versa. `mods/stack.sh`'s
+`ensure_dracut_live_modules`, called right after the "live" stack group
+installs (mod 05, so a gap fails in the first few minutes of a build) and
+again before mod 80 invokes dracut for the Live initrd, is the actual
+authority: it asks `dracut --no-kernel --list-modules` what dracut has,
+installs `dracut-live` if that would plausibly help, and fails with the
+exact missing module and suite named if it would not — never guessing from
+the suite name, which is what stack.yml's `optional:` still does as a
+best-effort first pass.
+
 The repository is signed. The first `make packages` on a machine generates a
 development key under `keys/private/` (git-ignored) and writes its public
 half to `keys/public/`, which `synos-archive-keyring` ships. Releases inject
