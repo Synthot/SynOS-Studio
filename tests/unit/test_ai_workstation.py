@@ -23,7 +23,10 @@ class AiWorkstationTests(unittest.TestCase):
         catalog = render_manifest.load_yaml(ROOT / "profiles" / "catalog.yml")
         self.assertEqual({"none", "nvidia", "amd", "intel"}, {g["id"] for g in catalog["gpus"]})
         services = {s["id"]: s for s in catalog["services"]}
-        self.assertEqual({"ollama", "open-webui", "vllm"}, set(services))
+        # The AI inference services this archetype uses; the catalog also carries
+        # non-AI appliance services (bundle-catalog, docs/BUNDLE.md) that this
+        # test does not concern itself with.
+        self.assertLessEqual({"ollama", "open-webui", "vllm"}, set(services))
         self.assertEqual(["nvidia", "amd"], services["vllm"]["gpu_required"])
         self.assertIn("amd", services["ollama"]["images"])
         for base in ("ubuntu", "debian"):

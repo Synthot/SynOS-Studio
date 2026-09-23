@@ -1,40 +1,111 @@
 # The bundle catalog: ready-made bundles a person can start from instead of
 # starting from scratch (docs/BUNDLE.md, "The bundle catalog"). Each entry
 # names one folder here; tools/export_catalog.py reads the folder's files and
-# exports them verbatim as bundle_catalog[].files.
+# exports them verbatim as bundle_catalog[].files. Every entry here ships with
+# the engine, so verified is true and contributed_by is omitted throughout;
+# a community-proposed entry would set both (see docs/BUNDLE.md).
 bundle_catalog:
   - id: yocto-builder
     name: Yocto Build Machine
-    summary: A developer workstation with BitBake's required host packages preinstalled, ready to build embedded Linux images with the Yocto Project.
+    summary: "A developer workstation with BitBake's required host packages and practical build tools (rsync, ccache, a lean QEMU for runqemu) preinstalled; needs an en_US.UTF-8 locale (this bundle's region supplies one) and at least 140 GB free disk space. Fast to build and install; pick the full build machine instead if you also want to build the Yocto documentation on this host."
     tags: [yocto, openembedded, bitbake, embedded, cross-compile, build-host]
     folder: yocto-builder
-  - id: developer-workstation
-    name: Developer Workstation
-    summary: An office workstation plus containers, compilers and a debugger, with no policy lockdown.
-    tags: [developer, coding, containers, build-tools, git, podman]
-    folder: developer-workstation
+    services: []
+    ports: []
+    verified: true
+  - id: yocto-builder-docs
+    name: Yocto Build Machine, full
+    summary: "The Yocto build machine plus its documentation and PDF toolchain (LaTeX, a full font set): much larger, for building the Yocto Project's own documentation, including PDFs, on this host rather than just embedded images. Needs an en_US.UTF-8 locale (this bundle's region supplies one) and well over 140 GB free disk space."
+    tags: [yocto, openembedded, bitbake, embedded, documentation, latex, build-host]
+    folder: yocto-builder-docs
+    services: []
+    ports: []
+    verified: true
   - id: ai-workstation
     name: AI Workstation
-    summary: A developer workstation with PyTorch and llama.cpp for local model work; GPU stack and inference services are chosen afterwards.
+    summary: "A developer workstation with PyTorch and llama.cpp for local model work; the GPU compute stack and the inference services (Ollama, Open WebUI, vLLM) are chosen after opening this bundle."
     tags: [ai, machine-learning, pytorch, llama.cpp, gpu, local-inference]
     folder: ai-workstation
-  - id: office-workstation
-    name: Office Workstation
-    summary: Office suite, mail, browser, printing, VPN and remote desktop for everyday business use.
-    tags: [office, business, productivity, mail, browser, printing]
-    folder: office-workstation
-  - id: kiosk
-    name: Kiosk
-    summary: Single application, automatic login, no shell access and no USB storage, for a public or unattended terminal.
-    tags: [kiosk, single-app, locked-down, public-terminal, digital-signage]
-    folder: kiosk
-  - id: small-server
-    name: Small Server
-    summary: Headless-ready server with SSH, Cockpit web administration, containers and automatic security updates.
-    tags: [server, headless, ssh, cockpit, containers, web-admin]
-    folder: small-server
-  - id: thin-client
-    name: Thin Client
-    summary: Boots straight into a VDI or RDP session, for a machine whose desktop lives elsewhere.
-    tags: [thin-client, vdi, rdp, remote-desktop, terminal]
-    folder: thin-client
+    services: []
+    ports: []
+    verified: true
+  - id: kodi-media-centre
+    name: Kodi Media Centre
+    summary: "A kiosk that boots straight into Kodi with remote/CEC and joystick support already installed. First boot: point Kodi at your media (Settings > Media > Library) and, only if you turn on Kodi's web interface yourself, set a password for it there before opening its port."
+    tags: [kodi, media-center, home-theater, kiosk, hdmi-cec, remote-control]
+    folder: kodi-media-centre
+    services: []
+    ports: []
+    verified: true
+  - id: web-server-nginx
+    name: Web Server (Nginx)
+    summary: "Nginx serving a placeholder page on ports 80 and 443, ready as a reverse proxy; the leanest and fastest of the three web server appliances. First boot: replace /srv/www/index.html with your site, and put your certificate and key in /etc/nginx/certs to enable the commented-out TLS block in /etc/nginx/conf.d/site.conf."
+    tags: [nginx, web-server, reverse-proxy, http, tls]
+    folder: web-server-nginx
+    services: [nginx]
+    ports: [22, 80, 443]
+    verified: true
+  - id: web-server-apache
+    name: Web Server (Apache)
+    summary: "Apache httpd serving a placeholder page on ports 80 and 443, ready as a reverse proxy; the traditional, most broadly documented and module-rich of the three web server appliances. First boot: replace /srv/www/index.html with your site, and put your certificate and key in /etc/apache/certs to enable the commented-out TLS block in /etc/apache/httpd.conf."
+    tags: [apache, httpd, web-server, reverse-proxy, http, tls]
+    folder: web-server-apache
+    services: [apache]
+    ports: [22, 80, 443]
+    verified: true
+  - id: web-server-caddy
+    name: Web Server (Caddy)
+    summary: "Caddy serving a placeholder page on ports 80 and 443, distinguished from the other two web server appliances by automatic HTTPS. First boot: replace /srv/www/index.html with your site, and replace \":80\" in /etc/caddy/Caddyfile with your real domain name — Caddy obtains and renews its certificate for you."
+    tags: [caddy, web-server, https, acme, automatic-tls]
+    folder: web-server-caddy
+    services: [caddy]
+    ports: [22, 80, 443]
+    verified: true
+  - id: container-registry
+    name: Container Registry
+    summary: "An OCI/Docker image registry on port 5000 with HTTP basic authentication already configured and storage on its own volume. First boot: the shipped htpasswd file is a placeholder that matches no real password, so every login is refused until you replace it — run `htpasswd -Bc /etc/registry/htpasswd <user>` and restart the registry service before pushing images."
+    tags: [registry, oci, docker, container-images, ci-cd]
+    folder: container-registry
+    services: [registry]
+    ports: [22, 5000]
+    verified: true
+  - id: git-server
+    name: Git Server
+    summary: "Self-hosted Git (Gitea) with a web UI, issues and pull requests on port 3000, and git over SSH on port 2222; SQLite storage, so there is no database to set up. First boot: open port 3000 and register the first account — Gitea makes the first registered user an administrator, and the install wizard is already skipped."
+    tags: [git, gitea, version-control, code-review, ci-cd]
+    folder: git-server
+    services: [gitea]
+    ports: [22, 3000, 2222]
+    verified: true
+  - id: media-server
+    name: Media Server
+    summary: "A Jellyfin media server pointed at /srv/media; drop your video and music library there. First boot: open port 8096 and finish Jellyfin's own setup wizard to create the admin account — nothing is pre-configured with a password."
+    tags: [jellyfin, media-server, streaming, movies, music]
+    folder: media-server
+    services: [jellyfin]
+    ports: [22, 8096]
+    verified: true
+  - id: monitoring-server
+    name: Monitoring Server
+    summary: "Prometheus (port 9090) and Grafana (port 3000) as system services, Grafana already pointed at Prometheus as its default data source. First boot: open port 3000 and sign in to Grafana — the default is admin/admin and Grafana itself forces a new password on first login."
+    tags: [monitoring, prometheus, grafana, metrics, dashboards, observability]
+    folder: monitoring-server
+    services: [prometheus, grafana]
+    ports: [22, 3000, 9090]
+    verified: true
+  - id: database-server
+    name: Database Server
+    summary: "PostgreSQL on port 5432, its superuser password read at start-up from a placeholder file rather than baked into the image. First boot, before this port reaches anything you do not trust: connect once locally, change the password, and replace /etc/postgres/superuser-password with something private of your own."
+    tags: [postgresql, database, sql, postgres]
+    folder: database-server
+    services: [postgres]
+    ports: [22, 5432]
+    verified: true
+  - id: kubernetes-server
+    name: Kubernetes Server
+    summary: "A single-node Kubernetes control plane (kubeadm, kubelet, kubectl, containerd) from the community pkgs.k8s.io repository pinned to v1.31, with the kernel modules, sysctl settings and firewall ports a node needs already in place. First boot, as one documented step: fix containerd's cgroup driver and initialise the cluster with `containerd config default | sed 's/SystemdCgroup = false/SystemdCgroup = true/' | sudo tee /etc/containerd/config.toml >/dev/null && sudo systemctl restart containerd && sudo kubeadm init --pod-network-cidr=10.244.0.0/16`, then install a CNI plugin; to add workers later, also open 30000-32767/tcp for NodePort services."
+    tags: [kubernetes, k8s, kubeadm, container-orchestration, cluster]
+    folder: kubernetes-server
+    services: []
+    ports: [22, 6443, 2379, 2380, 10250, 10251, 10252, 10257, 10259]
+    verified: true

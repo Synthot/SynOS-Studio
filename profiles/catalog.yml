@@ -18,7 +18,8 @@ bundles:
   web-admin: Cockpit web administration (services, storage, containers, terminal)
   virtualization: KVM virtual machines with libvirt
   ai-dev: PyTorch, Python tooling and llama.cpp for local model work
-  yocto-build: Host tools required to build embedded images with the Yocto Project / OpenEmbedded (BitBake and friends)
+  yocto-build: Host tools required to build embedded images with the Yocto Project / OpenEmbedded (BitBake and friends), plus practical extras (rsync, ccache, QEMU for runqemu, and the like)
+  yocto-build-docs: Packages to build the Yocto Project's own documentation, including PDFs (large — LaTeX and a full font set)
 
 compliance:
   - {id: none, name: None}
@@ -105,6 +106,75 @@ services:
     gpu_required: [nvidia, amd]
     exec: "--model Qwen/Qwen2.5-1.5B-Instruct"
     images: {nvidia: docker.io/vllm/vllm-openai:latest, amd: docker.io/rocm/vllm:latest}
+  # Appliance services (bundle-catalog, docs/BUNDLE.md "The bundle catalog"):
+  # none of these need a GPU. Image tags are pinned and were checked on
+  # Docker Hub's tag listing for the repository named.
+  - id: nginx
+    title: Nginx
+    summary: Web server and reverse proxy on ports 80 and 443; the leanest and fastest of the three web server appliances
+    ports: ["80:80", "443:443"]
+    volumes: ["/srv/www:/usr/share/nginx/html:ro", "/etc/nginx/conf.d/site.conf:/etc/nginx/conf.d/default.conf:ro", "/etc/nginx/certs:/etc/nginx/certs:ro"]
+    gpu: false
+    images: {default: docker.io/library/nginx:1.31.2}
+  - id: apache
+    title: Apache httpd
+    summary: Web server and reverse proxy on ports 80 and 443; the traditional, most broadly documented and module-rich of the three
+    ports: ["80:80", "443:443"]
+    volumes: ["/srv/www:/usr/local/apache2/htdocs:ro", "/etc/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro", "/etc/apache/certs:/etc/apache/certs:ro"]
+    gpu: false
+    images: {default: docker.io/library/httpd:2.4.68}
+  - id: caddy
+    title: Caddy
+    summary: Web server on ports 80 and 443 that requests and renews HTTPS certificates for a real domain automatically
+    ports: ["80:80", "443:443"]
+    volumes: ["/srv/www:/srv/www:ro", "/etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro", "caddy-data:/data", "caddy-config:/config"]
+    gpu: false
+    images: {default: docker.io/library/caddy:2.11.4}
+  - id: registry
+    title: OCI Registry
+    summary: Docker/OCI image registry on port 5000 with HTTP basic authentication
+    ports: ["5000:5000"]
+    volumes: ["registry-data:/var/lib/registry", "/etc/registry/config.yml:/etc/distribution/config.yml:ro", "/etc/registry/htpasswd:/auth/htpasswd:ro"]
+    gpu: false
+    images: {default: docker.io/library/registry:3.1.1}
+  - id: gitea
+    title: Gitea
+    summary: Self-hosted Git with a web UI, issues and pull requests, on port 3000 (SQLite, no external database)
+    ports: ["3000:3000", "2222:22"]
+    volumes: ["gitea-data:/data", "/etc/gitea/app.ini:/data/gitea/conf/app.ini:ro"]
+    env: {USER_UID: "1000", USER_GID: "1000"}
+    gpu: false
+    images: {default: docker.io/gitea/gitea:1.27.3}
+  - id: jellyfin
+    title: Jellyfin
+    summary: Media server for movies, TV and music on port 8096, pointed at a media folder
+    ports: ["8096:8096"]
+    volumes: ["jellyfin-config:/config", "jellyfin-cache:/cache", "/srv/media:/media"]
+    gpu: false
+    images: {default: docker.io/jellyfin/jellyfin:12.1}
+  - id: prometheus
+    title: Prometheus
+    summary: Metrics collection and storage on port 9090, scraping itself out of the box
+    ports: ["9090:9090"]
+    volumes: ["prometheus-data:/prometheus", "/etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro"]
+    gpu: false
+    images: {default: docker.io/prom/prometheus:v3.13.3}
+  - id: grafana
+    title: Grafana
+    summary: Dashboards on port 3000, pre-wired to the Prometheus appliance service as its default data source
+    ports: ["3000:3000"]
+    volumes: ["grafana-data:/var/lib/grafana", "/etc/grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro"]
+    gpu: false
+    images: {default: docker.io/grafana/grafana:13.2.2}
+    needs: [prometheus]
+  - id: postgres
+    title: PostgreSQL
+    summary: PostgreSQL database on port 5432; the superuser password is read from a placeholder file, never baked into the image
+    ports: ["5432:5432"]
+    volumes: ["postgres-data:/var/lib/postgresql/data", "/etc/postgres/superuser-password:/run/secrets/postgres-superuser-password:ro"]
+    env: {POSTGRES_PASSWORD_FILE: "/run/secrets/postgres-superuser-password"}
+    gpu: false
+    images: {default: docker.io/library/postgres:17.11}
 
 # GPU compute stacks a profile may ship (hardware.gpu); what each adds is in the
 # bases' package maps (gpu-nvidia, gpu-amd, gpu-intel).

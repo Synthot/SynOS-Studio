@@ -35,6 +35,13 @@
         container_services_gpu: "{{ profile.hardware.gpu | default('none') }}"
       when: (profile.software.services | default([])) | length > 0 or (profile.hardware.gpu | default('none')) != 'none'
 
+    - name: Configuration files from the profile
+      ansible.builtin.include_role:
+        name: synos.workstation.profile_files
+      vars:
+        profile_files: "{{ profile.software.files | default([]) }}"
+      when: (profile.software.files | default([])) | length > 0
+
     - name: Fleet enrollment from the profile
       ansible.builtin.include_role:
         name: synos.workstation.fleet_enrollment

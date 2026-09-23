@@ -85,6 +85,22 @@
                 }
               }
             },
+            "files": {
+              "type": "array",
+              "description": "Configuration files written into the image (synos.workstation.profile_files, docs/ARCHITECTURE.md); checked again, including the total size across the array, by tools/render_manifest.py at render time. 16 KiB per file, approximated here by character count.",
+              "items": {
+                "type": "object", "required": ["path", "content"], "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string", "maxLength": 4096,
+                    "pattern": "^/(etc|srv|opt|usr/local)/.+$",
+                    "description": "Absolute path under /etc, /srv, /opt or /usr/local; no .. and no path that resolves through a symlink (both checked at render time, which can reason about path segments and the build host's filesystem in a way a schema pattern cannot)"
+                  },
+                  "content": { "type": "string", "maxLength": 16384, "description": "Text content, written verbatim" },
+                  "mode": { "type": "string", "pattern": "^0[0-7]{3}$", "default": "0644" }
+                }
+              }
+            },
             "store": { "type": "object", "properties": { "catalog": { "type": "string" }, "allow_user_install": { "type": "boolean" } } },
             "defaults": {
               "type": "object", "additionalProperties": false,

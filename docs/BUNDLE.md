@@ -167,32 +167,80 @@ missing.
 
 ## The bundle catalog
 
-A catalogued bundle is an ordinary bundle (`bundle.json`, its manifest, and a
-profile only when it overrides a machine kind) kept in this repository as a
-ready-made starting point, so a front end can offer "begin from an office
-workstation" or "begin from a Yocto build machine" next to "start from
-scratch" — the same as reopening any other downloaded bundle, nothing else
-changes. This is a third, distinct sense of "bundle" from the package groups
-named `bundles` in `profiles/bundles.yml` (office, containers, build-tools...)
-and from the downloadable configuration bundle itself; context tells them
-apart, but the word is worth being careful with.
+A catalogued bundle is an ordinary bundle (`bundle.json`, its manifest, and
+almost always its own `profiles/<id>.yml`) kept in this repository as a
+ready-made *appliance*: a machine that boots to something that already
+works — a web server serving a page, a registry that already requires a
+login, a build host with the packages a real build needs — not a bare copy
+of an existing machine kind with nothing configured. A front end offers
+these next to "start from scratch", the same as reopening any other
+downloaded bundle; nothing else about the bundle format changes. This is a
+third, distinct sense of "bundle" from the package groups named `bundles` in
+`profiles/bundles.yml` (office, containers, build-tools...) and from the
+downloadable configuration bundle itself; context tells them apart, but the
+word is worth being careful with.
 
 Layout: `bundle-catalog/<folder>/` holds one bundle per folder, and
 `bundle-catalog/index.yml` lists them under a `bundle_catalog` key, each
-entry naming its `id`, `name`, one-sentence `summary`, lowercase `tags` for
-search, and its `folder`. `tools/export_catalog.py` reads every listed
-folder and exports a `bundle_catalog` array of
-`{id, name, summary, tags, kind, files}`, where `kind` is the machine-kind
-(profile) id the bundle's manifest names and `files` maps every path the
-folder contains (`bundle.json`, `manifests/<id>.yml`, and `profiles/<id>.yml`
-when present) to that file's exact text, read as bytes and decoded like
-`launchers()` above, so a front end can write the bundle out unchanged.
+entry naming its `id`, `name`, one-sentence `summary` (state plainly what
+the appliance does and what to do first: a password to change, a directory
+to fill), lowercase `tags` for search, its `folder`, `services` (the
+`software.services` names the profile runs, `[]` for an appliance with
+none), `ports` (the bare port numbers `security.open_ports` opens, as
+integers), and optionally `contributed_by` (a name or handle) and
+`verified` (whether a maintainer checked the package names and image tags
+below actually resolve; every entry shipped with the engine is `true`).
+`tools/export_catalog.py` reads every listed folder and exports a
+`bundle_catalog` array of
+`{id, name, summary, tags, kind, files, services, ports, verified,
+contributed_by?}`, where `kind` is the machine-kind (profile) id the
+bundle's manifest names and `files` maps every path the folder contains
+(`bundle.json`, `manifests/<id>.yml`, `profiles/<id>.yml`) to that file's
+exact text, read as bytes and decoded like `launchers()` above, so a front
+end can write the bundle out unchanged.
 
-To add an entry: create `bundle-catalog/<id>/` with a valid `bundle.json` and
-manifest (a profile file only if the machine kind is not one already shipped
-under `profiles/`), keep it minimal — no branding assets, no invented
-profile keys, a neutral name and no logo, since the person personalizes
-those after choosing it — and add one entry to `bundle-catalog/index.yml`.
-`tests/unit/test_bundle_catalog.py` checks that every entry validates, every
-package group it uses resolves on both bases, and the folder and the index
-agree.
+An appliance's profile carries its own configuration through
+`software.files` (see "Configuration files a profile ships" in
+`docs/ARCHITECTURE.md`): real files written into the image, never a
+generator invented for the occasion. A shipped credential is always an
+obvious, documented placeholder the person is told to change — never a
+working password left in place, and never a secret that would matter if
+read by anyone with this public repository.
+
+### Proposing a catalogued bundle
+
+1. Copy `bundle-catalog/_template/` to `bundle-catalog/<your-id>/` and
+   rename `template-appliance` to your id everywhere: the folder, the `name`
+   and `manifest` fields in `bundle.json`, the manifest file's name, and
+   `profiles/<your-id>.yml` (its file name and its `id:`) if you ship one.
+   Extend the machine kind that fits — `server` for most appliances,
+   `kiosk` for a locked-down single application — rather than inventing a
+   new archetype; do not invent new profile keys.
+2. Write the appliance: `software.services` for a container (the
+   `container_services` role, `docs/ARCHITECTURE.md` "GPU and container
+   services"), `software.packages` and `software.repositories` for native
+   packages and third-party apt sources (verify every package name and
+   repository resolves for the suites this engine supports — the same way
+   `bases/*/packages.map`'s `yocto-host-tools` entries were checked, one
+   base and suite at a time), and `software.files` for the configuration
+   that makes it boot to something useful. Pin container image tags to a
+   real released version, never `latest`. List every port the appliance
+   needs in `security.open_ports` (it replaces the parent profile's list
+   entirely, so re-list `22/tcp` too if you extend `server`).
+3. Add one entry to `bundle-catalog/index.yml`, with a `summary` that says
+   what to do first.
+4. Run `PYTHONPATH=tests python3 -m unittest discover -s tests/unit -p
+   'test_*.py'`. `tests/unit/test_bundle_catalog.py` checks, automatically,
+   for every entry: `bundle.json` and the manifest and profile schemas
+   validate; the manifest renders on its declared base and suite; every
+   `extends` and every package group it names exists and resolves to a
+   non-empty package list on both bases; every `software.files` path stays
+   inside the allowed directories, contains no `..`, and fits the size
+   limits (`tools/render_manifest.py`'s `validate_profile_files`); and the
+   folder and the index agree, with `bundle-catalog/_template/` exempt from
+   that last check on both sides.
+5. Open a pull request. A reviewer additionally checks, by eye, what the
+   automated tests cannot: that no shipped file contains a real secret,
+   that image tags and package names were actually verified rather than
+   guessed (say how, in the description), and that the summary honestly
+   states what to do before trusting the appliance with anything.

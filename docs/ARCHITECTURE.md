@@ -149,6 +149,34 @@ generated at boot; /dev/kfd and /dev/dri for AMD and Intel). The catalog
 (`profiles/catalog.yml`, `services`) describes the ones Studio offers with
 the image per GPU. The `ai-workstation` archetype uses all of this.
 
+## Configuration files a profile ships
+
+`software.files` lists plain configuration files a profile writes into the
+image: `{path, content, mode}`, `path` an absolute path under `/etc`,
+`/srv`, `/opt` or `/usr/local`, `content` text written verbatim, `mode` an
+octal string defaulting to `0644`. This is how a bundle-catalog appliance
+becomes more than a copy of a machine kind: an nginx site, a registry's
+htpasswd file, a Kubernetes node's sysctl settings.
+
+`tools/render_manifest.py`'s `validate_profile_files` checks every entry
+again at render time, byte-accurately, on top of what
+`schema/profile.schema.json` already checks: the path allowlist, no `..`,
+mode, 16 KiB per file, 64 KiB total across the profile (a schema pattern
+cannot sum an array, so the total is render-time only), and a best-effort
+symlink check against the render host's own filesystem — that host is
+always Debian- or Ubuntu-family, like the eventual build chroot, but it is
+not that chroot, so this catches symlinks conventional to the family
+(`/etc/mtab` and the like), not one a base image happens to add later.
+The `synos.workstation.profile_files` role (next to `container_services`,
+same wiring) writes the files into the chroot from the resolved profile.
+
+A shipped file is never a place for a real secret: a credential a
+container needs to boot (a database superuser password, a registry's
+htpasswd) is always an obvious, documented placeholder the profile's
+description or the bundle catalog's summary tells the person to replace,
+following the pattern set by `bases/*/packages.map` never carrying a real
+mirror credential either.
+
 ## Profiles: archetypes and derived profiles
 
 A profile is the role of a machine, never its hardware. Two levels exist and

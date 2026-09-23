@@ -88,14 +88,20 @@ def bundle_catalog() -> list[dict]:
             path.relative_to(folder).as_posix(): path.read_bytes().decode("utf-8")
             for path in sorted(folder.rglob("*")) if path.is_file()
         }
-        catalog.append({
+        item = {
             "id": entry["id"],
             "name": entry["name"],
             "summary": entry["summary"],
             "tags": list(entry.get("tags", [])),
             "kind": manifest["profile"],
             "files": files,
-        })
+            "services": list(entry.get("services", [])),
+            "ports": list(entry.get("ports", [])),
+            "verified": bool(entry.get("verified", False)),
+        }
+        if entry.get("contributed_by"):
+            item["contributed_by"] = entry["contributed_by"]
+        catalog.append(item)
     return catalog
 
 

@@ -3,7 +3,11 @@ and the bundle_catalog key tools/export_catalog.py exports for it.
 
 A catalogued bundle is an ordinary bundle (schema/bundle.schema.json,
 schema/manifest.schema.json, schema/profile.schema.json) kept in this
-repository as a ready-made starting point."""
+repository as a ready-made appliance, almost always carrying its own
+profiles/<id>.yml (docs/BUNDLE.md). bundle-catalog/_template/ is not a
+catalog entry (it is not listed in index.yml) and is excluded everywhere
+below by name.
+"""
 from __future__ import annotations
 
 import importlib.util
@@ -16,6 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CATALOG_DIR = ROOT / "bundle-catalog"
 SYNOS = ROOT / "tools" / "synos"
+TEMPLATE_FOLDER = "_template"
 
 
 def load_module(name: str, relative: str):
@@ -40,25 +45,72 @@ def index_entries() -> list[dict]:
     return data.get("bundle_catalog", [])
 
 
+def catalog_folders() -> list[Path]:
+    """Every bundle-catalog folder that is a real entry, the template excluded."""
+    return sorted(p for p in CATALOG_DIR.iterdir() if p.is_dir() and p.name != TEMPLATE_FOLDER)
+
+
+# --------------------------------------------------------------------------
+# Most catalog entries ship their own profiles/<id>.yml (unlike the machine
+# kinds this catalog used to just copy): render_manifest.resolve_profile and
+# `render_manifest.py --check` only look in this checkout's profiles/, so the
+# whole module installs every catalog folder's profile there for the
+# duration of the run, the same thing `tools/synos bundle apply` would do,
+# and removes exactly what it added afterwards.
+_INSTALLED: list[Path] = []
+
+
+def setUpModule() -> None:
+    for folder in catalog_folders() + [CATALOG_DIR / TEMPLATE_FOLDER]:
+        for profile_path in sorted(folder.glob("profiles/*.yml")):
+            target = ROOT / "profiles" / profile_path.name
+            if target.exists():
+                raise AssertionError(f"{target} already exists in this checkout; a catalog entry must not shadow an engine profile")
+            target.write_bytes(profile_path.read_bytes())
+            _INSTALLED.append(target)
+
+
+def tearDownModule() -> None:
+    for path in _INSTALLED:
+        path.unlink(missing_ok=True)
+    _INSTALLED.clear()
+
+
 class IndexAndFoldersTests(unittest.TestCase):
     def test_index_and_folders_agree(self) -> None:
         entries = index_entries()
         self.assertTrue(entries, "bundle-catalog/index.yml lists no entries")
         indexed_folders = {e["folder"] for e in entries}
-        on_disk = {p.name for p in CATALOG_DIR.iterdir() if p.is_dir()}
+        on_disk = {p.name for p in catalog_folders()}
         self.assertEqual(on_disk, indexed_folders, "an orphan folder or a missing folder")
         ids = [e["id"] for e in entries]
         self.assertEqual(len(ids), len(set(ids)), "duplicate id in bundle-catalog/index.yml")
+        self.assertNotIn(TEMPLATE_FOLDER, indexed_folders, "the template is not a catalog entry")
 
     def test_every_entry_has_the_required_index_fields(self) -> None:
         for entry in index_entries():
             with self.subTest(entry=entry["id"]):
-                for field in ("id", "name", "summary", "tags", "folder"):
+                for field in ("id", "name", "summary", "tags", "folder", "services", "ports"):
                     self.assertIn(field, entry)
                 self.assertRegex(entry["id"], r"^[a-z0-9][a-z0-9-]*$")
                 self.assertTrue(entry["tags"], "no tags")
                 for tag in entry["tags"]:
                     self.assertEqual(tag, tag.lower(), f"tag {tag!r} is not lowercase")
+                for port in entry["ports"]:
+                    self.assertIsInstance(port, int, f"{entry['id']}: port {port!r} must be a bare number")
+                self.assertIsInstance(entry.get("verified", False), bool)
+
+    def test_appliances_are_not_plain_copies_of_a_machine_kind(self) -> None:
+        """The catalog was rewritten around appliances: every entry either ships
+        its own profile (an appliance) or is one of the two genuinely
+        preconfigured machine kinds (the Yocto builders, the AI workstation)."""
+        machine_kind_only = {"yocto-builder", "ai-workstation"}
+        for entry in index_entries():
+            folder = CATALOG_DIR / entry["folder"]
+            with self.subTest(entry=entry["id"]):
+                ships_profile = any(folder.glob("profiles/*.yml"))
+                self.assertTrue(ships_profile or entry["id"] in machine_kind_only,
+                                 f"{entry['id']} neither ships a profile nor is a known preconfigured machine kind")
 
 
 class CatalogedBundleValidationTests(unittest.TestCase):
@@ -71,6 +123,11 @@ class CatalogedBundleValidationTests(unittest.TestCase):
                 code, payload = run_synos("bundle", "validate", str(folder))
                 self.assertEqual(0, code, payload)
                 self.assertEqual([], payload["report"]["errors"])
+
+    def test_the_template_folder_also_validates(self) -> None:
+        code, payload = run_synos("bundle", "validate", str(CATALOG_DIR / TEMPLATE_FOLDER))
+        self.assertEqual(0, code, payload)
+        self.assertEqual([], payload["report"]["errors"])
 
     def test_every_manifest_renders_on_its_declared_base_and_suite(self) -> None:
         for entry in index_entries():
@@ -99,7 +156,7 @@ class CatalogedBundleValidationTests(unittest.TestCase):
     def test_every_shipped_profile_matches_its_schema_and_resolves(self) -> None:
         """Every extends and every package group a catalogued bundle's profile chain
         names exists, and it resolves without error (profiles ship either in the
-        bundle or, like every machine kind added here, with the engine)."""
+        bundle or, like the Yocto and AI workstation machine kinds, with the engine)."""
         for entry in index_entries():
             folder = CATALOG_DIR / entry["folder"]
             bundle = json.loads((folder / "bundle.json").read_text(encoding="utf-8"))
@@ -114,15 +171,18 @@ class CatalogedBundleValidationTests(unittest.TestCase):
 
 
 class PackageResolutionTests(unittest.TestCase):
-    """Every package group a catalogued bundle's profile chain uses resolves to a
-    non-empty concrete package list on both bases."""
+    """Every package group and every repository a catalogued bundle's profile
+    chain uses resolves to a non-empty concrete package list on both bases."""
 
-    def test_bundle_groups_resolve_on_both_bases(self) -> None:
-        bundles = render_manifest.load_bundles()
-        pkg_maps = {
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.bundles = render_manifest.load_bundles()
+        cls.pkg_maps = {
             base_dir.name: render_manifest.load_package_map(base_dir / "packages.map")
             for base_dir in sorted(p for p in (ROOT / "bases").iterdir() if p.is_dir() and not p.name.startswith("_"))
         }
+
+    def test_bundle_groups_resolve_on_both_bases(self) -> None:
         for entry in index_entries():
             folder = CATALOG_DIR / entry["folder"]
             bundle = json.loads((folder / "bundle.json").read_text(encoding="utf-8"))
@@ -130,27 +190,122 @@ class PackageResolutionTests(unittest.TestCase):
             profile, _ = render_manifest.resolve_profile(manifest["profile"])
             bundle_ids = list((profile.get("software") or {}).get("bundles", []))
             for bundle_id in bundle_ids:
-                self.assertIn(bundle_id, bundles, f"{entry['id']}: unknown bundle {bundle_id!r}")
-                for base_id, pkg_map in pkg_maps.items():
+                self.assertIn(bundle_id, self.bundles, f"{entry['id']}: unknown bundle {bundle_id!r}")
+                for base_id, pkg_map in self.pkg_maps.items():
                     with self.subTest(entry=entry["id"], bundle=bundle_id, base=base_id):
-                        concrete, _ = render_manifest.resolve_packages(bundles[bundle_id], pkg_map, "amd64", ["en"], base_id)
+                        concrete, _ = render_manifest.resolve_packages(self.bundles[bundle_id], pkg_map, "amd64", ["en"], base_id)
                         self.assertTrue(concrete, f"{bundle_id} resolves to nothing on {base_id}")
 
-    def test_yocto_build_group_is_mapped_on_both_bases(self) -> None:
-        bundles = render_manifest.load_bundles()
-        self.assertIn("yocto-build", bundles)
-        abstract = bundles["yocto-build"]
-        self.assertIn("yocto-host-tools", abstract)
-        for base_dir in sorted(p for p in (ROOT / "bases").iterdir() if p.is_dir() and not p.name.startswith("_")):
-            pkg_map = render_manifest.load_package_map(base_dir / "packages.map")
-            with self.subTest(base=base_dir.name):
-                self.assertIn("yocto-host-tools", pkg_map)
-                concrete, unmapped = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_dir.name)
+    def test_repositories_name_a_key_that_exists_and_is_a_public_key(self) -> None:
+        for entry in index_entries():
+            folder = CATALOG_DIR / entry["folder"]
+            bundle = json.loads((folder / "bundle.json").read_text(encoding="utf-8"))
+            manifest = render_manifest.load_yaml(folder / bundle["manifest"])
+            profile, _ = render_manifest.resolve_profile(manifest["profile"])
+            repos = (profile.get("software") or {}).get("repositories", [])
+            for repo in repos:
+                with self.subTest(entry=entry["id"], repository=repo["name"]):
+                    key_path = ROOT / repo["key"]
+                    self.assertTrue(key_path.is_file(), f"{repo['key']} does not exist")
+                    self.assertTrue(key_path.read_text(encoding="utf-8").startswith("-----BEGIN PGP PUBLIC KEY BLOCK-----"))
+
+    def test_yocto_build_groups_are_mapped_on_both_bases(self) -> None:
+        for group in ("yocto-build", "yocto-build-docs"):
+            self.assertIn(group, self.bundles)
+        for base_id, pkg_map in self.pkg_maps.items():
+            with self.subTest(base=base_id):
+                concrete, unmapped = render_manifest.resolve_packages(self.bundles["yocto-build"], pkg_map, "amd64", ["en"], base_id)
                 self.assertEqual([], unmapped)
-                self.assertGreaterEqual(len(concrete), 20)
+                self.assertGreaterEqual(len(concrete), 30)
                 self.assertIn("build-essential", concrete)
                 self.assertIn("lz4", concrete)
                 self.assertNotIn("liblz4-tool", concrete)
+                docs_concrete, docs_unmapped = render_manifest.resolve_packages(self.bundles["yocto-build-docs"], pkg_map, "amd64", ["en"], base_id)
+                self.assertEqual([], docs_unmapped)
+                self.assertIn("texlive-latex-extra", docs_concrete)
+
+    def test_yocto_manuals_required_set_is_a_subset_of_both_catalogued_machines(self) -> None:
+        """Pins the Yocto Project reference manual's own "Ubuntu and Debian"
+        apt-get line (https://docs.yoctoproject.org/ref-manual/system-requirements.html):
+        a future edit that drops one of these from yocto-host-tools must fail
+        here, on both the lean and the full bundle-catalog entries."""
+        required = {
+            "gawk", "wget", "git", "diffstat", "unzip", "texinfo", "build-essential", "chrpath", "socat",
+            "cpio", "python3", "python3-pip", "python3-pexpect", "xz-utils", "debianutils", "iputils-ping",
+            "python3-git", "python3-jinja2", "python3-subunit", "zstd", "locales", "libacl1", "libcrypt-dev", "gcc",
+        }
+        for entry_id, profile_id in (("yocto-builder", "yocto-builder"), ("yocto-builder-docs", "yocto-builder-docs")):
+            with self.subTest(entry=entry_id):
+                profile, _ = render_manifest.resolve_profile(profile_id)
+                bundle_ids = profile["software"]["bundles"]
+                abstract: list = []
+                for bundle_id in bundle_ids:
+                    abstract.extend(self.bundles[bundle_id])
+                for base_id, pkg_map in self.pkg_maps.items():
+                    with self.subTest(base=base_id):
+                        concrete, _ = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_id)
+                        missing = required - set(concrete)
+                        self.assertEqual(set(), missing, f"{entry_id}/{base_id} is missing required Yocto packages: {missing}")
+
+
+class AppliancePolicyTests(unittest.TestCase):
+    """Rules the owner set for every appliance: no GPU service, pinned image
+    tags, no secret standing in for a real one."""
+
+    SECRET_LOOKING = ("BEGIN RSA PRIVATE KEY", "BEGIN OPENSSH PRIVATE KEY", "BEGIN PGP PRIVATE KEY", "AKIA", "-----BEGIN PRIVATE KEY-----")
+
+    def test_appliance_services_in_the_catalog_are_gpu_free_and_pinned(self) -> None:
+        catalog = render_manifest.load_yaml(ROOT / "profiles" / "catalog.yml")
+        appliance_ids = {"nginx", "apache", "caddy", "registry", "gitea", "jellyfin", "prometheus", "grafana", "postgres"}
+        seen = set()
+        for service in catalog["services"]:
+            if service["id"] not in appliance_ids:
+                continue
+            seen.add(service["id"])
+            with self.subTest(service=service["id"]):
+                self.assertFalse(service.get("gpu", False), f"{service['id']} must not need a GPU")
+                for image in service["images"].values():
+                    self.assertIn(":", image, f"{service['id']}: {image} is not pinned to a tag")
+                    tag = image.rsplit(":", 1)[1]
+                    self.assertNotEqual("latest", tag, f"{service['id']}: {image} is pinned to latest")
+        self.assertEqual(appliance_ids, seen, "an expected appliance service is missing from profiles/catalog.yml")
+
+    def test_no_shipped_file_looks_like_a_real_secret(self) -> None:
+        for folder in catalog_folders():
+            for path in folder.rglob("*"):
+                if not path.is_file():
+                    continue
+                text = path.read_text(encoding="utf-8", errors="ignore")
+                for needle in self.SECRET_LOOKING:
+                    self.assertNotIn(needle, text, f"{path} looks like it carries a real key")
+
+    def test_database_and_registry_placeholders_are_documented_not_real(self) -> None:
+        registry_profile, _ = render_manifest.resolve_profile("container-registry")
+        htpasswd = next(f for f in registry_profile["software"]["files"] if f["path"].endswith("htpasswd"))
+        self.assertIn("REPLACE", htpasswd["content"])
+        database_profile, _ = render_manifest.resolve_profile("database-server")
+        password_file = next(f for f in database_profile["software"]["files"] if "password" in f["path"])
+        self.assertIn("change-this-placeholder", password_file["content"])
+        # the appliance's own summary tells the person to change it
+        entry = next(e for e in index_entries() if e["id"] == "database-server")
+        self.assertIn("password", entry["summary"].lower())
+        registry_entry = next(e for e in index_entries() if e["id"] == "container-registry")
+        self.assertIn("htpasswd", registry_entry["summary"])
+
+    def test_every_appliance_profile_re_opens_ssh_when_it_replaces_open_ports(self) -> None:
+        """security.open_ports fully replaces the parent's list (it is not a
+        merge key), so an appliance profile that sets it must re-list 22/tcp
+        or lose SSH access that `server` granted."""
+        for entry in index_entries():
+            folder = CATALOG_DIR / entry["folder"]
+            for profile_path in folder.glob("profiles/*.yml"):
+                data = render_manifest.load_yaml(profile_path)
+                if data.get("extends") != "server":
+                    continue
+                open_ports = (data.get("security") or {}).get("open_ports")
+                if open_ports is not None:
+                    with self.subTest(entry=entry["id"]):
+                        self.assertIn("22/tcp", open_ports, f"{profile_path.name} drops SSH by replacing open_ports without 22/tcp")
 
 
 class YoctoProfileTests(unittest.TestCase):
@@ -163,6 +318,16 @@ class YoctoProfileTests(unittest.TestCase):
         profile, chain = render_manifest.resolve_profile("yocto-builder")
         self.assertEqual(["minimal", "workstation", "developer", "yocto-builder"], chain)
         self.assertIn("yocto-build", profile["software"]["bundles"])
+
+    def test_yocto_builder_docs_extends_yocto_builder_and_is_much_larger(self) -> None:
+        profile, chain = render_manifest.resolve_profile("yocto-builder-docs")
+        self.assertEqual(["minimal", "workstation", "developer", "yocto-builder", "yocto-builder-docs"], chain)
+        self.assertIn("yocto-build", profile["software"]["bundles"])
+        self.assertIn("yocto-build-docs", profile["software"]["bundles"])
+        lean_entry = next(e for e in index_entries() if e["id"] == "yocto-builder")
+        full_entry = next(e for e in index_entries() if e["id"] == "yocto-builder-docs")
+        self.assertNotEqual(lean_entry["summary"], full_entry["summary"])
+        self.assertRegex(full_entry["summary"].lower(), r"larger|documentation")
 
     def test_yocto_builder_is_exported_as_an_archetype(self) -> None:
         data = json.loads(subprocess.run([sys.executable, str(ROOT / "tools" / "export_catalog.py")],
@@ -187,19 +352,35 @@ class ExportedCatalogTests(unittest.TestCase):
         self.assertEqual([e["id"] for e in entries], [c["id"] for c in catalog], "export order must follow index.yml")
         for entry in catalog:
             with self.subTest(entry=entry["id"]):
-                for field in ("id", "name", "summary", "tags", "kind", "files"):
+                for field in ("id", "name", "summary", "tags", "kind", "files", "services", "ports", "verified"):
                     self.assertIn(field, entry)
                 self.assertIsInstance(entry["tags"], list)
+                self.assertIsInstance(entry["services"], list)
+                self.assertIsInstance(entry["ports"], list)
+                self.assertIsInstance(entry["verified"], bool)
                 self.assertIsInstance(entry["files"], dict)
                 self.assertIn("bundle.json", entry["files"])
                 manifest_rel = json.loads(entry["files"]["bundle.json"])["manifest"]
                 self.assertIn(manifest_rel, entry["files"])
 
+    def test_template_is_not_in_the_export(self) -> None:
+        ids = {e["id"] for e in self.data["bundle_catalog"]}
+        self.assertNotIn("template-appliance", ids)
+
     def test_kind_is_the_profile_the_manifest_names(self) -> None:
         by_id = {e["id"]: e for e in self.data["bundle_catalog"]}
         self.assertEqual("yocto-builder", by_id["yocto-builder"]["kind"])
-        self.assertEqual("workstation", by_id["office-workstation"]["kind"])
-        self.assertEqual("server", by_id["small-server"]["kind"])
+        self.assertEqual("yocto-builder-docs", by_id["yocto-builder-docs"]["kind"])
+        self.assertEqual("container-registry", by_id["container-registry"]["kind"])
+        self.assertEqual("kubernetes-server", by_id["kubernetes-server"]["kind"])
+
+    def test_services_and_ports_match_the_index(self) -> None:
+        by_id = {e["id"]: e for e in self.data["bundle_catalog"]}
+        self.assertEqual(["nginx"], by_id["web-server-nginx"]["services"])
+        self.assertEqual([22, 80, 443], by_id["web-server-nginx"]["ports"])
+        self.assertEqual(["prometheus", "grafana"], by_id["monitoring-server"]["services"])
+        self.assertEqual([], by_id["kodi-media-centre"]["services"])
+        self.assertEqual([], by_id["kodi-media-centre"]["ports"])
 
     def test_files_are_byte_identical_to_the_folder(self) -> None:
         index_by_id = {e["id"]: e for e in index_entries()}
@@ -211,9 +392,11 @@ class ExportedCatalogTests(unittest.TestCase):
                 for path, raw in on_disk.items():
                     self.assertEqual(raw.decode("utf-8"), entry["files"][path], path)
 
-    def test_no_starter_wording_leaks_into_the_export(self) -> None:
+    def test_no_starter_wording_leaks_into_the_export_or_the_docs(self) -> None:
         text = json.dumps(self.data["bundle_catalog"])
         self.assertNotIn("starter", text.lower())
+        bundle_doc = (ROOT / "docs" / "BUNDLE.md").read_text(encoding="utf-8")
+        self.assertNotIn("starter", bundle_doc.lower())
 
 
 if __name__ == "__main__":

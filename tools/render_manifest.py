@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
+import os
 import re
 import shlex
 import shutil
@@ -284,6 +285,43 @@ def resolve_packages(
     return concrete, unmapped
 
 
+# -------------------------------------------------------------- profile files
+FILES_ALLOWED_PATH = re.compile(r"^/(etc|srv|opt|usr/local)/.+$")
+FILES_MODE = re.compile(r"^0[0-7]{3}$")
+FILES_MAX_FILE_BYTES = 16 * 1024
+FILES_MAX_TOTAL_BYTES = 64 * 1024
+
+
+def validate_profile_files(files: list[dict]) -> None:
+    """software.files (schema/profile.schema.json): configuration written into the
+    image by the synos.workstation.profile_files role. The schema already checks
+    the path pattern, the mode pattern and an approximate per-file size; this is
+    the exact, byte-accurate re-check plus the one thing no schema can express,
+    the total across the profile, and a best-effort symlink check (this render
+    host is always Debian- or Ubuntu-family, like the eventual build chroot, but
+    it is not that chroot, so this can only catch symlinks conventional to the
+    family - /etc/mtab and the like - not ones a base image adds after the fact)."""
+    total = 0
+    for entry in files:
+        path = entry["path"]
+        if not FILES_ALLOWED_PATH.match(path):
+            raise ManifestError(f"software.files: {path!r} must be an absolute path under /etc, /srv, /opt or /usr/local")
+        if ".." in path:
+            raise ManifestError(f"software.files: {path!r} contains '..'")
+        mode = entry.get("mode", "0644")
+        if not FILES_MODE.match(mode):
+            raise ManifestError(f"software.files: {path!r} has mode {mode!r}, expected e.g. 0644")
+        size = len(entry["content"].encode("utf-8"))
+        if size > FILES_MAX_FILE_BYTES:
+            raise ManifestError(f"software.files: {path!r} is {size} bytes, over the {FILES_MAX_FILE_BYTES}-byte per-file limit")
+        total += size
+        real = os.path.realpath(path)
+        if real != path:
+            raise ManifestError(f"software.files: {path!r} resolves through a symlink to {real!r} on this build host")
+    if total > FILES_MAX_TOTAL_BYTES:
+        raise ManifestError(f"software.files: {total} bytes across the profile, over the {FILES_MAX_TOTAL_BYTES}-byte total limit")
+
+
 # ------------------------------------------------------- third-party software
 def stage_software(profile: dict, base: dict, manifest: dict, staging: Path) -> dict:
     """Write the third-party software a profile declares into a folder the build
@@ -436,6 +474,8 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
     unknown_bundles = [b for b in bundle_ids if b not in bundles]
     if unknown_bundles:
         raise ManifestError(f"unknown bundle(s) {unknown_bundles} — define them in profiles/bundles.yml")
+    profile_files = list(software.get("files", []))
+    validate_profile_files(profile_files)
     abstract: list = []
     for bundle_id in bundle_ids:
         abstract.extend(bundles[bundle_id])
@@ -467,6 +507,7 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
         or ansible_cfg.get("first_boot_roles") or ansible_cfg.get("pull_url")
         or installer.get("ssh") == "enabled" or security.get("open_ports")
         or (profile.get("software") or {}).get("services") or (profile.get("hardware") or {}).get("gpu", "none") != "none"
+        or profile_files
     )
     stack = resolve_stack(manifest)
     stack_exports = "".join(

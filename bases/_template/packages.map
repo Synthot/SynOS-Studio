@@ -35,3 +35,11 @@ ai-dev             = python3-torch python3-venv python3-pip
 # python3-websockets (skip it, or use a venv, on a suite old enough that the
 # archive version is below BitBake's minimum). lz4, not liblz4-tool.
 yocto-host-tools   = gawk wget git diffstat unzip texinfo build-essential chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils iputils-ping python3-git python3-jinja2 python3-subunit zstd lz4 file locales libacl1 libcrypt-dev gcc python3-websockets
+# Practical build-host tools the manual doesn't list but a real Yocto host
+# needs day to day; small enough to ship by default. Only the x86 and arm
+# system emulators plus qemu-utils (not the qemu-system metapackage, which
+# also pulls mips/ppc/sparc/s390x emulators for roughly 470 MB more).
+yocto-practical-tools = rsync bc bison flex libssl-dev git-lfs bmap-tools pigz ccache device-tree-compiler u-boot-tools qemu-system-x86 qemu-system-arm qemu-utils
+# Building the Yocto Project documentation, including PDFs (texlive is large:
+# this is its own bundle so a person opts in rather than always paying for it).
+yocto-doc-tools    = make librsvg2-bin python3-saneyaml python3-venv fonts-freefont-otf latexmk tex-gyre texlive-fonts-extra texlive-fonts-recommended texlive-lang-all texlive-latex-extra texlive-latex-recommended texlive-xetex
