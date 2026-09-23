@@ -91,7 +91,8 @@ and the base's `packages.map` resolves it.
    not exist and marks Ansible as required when the profile carries
    policy, hardening or enrollment. `bases/<base>/Containerfile` and
    `make container-build` run the whole build in a privileged Podman
-   container of the target base. `ci/gitlab-ci.yml` and
+   container of the target base (its pinned Rust toolchain is documented in
+   `docs/BUNDLE.md`, "Building without a checkout"). `ci/gitlab-ci.yml` and
    `.github/workflows/build.yml` are the pipeline templates customers
    include. `packer/synos.pkr.hcl` builds qcow2, vmdk and vhd images from
    the ISO with an answer file from `answers/`; the answer-file contract is
