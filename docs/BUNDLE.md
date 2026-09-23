@@ -185,6 +185,30 @@ told to use it, not the bundle moved.
 If your system disk is small, this is the fix: point `SYNOS_CONTAINER_ROOT`
 at the roomier one and nothing about how you run the launcher changes.
 
+**The launcher offers this up front, on podman, before it becomes a
+problem.** When no location was given and podman's own storage is not
+clearly big enough, `build.sh`/`build.ps1` (not `check`, not `--yes`, not
+without a terminal, not when podman's own storage clearly has room) asks
+once:
+
+    podman would keep this build under <podman's default storage> (<N> GB free); it needs 30 GB.
+    Use <bundle>/.build/container-storage next to this bundle instead (<M> GB free there)? [Y/n]
+
+Enter (or "y") accepts the directory beside the bundle; that alternative is
+only offered as the default answer when the bundle's own disk actually has
+more room than podman's default. The answer — that path, or "keep the
+default" — is written to `.build/container-root` next to the bundle, so the
+next run says where the storage is instead of asking again:
+
+    using the remembered build storage: <path> (change: --container-root=<path>; forget: rm .build/container-root)
+
+`--container-root=<path>` (or `SYNOS_CONTAINER_ROOT`) always wins over the
+remembered value for that run, and also becomes the new remembered value;
+deleting `.build/container-root` forgets the choice and asks again next
+time. Never asked on docker, where there is no per-build answer to offer —
+podman is only mentioned there as an alternative once space is actually
+short (see the docker refusal above).
+
 Inside the image `synos build` detects `SYNOS_IN_CONTAINER` and runs the
 engine's make directly; the ISO, its evidence files and the log are copied to
 `dist/` next to the bundle and handed to the invoking user (`SYNOS_UID`/`SYNOS_GID`).
