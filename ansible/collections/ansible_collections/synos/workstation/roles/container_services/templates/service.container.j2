@@ -15,6 +15,9 @@ PublishPort={{ port }}
 {% for volume in item.volumes | default([]) %}
 Volume={{ volume }}
 {% endfor %}
+{% for cap in item.cap_add | default([]) %}
+AddCapability={{ cap }}
+{% endfor %}
 {% if item.exec | default('') %}
 Exec={{ item.exec }}
 {% endif %}

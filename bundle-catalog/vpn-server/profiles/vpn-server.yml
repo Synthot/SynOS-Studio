@@ -1,0 +1,29 @@
+id: vpn-server
+extends: server
+description: >-
+  Server profile running wg-easy as a system service: a WireGuard VPN
+  server with a web UI for managing peers. The VPN itself (port
+  51820/udp) stays open by default — WireGuard answers nothing until a
+  peer's own key is registered, so there is nothing for an unregistered
+  visitor to reach. The web UI (port 51821) stays closed by default: like
+  this catalog's other appliances with an account-claiming first screen,
+  wg-easy's own setup wizard lets whoever opens it first create the
+  admin account. WG_HOST is shipped as 192.0.2.1, a documentation-only
+  placeholder address (RFC 5737) that generates no working peer configs
+  by itself — it must be replaced with this machine's real public
+  address before any client can connect. WireGuard has to create and
+  manage its own network interface, so the container carries the
+  NET_ADMIN capability (cap_add) — nothing else about the container
+  runs with elevated privileges.
+software:
+  services:
+    - name: wg-easy
+      image: ghcr.io/wg-easy/wg-easy:15.4.0
+      ports: ["51820:51820/udp", "51821:51821"]
+      volumes:
+        - wg-easy-data:/etc/wireguard
+      env:
+        WG_HOST: "192.0.2.1"
+      cap_add: [NET_ADMIN]
+security:
+  open_ports: [22/tcp, 51820/udp]

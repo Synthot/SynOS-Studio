@@ -1,0 +1,18 @@
+id: home-automation
+extends: server
+description: >-
+  Server profile running Home Assistant Core as a system service on port
+  8123: the everyday self-hosted home automation hub, with its config
+  kept on its own volume. Home Assistant's own onboarding wizard, which
+  creates the first (administrator) account, is open to whoever reaches
+  it first, so port 8123 stays closed by default until that account
+  exists.
+software:
+  services:
+    - name: homeassistant
+      image: docker.io/homeassistant/home-assistant:2026.9.3
+      ports: ["8123:8123"]
+      volumes:
+        - homeassistant-config:/config
+security:
+  open_ports: [22/tcp]

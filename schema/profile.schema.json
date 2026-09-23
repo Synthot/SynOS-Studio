@@ -76,11 +76,12 @@
                 "properties": {
                   "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
                   "image": { "type": "string" },
-                  "ports": { "type": "array", "items": { "type": "string", "pattern": "^[0-9]{1,5}:[0-9]{1,5}$" } },
+                  "ports": { "type": "array", "items": { "type": "string", "pattern": "^[0-9]{1,5}:[0-9]{1,5}(/(tcp|udp))?$", "description": "podman quadlet PublishPort=; protocol suffix optional, defaults to tcp (e.g. 51820:51820/udp for a UDP-only service)" } },
                   "volumes": { "type": "array", "items": { "type": "string" } },
                   "env": { "type": "object", "additionalProperties": { "type": "string" } },
                   "gpu": { "type": "boolean" },
                   "exec": { "type": "string", "description": "Arguments passed to the container's entry point" },
+                  "cap_add": { "type": "array", "items": { "type": "string", "pattern": "^[A-Z_]+$" }, "description": "Linux capabilities the container needs beyond the runtime default (podman quadlet AddCapability=), e.g. NET_ADMIN for a service that manages its own network interface" },
                   "description": { "type": "string" }
                 }
               }

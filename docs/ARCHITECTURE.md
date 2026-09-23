@@ -145,9 +145,14 @@ toolkit comes from NVIDIA's repository, whose key ships with the engine
 `container_services` role writes podman quadlet units, images are pulled on
 first start (the image stays small and reproducible), and `gpu: true` maps
 the GPU into the container the way each vendor needs (CDI for NVIDIA,
-generated at boot; /dev/kfd and /dev/dri for AMD and Intel). The catalog
-(`profiles/catalog.yml`, `services`) describes the ones Studio offers with
-the image per GPU. The `ai-workstation` archetype uses all of this.
+generated at boot; /dev/kfd and /dev/dri for AMD and Intel). `ports` are
+quadlet `PublishPort=` strings (`host:container`, protocol suffix optional
+and defaulting to tcp — `51820:51820/udp` for a UDP-only service such as
+WireGuard); `cap_add` lists Linux capabilities the container needs beyond
+the runtime default (quadlet `AddCapability=`), for a service that manages
+its own network interface or similar. The catalog (`profiles/catalog.yml`,
+`services`) describes the ones Studio offers with the image per GPU. The
+`ai-workstation` archetype uses all of this.
 
 ## Configuration files a profile ships
 

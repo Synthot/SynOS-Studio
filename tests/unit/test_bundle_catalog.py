@@ -303,7 +303,11 @@ class AppliancePolicyTests(unittest.TestCase):
 
     def test_appliance_services_in_the_catalog_are_gpu_free_and_pinned(self) -> None:
         catalog = render_manifest.load_yaml(ROOT / "profiles" / "catalog.yml")
-        appliance_ids = {"nginx", "apache", "caddy", "registry", "gitea", "jellyfin", "prometheus", "grafana", "postgres"}
+        appliance_ids = {
+            "nginx", "apache", "caddy", "registry", "gitea", "jellyfin", "prometheus", "grafana", "postgres",
+            "homeassistant", "pihole", "nextcloud", "vaultwarden", "portainer", "uptime-kuma", "syncthing",
+            "minio", "n8n", "wg-easy",
+        }
         seen = set()
         for service in catalog["services"]:
             if service["id"] not in appliance_ids:
@@ -357,6 +361,12 @@ class AppliancePolicyTests(unittest.TestCase):
             "git-server": 3000,        # Gitea web UI: registers the first account as admin
             "monitoring-server": 3000,  # Grafana: admin/admin until changed
             "media-server": 8096,      # Jellyfin: its own setup wizard creates the admin account
+            "home-automation": 8123,   # Home Assistant: onboarding wizard creates the admin account
+            "personal-cloud": 80,      # Nextcloud: setup wizard creates the admin account
+            "container-management": 9443,  # Portainer: setup token gates the admin account
+            "status-monitoring": 3001,  # Uptime Kuma: setup screen creates the one admin account
+            "automation-flows": 5678,  # n8n: setup screen creates the owner account
+            "vpn-server": 51821,       # wg-easy: setup wizard creates the admin account
         }
         for entry_id, risky_port in closed_by_default.items():
             with self.subTest(entry=entry_id):
@@ -421,6 +431,90 @@ class AppliancePolicyTests(unittest.TestCase):
                 if open_ports is not None:
                     with self.subTest(entry=entry["id"]):
                         self.assertIn("22/tcp", open_ports, f"{profile_path.name} drops SSH by replacing open_ports without 22/tcp")
+
+
+class SelfHostingApplianceTests(unittest.TestCase):
+    """Checks specific to the second round of appliances (home automation,
+    ad blocking, personal cloud, password manager, container management,
+    status monitoring, file sync, object storage, automation flows, VPN):
+    the resolver collision Pi-hole needs solved, the UDP-only ports the
+    schema had to learn, and the fail-closed shape each of these takes."""
+
+    def test_ad_blocking_disables_the_systemd_resolved_stub_before_binding_port_53(self) -> None:
+        profile, _ = render_manifest.resolve_profile("ad-blocking")
+        files = profile["software"]["files"]
+        override = next(f for f in files if f["path"] == "/etc/systemd/resolved.conf.d/pihole-no-stub.conf")
+        self.assertIn("DNSStubListener=no", override["content"])
+        open_ports = profile["security"]["open_ports"]
+        self.assertIn("53/tcp", open_ports)
+        self.assertIn("53/udp", open_ports)
+        self.assertNotIn("80/tcp", open_ports, "Pi-hole's web UI must stay closed by default")
+        entry = next(e for e in index_entries() if e["id"] == "ad-blocking")
+        combined = entry["summary"] + " ".join(entry["first_boot"])
+        self.assertIn("resolv.conf", combined)
+        self.assertIn("DNSStubListener", combined)
+
+    def test_profile_schema_accepts_a_udp_only_service_port(self) -> None:
+        """software.services[].ports used to accept only bare "host:container"
+        strings; WireGuard-style appliances need a UDP-only port too."""
+        try:
+            import jsonschema
+        except ImportError:
+            self.skipTest("jsonschema is not installed")
+        schema = json.loads((ROOT / "schema" / "profile.schema.json").read_text(encoding="utf-8"))
+        sample = {
+            "id": "udp-port-check",
+            "software": {"services": [{"name": "example", "image": "docker.io/library/example:1.0.0",
+                                        "ports": ["51820:51820/udp", "80:80"]}]},
+        }
+        jsonschema.Draft202012Validator(schema).validate(sample)
+        bad = {
+            "id": "udp-port-check-bad",
+            "software": {"services": [{"name": "example", "image": "docker.io/library/example:1.0.0",
+                                        "ports": ["51820:51820/sctp"]}]},
+        }
+        with self.assertRaises(jsonschema.exceptions.ValidationError):
+            jsonschema.Draft202012Validator(schema).validate(bad)
+
+    def test_vpn_server_publishes_wireguard_over_udp_and_only_that_capability(self) -> None:
+        profile, _ = render_manifest.resolve_profile("vpn-server")
+        service = next(s for s in profile["software"]["services"] if s["name"] == "wg-easy")
+        self.assertIn("51820:51820/udp", service["ports"])
+        self.assertEqual(["NET_ADMIN"], service.get("cap_add"))
+        open_ports = profile["security"]["open_ports"]
+        self.assertIn("51820/udp", open_ports)
+        self.assertNotIn("51821/tcp", open_ports, "wg-easy's admin-claiming web UI must stay closed by default")
+        # WG_HOST ships as a documentation-only placeholder address (RFC 5737),
+        # never a real routable address.
+        self.assertEqual("192.0.2.1", service["env"]["WG_HOST"])
+
+    def test_password_manager_warns_about_tls_and_ships_no_open_signups(self) -> None:
+        profile, _ = render_manifest.resolve_profile("password-manager")
+        service = next(s for s in profile["software"]["services"] if s["name"] == "vaultwarden")
+        self.assertEqual("false", service["env"]["SIGNUPS_ALLOWED"])
+        self.assertNotIn("80/tcp", profile["security"]["open_ports"])
+        entry = next(e for e in index_entries() if e["id"] == "password-manager")
+        combined = (entry["summary"] + " ".join(entry["first_boot"])).lower()
+        self.assertIn("tls", combined)
+
+    def test_object_storage_ships_no_root_credential_and_stays_closed(self) -> None:
+        profile, _ = render_manifest.resolve_profile("object-storage")
+        service = next(s for s in profile["software"]["services"] if s["name"] == "minio")
+        env = service.get("env", {})
+        self.assertNotIn("MINIO_ROOT_USER", env)
+        self.assertNotIn("MINIO_ROOT_PASSWORD", env)
+        self.assertNotIn("9000/tcp", profile["security"]["open_ports"])
+        self.assertNotIn("9001/tcp", profile["security"]["open_ports"])
+        entry = next(e for e in index_entries() if e["id"] == "object-storage")
+        self.assertIn("minioadmin", " ".join(entry["first_boot"]))
+
+    def test_file_sync_opens_the_sync_protocol_but_not_the_unauthenticated_gui(self) -> None:
+        profile, _ = render_manifest.resolve_profile("file-sync")
+        open_ports = profile["security"]["open_ports"]
+        self.assertIn("22000/tcp", open_ports)
+        self.assertIn("22000/udp", open_ports)
+        self.assertIn("21027/udp", open_ports)
+        self.assertNotIn("8384/tcp", open_ports, "Syncthing's unauthenticated GUI must stay closed by default")
 
 
 class YoctoProfileTests(unittest.TestCase):

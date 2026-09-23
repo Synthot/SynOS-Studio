@@ -1,0 +1,21 @@
+id: personal-cloud
+extends: server
+description: >-
+  Server profile running Nextcloud as a system service in its simplest
+  working shape: the Apache all-in-one image on port 80, using SQLite so
+  there is no separate database to configure (the same choice this
+  catalog already makes for Gitea). No admin account is created for you
+  — Nextcloud's own setup wizard, which creates the first (administrator)
+  account, is open to whoever reaches it first, so port 80 stays closed
+  by default until that account exists.
+software:
+  services:
+    - name: nextcloud
+      image: docker.io/library/nextcloud:35.0.0-apache
+      ports: ["80:80"]
+      volumes:
+        - nextcloud-data:/var/www/html
+      env:
+        SQLITE_DATABASE: nextcloud
+security:
+  open_ports: [22/tcp]

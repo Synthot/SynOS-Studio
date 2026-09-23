@@ -147,3 +147,110 @@ bundle_catalog:
     services: []
     ports: [22, 6443, 10250]
     verified: true
+  - id: home-automation
+    name: Home Automation
+    summary: "A Home Assistant server for home automation and device integrations, its configuration kept on its own volume."
+    first_boot:
+      - "Port 8123 stays closed by default: Home Assistant's own onboarding wizard, which creates the first (administrator) account, is open to whoever reaches it first. Tunnel in first (`ssh -L 8123:localhost:8123 you@host`), finish onboarding at http://localhost:8123/, then open 8123 yourself (`sudo ufw allow 8123/tcp`)."
+    tags: [home-assistant, home-automation, iot, smart-home]
+    folder: home-automation
+    services: [homeassistant]
+    ports: [22]
+    verified: true
+  - id: ad-blocking
+    name: Ad and Tracker Blocking (Pi-hole)
+    summary: "Pi-hole answering DNS on port 53 for the whole network, blocking ads and trackers before they ever load."
+    first_boot:
+      - "This appliance disables systemd-resolved's own DNS stub listener (/etc/systemd/resolved.conf.d/pihole-no-stub.conf sets DNSStubListener=no) so Pi-hole can bind port 53 itself; that also silences the resolver most desktops read through /etc/resolv.conf (127.0.0.53), so repoint it once at systemd-resolved's real, non-stub file: `sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf`."
+      - "The web UI (port 80) stays closed by default. Pi-hole itself generates a random admin password at first start and prints it only to the container's own log — never a password this profile ships — so read it with `docker logs pihole`, or tunnel in (`ssh -L 8080:localhost:80 you@host`) and set your own with `pihole -a -p`, then open port 80 yourself if you want it reachable directly."
+    tags: [pihole, dns, ad-blocking, privacy, network]
+    folder: ad-blocking
+    services: [pihole]
+    ports: [22, 53]
+    verified: true
+  - id: personal-cloud
+    name: Personal Cloud
+    summary: "A Nextcloud personal cloud for files, contacts and calendars, in its simplest working shape: SQLite, no separate database to configure."
+    first_boot:
+      - "Port 80 stays closed by default: Nextcloud's own setup wizard, which creates the first (administrator) account, is open to whoever reaches it first. Tunnel in first (`ssh -L 8080:localhost:80 you@host`), finish the wizard at http://localhost:8080/, then open 80 yourself (`sudo ufw allow 80/tcp`)."
+    tags: [nextcloud, personal-cloud, file-sharing, groupware]
+    folder: personal-cloud
+    services: [nextcloud]
+    ports: [22]
+    verified: true
+  - id: password-manager
+    name: Password Manager
+    summary: "A Vaultwarden password manager, compatible with Bitwarden's own clients, with sign-ups disabled until you turn them on."
+    first_boot:
+      - "This must sit behind TLS before it is exposed: every Bitwarden-compatible client refuses a server that is not HTTPS, so put this appliance's port 80 behind this catalog's Nginx, Apache or Caddy TLS reverse proxy — never open it to the outside as plain HTTP."
+      - "Sign-ups are disabled by default (SIGNUPS_ALLOWED=false). Reach it locally or over a tunnel (`ssh -L 8080:localhost:80 you@host`), turn SIGNUPS_ALLOWED on for just long enough to create your own account, then turn it back off."
+    tags: [vaultwarden, bitwarden, password-manager, security]
+    folder: password-manager
+    services: [vaultwarden]
+    ports: [22]
+    verified: true
+  - id: container-management
+    name: Container Management
+    summary: "Portainer managing this machine's own containers through a web UI on port 9443."
+    first_boot:
+      - "Enable the Podman API socket once before starting the portainer service: `sudo systemctl enable --now podman.socket`."
+      - "Port 9443 stays closed by default: Portainer prints a random one-time setup token to its own log at first start, and the admin account cannot be created without it."
+      - "Tunnel in (`ssh -L 9443:localhost:9443 you@host`), read the token from the container's log, create the account at https://localhost:9443/ (a self-signed certificate warning is expected), then open 9443 yourself (`sudo ufw allow 9443/tcp`)."
+    tags: [portainer, containers, management, podman]
+    folder: container-management
+    services: [portainer]
+    ports: [22]
+    verified: true
+  - id: status-monitoring
+    name: Status Monitoring
+    summary: "Uptime Kuma watching other hosts and services and reporting their status on port 3001."
+    first_boot:
+      - "Port 3001 stays closed by default: Uptime Kuma's own setup screen, which creates the one admin account, is open to whoever reaches it first. Tunnel in first (`ssh -L 3001:localhost:3001 you@host`), create that account at http://localhost:3001/, then open 3001 yourself (`sudo ufw allow 3001/tcp`)."
+    tags: [uptime-kuma, monitoring, status-page, alerts]
+    folder: status-monitoring
+    services: [uptime-kuma]
+    ports: [22]
+    verified: true
+  - id: file-sync
+    name: File Synchronisation
+    summary: "Syncthing keeping folders in sync across your own devices over its own peer-to-peer protocol."
+    first_boot:
+      - "The sync protocol (port 22000, TCP and UDP) and local discovery (port 21027/UDP) are open by default; pairing a device still needs that device's own ID, so nothing is reachable without one."
+      - "The web GUI (port 8384) ships with no username or password at all, so it stays closed by default. Tunnel in (`ssh -L 8384:localhost:8384 you@host`), set a GUI username and password (Settings > GUI), then open 8384 yourself (`sudo ufw allow 8384/tcp`) if you want it reachable directly."
+    tags: [syncthing, file-sync, peer-to-peer, backup]
+    folder: file-sync
+    services: [syncthing]
+    ports: [22, 22000, 21027]
+    verified: true
+  - id: object-storage
+    name: Object Storage
+    summary: "MinIO providing S3-compatible object storage, its API on port 9000 and its console on port 9001."
+    first_boot:
+      - "Both ports stay closed by default: with no MINIO_ROOT_USER or MINIO_ROOT_PASSWORD set, MinIO does not refuse to start — it silently falls back to the well-known default minioadmin:minioadmin."
+      - "Tunnel in (`ssh -L 9001:localhost:9001 you@host`), edit /etc/containers/systemd/minio.container to add real MINIO_ROOT_USER and MINIO_ROOT_PASSWORD values, run `sudo systemctl daemon-reload && sudo systemctl restart minio`, then open 9000 and 9001 yourself (`sudo ufw allow 9000/tcp && sudo ufw allow 9001/tcp`)."
+    tags: [minio, object-storage, s3, storage]
+    folder: object-storage
+    services: [minio]
+    ports: [22]
+    verified: true
+  - id: automation-flows
+    name: Automation Flows
+    summary: "An n8n workflow automation server on port 5678, with a large library of ready integrations."
+    first_boot:
+      - "Port 5678 stays closed by default: n8n's own setup screen, which creates the first (owner) account, is open to whoever reaches it first. Tunnel in first (`ssh -L 5678:localhost:5678 you@host`), create that account at http://localhost:5678/, then open 5678 yourself (`sudo ufw allow 5678/tcp`)."
+    tags: [n8n, automation, workflows, integrations]
+    folder: automation-flows
+    services: [n8n]
+    ports: [22]
+    verified: true
+  - id: vpn-server
+    name: VPN Server
+    summary: "A WireGuard VPN server (wg-easy) with a web UI for managing peers."
+    first_boot:
+      - "Replace the placeholder WG_HOST (192.0.2.1, a documentation-only address) with this machine's real public IP or hostname before generating any client config — every QR code and .conf file otherwise points nowhere."
+      - "Port 51821 (the web UI) stays closed by default: wg-easy's own setup wizard lets whoever opens it first create the admin account. Tunnel in first (`ssh -L 51821:localhost:51821 you@host`), finish setup at http://localhost:51821/, then open 51821 yourself (`sudo ufw allow 51821/tcp`) if you want to manage peers without a tunnel."
+    tags: [wireguard, vpn, wg-easy, networking]
+    folder: vpn-server
+    services: [wg-easy]
+    ports: [22, 51820]
+    verified: true

@@ -1,0 +1,19 @@
+schema_version: 1
+name: automation-flows
+version: 1.0.0
+
+base: ubuntu
+suite: noble
+arch: amd64
+
+profile: automation-flows
+regions: [us]
+brand: synos
+
+mirrors: {}
+
+packages:
+  repository: ""
+  takeover: all
+
+overrides: {}
