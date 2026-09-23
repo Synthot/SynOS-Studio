@@ -24,6 +24,9 @@ Exec={{ item.exec }}
 {% for key, value in (item.env | default({})).items() %}
 Environment={{ key }}={{ value }}
 {% endfor %}
+{% if item.env_file | default('') %}
+EnvironmentFile={{ item.env_file }}
+{% endif %}
 {% if item.gpu | default(false) %}
 {% if container_services_gpu == 'nvidia' %}
 AddDevice=nvidia.com/gpu=all

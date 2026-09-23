@@ -3,15 +3,17 @@ extends: server
 description: >-
   Server profile running MinIO as a system service: S3-compatible object
   storage, its API on port 9000 and its browser console on port 9001.
-  MinIO has no "refuse to start without a secret" mode and no working
-  file-based secret injection in this release (checked by hand: neither
-  MINIO_ROOT_USER_FILE nor MINIO_ROOT_PASSWORD_FILE actually took effect
-  in this image, so this profile does not rely on them) — leave
+  MinIO itself has no "refuse to start without a secret" mode — leave
   MINIO_ROOT_USER and MINIO_ROOT_PASSWORD unset and it silently starts
-  with the well-known default minioadmin:minioadmin instead. This profile
-  ships neither variable, on purpose, and keeps both ports closed by
-  default so that default credential is never reachable from outside
-  this machine.
+  with the well-known default minioadmin:minioadmin instead (confirmed
+  by hand; neither MINIO_ROOT_USER_FILE nor MINIO_ROOT_PASSWORD_FILE, its
+  own file-based secret variables, actually took effect in this image).
+  This profile makes it fail closed the same way the database appliance
+  does: the quadlet unit's own EnvironmentFile= (env_file, resolving to
+  /etc/minio/credentials) is never shipped by this profile, so the
+  service refuses to start — MINIO_ROOT_USER and MINIO_ROOT_PASSWORD
+  never resolve to anything at all, not even the default — until the
+  person creates that file.
 software:
   services:
     - name: minio
@@ -20,5 +22,6 @@ software:
       volumes:
         - minio-data:/data
       exec: "server /data --console-address :9001"
+      env_file: /etc/minio/credentials
 security:
   open_ports: [22/tcp]

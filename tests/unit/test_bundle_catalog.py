@@ -497,16 +497,46 @@ class SelfHostingApplianceTests(unittest.TestCase):
         combined = (entry["summary"] + " ".join(entry["first_boot"])).lower()
         self.assertIn("tls", combined)
 
-    def test_object_storage_ships_no_root_credential_and_stays_closed(self) -> None:
+    def test_object_storage_fails_closed_like_the_database_appliance(self) -> None:
+        """MinIO itself has no "refuse to start without a secret" mode (it
+        falls back to minioadmin:minioadmin), so this profile forces that
+        shape with the quadlet's own EnvironmentFile=, pointed at a file the
+        profile deliberately never ships — the same "credential the
+        service needs is read from a file this profile does not ship, so
+        it fails to start" rule database-server uses, just via env_file
+        instead of a mounted secret."""
         profile, _ = render_manifest.resolve_profile("object-storage")
         service = next(s for s in profile["software"]["services"] if s["name"] == "minio")
+        self.assertEqual("/etc/minio/credentials", service.get("env_file"))
         env = service.get("env", {})
         self.assertNotIn("MINIO_ROOT_USER", env)
         self.assertNotIn("MINIO_ROOT_PASSWORD", env)
+        files = profile.get("software", {}).get("files", [])
+        self.assertFalse([f for f in files if f["path"] == "/etc/minio/credentials"],
+                          "object-storage must not ship the credentials file its own env_file points at")
         self.assertNotIn("9000/tcp", profile["security"]["open_ports"])
         self.assertNotIn("9001/tcp", profile["security"]["open_ports"])
         entry = next(e for e in index_entries() if e["id"] == "object-storage")
-        self.assertIn("minioadmin", " ".join(entry["first_boot"]))
+        self.assertIn("fails to start", " ".join(entry["first_boot"]).lower())
+
+    def test_cap_add_is_a_closed_list_not_free_form(self) -> None:
+        """A free-form cap_add would let a contributed bundle ask for
+        SYS_ADMIN or ALL unnoticed; only capabilities an appliance in this
+        catalog actually needs are enumerated."""
+        try:
+            import jsonschema
+        except ImportError:
+            self.skipTest("jsonschema is not installed")
+        schema = json.loads((ROOT / "schema" / "profile.schema.json").read_text(encoding="utf-8"))
+        good = {"id": "cap-add-check", "software": {"services": [
+            {"name": "example", "image": "docker.io/library/example:1.0.0", "cap_add": ["NET_ADMIN"]}]}}
+        jsonschema.Draft202012Validator(schema).validate(good)
+        for refused in ("SYS_ADMIN", "ALL", "SYS_PTRACE"):
+            bad = {"id": "cap-add-check-bad", "software": {"services": [
+                {"name": "example", "image": "docker.io/library/example:1.0.0", "cap_add": [refused]}]}}
+            with self.subTest(cap=refused):
+                with self.assertRaises(jsonschema.exceptions.ValidationError):
+                    jsonschema.Draft202012Validator(schema).validate(bad)
 
     def test_file_sync_opens_the_sync_protocol_but_not_the_unauthenticated_gui(self) -> None:
         profile, _ = render_manifest.resolve_profile("file-sync")

@@ -297,7 +297,11 @@ read by anyone with this public repository.
 5. Open a pull request. A reviewer additionally checks, by eye, what the
    automated tests cannot: that no shipped file contains a real secret,
    that image tags and package names were actually verified rather than
-   guessed (say how, in the description), and that `first_boot` honestly
+   guessed (say how, in the description), that `first_boot` honestly
    covers everything a person needs to do before trusting the appliance
    with anything — nothing quietly left only in the profile's own
-   `description`.
+   `description` — and that any capability a service requests through
+   `cap_add` is one the appliance actually needs (the schema only allows
+   choosing among a fixed, reviewed set; widening that set is itself a
+   reviewed change to `schema/profile.schema.json`, not something a
+   single bundle can do on its own).
