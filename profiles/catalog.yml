@@ -175,6 +175,82 @@ services:
     env: {POSTGRES_PASSWORD_FILE: "/run/secrets/postgres-superuser-password"}
     gpu: false
     images: {default: docker.io/library/postgres:17.11}
+  - id: kafka
+    title: Apache Kafka
+    summary: Single-broker event streaming in KRaft mode on port 9092, no separate ZooKeeper ensemble needed
+    ports: ["9092:9092"]
+    volumes: ["kafka-data:/var/lib/kafka/data"]
+    env: {KAFKA_NODE_ID: "1", KAFKA_PROCESS_ROLES: "broker,controller", KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093", KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9092", KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER", KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093", KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT", KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"}
+    gpu: false
+    images: {default: docker.io/apache/kafka:4.3.1}
+  - id: jobmanager
+    title: Flink Job Manager
+    summary: Apache Flink job manager and REST API on port 8081, submitting work to its task manager
+    ports: ["8081:8081", "6123:6123", "6124:6124"]
+    volumes: ["flink-jm-data:/opt/flink/log"]
+    env: {JOB_MANAGER_RPC_ADDRESS: "host.containers.internal"}
+    gpu: false
+    images: {default: docker.io/library/flink:2.3.0-scala_2.12-java17}
+  - id: taskmanager
+    title: Flink Task Manager
+    summary: Apache Flink task manager that registers with the job manager appliance service and runs its work
+    ports: ["6121:6121", "6122:6122"]
+    volumes: ["flink-tm-data:/opt/flink/log"]
+    env: {JOB_MANAGER_RPC_ADDRESS: "host.containers.internal", TASK_MANAGER_NUMBER_OF_TASK_SLOTS: "2"}
+    gpu: false
+    images: {default: docker.io/library/flink:2.3.0-scala_2.12-java17}
+    needs: [jobmanager]
+  - id: zookeeper
+    title: Apache ZooKeeper
+    summary: Coordination ensemble on port 2181 for stacks that still need one; Kafka itself no longer does
+    ports: ["2181:2181"]
+    volumes: ["zookeeper-data:/data", "zookeeper-datalog:/datalog"]
+    gpu: false
+    images: {default: docker.io/library/zookeeper:3.9.5}
+  - id: keycloak
+    title: Keycloak
+    summary: Identity and single sign-on on port 8080, in start-dev mode with its embedded database; no admin account exists until one is created locally
+    ports: ["8080:8080"]
+    volumes: ["keycloak-data:/opt/keycloak/data"]
+    env: {KC_HOSTNAME_STRICT: "false"}
+    gpu: false
+    images: {default: quay.io/keycloak/keycloak:26.7.4}
+  - id: openbao
+    title: OpenBao
+    summary: Secret manager on port 8200 (the open-source fork of HashiCorp Vault); ships sealed and uninitialised, with no keys of its own
+    ports: ["8200:8200"]
+    volumes: ["openbao-data:/openbao/file"]
+    env: {BAO_LOCAL_CONFIG: '{"listener":[{"tcp":{"address":"0.0.0.0:8200","tls_disable":true}}],"storage":{"raft":{"path":"/openbao/file","node_id":"node1"}},"cluster_addr":"http://127.0.0.1:8201","api_addr":"http://127.0.0.1:8200","disable_mlock":true}'}
+    gpu: false
+    images: {default: docker.io/openbao/openbao:2.6.2}
+  - id: envoy
+    title: Envoy
+    summary: Edge proxy and load balancer on port 10000, its admin interface bound to loopback inside the container and never published
+    ports: ["10000:10000"]
+    volumes: ["/etc/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro"]
+    gpu: false
+    images: {default: docker.io/envoyproxy/envoy:v1.39.1}
+  - id: pdns
+    title: PowerDNS Authoritative Server
+    summary: Authoritative DNS on port 53 for a placeholder zone; its zone-editing HTTP API ships turned off
+    ports: ["53:53/tcp", "53:53/udp"]
+    volumes: ["/etc/powerdns/pdns.conf:/etc/powerdns/pdns.conf:ro", "/etc/powerdns/named.conf:/etc/powerdns/named.conf:ro", "/etc/powerdns/example.com.zone:/etc/powerdns/example.com.zone:ro"]
+    gpu: false
+    images: {default: docker.io/powerdns/pdns-auth-49:4.9.17}
+  - id: ray-head
+    title: Ray head node
+    summary: Distributed Python and machine-learning compute with its dashboard on port 8265; the dashboard and client ports run arbitrary code with no authentication
+    ports: ["6379:6379", "8265:8265", "10001:10001"]
+    volumes: ["ray-data:/tmp/ray"]
+    gpu: false
+    images: {default: docker.io/rayproject/ray:2.58.0-py311-cpu}
+  - id: gitlab
+    title: GitLab Community Edition
+    summary: Self-hosted DevOps platform on ports 80, 443 and 2222 for git over SSH; heavy, needing at least 8 GB of memory and about 40 GB of disk
+    ports: ["80:80", "443:443", "2222:22"]
+    volumes: ["gitlab-config:/etc/gitlab", "/etc/gitlab/gitlab.rb:/etc/gitlab/gitlab.rb:ro", "gitlab-logs:/var/log/gitlab", "gitlab-data:/var/opt/gitlab"]
+    gpu: false
+    images: {default: docker.io/gitlab/gitlab-ce:19.4.0-ce.0}
 
 # GPU compute stacks a profile may ship (hardware.gpu); what each adds is in the
 # bases' package maps (gpu-nvidia, gpu-amd, gpu-intel).

@@ -1,0 +1,19 @@
+id: cluster-coordination
+extends: server
+description: >-
+  Server profile running Apache ZooKeeper as a system service, for
+  people who still need a coordination ensemble for an older stack:
+  Kafka itself has not needed ZooKeeper since it grew its own KRaft mode
+  (see event-streaming). Port 2181 stays closed by default: a fresh
+  ensemble accepts any client with no authentication or ACLs configured
+  at all, so whoever reaches it first can read or rewrite every znode.
+software:
+  services:
+    - name: zookeeper
+      image: docker.io/library/zookeeper:3.9.5
+      ports: ["2181:2181"]
+      volumes:
+        - zookeeper-data:/data
+        - zookeeper-datalog:/datalog
+security:
+  open_ports: [22/tcp]

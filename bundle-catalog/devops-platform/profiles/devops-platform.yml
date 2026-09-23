@@ -1,0 +1,35 @@
+id: devops-platform
+extends: server
+description: >-
+  Server profile running GitLab Community Edition as a system service —
+  never Enterprise Edition, which needs a paid licence. It is heavy: at
+  least 8 GB of memory (GitLab's own documented baseline is 16 GB) and
+  roughly 40 GB of disk for the application alone, before real
+  repositories or a growing database, on top of whatever this base
+  image already uses. The bundled Prometheus monitoring is disabled to
+  save memory. The web UI (80/443) stays closed by default: GitLab
+  writes a random one-time root password inside the container on first
+  start, valid only 24 hours, so there is nothing to claim until an
+  operator reads it locally. Public sign-up ships at GitLab's own
+  default (on); turn it off from the admin area once you have signed in
+  if you do not want it.
+software:
+  services:
+    - name: gitlab
+      image: docker.io/gitlab/gitlab-ce:19.4.0-ce.0
+      ports: ["80:80", "443:443", "2222:22"]
+      volumes:
+        - gitlab-config:/etc/gitlab
+        - /etc/gitlab/gitlab.rb:/etc/gitlab/gitlab.rb:ro
+        - gitlab-logs:/var/log/gitlab
+        - gitlab-data:/var/opt/gitlab
+  files:
+    - path: /etc/gitlab/gitlab.rb
+      content: |
+        external_url 'http://localhost'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        puma['worker_processes'] = 0
+        sidekiq['max_concurrency'] = 10
+        prometheus_monitoring['enable'] = false
+security:
+  open_ports: [22/tcp, 2222/tcp]

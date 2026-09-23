@@ -1,0 +1,27 @@
+id: event-streaming
+extends: server
+description: >-
+  Server profile running a single-broker Apache Kafka cluster in KRaft
+  mode as a system service: one process is both broker and controller,
+  so there is no separate ZooKeeper ensemble to run or lose quorum in.
+  The client port (9092) stays closed by default: a fresh broker accepts
+  any client with no authentication configured, and whoever reaches it
+  first can create, read or delete any topic.
+software:
+  services:
+    - name: kafka
+      image: docker.io/apache/kafka:4.3.1
+      ports: ["9092:9092"]
+      volumes:
+        - kafka-data:/var/lib/kafka/data
+      env:
+        KAFKA_NODE_ID: "1"
+        KAFKA_PROCESS_ROLES: "broker,controller"
+        KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093"
+        KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9092"
+        KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+        KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
+        KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+security:
+  open_ports: [22/tcp]
