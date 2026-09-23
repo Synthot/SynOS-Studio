@@ -308,6 +308,8 @@ class AppliancePolicyTests(unittest.TestCase):
             "homeassistant", "pihole", "nextcloud", "vaultwarden", "portainer", "uptime-kuma", "syncthing",
             "minio", "n8n", "wg-easy",
         }
+        appliance_ids = {"nginx", "apache", "caddy", "registry", "gitea", "jellyfin", "prometheus", "grafana", "postgres",
+                         "kafka", "jobmanager", "taskmanager", "zookeeper", "keycloak", "openbao", "envoy", "pdns", "ray-head", "gitlab"}
         seen = set()
         for service in catalog["services"]:
             if service["id"] not in appliance_ids:
@@ -1039,6 +1041,139 @@ class DataStoreApplianceTests(unittest.TestCase):
         files = {f["path"]: f["content"] for f in profile["software"]["files"]}
         self.assertIn("/etc/milvus/user.yaml", files)
         self.assertIn("authorizationEnabled: true", files["/etc/milvus/user.yaml"])
+class PlatformAndNetworkingApplianceTests(unittest.TestCase):
+    """The nine enterprise platform, identity and networking appliances:
+    event-streaming, stream-processing, cluster-coordination, identity-sso,
+    secret-manager, edge-proxy, authoritative-dns, distributed-compute and
+    devops-platform. Every one of them has no built-in login or access
+    control on its data-plane or admin surface out of the box, so this
+    catalog's fail-closed rule (docs/BUNDLE.md) closes every port on all of
+    them except 22/tcp, the one exception being authoritative-dns's plain
+    DNS port, which is meant to be publicly reachable the way any
+    authoritative nameserver is."""
+
+    CLOSED_BY_DEFAULT = {
+        "event-streaming": "kafka",
+        "stream-processing": "jobmanager",
+        "cluster-coordination": "zookeeper",
+        "identity-sso": "keycloak",
+        "secret-manager": "openbao",
+        "distributed-compute": "ray-head",
+    }
+
+    def test_unauthenticated_services_close_every_port_but_ssh(self) -> None:
+        for entry_id in self.CLOSED_BY_DEFAULT:
+            with self.subTest(entry=entry_id):
+                profile, _ = render_manifest.resolve_profile(entry_id)
+                self.assertEqual(["22/tcp"], profile["security"]["open_ports"],
+                                  f"{entry_id} must open nothing but SSH by default")
+
+    def test_secret_manager_ships_sealed_and_uninitialised(self) -> None:
+        """OpenBao must never carry an unseal key or root token, and its API
+        port must stay closed until an operator initialises it locally."""
+        profile, _ = render_manifest.resolve_profile("secret-manager")
+        self.assertNotIn("8200/tcp", profile["security"]["open_ports"])
+        service = profile["software"]["services"][0]
+        self.assertEqual("openbao", service["name"])
+        blob = json.dumps(service)
+        for needle in ("unseal", "root_token", "recovery_key"):
+            self.assertNotIn(needle, blob.lower(), f"secret-manager must not ship a {needle}")
+        # HashiCorp Vault's licence changed to a Business Source Licence; this
+        # catalog ships the open-source fork instead.
+        self.assertNotRegex(blob.lower(), r"hashicorp|vault:")
+        raw = (CATALOG_DIR / "secret-manager" / "profiles" / "secret-manager.yml").read_text(encoding="utf-8")
+        self.assertRegex(raw, r"[Bb]usiness [Ss]ource")
+
+    def test_identity_provider_ships_no_bootstrap_admin_credential(self) -> None:
+        profile, _ = render_manifest.resolve_profile("identity-sso")
+        service = profile["software"]["services"][0]
+        env = service.get("env", {})
+        self.assertNotIn("KC_BOOTSTRAP_ADMIN_USERNAME", env)
+        self.assertNotIn("KC_BOOTSTRAP_ADMIN_PASSWORD", env)
+        self.assertNotIn("8080/tcp", profile["security"]["open_ports"])
+
+    def test_event_streaming_is_single_broker_kraft_with_no_zookeeper(self) -> None:
+        profile, _ = render_manifest.resolve_profile("event-streaming")
+        service = profile["software"]["services"][0]
+        self.assertEqual("kafka", service["name"])
+        env = service["env"]
+        self.assertIn("controller", env["KAFKA_PROCESS_ROLES"])
+        blob = json.dumps(profile).lower()
+        self.assertNotIn("zookeeper_connect", blob)
+
+    def test_cluster_coordination_summary_says_kafka_no_longer_needs_it(self) -> None:
+        entry = next(e for e in index_entries() if e["id"] == "cluster-coordination")
+        combined = (entry["summary"] + " ".join(entry["first_boot"])).lower()
+        self.assertRegex(combined, r"kafka")
+        self.assertRegex(combined, r"not needed|no longer|has not needed")
+
+    def test_stream_processing_task_manager_reaches_the_job_manager(self) -> None:
+        profile, _ = render_manifest.resolve_profile("stream-processing")
+        by_name = {s["name"]: s for s in profile["software"]["services"]}
+        self.assertEqual({"jobmanager", "taskmanager"}, set(by_name))
+        for service in by_name.values():
+            self.assertEqual("host.containers.internal", service["env"]["JOB_MANAGER_RPC_ADDRESS"])
+        self.assertNotIn("8081/tcp", profile["security"]["open_ports"])
+
+    def test_edge_proxy_never_publishes_the_admin_interface(self) -> None:
+        profile, _ = render_manifest.resolve_profile("edge-proxy")
+        service = profile["software"]["services"][0]
+        for port in service.get("ports", []):
+            self.assertNotIn("9901", port, "Envoy's admin interface must never be published to the host")
+        config = next(f["content"] for f in profile["software"]["files"] if f["path"] == "/etc/envoy/envoy.yaml")
+        self.assertIn("127.0.0.1", config)
+        self.assertIn("9901", config)
+        self.assertIn("10000/tcp", profile["security"]["open_ports"])
+
+    def test_authoritative_dns_ships_its_api_turned_off_and_opens_only_dns(self) -> None:
+        profile, _ = render_manifest.resolve_profile("authoritative-dns")
+        pdns_conf = next(f["content"] for f in profile["software"]["files"] if f["path"] == "/etc/powerdns/pdns.conf")
+        self.assertIn("api=no", pdns_conf)
+        self.assertEqual({"22/tcp", "53/tcp", "53/udp"}, set(profile["security"]["open_ports"]))
+        service = profile["software"]["services"][0]
+        self.assertIn("53:53/tcp", service["ports"])
+        self.assertIn("53:53/udp", service["ports"])
+        # RFC 5737 documentation range only, never a real address.
+        zone = next(f["content"] for f in profile["software"]["files"] if f["path"].endswith(".zone"))
+        self.assertIn("192.0.2.1", zone)
+
+    def test_distributed_compute_closes_dashboard_client_and_gcs_ports(self) -> None:
+        profile, _ = render_manifest.resolve_profile("distributed-compute")
+        service = profile["software"]["services"][0]
+        self.assertEqual({"6379:6379", "8265:8265", "10001:10001"}, set(service["ports"]))
+        self.assertEqual(["22/tcp"], profile["security"]["open_ports"])
+
+    def test_devops_platform_is_community_edition_never_enterprise(self) -> None:
+        profile, _ = render_manifest.resolve_profile("devops-platform")
+        service = profile["software"]["services"][0]
+        self.assertIn("gitlab-ce", service["image"])
+        self.assertNotIn("gitlab-ee", service["image"])
+        entry = next(e for e in index_entries() if e["id"] == "devops-platform")
+        self.assertIn("Enterprise Edition", entry["summary"])
+        self.assertRegex(entry["summary"], r"8 GB")
+        self.assertRegex(entry["summary"], r"16 GB")
+        self.assertRegex(entry["summary"], r"40 GB")
+
+    def test_devops_platform_ssh_stays_open_web_ui_stays_closed(self) -> None:
+        profile, _ = render_manifest.resolve_profile("devops-platform")
+        self.assertEqual({"22/tcp", "2222/tcp"}, set(profile["security"]["open_ports"]))
+        entry = next(e for e in index_entries() if e["id"] == "devops-platform")
+        self.assertIn("initial_root_password", " ".join(entry["first_boot"]))
+
+    def test_devops_platform_ships_no_root_password(self) -> None:
+        profile, _ = render_manifest.resolve_profile("devops-platform")
+        gitlab_rb = next(f["content"] for f in profile["software"]["files"] if f["path"] == "/etc/gitlab/gitlab.rb")
+        self.assertNotIn("initial_root_password", gitlab_rb)
+        self.assertNotIn("GITLAB_ROOT_PASSWORD", gitlab_rb)
+
+    def test_new_platform_entries_are_present_and_verified(self) -> None:
+        ids = {"event-streaming", "stream-processing", "cluster-coordination", "identity-sso", "secret-manager",
+               "edge-proxy", "authoritative-dns", "distributed-compute", "devops-platform"}
+        by_id = {e["id"]: e for e in index_entries()}
+        self.assertTrue(ids.issubset(by_id), ids - set(by_id))
+        for entry_id in ids:
+            with self.subTest(entry=entry_id):
+                self.assertTrue(by_id[entry_id]["verified"])
 
 
 if __name__ == "__main__":

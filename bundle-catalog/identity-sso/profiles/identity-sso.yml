@@ -1,0 +1,23 @@
+id: identity-sso
+extends: server
+description: >-
+  Server profile running Keycloak as a system service for identity and
+  single sign-on, in its start-dev mode with the embedded file-backed
+  database it ships with — enough to evaluate it or run one small
+  deployment; point it at a real external database (KC_DB and friends)
+  before relying on it as production identity infrastructure. No admin
+  account is created: Keycloak's bootstrap variables are deliberately
+  left unset, so port 8080 stays closed by default until an operator
+  creates the first administrator locally.
+software:
+  services:
+    - name: keycloak
+      image: quay.io/keycloak/keycloak:26.7.4
+      ports: ["8080:8080"]
+      volumes:
+        - keycloak-data:/opt/keycloak/data
+      env:
+        KC_HOSTNAME_STRICT: "false"
+      exec: "start-dev"
+security:
+  open_ports: [22/tcp]

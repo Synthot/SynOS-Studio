@@ -1,0 +1,52 @@
+id: edge-proxy
+extends: server
+description: >-
+  Server profile running Envoy as an edge proxy and load balancer on
+  port 10000, serving a placeholder response until real clusters and
+  routes are added. Envoy's admin and control interface, which can dump
+  configuration, drain listeners and shut the process down with no
+  authentication of its own, is bound to loopback inside the container
+  and is never published to the host, so nothing administrative is
+  reachable from outside at all.
+software:
+  services:
+    - name: envoy
+      image: docker.io/envoyproxy/envoy:v1.39.1
+      ports: ["10000:10000"]
+      volumes:
+        - /etc/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+  files:
+    - path: /etc/envoy/envoy.yaml
+      content: |
+        admin:
+          address:
+            socket_address: { address: 127.0.0.1, port_value: 9901 }
+        static_resources:
+          listeners:
+            - name: listener_0
+              address:
+                socket_address: { address: 0.0.0.0, port_value: 10000 }
+              filter_chains:
+                - filters:
+                    - name: envoy.filters.network.http_connection_manager
+                      typed_config:
+                        "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                        stat_prefix: ingress_http
+                        route_config:
+                          name: local_route
+                          virtual_hosts:
+                            - name: placeholder
+                              domains: ["*"]
+                              routes:
+                                - match: { prefix: "/" }
+                                  direct_response:
+                                    status: 200
+                                    body:
+                                      inline_string: "SynOS Edge Proxy: no backend cluster configured yet.\n"
+                        http_filters:
+                          - name: envoy.filters.http.router
+                            typed_config:
+                              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+          clusters: []
+security:
+  open_ports: [22/tcp, 10000/tcp]

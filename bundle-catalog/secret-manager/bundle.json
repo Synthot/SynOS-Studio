@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "secret-manager",
+  "manifest": "manifests/secret-manager.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Secret Manager \u2014 ubuntu noble amd64, profile secret-manager",
+  "files": [
+    "manifests/secret-manager.yml",
+    "profiles/secret-manager.yml"
+  ]
+}

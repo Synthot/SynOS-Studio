@@ -444,4 +444,113 @@ bundle_catalog:
     folder: milvus-server
     services: [milvus]
     ports: [22]
+  - id: event-streaming
+    name: Event Streaming (Kafka)
+    summary: "A single-broker Apache Kafka cluster running in KRaft mode as a system service — no separate ZooKeeper ensemble to run or lose quorum in."
+    first_boot:
+      - "Port 9092 stays closed by default: a fresh broker accepts any client with no authentication configured, so whoever reaches it first can create, read or delete any topic."
+      - "Reach it over an SSH tunnel first (`ssh -L 9092:localhost:9092 you@host`) to try it, then put real authentication (SASL or mTLS) in front of it before opening the port yourself (`sudo ufw allow 9092/tcp`)."
+    tags: [kafka, event-streaming, messaging, kraft, streaming]
+    folder: event-streaming
+    services: [kafka]
+    ports: [22]
+    verified: true
+
+  - id: stream-processing
+    name: Stream Processing (Flink)
+    summary: "An Apache Flink job manager and task manager running as system services, ready to accept a submitted job."
+    first_boot:
+      - "The web UI and REST API (8081) can submit and cancel arbitrary jobs with no authentication configured, so it stays closed by default: tunnel in first (`ssh -L 8081:localhost:8081 you@host`)."
+      - "Submit a job over that tunnel (`flink run -m localhost:8081 your-job.jar`) or with the web UI, then open the port yourself (`sudo ufw allow 8081/tcp`) once you trust who can reach it."
+    tags: [flink, stream-processing, batch-processing, streaming, data-pipeline]
+    folder: stream-processing
+    services: [jobmanager, taskmanager]
+    ports: [22]
+    verified: true
+
+  - id: cluster-coordination
+    name: Cluster Coordination (ZooKeeper)
+    summary: "An Apache ZooKeeper ensemble running as a system service, for people who still need one for an older stack — Kafka itself has not needed ZooKeeper since it grew its own KRaft mode."
+    first_boot:
+      - "Port 2181 stays closed by default: a fresh ensemble accepts any client with no authentication or ACLs configured at all, so whoever reaches it first can read or rewrite every znode."
+      - "Reach it over an SSH tunnel first (`ssh -L 2181:localhost:2181 you@host`), put authentication (SASL digest or Kerberos) in front of it, then open the port yourself (`sudo ufw allow 2181/tcp`)."
+    tags: [zookeeper, cluster-coordination, distributed-systems, consensus]
+    folder: cluster-coordination
+    services: [zookeeper]
+    ports: [22]
+    verified: true
+
+  - id: identity-sso
+    name: Identity and Single Sign-On (Keycloak)
+    summary: "Keycloak running as a system service for identity and single sign-on, in its start-dev mode with the embedded database it ships with."
+    first_boot:
+      - "No admin account exists yet: reach it only over an SSH tunnel first (`ssh -L 8080:localhost:8080 you@host`)."
+      - "Bootstrap one, once: `sudo systemctl edit keycloak`, add under `[Service]` both `Environment=KC_BOOTSTRAP_ADMIN_USERNAME=youradmin` and `Environment=KC_BOOTSTRAP_ADMIN_PASSWORD=a-real-password`, then `sudo systemctl restart keycloak` — Keycloak creates that account once and ignores the variables afterward."
+      - "Remove the override so the password does not linger in a unit file (`sudo systemctl edit keycloak` again, delete those lines, `sudo systemctl daemon-reload`), sign in at http://localhost:8080/, then open the port yourself (`sudo ufw allow 8080/tcp`)."
+    tags: [keycloak, identity, single-sign-on, oauth, oidc, saml]
+    folder: identity-sso
+    services: [keycloak]
+    ports: [22]
+    verified: true
+
+  - id: secret-manager
+    name: Secret Manager (OpenBao)
+    summary: "OpenBao running as a system service: the open-source fork of HashiCorp Vault, kept after Vault's licence changed to the Business Source Licence."
+    first_boot:
+      - "It ships sealed and completely uninitialised — no unseal key and no root token exist anywhere in this repository or the image — so reach it only over an SSH tunnel first (`ssh -L 8200:localhost:8200 you@host`)."
+      - "Initialise it there, once (`docker exec -it openbao bao operator init`), and save the unseal key and the root token it prints somewhere safe: OpenBao never shows them again."
+      - "Unseal it with that key (`bao operator unseal`), sign in with the root token, and put a TLS-terminating proxy in front of it (this catalog's own edge-proxy, or your own) before opening the port yourself (`sudo ufw allow 8200/tcp`) — it ships with TLS disabled for simplicity, so anything sent to it beyond your own tunnel travels in the clear otherwise."
+    tags: [openbao, secret-manager, vault, secrets, encryption]
+    folder: secret-manager
+    services: [openbao]
+    ports: [22]
+    verified: true
+
+  - id: edge-proxy
+    name: Edge Proxy and Load Balancer (Envoy)
+    summary: "Envoy running as a system service, an edge proxy and load balancer serving a placeholder response on port 10000 until real clusters and routes are added."
+    first_boot:
+      - "Edit /etc/envoy/envoy.yaml to add your own listeners, clusters and routes, then restart the envoy service."
+    tags: [envoy, edge-proxy, load-balancer, reverse-proxy, service-mesh]
+    folder: edge-proxy
+    services: [envoy]
+    ports: [22, 10000]
+    verified: true
+
+  - id: authoritative-dns
+    name: Authoritative DNS (PowerDNS)
+    summary: "PowerDNS Authoritative Server running as a system service, answering for a placeholder zone over plain DNS; its zone-editing HTTP API ships turned off."
+    first_boot:
+      - "Replace the placeholder zone (/etc/powerdns/example.com.zone and /etc/powerdns/named.conf) with your own, then restart the pdns service."
+      - "The HTTP API is off by default (api=no in /etc/powerdns/pdns.conf), since any key shipped in this public repository would already be known to everyone: turn it on and set your own key locally, then open its port yourself if you need it reachable."
+    tags: [powerdns, dns, authoritative-dns, nameserver]
+    folder: authoritative-dns
+    services: [pdns]
+    ports: [22, 53]
+    verified: true
+
+  - id: distributed-compute
+    name: Distributed Compute (Ray)
+    summary: "A Ray head node running as a system service for distributed Python and machine-learning workloads, its dashboard included."
+    first_boot:
+      - "The dashboard, the Ray Client server and the head node's own port (8265, 10001, 6379) all accept and run arbitrary code with no authentication configured at all, so every one of them stays closed by default."
+      - "Reach the dashboard over an SSH tunnel first (`ssh -L 8265:localhost:8265 you@host`), and open only the ports worker nodes on your own trusted network actually need (`sudo ufw allow 6379/tcp`, and so on)."
+    tags: [ray, distributed-compute, machine-learning, python, cluster-computing]
+    folder: distributed-compute
+    services: [ray-head]
+    ports: [22]
+    verified: true
+
+  - id: devops-platform
+    name: DevOps Platform (GitLab)
+    summary: "Self-hosted GitLab Community Edition as a system service — never Enterprise Edition, which needs a paid licence. It is heavy: at least 8 GB memory (16 GB is GitLab's own baseline) and about 40 GB disk for the application alone, before repositories or a growing database."
+    first_boot:
+      - "Git over SSH (port 2222) is open from the start — cloning or pushing needs a registered account and key, and none exists yet."
+      - "The web UI (80/443) stays closed by default: GitLab writes a random root password inside the container on first start, valid only 24 hours. Tunnel in first (`ssh -L 8080:localhost:80 you@host`), read it (`docker exec gitlab cat /etc/gitlab/initial_root_password`), sign in as root at http://localhost:8080/, and set a real password."
+      - "Public sign-up ships on (GitLab's own default): turn it off in the admin area (Settings > General > Sign-up restrictions) while you are in there, unless you want it."
+      - "Then open the web ports yourself (`sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`)."
+    tags: [gitlab, devops-platform, version-control, ci-cd, code-review]
+    folder: devops-platform
+    services: [gitlab]
+    ports: [22, 2222]
     verified: true

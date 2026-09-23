@@ -1,0 +1,53 @@
+id: authoritative-dns
+extends: server
+description: >-
+  Server profile running PowerDNS Authoritative Server as a system
+  service, answering for a placeholder zone (example.com, RFC 5737's
+  192.0.2.0/24 documentation range) over plain DNS on port 53 — an
+  authoritative server serves only the zones it is told about and does
+  not recurse, so it is safe to leave reachable the way any public
+  authoritative nameserver is. Its HTTP API, which can create and delete
+  zones, ships turned off rather than reachable behind a key anyone
+  reading this repository would already know.
+software:
+  services:
+    - name: pdns
+      image: docker.io/powerdns/pdns-auth-49:4.9.17
+      ports: ["53:53/tcp", "53:53/udp"]
+      volumes:
+        - /etc/powerdns/pdns.conf:/etc/powerdns/pdns.conf:ro
+        - /etc/powerdns/named.conf:/etc/powerdns/named.conf:ro
+        - /etc/powerdns/example.com.zone:/etc/powerdns/example.com.zone:ro
+  files:
+    - path: /etc/powerdns/pdns.conf
+      content: |
+        launch=bind
+        bind-config=/etc/powerdns/named.conf
+        local-address=0.0.0.0
+        local-port=53
+        # The HTTP API can create, change and delete zones: turn it on only
+        # once you have a real api-key of your own (api=yes, a webserver
+        # address, and a key that is not in this public repository), never
+        # by uncommenting a key shipped here.
+        api=no
+        webserver=no
+    - path: /etc/powerdns/named.conf
+      content: |
+        zone "example.com" {
+            type master;
+            file "/etc/powerdns/example.com.zone";
+        };
+    - path: /etc/powerdns/example.com.zone
+      content: |
+        $TTL 3600
+        @       IN      SOA     ns1.example.com. hostmaster.example.com. (
+                                2026092200 ; serial
+                                3600       ; refresh
+                                600        ; retry
+                                604800     ; expire
+                                3600 )     ; minimum
+        @       IN      NS      ns1.example.com.
+        @       IN      A       192.0.2.1
+        ns1     IN      A       192.0.2.1
+security:
+  open_ports: [22/tcp, 53/tcp, 53/udp]

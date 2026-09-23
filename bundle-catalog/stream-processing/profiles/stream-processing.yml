@@ -1,0 +1,32 @@
+id: stream-processing
+extends: server
+description: >-
+  Server profile running an Apache Flink job manager and task manager as
+  system services, the task manager pointed at the job manager the way
+  this catalog's other multi-service appliances reach each other
+  (monitoring-server's Grafana reaching Prometheus): both containers are
+  told the job manager lives at host.containers.internal, Flink's own
+  container image resolves that through the two services' published
+  ports. The web UI and REST API (8081) can submit and cancel arbitrary
+  jobs with no authentication configured, so it stays closed by default.
+software:
+  services:
+    - name: jobmanager
+      image: docker.io/library/flink:2.3.0-scala_2.12-java17
+      ports: ["8081:8081", "6123:6123", "6124:6124"]
+      volumes:
+        - flink-jm-data:/opt/flink/log
+      env:
+        JOB_MANAGER_RPC_ADDRESS: host.containers.internal
+      exec: "jobmanager"
+    - name: taskmanager
+      image: docker.io/library/flink:2.3.0-scala_2.12-java17
+      ports: ["6121:6121", "6122:6122"]
+      volumes:
+        - flink-tm-data:/opt/flink/log
+      env:
+        JOB_MANAGER_RPC_ADDRESS: host.containers.internal
+        TASK_MANAGER_NUMBER_OF_TASK_SLOTS: "2"
+      exec: "taskmanager"
+security:
+  open_ports: [22/tcp]

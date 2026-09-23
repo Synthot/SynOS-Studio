@@ -1,0 +1,19 @@
+schema_version: 1
+name: devops-platform
+version: 1.0.0
+
+base: ubuntu
+suite: noble
+arch: amd64
+
+profile: devops-platform
+regions: [us]
+brand: synos
+
+mirrors: {}
+
+packages:
+  repository: ""
+  takeover: all
+
+overrides: {}
