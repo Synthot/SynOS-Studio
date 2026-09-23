@@ -1,0 +1,124 @@
+# Nightly, unattended proof that the whole catalog builds: every bundle in
+# bundle-catalog/, and every base/suite core, through tools/build_matrix.py.
+# docs/BUILD_MATRIX.md explains what this proves and what it costs.
+#
+# Two jobs, deliberately split by cost:
+#
+#   plan      hosted runner (ubuntu-24.04), a few minutes: validates every
+#             catalogued bundle and manifest, renders every one of them,
+#             and checks that every pinned base/builder image tag still
+#             exists — no build, no disk beyond a checkout. Runs on every
+#             push and pull request, same as .github/workflows/build.yml's
+#             own validate job.
+#
+#   matrix    self-hosted runner only, gated the same way build.yml gates
+#             its own build job: set the repository variable
+#             SYNOS_SELF_HOSTED=true once a runner carrying the
+#             `synos-builder` label is registered. Needs the same host the
+#             engine itself needs (podman or docker, 40+ GB free per
+#             concurrent build, docs/BUNDLE.md's "Building without a
+#             checkout"), plus, for the smoke test, qemu-system-x86_64 and
+#             xorriso — a hosted runner has neither the disk nor the time
+#             for a 40-minute, 40 GB image, let alone fifty of them.
+#
+# Nothing here invents a secret or a registry: SYNOS_SIGNING_KEY (optional,
+# reproducible unsigned builds work without it) is the same repository
+# secret .github/workflows/build.yml already documents, and
+# SYNOS_BUILDER_IMAGE (optional) points the matrix at a pre-built image
+# instead of building one from bases/<base>/Containerfile per target.
+name: Catalog matrix
+
+on:
+  schedule:
+    - cron: "0 3 * * *"   # nightly; the runner's own clock, not necessarily UTC-adjacent to any release
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Comma-separated target ids to build (default: everything)"
+        default: ""
+      kind:
+        description: "Restrict to one kind of target"
+        default: ""
+        type: choice
+        options: ["", catalog, core]
+
+jobs:
+  plan:
+    # Cheap and hosted: proves the catalog and the manifests it renders are
+    # well-formed, without building a single image.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq python3-yaml python3-jsonschema python3-pil python3-jinja2 skopeo
+      - name: Every catalogued bundle validates and applies cleanly
+        run: |
+          set -e
+          for folder in bundle-catalog/*/; do
+            id=$(basename "$folder")
+            [ "$id" = "_template" ] && continue
+            python3 tools/synos --json bundle validate "$folder" | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if d['ok'] else 1)"
+          done
+      - name: Every manifest a target would build renders (applying each catalog bundle into this disposable checkout)
+        run: |
+          set -e
+          for folder in bundle-catalog/*/; do
+            id=$(basename "$folder")
+            [ "$id" = "_template" ] && continue
+            python3 tools/synos --json bundle apply "$folder" >/dev/null
+          done
+          python3 tools/build_matrix.py --dry-run
+      - name: "Every base/suite's own builder image tag still resolves (informational: unpublished is not a failure before the first release)"
+        run: |
+          owner=$(echo "${{ github.repository_owner }}" | tr 'A-Z' 'a-z')
+          repo="${SYNOS_IMAGE_REPOSITORY:-ghcr.io/$owner/synos-builder}"
+          for base_dir in bases/*/; do
+            base_name=$(basename "$base_dir")
+            [ "$base_name" = "_template" ] && continue
+            ( . "$base_dir/base.env"
+              for suite in $SUPPORTED_SUITES; do
+                tag="$repo:$BASE_ID-$suite"
+                if skopeo inspect "docker://$tag" >/dev/null 2>&1; then
+                  echo "$tag: found"
+                else
+                  echo "$tag: not published yet"
+                fi
+              done )
+          done
+      - name: The matrix plan and the conformance tool (report.json shape) stay stable
+        run: |
+          PYTHONPATH=tests python3 -m unittest tests.unit.test_build_matrix tests.unit.test_smoke_test \
+            tests.unit.test_catalog_conformance tests.unit.test_bundle_catalog -v
+
+  matrix:
+    needs: plan
+    if: vars.SYNOS_SELF_HOSTED == 'true'
+    runs-on: [self-hosted, synos-builder]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the matrix
+        env:
+          SYNOS_SIGNING_KEY: ${{ secrets.SYNOS_SIGNING_KEY }}
+          SYNOS_BUILDER_IMAGE: ${{ vars.SYNOS_BUILDER_IMAGE }}
+        run: |
+          args=(--resume)
+          [ -n "${{ github.event.inputs.only }}" ] && args+=(--only "${{ github.event.inputs.only }}")
+          [ -n "${{ github.event.inputs.kind }}" ] && args+=(--kind "${{ github.event.inputs.kind }}")
+          python3 tools/build_matrix.py "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: catalog-matrix-report
+          path: |
+            dist/matrix/report.json
+            dist/matrix/summary.txt
+            dist/matrix/targets/*/build.log
+            dist/matrix/targets/*/smoke-serial.log
+      - name: Commit the honest build-status file
+        # Only bundle-catalog/build-status.yml, never a report or a log: the
+        # rest is the artifact above. A person reviews and merges this like
+        # any other change; nothing here pushes directly to a protected branch.
+        run: |
+          if ! git diff --quiet -- bundle-catalog/build-status.yml; then
+            git diff -- bundle-catalog/build-status.yml
+            echo "bundle-catalog/build-status.yml changed; open a PR with this diff to publish it."
+          fi

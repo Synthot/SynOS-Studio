@@ -1,0 +1,20 @@
+# Honest "last built" status per catalogued bundle, written by
+# tools/build_matrix.py after a matrix run (bundle-catalog/index.yml's
+# `verified` field is a maintainer's claim that package names and image tags
+# resolve; this file is the engine's own record of actually building the
+# bundle end to end). Never edited by hand.
+#
+# An id absent from build_status has never been built by the matrix: absent,
+# not false. tools/export_catalog.py merges this file into each
+# bundle_catalog[] entry as build_status when one exists, so a front end can
+# show "last built <date> with engine <version>" honestly, or nothing at all.
+#
+# Shape per id:
+#   engine:      VERSION of the engine checkout that built it
+#   date:        ISO 8601 UTC timestamp the matrix run finished this target
+#   result:      success | invalid | host | build_failed | timeout | error
+#   duration_s:  build time in seconds
+#   iso_sha256:  SHA-256 of the produced ISO (omitted when none was produced)
+#   smoke:       tools/smoke_test.py's status (passed | failed | error | skipped),
+#                omitted when the smoke test did not run at all
+build_status: {}

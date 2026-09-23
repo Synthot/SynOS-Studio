@@ -1,0 +1,12 @@
+[Unit]
+Description=Run the SynOS catalog conformance check often (minutes, not days)
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=15min
+Persistent=true
+AccuracySec=1min
+Unit=synos-conformance-check.service
+
+[Install]
+WantedBy=timers.target

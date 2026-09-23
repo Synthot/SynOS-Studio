@@ -1,0 +1,41 @@
+# tools/catalog_conformance.py's config. Copy to /etc/synos/conformance.yml
+# (the units below point there) and fill in catalog_url at least.
+#
+# catalog_url is the Studio site's own exported catalog, not this
+# repository's bundle-catalog/ — typically <site>/data/catalog.json, the
+# file tools/export_catalog.py's bundle_catalog key becomes once the front
+# end deploys it. This is what makes the conformance run prove what a real
+# person gets, not what this checkout happens to hold.
+catalog_url: https://studio.example/data/catalog.json
+
+# Where prepared bundles, build output and the two report files
+# (build-report.json/build-summary.txt, check-report.json/check-summary.txt)
+# are kept between runs. Owned by the service user (see README below).
+workdir: /var/lib/synos-conformance
+
+# Disk guard for `build` only (docs/BUILD_MATRIX.md's own thresholds):
+# this checkout's own free space, and the container runtime's storage.
+min_free_gb: 40
+min_store_gb: 30
+
+# `build` only: how many catalog entries one run attempts (a full pass over
+# fifty-odd entries is the better part of a day; the systemd timer below
+# runs this rarely) and the per-entry timeout.
+max_builds_per_run: 5
+build_timeout_minutes: 90
+
+# `build` only: run tools/smoke_test.py on every entry that builds.
+smoke: true
+
+# `build` only, both optional: a single builder image for every entry
+# instead of the engine building one per base/suite, and whether to pull
+# the published image instead of building it locally.
+image: null
+pull: false
+
+# Optional: POST {"report": ..., "diff": ...} here after every run (build
+# and check both). No email or notification service is invented here —
+# point this at whatever already receives webhooks (a chat incoming
+# webhook, a small collector of your own). Leave null to only write the
+# report files under workdir.
+report_url: null

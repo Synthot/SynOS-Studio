@@ -67,6 +67,18 @@ def launchers() -> dict[str, str]:
     return {name: (ROOT / "tools" / source).read_bytes().decode("utf-8") for name, source in LAUNCHERS.items()}
 
 
+def build_status() -> dict[str, dict]:
+    """The honest "last built" record tools/build_matrix.py writes to
+    bundle-catalog/build-status.yml after a matrix run. {} when the file is
+    missing (no matrix has ever run against this checkout) or an id has
+    never been built: absent, not false (docs/…, "Feed the page an honest
+    badge")."""
+    path = ROOT / "bundle-catalog" / "build-status.yml"
+    if not path.is_file():
+        return {}
+    return render_manifest.load_yaml(path).get("build_status", {}) or {}
+
+
 def bundle_catalog() -> list[dict]:
     """The bundle catalog (bundle-catalog/, docs/BUNDLE.md): ready-made, ordinary
     bundles a front end can offer as starting points, alongside "start from
@@ -80,6 +92,7 @@ def bundle_catalog() -> list[dict]:
     if not index_path.is_file():
         return []
     entries = load_yaml(index_path).get("bundle_catalog", [])
+    statuses = build_status()
     catalog = []
     for entry in entries:
         folder = ROOT / "bundle-catalog" / entry["folder"]
@@ -103,6 +116,8 @@ def bundle_catalog() -> list[dict]:
         }
         if entry.get("contributed_by"):
             item["contributed_by"] = entry["contributed_by"]
+        if entry["id"] in statuses:
+            item["build_status"] = statuses[entry["id"]]
         catalog.append(item)
     return catalog
 

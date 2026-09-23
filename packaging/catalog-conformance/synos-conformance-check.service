@@ -1,0 +1,32 @@
+[Unit]
+Description=SynOS catalog conformance: cheap package/image drift check
+Documentation=file:/opt/synos-engine/docs/BUILD_MATRIX.md
+# Edit ExecStart's checkout path (and this Documentation= line) if the
+# engine is not checked out at /opt/synos-engine.
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/synos-engine
+ExecStart=/usr/bin/python3 /opt/synos-engine/tools/catalog_conformance.py check --config /etc/synos/conformance.yml
+User=synos-conformance
+Group=synos-conformance
+
+# No container runtime, no privileged build, no writes outside its own
+# workdir: this mode only reads the network (the catalog, an archive
+# index, a registry) and its own config.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/synos-conformance
+CapabilityBoundingSet=
+RestrictNamespaces=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+UMask=0077

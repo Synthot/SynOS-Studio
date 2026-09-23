@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the SynOS catalog conformance full build rarely (it costs a day of machine time)
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+AccuracySec=1h
+Unit=synos-conformance-build.service
+
+[Install]
+WantedBy=timers.target

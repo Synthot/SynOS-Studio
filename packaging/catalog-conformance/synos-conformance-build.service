@@ -1,0 +1,26 @@
+[Unit]
+Description=SynOS catalog conformance: full build and smoke test of the published catalog
+Documentation=file:/opt/synos-engine/docs/BUILD_MATRIX.md
+# Edit ExecStart's checkout path (and this Documentation= line) if the
+# engine is not checked out at /opt/synos-engine.
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/synos-engine
+ExecStart=/usr/bin/python3 /opt/synos-engine/tools/catalog_conformance.py build --config /etc/synos/conformance.yml
+User=synos-conformance
+Group=synos-conformance
+# 40+ GB per entry, tens of minutes each: give this a long leash before
+# systemd decides it hung. tools/catalog_conformance.py enforces its own,
+# shorter per-entry timeout from the config (build_timeout_minutes).
+TimeoutStartSec=1day
+
+# This mode drives a container runtime (podman/docker, --privileged, the
+# same as tools/synos build itself) and cannot be sandboxed the way the
+# check service is; it needs the runtime's own socket/group access
+# (add synos-conformance to the podman or docker group) and read-write
+# access to this checkout (bundles are applied into it, docs/BUNDLE.md)
+# and its own workdir.
+NoNewPrivileges=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/synos-conformance /opt/synos-engine

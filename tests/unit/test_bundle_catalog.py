@@ -913,6 +913,44 @@ class ExportedCatalogTests(unittest.TestCase):
         bundle_doc = (ROOT / "docs" / "BUNDLE.md").read_text(encoding="utf-8")
         self.assertNotIn("starter", bundle_doc.lower())
 
+    def test_no_entry_carries_build_status_in_this_checkout(self) -> None:
+        """bundle-catalog/build-status.yml ships empty: no matrix run has
+        recorded anything yet, so no entry should claim to have been built."""
+        self.assertFalse(any("build_status" in entry for entry in self.data["bundle_catalog"]))
+
+
+class BuildStatusExportTests(unittest.TestCase):
+    """tools/build_matrix.py writes bundle-catalog/build-status.yml;
+    export_catalog.build_status() merges it in honestly: present only for an
+    id that was actually built, absent (never false) for everything else."""
+
+    STATUS_PATH = ROOT / "bundle-catalog" / "build-status.yml"
+
+    def setUp(self) -> None:
+        self.original = self.STATUS_PATH.read_text(encoding="utf-8")
+        self.addCleanup(lambda: self.STATUS_PATH.write_text(self.original, encoding="utf-8"))
+
+    def test_a_recorded_build_is_merged_into_its_entry_only(self) -> None:
+        self.STATUS_PATH.write_text(
+            "build_status:\n"
+            "  web-server-nginx:\n"
+            "    engine: \"0.2.0\"\n"
+            "    date: \"2026-09-23T09:00:00+00:00\"\n"
+            "    result: success\n"
+            "    duration_s: 120.0\n",
+            encoding="utf-8",
+        )
+        catalog = export_catalog.bundle_catalog()
+        by_id = {e["id"]: e for e in catalog}
+        self.assertIn("build_status", by_id["web-server-nginx"])
+        self.assertEqual("success", by_id["web-server-nginx"]["build_status"]["result"])
+        self.assertNotIn("build_status", by_id["web-server-apache"])
+
+    def test_an_empty_status_file_adds_nothing(self) -> None:
+        self.STATUS_PATH.write_text("build_status: {}\n", encoding="utf-8")
+        catalog = export_catalog.bundle_catalog()
+        self.assertFalse(any("build_status" in entry for entry in catalog))
+
 
 class DataStoreApplianceTests(unittest.TestCase):
     """The nine enterprise data-store appliances (ClickHouse, InfluxDB,
