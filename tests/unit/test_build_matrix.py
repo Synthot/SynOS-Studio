@@ -407,6 +407,80 @@ class ParallelismTests(unittest.TestCase):
         self.assertGreaterEqual(jobs, 0)
 
 
+class ContainerRootPassthroughTests(unittest.TestCase):
+    """--container-root/--container-runroot (SYNOS_CONTAINER_ROOT/SYNOS_CONTAINER_RUNROOT):
+    every target's `tools/synos build` receives the same setting, and
+    resolve_jobs measures free disk there. subprocess.run is faked here, so
+    no scratch checkout or real synos process is ever started."""
+
+    class _FakeCompleted:
+        returncode = 0
+        stdout = "{}"
+        stderr = ""
+
+    def _capture_argv(self, target, **extra) -> list[str]:
+        calls: list[list[str]] = []
+        original = build_matrix.subprocess.run
+
+        def fake_run(argv, **kwargs):
+            calls.append(list(argv))
+            return self._FakeCompleted()
+
+        build_matrix.subprocess.run = fake_run
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                build_matrix.run_one(target, output_dir=tmp / "out", timeout_seconds=60, image=None, pull=False,
+                                     run_smoke=False, root=ROOT, scratch_path=tmp / "scratch", **extra)
+        finally:
+            build_matrix.subprocess.run = original
+        self.assertEqual(1, len(calls))
+        return calls[0]
+
+    def test_both_flags_reach_the_synos_build_invocation(self) -> None:
+        argv = self._capture_argv(make_target(), container_root="/mnt/big/synos-storage",
+                                  container_runroot="/mnt/big/synos-runroot")
+        self.assertIn("--container-root", argv)
+        self.assertEqual("/mnt/big/synos-storage", argv[argv.index("--container-root") + 1])
+        self.assertIn("--container-runroot", argv)
+        self.assertEqual("/mnt/big/synos-runroot", argv[argv.index("--container-runroot") + 1])
+
+    def test_an_unset_container_root_omits_both_flags(self) -> None:
+        argv = self._capture_argv(make_target())
+        self.assertNotIn("--container-root", argv)
+        self.assertNotIn("--container-runroot", argv)
+
+    def test_resolve_jobs_passes_container_root_to_host_resources(self) -> None:
+        original = build_matrix.host_resources.resolve_jobs
+        captured: dict = {}
+
+        def fake_resolve_jobs(requested, root, **kwargs):
+            captured.update(kwargs)
+            return 2, []
+
+        build_matrix.host_resources.resolve_jobs = fake_resolve_jobs
+        try:
+            build_matrix.resolve_jobs("auto", "/mnt/big/synos-storage")
+        finally:
+            build_matrix.host_resources.resolve_jobs = original
+        self.assertEqual("/mnt/big/synos-storage", captured.get("container_root"))
+
+    def test_resolve_jobs_with_no_container_root_passes_none(self) -> None:
+        original = build_matrix.host_resources.resolve_jobs
+        captured: dict = {}
+
+        def fake_resolve_jobs(requested, root, **kwargs):
+            captured.update(kwargs)
+            return 2, []
+
+        build_matrix.host_resources.resolve_jobs = fake_resolve_jobs
+        try:
+            build_matrix.resolve_jobs("auto")
+        finally:
+            build_matrix.host_resources.resolve_jobs = original
+        self.assertIsNone(captured.get("container_root"))
+
+
 class DiskGuardTests(unittest.TestCase):
     """build_matrix.resolve_jobs itself; the numbers behind it (disk, memory,
     CPU derivation) are tested directly in tests/unit/test_host_resources.py."""

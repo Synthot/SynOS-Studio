@@ -41,6 +41,14 @@ smoke: true
 image: null
 pull: false
 
+# `build` only, podman only, both optional: where podman keeps images,
+# layers and the chroot for every entry (default: podman's own storage) and
+# its small state directory (default: podman's own). min_store_gb above is
+# then measured here instead of podman's default. Refused for docker, whose
+# storage is one setting for the whole daemon (docs/BUNDLE.md).
+container_root: null
+container_runroot: null
+
 # Optional: POST {"report": ..., "diff": ...} here after every run (build
 # and check both). No email or notification service is invented here —
 # point this at whatever already receives webhooks (a chat incoming

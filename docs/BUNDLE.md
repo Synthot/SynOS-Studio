@@ -136,8 +136,9 @@ catalog and written into the zip by the front end) do this and nothing else:
    offers Docker Desktop through winget. Rootless podman and an unreachable
    docker socket are used through sudo: the build mounts filesystems and
    loop-mounts the EFI image, which needs a root runtime;
-4. check 40 GB free, then pull the image pinned to the engine version, or the
-   latest one for that base and suite when no pinned image exists;
+4. check 40 GB free next to the bundle, then check the container runtime's own
+   storage (below) before pulling the image pinned to the engine version, or
+   the latest one for that base and suite when no pinned image exists;
 5. run it privileged with the bundle mounted at `/bundle`, a named volume
    `synos-cache-<base>-<suite>` at `/opt/synos/.build` (package, apt and
    source caches, signing key), anonymous volumes for the chroot and the
@@ -146,6 +147,43 @@ catalog and written into the zip by the front end) do this and nothing else:
 6. print where the ISO is and how to write it to a USB stick or boot it in a
    virtual machine; on failure, where to look in `build.log` and that running
    again resumes from the cache.
+
+### Where the build's bytes land
+
+Running the launcher from a roomy disk does not put the build there: the
+chroot, the image layers and the cache live in the container runtime's own
+storage, normally on the system disk, wherever that runtime was installed.
+A machine with a small system disk and a large second one needs the runtime
+told to use it, not the bundle moved.
+
+- **podman** takes a location per invocation. Set `SYNOS_CONTAINER_ROOT`
+  (or pass `--container-root=<path>` to `build.sh`/`tools/synos build`, or
+  `-ContainerRoot` to `build.ps1`) to a directory on the disk with room; no
+  root and no daemon restart are needed, and the same value on the next run
+  reuses what is already there rather than starting over. `SYNOS_CONTAINER_RUNROOT`
+  (`--container-runroot`/`-ContainerRunroot`) does the same for podman's small
+  state directory, which otherwise stays at podman's own default. The chosen
+  path must be on a filesystem that can back a container's overlay (ext4, xfs,
+  btrfs and similar; not vfat, exFAT, NTFS or a network share) — `build.sh`
+  checks this and says so plainly rather than failing deep inside the build.
+- **docker**'s storage is one setting for the whole daemon: there is no
+  per-build override. Asking the launcher or `tools/synos build` for a
+  location while running under docker is refused, with the two ways to move
+  it instead (`data-root` in `/etc/docker/daemon.json` and a service restart
+  for a plain install; the same key in
+  `/var/snap/docker/current/config/daemon.json`, a `snap restart docker`, and
+  a one-time `snap connect docker:removable-media` so it can even reach
+  `/mnt`, for the snap) — or install podman, or build on a machine that
+  already has room where docker keeps its images.
+- `tools/build_matrix.py` and `tools/catalog_conformance.py` accept the same
+  setting (`--container-root`/`--container-runroot` on the former,
+  `container_root`/`container_runroot` in the latter's config) and pass it to
+  every target's `tools/synos build`; `tools/host_resources.py` measures free
+  disk there instead of the runtime's default when it is set, so `--jobs auto`
+  is derived from the disk actually being used, not the one being avoided.
+
+If your system disk is small, this is the fix: point `SYNOS_CONTAINER_ROOT`
+at the roomier one and nothing about how you run the launcher changes.
 
 Inside the image `synos build` detects `SYNOS_IN_CONTAINER` and runs the
 engine's make directly; the ISO, its evidence files and the log are copied to

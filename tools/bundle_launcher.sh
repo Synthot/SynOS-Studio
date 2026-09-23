@@ -15,22 +15,37 @@
 # image published for the exact engine version this bundle was made for.
 # 40 GB free are needed for the first build.
 #
+# Where the build's bytes land has nothing to do with where you run this
+# script: podman and docker keep their own storage (images, layers, the
+# chroot), usually on the system disk. With podman, point that storage at a
+# bigger disk with no root and no daemon restart: --container-root=/path
+# (or SYNOS_CONTAINER_ROOT=/path), and optionally --container-runroot=/path
+# (SYNOS_CONTAINER_RUNROOT) for its small state directory, which otherwise
+# stays at podman's own default. Docker's storage is set once for the whole
+# daemon: there is no per-build override, and this script says so, with the
+# steps to move it, instead of guessing.
+#
 # Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
 #   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
 #   (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive),
 #   SYNOS_LAUNCHER_URL (source for `update`, default the engine's tools/ on GitHub),
 #   SYNOS_NO_UPDATE_CHECK=1 (skip the launcher update check at the start of
-#   check/build), SYNOS_YES=1 (same as --yes).
+#   check/build), SYNOS_YES=1 (same as --yes), SYNOS_CONTAINER_ROOT and
+#   SYNOS_CONTAINER_RUNROOT (podman only; see above).
 set -eu
 cd "$(dirname "$0")"
 
 yes_to_all=${SYNOS_YES:-}
 command_word=""
+container_root=${SYNOS_CONTAINER_ROOT:-}
+container_runroot=${SYNOS_CONTAINER_RUNROOT:-}
 for arg in "$@"; do
     case "$arg" in
         --yes|-y) yes_to_all=1 ;;
+        --container-root=*) container_root=${arg#--container-root=} ;;
+        --container-runroot=*) container_runroot=${arg#--container-runroot=} ;;
         check|build|update) command_word=$arg ;;
-        -h|--help) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,34p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) printf 'unknown argument: %s\n' "$arg" >&2; exit 1 ;;
     esac
 done
@@ -174,7 +189,7 @@ refresh_siblings() {
         if [ -n "${src:-}" ] && [ -f "$src/tools/bundle_launcher.$ext" ]; then
             cp "$src/tools/bundle_launcher.$ext" "$tmp" 2>/dev/null
         else
-            $run_as "$runtime" run --rm --platform "linux/$arch" "$image" cat "/opt/synos/tools/bundle_launcher.$ext" > "$tmp" 2>/dev/null
+            $run_as "$runtime" $runtime_root_args run --rm --platform "linux/$arch" "$image" cat "/opt/synos/tools/bundle_launcher.$ext" > "$tmp" 2>/dev/null
         fi
         if ! validate_launcher "$ext" "$tmp"; then
             say "warning: $target was not refreshed ($fetch_error); it was left unchanged."
@@ -322,12 +337,73 @@ install_podman() {
     sh -c "$cmd" || fail "the installation failed; install podman or docker by hand, then run this script again" 2
 }
 
+is_podman() { case "$runtime" in *podman) return 0 ;; *) return 1 ;; esac; }
+is_docker() { case "$runtime" in *docker) return 0 ;; *) return 1 ;; esac; }
+
+# Docker's storage (images, layers, the chroot) is one setting for the whole
+# daemon; there is no per-build override. Printed when a person asks this
+# script to put a build's storage somewhere while running under docker, and
+# again inside the low-space refusal below, since moving it is the only fix
+# there. The snap's daemon.json lives under a different path than a plain
+# package's, and the snap also needs a manual `snap connect` before it can
+# reach anything under /mnt, so both are spelled out rather than guessed.
+docker_storage_help() {
+    cat <<'EOF'
+docker's storage is one setting for the whole daemon; there is no per-build location.
+  plain install:  add "data-root": "<path>" to /etc/docker/daemon.json, then: sudo systemctl restart docker
+  snap install:   the same key in /var/snap/docker/current/config/daemon.json, then: sudo snap restart docker
+                  (once: sudo snap connect docker:removable-media, so docker can reach /mnt)
+  or: install podman, which takes a location per build, no root, no restart (SYNOS_CONTAINER_ROOT=<path>)
+  or: build on a machine that already has room where docker keeps its images
+EOF
+}
+
+# The overlay filesystem that backs a container's chroot cannot live on
+# everything; a location on vfat, exFAT, NTFS or a network share fails deep
+# into the build with an opaque mount error. Caught once, here, instead of
+# left for the person to chase through dist/build.log.
+check_overlay_fs() {  # path
+    fstype=$(stat -f -c %T "$1" 2>/dev/null || true)
+    case "$fstype" in
+        vfat|msdos|exfat|ntfs|fuseblk|cifs|smb2|nfs|nfs4)
+            fail "$1 is $fstype, which cannot back a container's overlay filesystem; point SYNOS_CONTAINER_ROOT at a disk formatted ext4, xfs, btrfs or similar" 2 ;;
+    esac
+}
+
 runtime=$(command -v podman || command -v docker || true)
 if [ -z "$runtime" ]; then
     [ "$command_word" = check ] && fail "podman or docker is required; ./build.sh installs podman for you (Linux)" 2
     install_podman
     runtime=$(command -v podman || command -v docker || true)
     [ -n "$runtime" ] || fail "podman is still not on PATH; open a new terminal and run this script again" 2
+fi
+
+# Where the build's storage lives: podman takes --root/--runroot per
+# invocation; docker's is one setting for the whole daemon, so asking it for
+# a location here is refused plainly rather than silently ignored (a build
+# that then fails, or one that succeeds into the default location the person
+# was trying to avoid, would both be worse than saying so now).
+if { [ -n "$container_root" ] || [ -n "$container_runroot" ]; } && is_docker; then
+    printf 'error: %s\n' "docker cannot put this build's storage anywhere but its own daemon-wide location." >&2
+    docker_storage_help >&2
+    exit 2
+fi
+runtime_root_args=""
+if is_podman && { [ -n "$container_root" ] || [ -n "$container_runroot" ]; }; then
+    if [ -n "$macos" ]; then
+        say "note: SYNOS_CONTAINER_ROOT/SYNOS_CONTAINER_RUNROOT have no effect here: podman on macOS runs in its own virtual machine with its own disk (set its size once with podman machine init --disk-size)."
+        container_root=""; container_runroot=""
+    else
+        if [ -n "$container_root" ]; then
+            mkdir -p "$container_root" 2>/dev/null || fail "could not create $container_root (SYNOS_CONTAINER_ROOT)" 2
+            check_overlay_fs "$container_root"
+            runtime_root_args="--root $container_root"
+        fi
+        if [ -n "$container_runroot" ]; then
+            mkdir -p "$container_runroot" 2>/dev/null || fail "could not create $container_runroot (SYNOS_CONTAINER_RUNROOT)" 2
+            runtime_root_args="$runtime_root_args --runroot $container_runroot"
+        fi
+    fi
 fi
 
 # The build mounts filesystems, runs debootstrap and loop-mounts an EFI image:
@@ -369,12 +445,31 @@ free_kb=$(df -Pk . | awk 'NR==2 {print $4}')
 [ "$free_kb" -ge 41943040 ] || fail "at least 40 GB free is needed in $(pwd); $((free_kb / 1048576)) GB available" 2
 # The chroot, the image staging and the cache live in the container runtime's own
 # storage, not next to the bundle; a small root partition there fails a build
-# halfway with "No space left on device" while dpkg configures packages.
-store=$($run_as "$runtime" info --format '{{.DockerRootDir}}' 2>/dev/null || true)
-case "$store" in ""|*"{{"*|"<no value>") store=$($run_as "$runtime" info --format '{{.Store.GraphRoot}}' 2>/dev/null || true) ;; esac
+# halfway with "No space left on device" while dpkg configures packages. When
+# SYNOS_CONTAINER_ROOT chose that location already, it is checked directly
+# instead of asked back of podman, so this is right even before the first run
+# creates anything there.
+if [ -n "$container_root" ] && is_podman; then
+    store=$container_root
+else
+    store=$($run_as "$runtime" info --format '{{.DockerRootDir}}' 2>/dev/null || true)
+    case "$store" in ""|*"{{"*|"<no value>") store=$($run_as "$runtime" info --format '{{.Store.GraphRoot}}' 2>/dev/null || true) ;; esac
+fi
 if [ -n "$store" ] && [ -d "$store" ]; then
     store_kb=$(df -Pk "$store" | awk 'NR==2 {print $4}')
-    [ "$store_kb" -ge 31457280 ] || fail "the container runtime keeps the build under $store, which has $((store_kb / 1048576)) GB free; 30 GB are needed there. Free space, or move the storage (docker: data-root in /etc/docker/daemon.json; podman: graphroot in storage.conf)" 2
+    if [ "$store_kb" -lt 31457280 ]; then
+        free_store_gb=$((store_kb / 1048576))
+        if is_podman; then
+            fail "this build needs 30 GB free; only ${free_store_gb} GB is free at $store, where podman keeps the build.
+  no root needed: SYNOS_CONTAINER_ROOT=/path/with/room ./build.sh  (or --container-root=/path/with/room)
+  or: free space at $store
+  or: move podman's own default storage (root): graphroot in \$HOME/.config/containers/storage.conf, or /etc/containers/storage.conf" 2
+        else
+            fail "this build needs 30 GB free; only ${free_store_gb} GB is free at $store, where docker keeps the build.
+  free space at $store, or install podman (moves its storage with no root: SYNOS_CONTAINER_ROOT=/path), or:
+$(docker_storage_help)" 2
+        fi
+    fi
 fi
 
 # ---------------------------------------------------------------- the image
@@ -404,7 +499,7 @@ build_engine_image() {
     fi
     [ -f "$src/bases/$base/Containerfile" ] || fail "$src has no bases/$base/Containerfile: not an engine checkout" 2
     local_tag="synos-builder:$base-$suite-$source_id"
-    if $run_as "$runtime" image inspect "$local_tag" >/dev/null 2>&1; then
+    if $run_as "$runtime" $runtime_root_args image inspect "$local_tag" >/dev/null 2>&1; then
         say "using the engine image built earlier on this machine from this engine source: $local_tag"
         image=$local_tag; return 0
     fi
@@ -415,7 +510,7 @@ build_engine_image() {
     # The full output goes to the log; the terminal gets the lines that show progress
     # (build steps from podman and docker, packages being fetched and set up).
     status_file=$PWD/dist/.image-build.status
-    ( cd "$src" && $run_as "$runtime" build --platform "linux/$arch" --build-arg "SUITE=$suite" -t "$local_tag" -f "bases/$base/Containerfile" . 2>&1; st=$?; echo "$st" >"$status_file" ) \
+    ( cd "$src" && $run_as "$runtime" $runtime_root_args build --platform "linux/$arch" --build-arg "SUITE=$suite" -t "$local_tag" -f "bases/$base/Containerfile" . 2>&1; st=$?; echo "$st" >"$status_file" ) \
         | tee dist/image-build.log \
         | awk '/^(STEP [0-9]+\/[0-9]+|Step [0-9]+\/[0-9]+|#[0-9]+ \[[0-9]+\/[0-9]+\]|Get:[0-9]+ |Setting up |Successfully built|Successfully tagged|COMMIT|-->)/ { print "  " $0; fflush() }'
     status=$(cat "$status_file" 2>/dev/null || echo 1)
@@ -430,9 +525,9 @@ if [ -z "$image" ]; then
     pinned="$repository:$base-$suite${engine:+-v$engine}"
     moving="$repository:$base-$suite"
     say "pulling the build engine $pinned (one-time download, about 1.5 GB)"
-    if $run_as "$runtime" pull --platform "linux/$arch" "$pinned" >/dev/null 2>&1; then
+    if $run_as "$runtime" $runtime_root_args pull --platform "linux/$arch" "$pinned" >/dev/null 2>&1; then
         image=$pinned
-    elif $run_as "$runtime" pull --platform "linux/$arch" "$moving" >/dev/null 2>&1; then
+    elif $run_as "$runtime" $runtime_root_args pull --platform "linux/$arch" "$moving" >/dev/null 2>&1; then
         say "no image pinned to engine ${engine:-?}; using the current $moving"
         image=$moving
     elif [ "$command_word" = check ]; then
@@ -445,7 +540,7 @@ if [ -z "$image" ]; then
 fi
 
 if [ "$command_word" = check ]; then
-    say "ready: $run_as $runtime, $((free_kb / 1048576)) GB free here${store:+, $((store_kb / 1048576)) GB free in $store}, engine image $image"
+    say "ready: $run_as $runtime${runtime_root_args:+ $runtime_root_args}, $((free_kb / 1048576)) GB free here${store:+, $((store_kb / 1048576)) GB free in $store}, engine image $image"
     exit 0
 fi
 
@@ -458,7 +553,7 @@ if [ -z "${SYNOS_LAUNCHER_REFRESHED:-}" ]; then
     if [ -n "${src:-}" ] && [ -f "$src/tools/bundle_launcher.sh" ]; then
         latest=$(cat "$src/tools/bundle_launcher.sh")
     else
-        latest=$($run_as "$runtime" run --rm --platform "linux/$arch" "$image" cat /opt/synos/tools/bundle_launcher.sh 2>/dev/null || true)
+        latest=$($run_as "$runtime" $runtime_root_args run --rm --platform "linux/$arch" "$image" cat /opt/synos/tools/bundle_launcher.sh 2>/dev/null || true)
     fi
     case "$latest" in
         "#!/bin/sh"*)
@@ -491,7 +586,7 @@ say "building $manifest with $image"
 say "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
 say "the full output is kept in dist/build.log"
 set +e
-$run_as "$runtime" run --rm --privileged --platform "linux/$arch" \
+$run_as "$runtime" $runtime_root_args run --rm --privileged --platform "linux/$arch" \
     -v "$PWD:/bundle:z" \
     -v "synos-cache-$base-$suite:/opt/synos/.build" \
     -v /opt/synos/new_building_os -v /opt/synos/image \

@@ -37,6 +37,8 @@ Config (YAML; see conformance.example.yml):
     smoke: true               # build only: run tools/smoke_test.py on success
     image: null                # build only: $SYNOS_BUILDER_IMAGE equivalent
     pull: false                # build only
+    container_root: null       # build only, podman only: SYNOS_CONTAINER_ROOT equivalent; also where free disk is measured
+    container_runroot: null    # build only, podman only: SYNOS_CONTAINER_RUNROOT equivalent
     report_url: null           # optional: POST the finished report here
 
 Never invents a shell command from a name read out of a catalog: every
@@ -120,6 +122,8 @@ class Config:
     smoke: bool = True
     image: str | None = None
     pull: bool = False
+    container_root: str | None = None      # podman only: SYNOS_CONTAINER_ROOT equivalent, also where free disk is measured
+    container_runroot: str | None = None   # podman only: SYNOS_CONTAINER_RUNROOT equivalent
     report_url: str | None = None
 
     @classmethod
@@ -251,7 +255,7 @@ def resolve_jobs(config: Config) -> tuple[int, list[str]]:
     tools/build_matrix.py uses); also refuses when there is no container
     engine at all, which no job count helps."""
     jobs, problems = host_resources.resolve_jobs(config.jobs, ROOT, min_free_gb=config.min_free_gb,
-                                                 min_store_gb=config.min_store_gb)
+                                                 min_store_gb=config.min_store_gb, container_root=config.container_root)
     if not host_resources.container_engine():
         problems.append("podman or docker is required")
     return jobs, problems
@@ -307,6 +311,10 @@ def build_one(entry: dict, *, config: Config, work_dir: Path, root: Path = ROOT,
             argv += ["--image", config.image]
         if config.pull:
             argv.append("--pull")
+        if config.container_root:
+            argv += ["--container-root", config.container_root]
+        if config.container_runroot:
+            argv += ["--container-runroot", config.container_runroot]
         completed = subprocess.run(argv, cwd=scratch_path, capture_output=True, text=True,
                                    timeout=config.build_timeout_minutes * 60, check=False)
         result["exit_code"] = completed.returncode

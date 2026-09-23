@@ -76,6 +76,107 @@ class DeriveSafeJobsTests(unittest.TestCase):
         self.assertEqual(8, safe)
 
 
+class ContainerStoreTests(unittest.TestCase):
+    """container_store: podman honors a SYNOS_CONTAINER_ROOT-style override
+    directly (no subprocess call, so it works before podman has ever run
+    there); docker has no such override and is always asked."""
+
+    def test_podman_returns_the_override_without_a_subprocess_call(self) -> None:
+        original = hr.subprocess.run
+
+        def must_not_be_called(*args, **kwargs):
+            raise AssertionError("subprocess.run must not be called when the override already answers it")
+
+        hr.subprocess.run = must_not_be_called
+        try:
+            self.assertEqual("/mnt/big/synos-storage", hr.container_store("/usr/bin/podman", "/mnt/big/synos-storage"))
+        finally:
+            hr.subprocess.run = original
+
+    def test_podman_without_an_override_still_asks(self) -> None:
+        class Result:
+            returncode = 0
+            stdout = "/home/user/.local/share/containers/storage\n"
+
+        original = hr.subprocess.run
+        hr.subprocess.run = lambda *a, **k: Result()
+        try:
+            self.assertEqual("/home/user/.local/share/containers/storage", hr.container_store("/usr/bin/podman", None))
+        finally:
+            hr.subprocess.run = original
+
+    def test_docker_ignores_the_override_and_is_always_asked(self) -> None:
+        class Result:
+            returncode = 0
+            stdout = "/var/lib/docker\n"
+
+        original = hr.subprocess.run
+        hr.subprocess.run = lambda *a, **k: Result()
+        try:
+            self.assertEqual("/var/lib/docker", hr.container_store("/usr/bin/docker", "/mnt/big/synos-storage"))
+        finally:
+            hr.subprocess.run = original
+
+
+class DeriveSafeJobsContainerRootTests(unittest.TestCase):
+    """derive_safe_jobs measures free space at the chosen container_root
+    (an explicit keyword, or SYNOS_CONTAINER_ROOT when the keyword is left at
+    its default None) instead of the runtime's own default storage."""
+
+    def setUp(self) -> None:
+        import tempfile
+        self.tmp = tempfile.mkdtemp()
+        self.other_tmp = tempfile.mkdtemp()
+        self.original_engine = hr.container_engine
+        self.original_store = hr.container_store
+        self.original_disk_usage = hr.shutil.disk_usage
+        self.original_environ = dict(hr.os.environ)
+        hr.container_engine = lambda: "/usr/bin/podman"
+        self.store_calls: list[str | None] = []
+
+        def fake_store(engine, container_root=None):
+            self.store_calls.append(container_root)
+            return container_root or self.tmp
+
+        hr.container_store = fake_store
+
+        class Usage:
+            free = 65 * 1024**3
+
+        hr.shutil.disk_usage = lambda path: Usage()
+
+    def tearDown(self) -> None:
+        import shutil as shutil_module
+        hr.container_engine = self.original_engine
+        hr.container_store = self.original_store
+        hr.shutil.disk_usage = self.original_disk_usage
+        hr.os.environ.clear()
+        hr.os.environ.update(self.original_environ)
+        shutil_module.rmtree(self.tmp, ignore_errors=True)
+        shutil_module.rmtree(self.other_tmp, ignore_errors=True)
+
+    def test_an_explicit_container_root_is_measured(self) -> None:
+        safe, factors = hr.derive_safe_jobs(ROOT, free_root_gb=5000.0, memory_gb=64.0, cpu_count=32,
+                                            container_root=self.other_tmp)
+        self.assertEqual([self.other_tmp], self.store_calls)
+        self.assertEqual(65.0, factors["free_store_gb"])
+
+    def test_an_unset_variable_changes_nothing(self) -> None:
+        hr.os.environ.pop("SYNOS_CONTAINER_ROOT", None)
+        hr.derive_safe_jobs(ROOT, free_root_gb=100.0, memory_gb=8.0, cpu_count=4)
+        self.assertEqual([None], self.store_calls)
+
+    def test_the_environment_variable_is_used_when_the_keyword_is_not_given(self) -> None:
+        hr.os.environ["SYNOS_CONTAINER_ROOT"] = self.other_tmp
+        hr.derive_safe_jobs(ROOT, free_root_gb=100.0, memory_gb=8.0, cpu_count=4)
+        self.assertEqual([self.other_tmp], self.store_calls)
+
+    def test_the_keyword_overrides_the_environment_variable(self) -> None:
+        hr.os.environ["SYNOS_CONTAINER_ROOT"] = self.tmp
+        hr.derive_safe_jobs(ROOT, free_root_gb=100.0, memory_gb=8.0, cpu_count=4, container_root=self.other_tmp)
+        self.assertEqual([self.other_tmp], self.store_calls)
+
+
 class ResolveJobsTests(unittest.TestCase):
     def _kwargs(self):
         return dict(free_root_gb=400.0, free_store_gb=None, memory_gb=64.0, cpu_count=32)  # safe = min(10, 16, 16) = 10
