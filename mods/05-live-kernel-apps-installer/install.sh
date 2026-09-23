@@ -13,6 +13,11 @@ wait_network
 
 print_ok "Installing the Dracut Live stack..."
 install_stack_group live
+# Fail here, minutes into the build, rather than in mod 80 after the desktop
+# and third-party-software stages have run: which package carries the
+# "dmsquash-live" family of dracut modules is not the same on every suite
+# (see mods/stack.sh), so packages/stack.yml cannot pin it unconditionally.
+ensure_dracut_live_modules
 
 print_ok "Installing the desktop stack..."
 # DKMS legitimately needs gcc/make/dpkg-dev, but dpkg-dev only recommends the

@@ -2,6 +2,8 @@
 set -e
 set -o pipefail
 set -u
+# shellcheck disable=SC1091
+source /root/mods/stack.sh
 
 print_ok "Building the dedicated non-host-only Dracut Live initrd..."
 
@@ -18,12 +20,18 @@ dracut --force "/boot/initrd.img-$kernel_version" "$kernel_version"
 judge "Generate the installed system's initrd for $kernel_version"
 printf 'update_initramfs=yes\n' > /etc/initramfs-tools/update-initramfs.conf
 
+# Belt and suspenders: mod 05 already checked this right after installing the
+# "live" stack group, but re-checking here is cheap and this is the step that
+# actually pays for a missing module — 30+ minutes into a build, if it were
+# the only check.
+ensure_dracut_live_modules
+
 live_initrd=/boot/synos-live-initrd.img
 dracut \
     --force \
     --no-hostonly \
     --no-hostonly-cmdline \
-    --add "dmsquash-live dmsquash-live-autooverlay overlayfs synos-live-layers" \
+    --add "$LIVE_DRACUT_MODULES" \
     --add-drivers "loop squashfs overlay" \
     "$live_initrd" \
     "$kernel_version"
