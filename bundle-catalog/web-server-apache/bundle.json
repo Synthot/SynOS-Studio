@@ -3,7 +3,7 @@
   "name": "web-server-apache",
   "manifest": "manifests/web-server-apache.yml",
   "engine": {
-    "min": "0.1.0"
+    "min": "0.2.0"
   },
   "generator": {
     "name": "SynOS bundle catalog",

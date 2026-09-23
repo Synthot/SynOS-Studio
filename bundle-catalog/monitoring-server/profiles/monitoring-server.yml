@@ -1,9 +1,10 @@
 id: monitoring-server
 extends: server
 description: >-
-  Server profile running Prometheus (port 9090) and Grafana (port 3000) as
-  system services, Grafana pre-wired to Prometheus as its default data
-  source.
+  Server profile running Prometheus (port 9090) and Grafana as system
+  services, Grafana pre-wired to Prometheus as its default data source.
+  Grafana's port 3000 stays closed by default: it signs in as admin/admin
+  until someone changes it, so whoever reaches it first owns it.
 software:
   services:
     - name: prometheus
@@ -38,4 +39,4 @@ software:
             url: http://host.containers.internal:9090
             isDefault: true
 security:
-  open_ports: [22/tcp, 3000/tcp, 9090/tcp]
+  open_ports: [22/tcp, 9090/tcp]

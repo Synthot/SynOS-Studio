@@ -1,9 +1,12 @@
 id: database-server
 extends: server
 description: >-
-  Server profile running PostgreSQL as a system service on port 5432; the
-  superuser password is read from a placeholder file, never baked into
-  the image.
+  Server profile running PostgreSQL as a system service, its superuser
+  password read from /etc/postgres/superuser-password — a file this
+  profile does not ship. The service fails to start until that file
+  exists, on purpose: no working credential is baked into the image.
+  Port 5432 stays closed until the password is set (see the bundle
+  catalog summary).
 software:
   services:
     - name: postgres
@@ -14,8 +17,5 @@ software:
         - /etc/postgres/superuser-password:/run/secrets/postgres-superuser-password:ro
       env:
         POSTGRES_PASSWORD_FILE: /run/secrets/postgres-superuser-password
-  files:
-    - path: /etc/postgres/superuser-password
-      content: "change-this-placeholder-before-first-connecting\n"
 security:
-  open_ports: [22/tcp, 5432/tcp]
+  open_ports: [22/tcp]

@@ -4,10 +4,19 @@ description: >-
   Server profile for a single-node Kubernetes control plane that can grow:
   kubeadm, kubelet and kubectl from the community pkgs.k8s.io repository
   pinned to v1.31, containerd as the container runtime from this base's
-  own archive, and the kernel modules, sysctl settings and firewall ports
-  a node needs already in place.
+  own archive, and the kernel modules and sysctl settings a node needs
+  already in place. Only 6443 (the API server) and 10250 (the kubelet
+  API) are opened by default: on a single node nothing else needs to be
+  reachable from outside. etcd (2379-2380/tcp) matters only if you add
+  external etcd members, and the NodePort range (30000-32767/tcp) only
+  once you expose a service that way; open either yourself when you need
+  it. The scheduler and controller-manager (10257, 10259/tcp) never need
+  to be reachable from outside a node.
 software:
   repositories:
+    # Signing key expires 2026-12-29 (checked with gpg --show-keys); refresh
+    # keys/kubernetes.asc from https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key
+    # before then.
     - name: kubernetes
       url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/
       suite: "/"
@@ -26,4 +35,4 @@ software:
         net.bridge.bridge-nf-call-ip6tables = 1
         net.ipv4.ip_forward                 = 1
 security:
-  open_ports: [22/tcp, 6443/tcp, 2379/tcp, 2380/tcp, 10250/tcp, 10251/tcp, 10252/tcp, 10257/tcp, 10259/tcp]
+  open_ports: [22/tcp, 6443/tcp, 10250/tcp]

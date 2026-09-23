@@ -1,9 +1,10 @@
 id: media-server
 extends: server
 description: >-
-  Server profile running Jellyfin as a system service on port 8096,
-  pointed at /srv/media: drop a video and music library there and
-  Jellyfin finds it.
+  Server profile running Jellyfin as a system service, pointed at
+  /srv/media: drop a video and music library there and Jellyfin finds
+  it. Port 8096 stays closed by default: Jellyfin's own setup wizard,
+  which creates the admin account, is open to whoever reaches it first.
 software:
   services:
     - name: jellyfin
@@ -14,4 +15,4 @@ software:
         - jellyfin-cache:/cache
         - /srv/media:/media
 security:
-  open_ports: [22/tcp, 8096/tcp]
+  open_ports: [22/tcp]

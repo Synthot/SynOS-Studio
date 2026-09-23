@@ -199,6 +199,21 @@ bundle's manifest names and `files` maps every path the folder contains
 exact text, read as bytes and decoded like `launchers()` above, so a front
 end can write the bundle out unchanged.
 
+`verified: true` means a maintainer checked the package names and image
+tags resolve; it does not by itself mean every appliance was booted and
+exercised over HTTP. Most of this round's appliances were: nginx, Apache,
+Caddy, the registry and PostgreSQL were built, run and hit with a real
+request (the registry and Postgres tests below are effectively that
+verification, executable). Gitea and Grafana were verified by
+configuration and logs only — the shipped config paths and settings were
+confirmed correct from the images' own startup scripts and log output
+(Gitea's `ConfigFile` line and `INSTALL_LOCK` behavior; Grafana's
+provisioning YAML is standard and low-risk) — but neither was confirmed to
+answer a live HTTP request in the environment this was built in, which hit
+very slow first-run database migrations unrelated to the shipped
+configuration. Say which kind of verification an entry got when proposing
+one.
+
 An appliance's profile carries its own configuration through
 `software.files` (see "Configuration files a profile ships" in
 `docs/ARCHITECTURE.md`): real files written into the image, never a

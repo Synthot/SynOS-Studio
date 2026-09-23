@@ -279,18 +279,85 @@ class AppliancePolicyTests(unittest.TestCase):
                 for needle in self.SECRET_LOOKING:
                     self.assertNotIn(needle, text, f"{path} looks like it carries a real key")
 
-    def test_database_and_registry_placeholders_are_documented_not_real(self) -> None:
+    def test_no_appliance_ships_a_file_carrying_a_usable_credential(self) -> None:
+        """Fail closed, not a placeholder credential: the database ships no
+        password file at all (the service refuses to start until the person
+        creates one), and the registry's htpasswd line is not a real bcrypt
+        hash, so it cannot authenticate any password."""
+        database_profile, _ = render_manifest.resolve_profile("database-server")
+        files = database_profile.get("software", {}).get("files", [])
+        self.assertFalse([f for f in files if "password" in f["path"].lower()],
+                          "database-server must not ship a password file")
         registry_profile, _ = render_manifest.resolve_profile("container-registry")
         htpasswd = next(f for f in registry_profile["software"]["files"] if f["path"].endswith("htpasswd"))
-        self.assertIn("REPLACE", htpasswd["content"])
-        database_profile, _ = render_manifest.resolve_profile("database-server")
-        password_file = next(f for f in database_profile["software"]["files"] if "password" in f["path"])
-        self.assertIn("change-this-placeholder", password_file["content"])
-        # the appliance's own summary tells the person to change it
+        # a real htpasswd -B line looks like "user:$2y$05$..."; ship anything else
+        for line in htpasswd["content"].splitlines():
+            if not line.strip():
+                continue
+            with self.subTest(line=line):
+                self.assertNotRegex(line, r":\$2[aby]\$\d\d\$", "this line is a real bcrypt hash and could authenticate someone")
         entry = next(e for e in index_entries() if e["id"] == "database-server")
-        self.assertIn("password", entry["summary"].lower())
+        self.assertIn("fails to start", entry["summary"].lower())
         registry_entry = next(e for e in index_entries() if e["id"] == "container-registry")
         self.assertIn("htpasswd", registry_entry["summary"])
+
+    def test_first_arrival_admin_claiming_ports_are_closed_by_default(self) -> None:
+        """Gitea's web UI, Grafana, and Jellyfin's setup wizard each let whoever
+        connects first claim the machine (register the first account, or sign
+        in with a well-known default); those ports stay closed until the
+        person has finished setup locally or over a tunnel."""
+        closed_by_default = {
+            "git-server": 3000,        # Gitea web UI: registers the first account as admin
+            "monitoring-server": 3000,  # Grafana: admin/admin until changed
+            "media-server": 8096,      # Jellyfin: its own setup wizard creates the admin account
+        }
+        for entry_id, risky_port in closed_by_default.items():
+            with self.subTest(entry=entry_id):
+                entry = next(e for e in index_entries() if e["id"] == entry_id)
+                self.assertNotIn(risky_port, entry["ports"], f"{entry_id}: port {risky_port} must stay closed by default")
+                self.assertIn(22, entry["ports"], f"{entry_id}: SSH access must remain available")
+                self.assertRegex(entry["summary"].lower(), r"tunnel|locally", f"{entry_id}: summary must say how to reach it safely first")
+
+    def test_gitea_ssh_port_stays_open_because_nothing_is_reachable_before_an_account_exists(self) -> None:
+        profile, _ = render_manifest.resolve_profile("git-server")
+        open_ports = profile["security"]["open_ports"]
+        self.assertIn("2222/tcp", open_ports)
+        self.assertNotIn("3000/tcp", open_ports)
+
+    def test_prometheus_stays_open_since_it_has_no_login_to_claim(self) -> None:
+        """Only Grafana (an account-claiming login) is closed by default here;
+        Prometheus has no authentication to race for, so leaving it reachable
+        is a data-exposure question the owner did not ask to change."""
+        profile, _ = render_manifest.resolve_profile("monitoring-server")
+        self.assertIn("9090/tcp", profile["security"]["open_ports"])
+        self.assertNotIn("3000/tcp", profile["security"]["open_ports"])
+
+    def test_kubernetes_opens_only_the_api_server_and_kubelet_by_default(self) -> None:
+        profile, _ = render_manifest.resolve_profile("kubernetes-server")
+        self.assertEqual({"22/tcp", "6443/tcp", "10250/tcp"}, set(profile["security"]["open_ports"]))
+        raw = render_manifest.load_yaml(CATALOG_DIR / "kubernetes-server" / "profiles" / "kubernetes-server.yml")
+        self.assertRegex(raw["description"], r"2379-2380|etcd")
+        self.assertRegex(raw["description"], r"30000-32767|NodePort")
+
+    def test_kubernetes_repository_documents_the_signing_key_expiry(self) -> None:
+        text = (CATALOG_DIR / "kubernetes-server" / "profiles" / "kubernetes-server.yml").read_text(encoding="utf-8")
+        self.assertIn("2026-12-29", text)
+
+    def test_engine_min_reflects_whether_a_bundle_uses_software_files(self) -> None:
+        """docs/BUNDLE.md: engine.min tracks the oldest engine that understands
+        the bundle. software.files is new in 0.2.0, so any catalogued bundle
+        using it must require at least that; the rest stay honest at 0.1.0."""
+        for entry in index_entries():
+            folder = CATALOG_DIR / entry["folder"]
+            bundle = json.loads((folder / "bundle.json").read_text(encoding="utf-8"))
+            manifest = render_manifest.load_yaml(folder / bundle["manifest"])
+            profile, _ = render_manifest.resolve_profile(manifest["profile"])
+            uses_files = bool((profile.get("software") or {}).get("files"))
+            engine_min = bundle["engine"]["min"]
+            with self.subTest(entry=entry["id"]):
+                if uses_files:
+                    self.assertGreaterEqual(tuple(map(int, engine_min.split("."))), (0, 2, 0),
+                                             f"{entry['id']} uses software.files but engine.min is {engine_min}")
 
     def test_every_appliance_profile_re_opens_ssh_when_it_replaces_open_ports(self) -> None:
         """security.open_ports fully replaces the parent's list (it is not a

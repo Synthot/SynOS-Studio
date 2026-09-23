@@ -3,7 +3,7 @@
   "name": "web-server-caddy",
   "manifest": "manifests/web-server-caddy.yml",
   "engine": {
-    "min": "0.1.0"
+    "min": "0.2.0"
   },
   "generator": {
     "name": "SynOS bundle catalog",

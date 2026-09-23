@@ -1,9 +1,13 @@
 id: git-server
 extends: server
 description: >-
-  Server profile running Gitea as a system service on port 3000 (git over
-  SSH on 2222): self-hosted Git with a web UI, issues and pull requests,
-  using SQLite so there is no separate database to configure.
+  Server profile running Gitea as a system service: self-hosted Git with
+  a web UI, issues and pull requests, using SQLite so there is no
+  separate database to configure. Port 3000 (the web UI) stays closed by
+  default, since whoever reaches it first would register the first
+  account (Gitea makes that account an administrator); git over SSH on
+  2222 stays open, since it accepts nothing until an account with a
+  registered key exists.
 software:
   services:
     - name: gitea
@@ -40,4 +44,4 @@ software:
         [service]
         DISABLE_REGISTRATION = false
 security:
-  open_ports: [22/tcp, 3000/tcp, 2222/tcp]
+  open_ports: [22/tcp, 2222/tcp]
