@@ -1,0 +1,22 @@
+id: cassandra-server
+extends: server
+description: >-
+  Server profile running Apache Cassandra (wide-column store, CQL native
+  transport on port 9042) as a system service: a single node started with
+  the image's own defaults, which is a real Cassandra cluster of one and
+  can grow by pointing further nodes at it as seeds. Cassandra's stock
+  authenticator (AllowAllAuthenticator) accepts every connection with no
+  login at all, so this profile does not open port 9042: first_boot walks
+  through turning on PasswordAuthenticator, which starts every login off
+  needing Cassandra's own default superuser (cassandra/cassandra), and
+  replacing that password before the port is opened. Wants several GB of
+  heap even for a single node.
+software:
+  services:
+    - name: cassandra
+      image: docker.io/library/cassandra:5.0.6
+      ports: ["9042:9042"]
+      volumes:
+        - cassandra-data:/var/lib/cassandra
+security:
+  open_ports: [22/tcp]

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "cockroachdb-server",
+  "manifest": "manifests/cockroachdb-server.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-23T00:00:00Z",
+  "description": "CockroachDB Distributed SQL — ubuntu noble amd64, profile cockroachdb-server",
+  "files": [
+    "manifests/cockroachdb-server.yml",
+    "profiles/cockroachdb-server.yml"
+  ]
+}

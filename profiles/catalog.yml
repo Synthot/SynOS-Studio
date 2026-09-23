@@ -258,6 +258,77 @@ services:
     cap_add: [NET_ADMIN]
     gpu: false
     images: {default: ghcr.io/wg-easy/wg-easy:15.4.0}
+  - id: clickhouse
+    title: ClickHouse
+    summary: Column-oriented analytics database, HTTP on port 8123 and its native protocol on 9000; the default user is loopback-only until a password is set
+    ports: ["8123:8123", "9000:9000"]
+    volumes: ["clickhouse-data:/var/lib/clickhouse", "/etc/clickhouse/password:/run/secrets/clickhouse-password:ro"]
+    env: {CLICKHOUSE_PASSWORD_FILE: "/run/secrets/clickhouse-password"}
+    gpu: false
+    images: {default: docker.io/clickhouse/clickhouse-server:25.8.33}
+  - id: influxdb
+    title: InfluxDB
+    summary: Time-series database with an HTTP API and UI on port 8086; fails to start until an admin password file is created
+    ports: ["8086:8086"]
+    volumes: ["influxdb-data:/var/lib/influxdb2", "/etc/influxdb/admin-password:/run/secrets/influxdb-admin-password:ro"]
+    env: {DOCKER_INFLUXDB_INIT_MODE: "setup", DOCKER_INFLUXDB_INIT_USERNAME: "admin", DOCKER_INFLUXDB_INIT_PASSWORD_FILE: "/run/secrets/influxdb-admin-password", DOCKER_INFLUXDB_INIT_ORG: "synos", DOCKER_INFLUXDB_INIT_BUCKET: "metrics"}
+    gpu: false
+    images: {default: docker.io/library/influxdb:2.7.12}
+  - id: cassandra
+    title: Cassandra
+    summary: Wide-column store on CQL port 9042, a single node that can grow into a cluster; ships with no authentication until first_boot turns it on
+    ports: ["9042:9042"]
+    volumes: ["cassandra-data:/var/lib/cassandra"]
+    gpu: false
+    images: {default: docker.io/library/cassandra:5.0.6}
+  - id: cockroach
+    title: CockroachDB
+    summary: Distributed SQL database speaking the PostgreSQL wire protocol, SQL on port 26257 and its admin UI on 8080, secure mode with self-generated certificates
+    ports: ["26257:26257", "8080:8080"]
+    volumes: ["cockroach-certs:/cockroach/certs", "cockroach-data:/cockroach/cockroach-data"]
+    exec: "start-single-node --certs-dir=/cockroach/certs --store=/cockroach/cockroach-data"
+    gpu: false
+    images: {default: docker.io/cockroachdb/cockroach:v25.1.8}
+  - id: couchdb
+    title: CouchDB
+    summary: Document database over its own HTTP API on port 5984; refuses "Admin Party" mode and fails to start until an admin account file is created
+    ports: ["5984:5984"]
+    volumes: ["couchdb-data:/opt/couchdb/data", "/etc/couchdb/admins.ini:/opt/couchdb/etc/local.d/admins.ini:ro"]
+    gpu: false
+    images: {default: docker.io/library/couchdb:3.5.0}
+  - id: valkey
+    title: Valkey
+    summary: In-memory data structure store on port 6379, the BSD-licensed fork shipped in place of the software it forked from; fails to start until a real ACL file exists
+    ports: ["6379:6379"]
+    volumes: ["valkey-data:/data", "/etc/valkey/users.acl:/etc/valkey/users.acl:ro"]
+    exec: "--protected-mode yes --aclfile /etc/valkey/users.acl"
+    gpu: false
+    images: {default: docker.io/valkey/valkey:8.1.10}
+  - id: mongodb
+    title: MongoDB
+    summary: MongoDB Community Server (never Enterprise), document database on port 27017; fails to start until a root password file is created
+    ports: ["27017:27017"]
+    volumes: ["mongodb-data:/data/db", "/etc/mongodb/root-password:/run/secrets/mongo-root-password:ro"]
+    env: {MONGO_INITDB_ROOT_USERNAME: "root", MONGO_INITDB_ROOT_PASSWORD_FILE: "/run/secrets/mongo-root-password"}
+    gpu: false
+    images: {default: docker.io/library/mongo:8.0.12}
+  - id: neo4j
+    title: Neo4j
+    summary: Neo4j Community Edition (never Enterprise), graph database with its browser/HTTP interface on port 7474 and Bolt on 7687; fails to start until an auth file is created
+    ports: ["7474:7474", "7687:7687"]
+    volumes: ["neo4j-data:/data", "/etc/neo4j/auth:/run/secrets/neo4j-auth:ro"]
+    env: {NEO4J_AUTH_FILE: "/run/secrets/neo4j-auth"}
+    gpu: false
+    images: {default: docker.io/library/neo4j:5.26.14}
+  - id: milvus
+    title: Milvus
+    summary: Vector database for similarity search, standalone with embedded etcd and local storage on gRPC port 19530; the most memory-hungry appliance in this catalog
+    ports: ["19530:19530", "9091:9091"]
+    volumes: ["milvus-data:/var/lib/milvus", "/etc/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml:ro", "/etc/milvus/user.yaml:/milvus/configs/user.yaml:ro"]
+    env: {ETCD_USE_EMBED: "true", ETCD_DATA_DIR: "/var/lib/milvus/etcd", ETCD_CONFIG_PATH: "/milvus/configs/embedEtcd.yaml", COMMON_STORAGETYPE: "local", DEPLOY_MODE: "STANDALONE"}
+    exec: "milvus run standalone"
+    gpu: false
+    images: {default: docker.io/milvusdb/milvus:v3.0.2}
 
 # GPU compute stacks a profile may ship (hardware.gpu); what each adds is in the
 # bases' package maps (gpu-nvidia, gpu-amd, gpu-intel).

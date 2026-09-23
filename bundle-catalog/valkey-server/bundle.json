@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "valkey-server",
+  "manifest": "manifests/valkey-server.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-23T00:00:00Z",
+  "description": "Valkey In-Memory Store — ubuntu noble amd64, profile valkey-server",
+  "files": [
+    "manifests/valkey-server.yml",
+    "profiles/valkey-server.yml"
+  ]
+}

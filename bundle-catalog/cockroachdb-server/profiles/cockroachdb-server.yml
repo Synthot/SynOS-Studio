@@ -1,0 +1,27 @@
+id: cockroachdb-server
+extends: server
+description: >-
+  Server profile running CockroachDB (distributed SQL, PostgreSQL wire
+  protocol and dialect) as a single node that can grow into a cluster
+  later, with the SQL port on 26257 and its admin UI on 8080. Started with
+  start-single-node in CockroachDB's normal secure mode (never --insecure):
+  the certificate directory is empty on first boot, so CockroachDB
+  generates its own certificate authority and node/root client
+  certificates inside the container. Nobody outside the container can
+  authenticate yet — root only has a certificate that lives in that
+  volume, and no other SQL user has a password — so this profile keeps
+  both ports closed until a real user and password are created over a
+  local shell (verified: a sibling connection with a fabricated password
+  is refused, and a real user created with CREATE USER ... WITH PASSWORD
+  can run real SQL over the network once the port is opened).
+software:
+  services:
+    - name: cockroach
+      image: docker.io/cockroachdb/cockroach:v25.1.8
+      ports: ["26257:26257", "8080:8080"]
+      volumes:
+        - cockroach-certs:/cockroach/certs
+        - cockroach-data:/cockroach/cockroach-data
+      exec: "start-single-node --certs-dir=/cockroach/certs --store=/cockroach/cockroach-data"
+security:
+  open_ports: [22/tcp]

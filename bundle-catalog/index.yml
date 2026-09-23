@@ -344,4 +344,104 @@ bundle_catalog:
     folder: vpn-server
     services: [wg-easy]
     ports: [22, 51820]
+  - id: clickhouse-server
+    name: ClickHouse Analytics Database
+    summary: "ClickHouse, a column-oriented SQL database built for fast analytics over huge tables, serving HTTP on port 8123 and its native protocol on port 9000; give it plenty of RAM once real data lands."
+    first_boot:
+      - "ClickHouse ships with no password, and its own entrypoint responds to that by restricting the default user to the container's own loopback interface: nothing on the network can query it yet."
+      - "Tunnel in (`ssh -L 8123:localhost:8123 you@host`), give it a real password (`printf '%s' 'a-real-password' | sudo tee /etc/clickhouse/password >/dev/null && sudo chmod 600 /etc/clickhouse/password && sudo systemctl restart clickhouse`), then open ports 8123 and 9000 yourself once that password is something private of your own."
+    tags: [clickhouse, olap, analytics, column-store, sql, database]
+    folder: clickhouse-server
+    services: [clickhouse]
+    ports: [22]
+    verified: true
+  - id: influxdb-server
+    name: InfluxDB Time-Series Database
+    summary: "InfluxDB, a time-series database with an HTTP API and browser UI on port 8086, for metrics and other time-stamped data."
+    first_boot:
+      - "It fails to start until you create its admin password file: `printf '%s' 'a-real-password' | sudo tee /etc/influxdb/admin-password >/dev/null && sudo chmod 600 /etc/influxdb/admin-password && sudo systemctl restart influxdb`."
+      - "Open port 8086 yourself once that password is set to something private of your own; the initial organisation is synos and the initial bucket is metrics."
+    tags: [influxdb, time-series, metrics, database]
+    folder: influxdb-server
+    services: [influxdb]
+    ports: [22]
+    verified: true
+  - id: cassandra-server
+    name: Cassandra Wide-Column Store
+    summary: "Apache Cassandra, a wide-column store built to scale out, started here as a single node on CQL port 9042 that can grow into a real cluster; wants several GB of heap even alone."
+    first_boot:
+      - "Cassandra's default authenticator accepts every connection with no login at all, so port 9042 stays closed until you turn authentication on yourself."
+      - "Tunnel in (`ssh -L 9042:localhost:9042 you@host`), then enable password authentication and restart: `docker exec cassandra sed -i 's/^authenticator:.*/authenticator: PasswordAuthenticator/' /etc/cassandra/cassandra.yaml && sudo systemctl restart cassandra`."
+      - "Log in with Cassandra's own default superuser and change it immediately: `docker exec -it cassandra cqlsh -u cassandra -p cassandra -e \"ALTER USER cassandra WITH PASSWORD 'a-real-password';\"`, then open port 9042 yourself."
+    tags: [cassandra, wide-column, nosql, database, cluster]
+    folder: cassandra-server
+    services: [cassandra]
+    ports: [22]
+    verified: true
+  - id: cockroachdb-server
+    name: CockroachDB Distributed SQL
+    summary: "CockroachDB, a distributed SQL database that speaks the PostgreSQL wire protocol and dialect, started here as a single node (SQL on port 26257, admin UI on 8080) that can grow into a cluster."
+    first_boot:
+      - "CockroachDB starts in its normal secure mode: it generates its own certificate authority and certificates inside the container on first boot, and nobody outside can authenticate yet — root only holds a certificate, no other user has a password."
+      - "Tunnel in (`ssh -L 26257:localhost:26257 you@host`), then create a real user from inside the container: `docker exec -it cockroach cockroach sql --certs-dir=/cockroach/certs -e \"CREATE USER appuser WITH PASSWORD 'a-real-password';\"`."
+      - "Open port 26257 (and 8080 for the admin UI, which asks that user to log in) yourself once that password is something private of your own."
+    tags: [cockroachdb, distributed-sql, postgresql-compatible, database, cluster]
+    folder: cockroachdb-server
+    services: [cockroach]
+    ports: [22]
+    verified: true
+  - id: couchdb-server
+    name: CouchDB Document Database
+    summary: "CouchDB, a document database queried entirely over its own HTTP API on port 5984."
+    first_boot:
+      - "CouchDB refuses to run in \"Admin Party\" mode: it fails to start until you create its admin account file: `printf '[admins]\\nadmin = a-real-password\\n' | sudo tee /etc/couchdb/admins.ini >/dev/null && sudo chmod 600 /etc/couchdb/admins.ini && sudo systemctl restart couchdb`."
+      - "Open port 5984 yourself once that password is something private of your own."
+    tags: [couchdb, document-database, http-api, nosql, database]
+    folder: couchdb-server
+    services: [couchdb]
+    ports: [22]
+    verified: true
+  - id: valkey-server
+    name: Valkey In-Memory Store
+    summary: "Valkey, an in-memory data structure store on port 6379 speaking the same protocol as the software it was forked from — shipped instead of it because Valkey stayed BSD-licensed and open source."
+    first_boot:
+      - "It starts with an ACL file this profile does not ship, so it refuses to run at all until that file exists: `printf 'user default off\\nuser synos on >a-real-password ~* &* +@all\\n' | sudo tee /etc/valkey/users.acl >/dev/null && sudo chmod 600 /etc/valkey/users.acl && sudo systemctl restart valkey`."
+      - "Open port 6379 yourself once that password is something private of your own; connect with `--user synos` and the password you chose."
+    tags: [valkey, redis-compatible, in-memory, cache, key-value, database]
+    folder: valkey-server
+    services: [valkey]
+    ports: [22]
+    verified: true
+  - id: mongodb-server
+    name: MongoDB Document Database
+    summary: "MongoDB Community Server (never Enterprise), a document database on port 27017."
+    first_boot:
+      - "It fails to start until you create its root password file: `printf '%s' 'a-real-password' | sudo tee /etc/mongodb/root-password >/dev/null && sudo chmod 600 /etc/mongodb/root-password && sudo systemctl restart mongodb`."
+      - "Open port 27017 yourself once that password is something private of your own; the root user name is root."
+    tags: [mongodb, document-database, nosql, database]
+    folder: mongodb-server
+    services: [mongodb]
+    ports: [22]
+    verified: true
+  - id: neo4j-server
+    name: Neo4j Graph Database
+    summary: "Neo4j Community Edition (never Enterprise), a graph database with its browser/HTTP interface on port 7474 and the Bolt protocol on 7687."
+    first_boot:
+      - "It fails to start until you create its auth file: `printf '%s' 'neo4j/a-real-password' | sudo tee /etc/neo4j/auth >/dev/null && sudo chmod 600 /etc/neo4j/auth && sudo systemctl restart neo4j`."
+      - "Open ports 7474 and 7687 yourself once that password is something private of your own."
+    tags: [neo4j, graph-database, cypher, database]
+    folder: neo4j-server
+    services: [neo4j]
+    ports: [22]
+    verified: true
+  - id: milvus-server
+    name: Milvus Vector Database
+    summary: "Milvus, a vector database for similarity search, running standalone with its embedded etcd and local storage on gRPC port 19530; the most memory-hungry appliance here — budget several GB of RAM."
+    first_boot:
+      - "This profile turns Milvus's own authorization on, which it does not do by default; its built-in root account then uses Milvus's own well-known default password, so nothing is open yet."
+      - "Tunnel in (`ssh -L 19530:localhost:19530 you@host`) and change the default root password with a Milvus client, logging in as root with password Milvus first, before opening port 19530 yourself."
+    tags: [milvus, vector-database, similarity-search, embeddings, database]
+    folder: milvus-server
+    services: [milvus]
+    ports: [22]
     verified: true

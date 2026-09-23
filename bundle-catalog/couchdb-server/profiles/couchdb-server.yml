@@ -1,0 +1,22 @@
+id: couchdb-server
+extends: server
+description: >-
+  Server profile running CouchDB (document database over its own HTTP
+  API, port 5984) as a system service. CouchDB 3+ refuses to run in
+  "Admin Party" mode: it looks for an [admins] section in
+  /opt/couchdb/etc/local.d/admins.ini, a file this profile deliberately
+  does not ship, and exits 1 with an explicit error instead of starting
+  unauthenticated (verified: with the file absent the container logs
+  "CouchDB 3.0+ will no longer run in Admin Party mode" and stops; with a
+  real [admins] section mounted at that path it starts, an unauthenticated
+  write is rejected with 401, and an authenticated one succeeds).
+software:
+  services:
+    - name: couchdb
+      image: docker.io/library/couchdb:3.5.0
+      ports: ["5984:5984"]
+      volumes:
+        - couchdb-data:/opt/couchdb/data
+        - /etc/couchdb/admins.ini:/opt/couchdb/etc/local.d/admins.ini:ro
+security:
+  open_ports: [22/tcp]

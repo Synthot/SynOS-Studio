@@ -1,0 +1,25 @@
+id: clickhouse-server
+extends: server
+description: >-
+  Server profile running ClickHouse (column-oriented SQL, HTTP on 8123 and
+  the native protocol on 9000) as a system service. Ships with no
+  CLICKHOUSE_PASSWORD set, which is ClickHouse's own signal to restrict the
+  default user to the container's loopback interface only (verified: the
+  entrypoint writes a users.d override with <networks><ip>127.0.0.1</ip>
+  <ip>::1</ip></networks>, and a query sent to the published port is
+  refused with no password configured). CLICKHOUSE_PASSWORD_FILE points at
+  /etc/clickhouse/password, a file this profile deliberately does not
+  ship; once that file exists and the service restarts, ClickHouse opens
+  the default user to the network with that password.
+software:
+  services:
+    - name: clickhouse
+      image: docker.io/clickhouse/clickhouse-server:25.8.33
+      ports: ["8123:8123", "9000:9000"]
+      volumes:
+        - clickhouse-data:/var/lib/clickhouse
+        - /etc/clickhouse/password:/run/secrets/clickhouse-password:ro
+      env:
+        CLICKHOUSE_PASSWORD_FILE: /run/secrets/clickhouse-password
+security:
+  open_ports: [22/tcp]

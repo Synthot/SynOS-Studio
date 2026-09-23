@@ -1,0 +1,48 @@
+id: milvus-server
+extends: server
+description: >-
+  Server profile running Milvus (vector database) standalone, with its
+  embedded etcd and local-filesystem storage backend so no separate etcd
+  or object-storage service is needed: gRPC on port 19530, health/metrics
+  on 9091. software.files ships embedEtcd.yaml (the embedded etcd's own
+  listen settings) and user.yaml (turning common.security.authorizationEnabled
+  on, which Milvus does not do by default). With authorization on, the
+  built-in root account still uses Milvus's own well-known default
+  password ("Milvus"), so this profile keeps both ports closed until that
+  password is changed over a local connection (verified: an unauthenticated
+  client is refused with UNAUTHENTICATED "missing authorization in
+  header"; authenticated as root/Milvus, a real collection can be created,
+  vectors inserted, and a similarity search run and dropped again). The
+  most memory-hungry of the appliances in this catalog: budget several GB
+  of RAM even for standalone testing, more for real collections.
+software:
+  services:
+    - name: milvus
+      image: docker.io/milvusdb/milvus:v3.0.2
+      ports: ["19530:19530", "9091:9091"]
+      volumes:
+        - milvus-data:/var/lib/milvus
+        - /etc/milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml:ro
+        - /etc/milvus/user.yaml:/milvus/configs/user.yaml:ro
+      env:
+        ETCD_USE_EMBED: "true"
+        ETCD_DATA_DIR: /var/lib/milvus/etcd
+        ETCD_CONFIG_PATH: /milvus/configs/embedEtcd.yaml
+        COMMON_STORAGETYPE: local
+        DEPLOY_MODE: STANDALONE
+      exec: "milvus run standalone"
+  files:
+    - path: /etc/milvus/embedEtcd.yaml
+      content: |
+        listen-client-urls: http://0.0.0.0:2379
+        advertise-client-urls: http://0.0.0.0:2379
+        quota-backend-bytes: 4294967296
+        auto-compaction-mode: revision
+        auto-compaction-retention: '1000'
+    - path: /etc/milvus/user.yaml
+      content: |
+        common:
+          security:
+            authorizationEnabled: true
+security:
+  open_ports: [22/tcp]
