@@ -7,18 +7,22 @@
     mode: "0644"
   notify: dconf update
 
-- name: dconf defaults
-  ansible.builtin.copy:
+- name: Refuse a policy.dconf key that names neither a path nor a GSettings schema
+  ansible.builtin.fail:
+    msg: >-
+      policy.dconf key {{ item }} has neither '/' nor '.' — it must name a
+      GSettings schema and key, e.g.
+      "org/gnome/desktop/lockdown/disable-command-line" (dconf path form) or
+      "org.gnome.desktop.lockdown.disable-command-line" (dotted GSettings
+      form). Both forms are accepted; this key is neither.
+  loop: "{{ desktop_policy_dconf.keys() | list }}"
+  when: "'/' not in item and '.' not in item"
+
+- name: /etc/dconf/db/local.d/50-policy from the profile's policy.dconf
+  ansible.builtin.template:
+    src: dconf-local.j2
     dest: /etc/dconf/db/local.d/50-policy
     mode: "0644"
-    content: |
-      {% set groups = {} %}
-      {% for key, value in desktop_policy_dconf.items() %}{% set _ = groups.setdefault(key.rsplit('/', 1)[0], []).append(key.rsplit('/', 1)[1] ~ '=' ~ value) %}{% endfor %}
-      {% for path, entries in groups.items() %}
-      [{{ path }}]
-      {% for entry in entries %}{{ entry }}
-      {% endfor %}
-      {% endfor %}
   when: desktop_policy_dconf | length > 0
   notify: dconf update
 
