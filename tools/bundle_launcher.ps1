@@ -24,6 +24,13 @@
 # Docker Desktop's storage is one setting for the whole engine; there is no
 # per-build override, and this script says so instead of guessing.
 #
+# With Podman, when no location was given and its own storage looks tight,
+# this script asks once (a terminal, no -Yes) whether to use a directory
+# beside the bundle instead, and remembers the answer in
+# .build\container-root so the next run is never asked again ("forget" it:
+# del .build\container-root). -ContainerRoot always wins, and updates what
+# is remembered.
+#
 # Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
 #   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
 #   (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive),
@@ -337,11 +344,65 @@ if (($ContainerRoot -or $ContainerRunroot) -and (Test-IsDocker)) {
     Write-Host (Get-DockerStorageHelp)
     exit 2
 }
+
+$drive = (Get-Item -Path $PSScriptRoot).PSDrive
+$freeGb = [math]::Floor($drive.Free / 1GB)
+if ($freeGb -lt 40) { Fail "at least 40 GB free is needed on drive $($drive.Name): $freeGb GB available" 2 }
+
+$minStoreGb = 30
+$comfortableStoreGb = $minStoreGb * 2   # no point even asking when there is clearly room
+$rememberedRootFile = Join-Path $PSScriptRoot ".build\container-root"
+function Remember-ContainerRoot([string]$Value) {
+    New-Item -ItemType Directory -Force -Path (Join-Path $PSScriptRoot ".build") | Out-Null
+    Set-Content -Path $rememberedRootFile -Value $Value -Encoding utf8
+}
+
+# A location already chosen for this bundle (by hand, or by answering the
+# question below on an earlier run) is remembered, never asked twice.
+$storageAsked = $false
+if ((Test-IsPodman) -and (-not $ContainerRoot) -and (Test-Path $rememberedRootFile -PathType Leaf)) {
+    $remembered = (Get-Content -Path $rememberedRootFile -Raw -ErrorAction SilentlyContinue)
+    if ($remembered) { $remembered = $remembered.Trim() }
+    if ($remembered -eq "default") {
+        $storageAsked = $true
+    } elseif ($remembered) {
+        $ContainerRoot = $remembered
+        $storageAsked = $true
+        Write-Host "using the remembered build storage: $ContainerRoot (change: -ContainerRoot <path>; forget: del .build\container-root)"
+    }
+}
+
+# Proposed once, up front, instead of only refused after the fact - but only
+# when it can actually be answered in two seconds (a terminal, no -Yes, no
+# answer already known, not just a check) and only when there is a real
+# question to ask: the default storage is not clearly fine, and the
+# bundle's own disk - right here, already measured above - actually has
+# more room to offer. Skipped for a runtime reporting a Linux path (a WSL
+# machine's own disk, not a Windows one Test-Path can weigh).
+if ((Test-IsPodman) -and (-not $ContainerRoot) -and (-not $storageAsked) -and ($Command -ne "check") `
+        -and (-not $Yes) -and (-not [Console]::IsInputRedirected)) {
+    $defaultStore = (& $runtime info --format '{{.Store.GraphRoot}}' 2>$null)
+    if ($defaultStore -and ($defaultStore -notmatch '\{\{') -and ($defaultStore -notmatch '^/') -and (Test-Path $defaultStore)) {
+        $defaultStoreDrive = (Get-Item -Path $defaultStore).PSDrive
+        $defaultStoreGb = [math]::Floor($defaultStoreDrive.Free / 1GB)
+        if (($defaultStoreGb -lt $comfortableStoreGb) -and ($freeGb -gt $defaultStoreGb)) {
+            $altDir = Join-Path $PSScriptRoot ".build\container-storage"
+            Write-Host "podman would keep this build under $defaultStore ($defaultStoreGb GB free); it needs $minStoreGb GB."
+            if (AskYes "Use $altDir next to this bundle instead ($freeGb GB free there)?") {
+                $ContainerRoot = $altDir
+            }
+            $valueToRemember = if ($ContainerRoot) { $ContainerRoot } else { "default" }
+            Remember-ContainerRoot $valueToRemember
+        }
+    }
+}
+
 $runtimeRootArgs = @()
 if ((Test-IsPodman) -and ($ContainerRoot -or $ContainerRunroot)) {
     if ($ContainerRoot) {
         New-Item -ItemType Directory -Force -Path $ContainerRoot | Out-Null
         $runtimeRootArgs += @("--root", $ContainerRoot)
+        Remember-ContainerRoot $ContainerRoot
     }
     if ($ContainerRunroot) {
         New-Item -ItemType Directory -Force -Path $ContainerRunroot | Out-Null
@@ -350,9 +411,6 @@ if ((Test-IsPodman) -and ($ContainerRoot -or $ContainerRunroot)) {
 }
 & $runtime @runtimeRootArgs info *> $null
 if ($LASTEXITCODE -ne 0) { Fail "$runtime is installed but not running: start Docker Desktop (or Podman Desktop) and wait until the engine is running, then run this script again" 2 }
-$drive = (Get-Item -Path $PSScriptRoot).PSDrive
-$freeGb = [math]::Floor($drive.Free / 1GB)
-if ($freeGb -lt 40) { Fail "at least 40 GB free is needed on drive $($drive.Name): $freeGb GB available" 2 }
 
 # The chroot, the image staging and the cache live in the container runtime's
 # own storage, not next to the bundle. When it reports a path inside its own
@@ -370,7 +428,7 @@ if ($ContainerRoot -and (Test-IsPodman)) {
 if ($store -and ($store -notmatch '^/') -and (Test-Path $store)) {
     $storeDrive = (Get-Item -Path $store).PSDrive
     $storeFreeGb = [math]::Floor($storeDrive.Free / 1GB)
-    if ($storeFreeGb -lt 30) {
+    if ($storeFreeGb -lt $minStoreGb) {
         if (Test-IsPodman) {
             Fail @"
 this build needs 30 GB free; only $storeFreeGb GB is free at $store, where podman keeps the build.
