@@ -364,7 +364,7 @@ def _fetch_index(base_url: str, suite: str, component: str, arch: str, dest: Pat
         data = raw.read_bytes()
         raw.unlink()
         if name.endswith(".xz"):
-            data = lzma.decompress(data)
+            data = gzip.compress(lzma.decompress(data))
         elif not name.endswith(".gz"):
             data = gzip.compress(data)
         dest.write_bytes(data)

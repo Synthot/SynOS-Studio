@@ -14,6 +14,61 @@ packages/<name>/
   conffiles          list of configuration files (optional)
 ```
 
+### Dependencies that differ by release
+
+A `control` field can carry a `Field[base]:` override — `Depends[debian]:`
+replaces `Depends:` when building for that base, e.g. because Debian and
+Ubuntu name their kernel package differently. There is no equivalent
+`Field[suite]:` override: bases already span several suites each
+(`bases/*/base.env`'s `SUPPORTED_SUITES`), and a suite override would mean
+copying the whole field for every suite just to change the one token that
+differs — easy to let drift out of sync, exactly how
+`packages/synos-core-system/control` ended up depending unconditionally on
+`linux-generic-hwe-26.04` and `libfuse3-4`, kernel-HWE and libfuse sonames
+that exist only on the newest Ubuntu release, so installing the package on
+an older supported suite (24.04, 22.04) failed outright even though it built
+fine.
+
+The fix is almost always an **alternatives list**, `name-a | name-b`, when
+either package really does satisfy the dependency: apt installs the first
+one that resolves, so one line covers every suite without saying which suite
+is which. Order alternatives newest-first so a suite that has more than one
+still gets the best match:
+
+```
+Depends: linux-generic-hwe-26.04 | linux-generic-hwe-24.04 | linux-generic-hwe-22.04 | linux-generic,
+         libfuse3-4 | libfuse3-3,
+         libfuse2t64 | libfuse2,
+         dracut-install | dracut-core
+```
+
+(the last one is for a suite where the upstream package split
+`dracut-install` out of `dracut-core` later than others — on a suite that
+predates the split, the already-mandatory `dracut-core` alternative covers
+it.) Reach for a `Depends[base]:` override instead only when the two bases
+genuinely need *different* packages, not merely differently-named ones — the
+Ubuntu HWE kernel stack has no Debian equivalent at all, so
+`Depends[debian]:` names `linux-image-${ARCH}` outright rather than listing
+Ubuntu's kernel names as alternatives Debian would never match.
+
+If a dependency truly does not exist before some release — no alternative
+name, no split package — say so instead of dropping it or loosening a
+version constraint to make the resolver happy: `synos-whisper-worker`
+depends on `libggml0 (>= 0.9.11)`, which Ubuntu ships starting with the
+25.10+ archive and not before; there is no 22.04/24.04 equivalent to fall
+back to, so that package is not currently installable on those suites. That
+gap is tracked, not hidden, in `tests/unit/test_control_dependencies.py`'s
+`KNOWN_GAPS`.
+
+`tests/unit/test_control_dependencies.py` guards this class of bug: an
+offline test rejects any dependency name with no `|` fallback that embeds a
+release number, and a slower, network-dependent test downloads the real
+package indices for every base's `SUPPORTED_SUITES` (all the pockets
+`bases/*/sources.tmpl` enables: `SUITE`, `SUITE-updates`, `SUITE-backports`,
+`SUITE-security`) and checks that every `Depends`/`Pre-Depends` alternatives
+group resolves against at least one of them; it skips cleanly, rather than
+failing, when the archive is unreachable.
+
 The repository is signed. The first `make packages` on a machine generates a
 development key under `keys/private/` (git-ignored) and writes its public
 half to `keys/public/`, which `synos-archive-keyring` ships. Releases inject
