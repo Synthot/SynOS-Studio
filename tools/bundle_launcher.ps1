@@ -9,17 +9,35 @@
 # When neither is present it offers to install Docker Desktop with winget.
 # Nothing else is installed: the SynOS build engine runs inside a container
 # image published for the exact engine version this bundle was made for.
+#
+# Where the build's bytes land has nothing to do with where you run this
+# script: the container runtime keeps its own storage (images, layers, the
+# chroot), normally on the system drive. With Podman Desktop, -ContainerRoot
+# (or SYNOS_CONTAINER_ROOT) asks Podman to use another path, the same as
+# --container-root on Linux/macOS; -ContainerRunroot/SYNOS_CONTAINER_RUNROOT
+# does the same for its small state directory (Podman's own default is used
+# otherwise). This is passed straight to Podman the way build.sh does, but
+# has not been exercised on Windows by the project: Podman Desktop on
+# Windows commonly talks to a WSL 2 machine, whose own virtual disk (not a
+# Windows path) may be what actually needs to grow instead (Podman's machine
+# set --disk-size, or move the WSL distribution with wsl --manage <name> --move).
+# Docker Desktop's storage is one setting for the whole engine; there is no
+# per-build override, and this script says so instead of guessing.
+#
 # Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
 #   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
 #   (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive),
 #   SYNOS_LAUNCHER_URL (source for `update`, default the engine's tools/ on GitHub),
 #   SYNOS_NO_UPDATE_CHECK=1 (skip the launcher update check at the start of
-#   check/build), SYNOS_YES=1.
+#   check/build), SYNOS_YES=1, SYNOS_CONTAINER_ROOT and SYNOS_CONTAINER_RUNROOT
+#   (Podman only; see above).
 [CmdletBinding()]
-param([string]$Command = "", [switch]$Yes)
+param([string]$Command = "", [switch]$Yes, [string]$ContainerRoot = "", [string]$ContainerRunroot = "")
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
 if ($env:SYNOS_YES) { $Yes = $true }
+if (-not $ContainerRoot -and $env:SYNOS_CONTAINER_ROOT) { $ContainerRoot = $env:SYNOS_CONTAINER_ROOT }
+if (-not $ContainerRunroot -and $env:SYNOS_CONTAINER_RUNROOT) { $ContainerRunroot = $env:SYNOS_CONTAINER_RUNROOT }
 
 function Fail([string]$Message, [int]$Code = 1) { Write-Host "error: $Message" -ForegroundColor Red; exit $Code }
 function Ask([string]$Question) {
@@ -158,7 +176,7 @@ function Update-Siblings {
         if ($candidate) {
             Copy-Item -Path $candidate.FullName -Destination $tmp -Force
         } else {
-            & $runtime run --rm $image cat "/opt/synos/tools/bundle_launcher.$ext" 2>$null | Set-Content -Path $tmp -Encoding utf8 -NoNewline
+            & $runtime @runtimeRootArgs run --rm $image cat "/opt/synos/tools/bundle_launcher.$ext" 2>$null | Set-Content -Path $tmp -Encoding utf8 -NoNewline
         }
         $problem = Test-Launcher -Ext $ext -Path $tmp
         if ($problem) {
@@ -257,6 +275,8 @@ function Test-ForLauncherUpdate {
     $reExecArgs = @()
     if ($Command) { $reExecArgs += $Command }
     if ($Yes) { $reExecArgs += "-Yes" }
+    if ($ContainerRoot) { $reExecArgs += @("-ContainerRoot", $ContainerRoot) }
+    if ($ContainerRunroot) { $reExecArgs += @("-ContainerRunroot", $ContainerRunroot) }
     & powershell -ExecutionPolicy Bypass -File $PSCommandPath @reExecArgs
     exit $LASTEXITCODE
 }
@@ -296,11 +316,77 @@ if (-not $runtime) {
     Write-Host "Docker Desktop is installed. Start it from the Start menu, wait until it reports 'Engine running', then run this script again."
     exit 2
 }
-& $runtime info *> $null
+function Test-IsPodman { $runtime -match 'podman' }
+function Test-IsDocker { $runtime -match 'docker' }
+
+# Docker Desktop's storage is one setting for the whole engine; there is no
+# per-build override. Printed when this script is asked for a location while
+# running under docker, and again in the low-space refusal below, since
+# moving it is the only fix there.
+function Get-DockerStorageHelp {
+@"
+docker's storage is one setting for the whole engine; there is no per-build location.
+  Docker Desktop: Settings > Resources > Advanced > Disk image location (move it), or enlarge the WSL virtual disk it already uses.
+  or: install Podman Desktop, which takes a location per build (-ContainerRoot, or SYNOS_CONTAINER_ROOT)
+  or: build on a machine that already has room where Docker Desktop keeps its images
+"@
+}
+
+if (($ContainerRoot -or $ContainerRunroot) -and (Test-IsDocker)) {
+    Write-Host "error: docker cannot put this build's storage anywhere but its own daemon-wide location." -ForegroundColor Red
+    Write-Host (Get-DockerStorageHelp)
+    exit 2
+}
+$runtimeRootArgs = @()
+if ((Test-IsPodman) -and ($ContainerRoot -or $ContainerRunroot)) {
+    if ($ContainerRoot) {
+        New-Item -ItemType Directory -Force -Path $ContainerRoot | Out-Null
+        $runtimeRootArgs += @("--root", $ContainerRoot)
+    }
+    if ($ContainerRunroot) {
+        New-Item -ItemType Directory -Force -Path $ContainerRunroot | Out-Null
+        $runtimeRootArgs += @("--runroot", $ContainerRunroot)
+    }
+}
+& $runtime @runtimeRootArgs info *> $null
 if ($LASTEXITCODE -ne 0) { Fail "$runtime is installed but not running: start Docker Desktop (or Podman Desktop) and wait until the engine is running, then run this script again" 2 }
 $drive = (Get-Item -Path $PSScriptRoot).PSDrive
 $freeGb = [math]::Floor($drive.Free / 1GB)
 if ($freeGb -lt 40) { Fail "at least 40 GB free is needed on drive $($drive.Name): $freeGb GB available" 2 }
+
+# The chroot, the image staging and the cache live in the container runtime's
+# own storage, not next to the bundle. When it reports a path inside its own
+# Linux VM (starts with "/"), Windows cannot stat it directly, so the check
+# is skipped rather than guessed at; a real Windows path (ContainerRoot set
+# to a drive letter) is checked the same way build.sh checks one.
+if ($ContainerRoot -and (Test-IsPodman)) {
+    $store = $ContainerRoot
+} else {
+    $store = (& $runtime info --format '{{.DockerRootDir}}' 2>$null)
+    if (-not $store -or $store -match '\{\{' -or $store -eq '<no value>') {
+        $store = (& $runtime @runtimeRootArgs info --format '{{.Store.GraphRoot}}' 2>$null)
+    }
+}
+if ($store -and ($store -notmatch '^/') -and (Test-Path $store)) {
+    $storeDrive = (Get-Item -Path $store).PSDrive
+    $storeFreeGb = [math]::Floor($storeDrive.Free / 1GB)
+    if ($storeFreeGb -lt 30) {
+        if (Test-IsPodman) {
+            Fail @"
+this build needs 30 GB free; only $storeFreeGb GB is free at $store, where podman keeps the build.
+  no root needed: -ContainerRoot X:\path\with\room  (or SYNOS_CONTAINER_ROOT)
+  or: free space at $store
+  or: move podman's own default storage (root): graphroot in storage.conf, or podman machine set --disk-size for a WSL machine
+"@ 2
+        } else {
+            Fail @"
+this build needs 30 GB free; only $storeFreeGb GB is free at $store, where docker keeps the build.
+  free space at $store, or install Podman Desktop (moves its storage with -ContainerRoot, no daemon setting), or:
+$(Get-DockerStorageHelp)
+"@ 2
+        }
+    }
+}
 
 # ---------------------------------------------------------------- the image
 # The published image is preferred. When none can be pulled (not published yet,
@@ -323,7 +409,7 @@ function Build-EngineImage {
     }
     if (-not (Test-Path (Join-Path $src "bases\$base\Containerfile"))) { Fail "$src has no bases\$base\Containerfile: not an engine checkout" 2 }
     $localTag = "synos-builder:$base-$suite-$sourceId"
-    & $runtime image inspect $localTag *> $null
+    & $runtime @runtimeRootArgs image inspect $localTag *> $null
     if ($LASTEXITCODE -eq 0) { Write-Host "using the engine image built earlier on this machine from this engine source: $localTag"; return $localTag }
     Write-Host "building the engine image $localTag from $src (about 20 minutes, once)."
     Write-Host "Each build step and package is shown as it happens; the complete output is kept in dist\image-build.log"
@@ -331,7 +417,7 @@ function Build-EngineImage {
     $log = Join-Path $PSScriptRoot "dist\image-build.log"
     $started = Get-Date
     Push-Location $src
-    & $runtime build --build-arg "SUITE=$suite" -t $localTag -f "bases/$base/Containerfile" . 2>&1 |
+    & $runtime @runtimeRootArgs build --build-arg "SUITE=$suite" -t $localTag -f "bases/$base/Containerfile" . 2>&1 |
         Tee-Object -FilePath $log |
         ForEach-Object { if ("$_" -match '^(STEP \d+/\d+|Step \d+/\d+|#\d+ \[\d+/\d+\]|Get:\d+ |Setting up |Successfully )') { Write-Host "  $_" } }
     $code = $LASTEXITCODE
@@ -346,10 +432,10 @@ if (-not $image) {
     $pinned = if ($engine) { "${repository}:$base-$suite-v$engine" } else { "${repository}:$base-$suite" }
     $moving = "${repository}:$base-$suite"
     Write-Host "pulling the build engine $pinned (one-time download, about 1.5 GB)"
-    & $runtime pull $pinned *> $null
+    & $runtime @runtimeRootArgs pull $pinned *> $null
     if ($LASTEXITCODE -eq 0) { $image = $pinned }
     else {
-        & $runtime pull $moving *> $null
+        & $runtime @runtimeRootArgs pull $moving *> $null
         if ($LASTEXITCODE -eq 0) { Write-Host "no image pinned to engine $engine; using the current $moving"; $image = $moving }
         elseif ($Command -eq "check") { $image = "none published: it will be built here at the first build, about 20 minutes" }
         else {
@@ -361,7 +447,9 @@ if (-not $image) {
 }
 
 if ($Command -eq "check") {
-    Write-Host "ready: $runtime, $freeGb GB free, engine image $image"
+    $rootArgsText = if ($runtimeRootArgs.Count -gt 0) { " " + ($runtimeRootArgs -join " ") } else { "" }
+    $storeText = if ($null -ne $storeFreeGb) { ", $storeFreeGb GB free in $store" } else { "" }
+    Write-Host "ready: $runtime$rootArgsText, $freeGb GB free here$storeText, engine image $image"
     exit 0
 }
 
@@ -373,14 +461,19 @@ if (-not $env:SYNOS_LAUNCHER_REFRESHED) {
     $fromSource = if ($env:SYNOS_ENGINE_SOURCE) { Join-Path $env:SYNOS_ENGINE_SOURCE "tools\bundle_launcher.ps1" } else { Join-Path $PSScriptRoot ".build\engine-src" }
     $candidate = Get-ChildItem -Path $fromSource -Recurse -Filter "bundle_launcher.ps1" -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($candidate) { $latest = Get-Content -Raw $candidate.FullName }
-    else { $latest = (& $runtime run --rm $image cat /opt/synos/tools/bundle_launcher.ps1 2>$null) -join "`n" }
+    else { $latest = (& $runtime @runtimeRootArgs run --rm $image cat /opt/synos/tools/bundle_launcher.ps1 2>$null) -join "`n" }
     $self = Get-Content -Raw $PSCommandPath
     if ($latest -and $latest.StartsWith("#") -and ($latest.Trim() -ne $self.Trim())) {
         Set-Content -Path $PSCommandPath -Value $latest -Encoding utf8
         Write-Host "build.ps1 was updated to the engine's current launcher; starting again."
         Update-Siblings
         $env:SYNOS_LAUNCHER_REFRESHED = "1"
-        & powershell -ExecutionPolicy Bypass -File $PSCommandPath @args
+        $reExecArgs = @()
+        if ($Command) { $reExecArgs += $Command }
+        if ($Yes) { $reExecArgs += "-Yes" }
+        if ($ContainerRoot) { $reExecArgs += @("-ContainerRoot", $ContainerRoot) }
+        if ($ContainerRunroot) { $reExecArgs += @("-ContainerRunroot", $ContainerRunroot) }
+        & powershell -ExecutionPolicy Bypass -File $PSCommandPath @reExecArgs
         exit $LASTEXITCODE
     }
 }
@@ -400,7 +493,7 @@ if (Test-Path "dist\build.log") { Move-Item -Force "dist\build.log" "dist\build.
 Write-Host "building $manifest with $image"
 Write-Host "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
 Write-Host "the full output is kept in dist\build.log"
-& $runtime run --rm --privileged `
+& $runtime @runtimeRootArgs run --rm --privileged `
     -v "${PSScriptRoot}:/bundle" `
     -v "synos-cache-$base-${suite}:/opt/synos/.build" `
     -v /opt/synos/new_building_os -v /opt/synos/image `

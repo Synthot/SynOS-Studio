@@ -435,13 +435,45 @@ def local_build(manifest: Path, log_to: Path | None, output: Path | None) -> dic
     return {"image": None, "engine": "local", **collect_outputs(output)}
 
 
-def container_build(manifest: Path, image: str | None, pull: bool, log_to: Path | None, output: Path | None = None) -> dict:
+DOCKER_STORAGE_HELP = (
+    "docker's storage is one setting for the whole daemon; there is no per-build location.\n"
+    '  plain install:  add "data-root": "<path>" to /etc/docker/daemon.json, then: sudo systemctl restart docker\n'
+    "  snap install:   the same key in /var/snap/docker/current/config/daemon.json, then: sudo snap restart docker\n"
+    "                  (once: sudo snap connect docker:removable-media, so docker can reach /mnt)\n"
+    "  or: install podman, which takes a location per build, no root, no restart (--container-root=<path>)\n"
+    "  or: build on a machine that already has room where docker keeps its images"
+)
+
+
+def is_podman(engine: str) -> bool:
+    return "podman" in Path(engine).name
+
+
+def container_root_args(engine: str, container_root: str | None, container_runroot: str | None) -> list[str]:
+    """--root/--runroot go before the subcommand, podman only: docker's storage
+    is a daemon-wide setting with no per-invocation override (DOCKER_STORAGE_HELP)."""
+    if not is_podman(engine) or not (container_root or container_runroot):
+        return []
+    args = []
+    if container_root:
+        args += ["--root", container_root]
+    if container_runroot:
+        args += ["--runroot", container_runroot]
+    return args
+
+
+def container_build(manifest: Path, image: str | None, pull: bool, log_to: Path | None, output: Path | None = None,
+                    container_root: str | None = None, container_runroot: str | None = None) -> dict:
     if os.environ.get("SYNOS_IN_CONTAINER"):
         return local_build(manifest, log_to, output)
     host = host_report()
     if host["problems"]:
         raise Failure("; ".join(host["problems"]), EXIT_HOST, host=host)
     engine = host["engine"]
+    if (container_root or container_runroot) and not is_podman(engine):
+        raise Failure("docker cannot put this build's storage anywhere but its own daemon-wide location.\n" + DOCKER_STORAGE_HELP,
+                      EXIT_HOST)
+    root_args = container_root_args(engine, container_root, container_runroot)
     values = manifest_values(manifest)
     base, suite = values["base"], values["suite"]
     if not base or not suite:
@@ -450,20 +482,21 @@ def container_build(manifest: Path, image: str | None, pull: bool, log_to: Path 
         image = f"{DEFAULT_IMAGE_REPOSITORY}:{base}-{suite}"
     steps = []
     if image and pull:
-        steps.append([engine, "pull", image])
+        steps.append(("pull", [engine, *root_args, "pull", image]))
     if not image:
         image = f"synos-builder-{base}:{suite}"
-        steps.append([engine, "build", "--build-arg", f"SUITE={suite}", "-t", image, "-f", f"bases/{base}/Containerfile", "."])
+        steps.append(("build", [engine, *root_args, "build", "--build-arg", f"SUITE={suite}", "-t", image,
+                                "-f", f"bases/{base}/Containerfile", "."]))
     rel_manifest = manifest.relative_to(ROOT) if manifest.is_relative_to(ROOT) else manifest
     if not manifest.is_relative_to(ROOT):
         raise Failure(f"{manifest} must live inside the checkout so the container can read it")
-    steps.append([engine, "run", "--rm", "--privileged", "-v", f"{ROOT}:/src", "-w", "/src",
+    steps.append(("run", [engine, *root_args, "run", "--rm", "--privileged", "-v", f"{ROOT}:/src", "-w", "/src",
                   "-e", "SYNOS_IN_CONTAINER=1", "-e", "SYNOS_SIGNING_KEY", "-e", "SYNOS_SIGNING_KEY_FILE",
-                  image, "make", f"MANIFEST={rel_manifest}", "PACKAGES_FLAGS=--strict"])
-    for step in steps:
+                  image, "make", f"MANIFEST={rel_manifest}", "PACKAGES_FLAGS=--strict"]))
+    for label, step in steps:
         code = run_step(step, log_to)
         if code != 0:
-            raise Failure(f"'{step[0]} {step[1]}' failed with exit code {code}" + (f" (log: {log_to})" if log_to else ""),
+            raise Failure(f"'{engine} {label}' failed with exit code {code}" + (f" (log: {log_to})" if log_to else ""),
                           EXIT_BUILD, step=step, image=image)
     return {"image": image, "engine": engine, **collect_outputs(output)}
 
@@ -585,7 +618,8 @@ def cmd_build(args) -> int:
         return emit(args, {"manifest": str(manifest), "validation": log}, EXIT_INVALID)
     log_to = Path(args.log).expanduser().resolve() if args.log else None
     output = Path(args.output).expanduser().resolve() if args.output else None
-    result = container_build(manifest, args.image, args.pull, log_to, output)
+    result = container_build(manifest, args.image, args.pull, log_to, output,
+                             container_root=args.container_root, container_runroot=args.container_runroot)
     if not args.json:
         print(f"image built {('with ' + result['image']) if result['image'] else 'inside the builder image'}: "
               f"{result['iso'] or 'no ISO found in dist/'}")
@@ -613,6 +647,11 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument("--force", action="store_true", help="replace bundle files that already exist in the checkout")
     build.add_argument("--log", help="also append the build output to this file (kept next to the ISO by the launchers)")
     build.add_argument("--output", help="copy the ISO and its evidence files into this directory when the build succeeds")
+    build.add_argument("--container-root", default=os.environ.get("SYNOS_CONTAINER_ROOT"),
+                       help="podman only: where podman stores images, layers and the chroot for this build "
+                            "(default: podman's own storage; SYNOS_CONTAINER_ROOT; refused for docker, whose storage is daemon-wide)")
+    build.add_argument("--container-runroot", default=os.environ.get("SYNOS_CONTAINER_RUNROOT"),
+                       help="podman only: its small state directory (default: podman's own; SYNOS_CONTAINER_RUNROOT)")
     args = parser.parse_args(argv)
     try:
         if args.command == "version":

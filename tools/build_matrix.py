@@ -212,13 +212,15 @@ def select_targets(targets: list[Target], *, only: list[str] | None, base: list[
 
 
 # ------------------------------------------------------------- host guard
-def resolve_jobs(requested: str) -> tuple[int, list[str]]:
+def resolve_jobs(requested: str, container_root: str | None = None) -> tuple[int, list[str]]:
     """--jobs "auto" derives the safe count from this machine's own disk,
     memory and CPUs (tools/host_resources.py, the same formula
     tools/catalog_conformance.py uses); an explicit count above that is
     refused with the reason, not silently capped. Also refuses when there
-    is no container engine at all, which no job count helps."""
-    jobs, problems = host_resources.resolve_jobs(requested, ROOT)
+    is no container engine at all, which no job count helps. container_root,
+    when set (--container-root/SYNOS_CONTAINER_ROOT), is where the disk
+    figure is measured, so the worker count matches the disk actually used."""
+    jobs, problems = host_resources.resolve_jobs(requested, ROOT, container_root=container_root)
     if not host_resources.container_engine():
         problems.append("podman or docker is required")
     return jobs, problems
@@ -301,7 +303,8 @@ def _materialize_source(target: Target, root: Path, scratch_path: Path) -> Path:
 
 def run_one(target: Target, *, output_dir: Path, timeout_seconds: int, image: str | None,
             pull: bool, run_smoke: bool, root: Path = ROOT, scratch_path: Path | None = None,
-            scratch_base: Path | None = None) -> dict:
+            scratch_base: Path | None = None, container_root: str | None = None,
+            container_runroot: str | None = None) -> dict:
     """Builds one target inside `scratch_path`. When `scratch_path` is not
     given, a scratch checkout is created and removed just for this one call
     (used directly by tests and by anything building a single target); a
@@ -330,6 +333,10 @@ def run_one(target: Target, *, output_dir: Path, timeout_seconds: int, image: st
             argv += ["--image", image]
         if pull:
             argv.append("--pull")
+        if container_root:
+            argv += ["--container-root", container_root]
+        if container_runroot:
+            argv += ["--container-runroot", container_runroot]
         completed = subprocess.run(argv, cwd=scratch_path, capture_output=True, text=True,
                                    timeout=timeout_seconds, check=False)
         result["exit_code"] = completed.returncode
@@ -459,7 +466,8 @@ def targets_to_run(targets: list["Target"], report: dict, *, resume: bool) -> li
 
 def run_targets_in_parallel(to_run: list["Target"], *, output_dir: Path, timeout_seconds: int, image: str | None,
                             pull: bool, run_smoke: bool, jobs: int, root: Path = ROOT,
-                            scratch_root_dir: Path | None = None, on_result=None) -> dict:
+                            scratch_root_dir: Path | None = None, on_result=None,
+                            container_root: str | None = None, container_runroot: str | None = None) -> dict:
     """Runs `to_run` with `jobs` workers (tools/job_queue.py). Each worker
     owns exactly one scratch checkout (tools/scratch_checkout.py) for this
     call's whole lifetime, created the first time that worker is handed a
@@ -478,7 +486,8 @@ def run_targets_in_parallel(to_run: list["Target"], *, output_dir: Path, timeout
             scratch_path = scratch_checkout.create(root, scratch_root_dir, label=f"worker-{worker_id}")
             worker_scratch[worker_id] = scratch_path
         return run_one(target, output_dir=output_dir, timeout_seconds=timeout_seconds, image=image,
-                       pull=pull, run_smoke=run_smoke, root=root, scratch_path=scratch_path)
+                       pull=pull, run_smoke=run_smoke, root=root, scratch_path=scratch_path,
+                       container_root=container_root, container_runroot=container_runroot)
 
     try:
         return job_queue.run_parallel(to_run, jobs, build_one, on_result=on_result)
@@ -524,6 +533,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-smoke", action="store_true", help="skip tools/smoke_test.py even when a build succeeds")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="where report.json, logs and ISOs go (default dist/matrix/)")
     parser.add_argument("--resume", action="store_true", help="skip targets whose last recorded result was success at this checksum")
+    parser.add_argument("--container-root", default=os.environ.get("SYNOS_CONTAINER_ROOT"),
+                        help="podman only: where every target's build keeps its images, layers and chroot "
+                             "(default: podman's own storage; SYNOS_CONTAINER_ROOT); also where free disk is measured for --jobs auto")
+    parser.add_argument("--container-runroot", default=os.environ.get("SYNOS_CONTAINER_RUNROOT"),
+                        help="podman only: its small state directory (default: podman's own; SYNOS_CONTAINER_RUNROOT)")
     args = parser.parse_args(argv)
 
     only = args.only.split(",") if args.only else None
@@ -539,7 +553,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\n{len(targets)} target(s)")
         if args.dry_run:
             timeout_seconds = int(args.timeout * 60)
-            safe_jobs, factors = host_resources.derive_safe_jobs(ROOT)
+            safe_jobs, factors = host_resources.derive_safe_jobs(ROOT, container_root=args.container_root)
             print(f"jobs={args.jobs} (auto would use {safe_jobs}: {host_resources.explain(factors)}) "
                   f"timeout={args.timeout:.0f}m image={args.image or '(engine default)'} "
                   f"pull={args.pull} smoke={not args.no_smoke} output={args.output}")
@@ -555,10 +569,14 @@ def main(argv: list[str] | None = None) -> int:
                     argv_preview += ["--image", args.image]
                 if args.pull:
                     argv_preview.append("--pull")
+                if args.container_root:
+                    argv_preview += ["--container-root", args.container_root]
+                if args.container_runroot:
+                    argv_preview += ["--container-runroot", args.container_runroot]
                 print("  " + " ".join(argv_preview))
         return EXIT_OK
 
-    jobs, problems = resolve_jobs(args.jobs)
+    jobs, problems = resolve_jobs(args.jobs, args.container_root)
     if problems:
         for problem in problems:
             print(f"error: {problem}", file=sys.stderr)
@@ -590,7 +608,8 @@ def main(argv: list[str] | None = None) -> int:
     if to_run:
         print(f"building {len(to_run)} target(s) with {jobs} worker(s)", file=sys.stderr)
         run_targets_in_parallel(to_run, output_dir=output_dir, timeout_seconds=timeout_seconds, image=args.image,
-                                pull=args.pull, run_smoke=not args.no_smoke, jobs=jobs, root=ROOT, on_result=_on_result)
+                                pull=args.pull, run_smoke=not args.no_smoke, jobs=jobs, root=ROOT, on_result=_on_result,
+                                container_root=args.container_root, container_runroot=args.container_runroot)
 
     _write_report(report_path, report)
     summary_text = human_summary(report)

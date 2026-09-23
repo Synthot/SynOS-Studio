@@ -37,7 +37,14 @@ def container_engine() -> str | None:
     return shutil.which("podman") or shutil.which("docker")
 
 
-def container_store(engine: str) -> str | None:
+def container_store(engine: str, container_root: str | None = None) -> str | None:
+    """Where the runtime keeps images, layers and the chroot. When podman was
+    told to use another location (SYNOS_CONTAINER_ROOT, the same setting
+    bundle_launcher.sh and tools/synos honor), that path is authoritative and
+    is returned directly rather than asked back of `podman info`, which
+    reports the daemon default and would otherwise measure the wrong disk."""
+    if container_root and "podman" in Path(engine).name:
+        return container_root
     for fmt in ("{{.DockerRootDir}}", "{{.Store.GraphRoot}}"):
         result = subprocess.run([engine, "info", "--format", fmt], capture_output=True, text=True, check=False, timeout=20)
         value = result.stdout.strip()
@@ -64,19 +71,25 @@ _UNSET = object()  # distinct from None: None is a legitimate override meaning "
 
 def derive_safe_jobs(root: Path, *, min_free_gb: float = MIN_FREE_GB, min_store_gb: float = MIN_STORE_GB,
                      min_memory_gb_per_job: float = MIN_MEMORY_GB_PER_JOB, cpus_per_job: int = CPUS_PER_JOB,
-                     free_root_gb=_UNSET, free_store_gb=_UNSET, memory_gb=_UNSET, cpu_count=_UNSET) -> tuple[int, dict]:
+                     free_root_gb=_UNSET, free_store_gb=_UNSET, memory_gb=_UNSET, cpu_count=_UNSET,
+                     container_root: str | None = None) -> tuple[int, dict]:
     """The largest --jobs this machine's own numbers can feed, and the four
     numbers that went into it. Can come back 0 (not floored to 1): a machine
     without even 40 GB free cannot safely run one build either, and must be
     refused, not quietly offered "1" (resolve_jobs does that refusing).
     The *_gb/cpu_count keyword-only overrides exist for tests: passing one
     fixes that number instead of measuring the real host (None is itself a
-    valid override — "no container store" — distinct from omitting it)."""
+    valid override — "no container store" — distinct from omitting it).
+    container_root, when given (or SYNOS_CONTAINER_ROOT is set and this
+    keyword is left at its default None), measures free space at that
+    location instead of the runtime's own default storage — an unset
+    variable and an omitted keyword both leave this exactly as before."""
+    container_root = container_root or os.environ.get("SYNOS_CONTAINER_ROOT")
     if free_root_gb is _UNSET:
         free_root_gb = shutil.disk_usage(root).free / 1024**3
     if free_store_gb is _UNSET:
         engine = container_engine()
-        store = container_store(engine) if engine else None
+        store = container_store(engine, container_root) if engine else None
         free_store_gb = (shutil.disk_usage(store).free / 1024**3) if store and Path(store).is_dir() else None
     if memory_gb is _UNSET:
         memory_gb = total_memory_gb()

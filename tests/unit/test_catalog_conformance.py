@@ -343,6 +343,83 @@ class BuildModeTests(unittest.TestCase):
         self.assertEqual(2, len(report["targets"]))
 
 
+class ContainerRootPassthroughTests(unittest.TestCase):
+    """config.container_root/container_runroot (SYNOS_CONTAINER_ROOT/SYNOS_CONTAINER_RUNROOT
+    equivalents): every entry's `tools/synos build` receives the same
+    setting, and resolve_jobs measures free disk there. subprocess.run is
+    faked here, so no scratch checkout or real synos process is started."""
+
+    def test_both_flags_reach_the_synos_build_invocation(self) -> None:
+        catalog = real_catalog()
+        entry = entry_by_id(catalog, "web-server-nginx")
+        calls: list[list[str]] = []
+
+        class FakeCompleted:
+            returncode = 0
+            stdout = "{}"
+            stderr = ""
+
+        original = cc.subprocess.run
+
+        def fake_run(argv, **kwargs):
+            calls.append(list(argv))
+            return FakeCompleted()
+
+        cc.subprocess.run = fake_run
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False,
+                                   container_root="/mnt/big/synos-storage", container_runroot="/mnt/big/synos-runroot")
+                cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t", scratch_path=Path(tmp) / "scratch")
+        finally:
+            cc.subprocess.run = original
+        self.assertEqual(1, len(calls))
+        argv = calls[0]
+        self.assertIn("--container-root", argv)
+        self.assertEqual("/mnt/big/synos-storage", argv[argv.index("--container-root") + 1])
+        self.assertIn("--container-runroot", argv)
+        self.assertEqual("/mnt/big/synos-runroot", argv[argv.index("--container-runroot") + 1])
+
+    def test_an_unset_container_root_omits_both_flags(self) -> None:
+        catalog = real_catalog()
+        entry = entry_by_id(catalog, "web-server-nginx")
+        calls: list[list[str]] = []
+
+        class FakeCompleted:
+            returncode = 0
+            stdout = "{}"
+            stderr = ""
+
+        original = cc.subprocess.run
+        cc.subprocess.run = lambda argv, **kwargs: calls.append(list(argv)) or FakeCompleted()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
+                cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t", scratch_path=Path(tmp) / "scratch")
+        finally:
+            cc.subprocess.run = original
+        self.assertNotIn("--container-root", calls[0])
+        self.assertNotIn("--container-runroot", calls[0])
+
+    def test_resolve_jobs_passes_container_root_to_host_resources(self) -> None:
+        original = cc.host_resources.resolve_jobs
+        captured: dict = {}
+
+        def fake_resolve_jobs(requested, root, **kwargs):
+            captured.update(kwargs)
+            return 2, []
+
+        cc.host_resources.resolve_jobs = fake_resolve_jobs
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", jobs="auto",
+                                   container_root="/mnt/big/synos-storage")
+                cc.resolve_jobs(config)
+        finally:
+            cc.host_resources.resolve_jobs = original
+        self.assertEqual("/mnt/big/synos-storage", captured.get("container_root"))
+
+
 class ParallelismTests(unittest.TestCase):
     """run_build's own use of tools/job_queue.py: each worker owns one
     scratch checkout, reused across whatever entries that worker builds."""

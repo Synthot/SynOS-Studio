@@ -296,6 +296,82 @@ class HostAndBuildTests(unittest.TestCase):
             cli.sys.stderr.close()
             cli.sys.stderr = sys.stderr
 
+    def test_container_root_is_passed_to_podman_before_every_subcommand(self) -> None:
+        cli = load_cli()
+        calls: list[list[str]] = []
+
+        class Result:
+            returncode = 0
+
+        def fake_run(step, **kwargs):
+            calls.append(list(step))
+            return Result()
+
+        original = cli.subprocess.run
+        cli.subprocess.run = fake_run
+        cli.sys.stderr = open(os.devnull, 'w')
+        cli.host_report = lambda: {"problems": [], "engine": "/usr/bin/podman"}
+        try:
+            result = cli.container_build(ROOT / "manifests" / "test-build.yml", None, True, None,
+                                         container_root="/mnt/big/synos-storage", container_runroot="/mnt/big/synos-runroot")
+            self.assertEqual("ghcr.io/synthot/synos-builder:ubuntu-resolute", result["image"])
+            self.assertEqual(["/usr/bin/podman", "--root", "/mnt/big/synos-storage", "--runroot", "/mnt/big/synos-runroot",
+                              "pull", "ghcr.io/synthot/synos-builder:ubuntu-resolute"], calls[0])
+            self.assertEqual("--root", calls[1][1])
+            self.assertIn("--privileged", calls[1])
+        finally:
+            cli.subprocess.run = original
+            cli.sys.stderr.close()
+            cli.sys.stderr = sys.stderr
+
+    def test_container_root_is_refused_for_docker_before_any_command_runs(self) -> None:
+        cli = load_cli()
+        calls: list[list[str]] = []
+
+        def fake_run(step, **kwargs):
+            calls.append(list(step))
+            raise AssertionError("docker must never be invoked once a location was asked for and refused")
+
+        original = cli.subprocess.run
+        cli.subprocess.run = fake_run
+        cli.host_report = lambda: {"problems": [], "engine": "/usr/bin/docker"}
+        try:
+            with self.assertRaises(cli.Failure) as raised:
+                cli.container_build(ROOT / "manifests" / "test-build.yml", None, True, None, container_root="/mnt/big/synos-storage")
+            self.assertEqual([], calls)
+            message = str(raised.exception)
+            self.assertIn("daemon-wide", message)
+            self.assertIn("data-root", message)
+            self.assertIn("/etc/docker/daemon.json", message)
+            self.assertIn("/var/snap/docker/current/config/daemon.json", message)
+            self.assertIn("snap connect docker:removable-media", message)
+        finally:
+            cli.subprocess.run = original
+
+    def test_an_unset_container_root_changes_nothing(self) -> None:
+        cli = load_cli()
+        calls: list[list[str]] = []
+
+        class Result:
+            returncode = 0
+
+        def fake_run(step, **kwargs):
+            calls.append(list(step))
+            return Result()
+
+        original = cli.subprocess.run
+        cli.subprocess.run = fake_run
+        cli.sys.stderr = open(os.devnull, 'w')
+        cli.host_report = lambda: {"problems": [], "engine": "/usr/bin/podman"}
+        try:
+            cli.container_build(ROOT / "manifests" / "test-build.yml", None, True, None)
+            self.assertEqual(["/usr/bin/podman", "pull", "ghcr.io/synthot/synos-builder:ubuntu-resolute"], calls[0])
+            self.assertNotIn("--root", calls[0])
+        finally:
+            cli.subprocess.run = original
+            cli.sys.stderr.close()
+            cli.sys.stderr = sys.stderr
+
     def test_makefile_routes_container_build_through_the_tool(self) -> None:
         makefile = (ROOT / "makefile").read_text(encoding="utf-8")
         self.assertIn("tools/synos build", makefile)
@@ -475,6 +551,212 @@ class LauncherTests(unittest.TestCase):
             cli.sys.stderr = sys.stderr
             os.environ.clear()
             os.environ.update(original_env)
+
+
+def write_executable(path: Path, content: str) -> None:
+    path.write_text(content, encoding="utf-8")
+    path.chmod(0o755)
+
+
+class ContainerStorageTests(unittest.TestCase):
+    """SYNOS_CONTAINER_ROOT/SYNOS_CONTAINER_RUNROOT (and --container-root=/--container-runroot=):
+    podman takes a per-build storage location with no root; docker's is
+    daemon-wide and is refused plainly instead of silently ignored or built
+    into a failure. Every runtime here is a fake that logs its argv and exits
+    0; no real build is ever started."""
+
+    TOOLS = ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "tr",
+             "dirname", "printf", "stat", "mkdir")
+
+    def make_fake_bin(self, tmp: Path) -> Path:
+        fake = tmp / "bin"
+        fake.mkdir()
+        for tool in self.TOOLS:
+            found = shutil.which(tool)
+            if found:
+                (fake / tool).symlink_to(found)
+        return fake
+
+    def write_root_id(self, fake: Path) -> None:
+        """A fake `id` reporting uid/gid 0, so the podman branch (which runs
+        through sudo for a real, non-root user) needs neither real root nor
+        an interactive sudo prompt to exercise here."""
+        real_id = shutil.which("id")
+        (fake / "id").unlink()
+        write_executable(fake / "id", "#!/bin/sh\ncase \"$1\" in\n  -u) echo 0 ;;\n  -g) echo 0 ;;\n"
+                                       f"  *) exec '{real_id}' \"$@\" ;;\nesac\n")
+
+    def write_logging_runtime(self, fake: Path, name: str, log: Path) -> None:
+        """A fake podman/docker that records every invocation's argv, one
+        line per call, and always succeeds."""
+        write_executable(fake / name, f"#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{log}'\nexit 0\n")
+
+    def write_docker_reporting_store(self, fake: Path, log: Path, store: Path) -> None:
+        write_executable(fake / "docker", (
+            "#!/bin/sh\n"
+            f"printf '%s\\n' \"$*\" >> '{log}'\n"
+            "if [ \"$1\" = info ] && [ \"$2\" = --format ]; then\n"
+            "    case \"$3\" in\n"
+            f"        *DockerRootDir*) printf '%s\\n' '{store}' ;;\n"
+            "        *) printf '\\n' ;;\n"
+            "    esac\n"
+            "fi\n"
+            "exit 0\n"
+        ))
+
+    def write_df(self, fake: Path, marker_path: str, marker_avail_kb: int, default_avail_kb: int = 100 * 1024 * 1024) -> None:
+        """A fake `df -Pk PATH` that reports marker_avail_kb for marker_path
+        and a large default for everything else (in particular ".", the
+        bundle's own 40 GB check), so a test controls exactly one number
+        without depending on the real disk this runs on."""
+        (fake / "df").unlink()
+        write_executable(fake / "df", (
+            "#!/bin/sh\n"
+            "path=$2\n"
+            f"if [ \"$path\" = '{marker_path}' ]; then avail={marker_avail_kb}; else avail={default_avail_kb}; fi\n"
+            "printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\\n'\n"
+            "printf '/dev/fake 1 1 %s 1%% %s\\n' \"$avail\" \"$path\"\n"
+        ))
+
+    def make_bundle(self, tmp: Path) -> Path:
+        bundle = write_bundle(tmp / "bundle", {"format": 1, "manifest": "manifests/x.yml", "engine": {"min": "0.1.0"}},
+                              {"manifests/x.yml": MANIFEST})
+        shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
+        return bundle
+
+    def test_podman_receives_root_and_runroot_docker_never_would(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            container_root = tmp / "storage"
+            container_runroot = tmp / "runroot"
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            self.write_df(fake, str(container_root), 100 * 1024 * 1024)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_CONTAINER_ROOT": str(container_root), "SYNOS_CONTAINER_RUNROOT": str(container_runroot)}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            calls = log.read_text(encoding="utf-8").splitlines()
+            self.assertTrue(calls, "podman must have been invoked")
+            for call in calls:
+                self.assertIn(f"--root {container_root} --runroot {container_runroot}", call, call)
+            self.assertTrue(container_root.is_dir())
+            self.assertTrue(container_runroot.is_dir())
+            self.assertIn(f"--root {container_root} --runroot {container_runroot}", result.stdout)
+
+    def test_an_unset_container_root_changes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            self.write_df(fake, str(tmp / "never-matched"), 1)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            calls = log.read_text(encoding="utf-8").splitlines()
+            self.assertTrue(calls, "podman must have been invoked")
+            for call in calls:
+                self.assertNotIn("--root", call)
+                self.assertNotIn("--runroot", call)
+            self.assertNotIn("--root", result.stdout)
+
+    def test_docker_refuses_a_requested_location_before_any_command_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            container_root = tmp / "storage"
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "docker", log)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1",
+                   "SYNOS_CONTAINER_ROOT": str(container_root)}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertFalse(log.exists() and log.read_text(encoding="utf-8").strip(), "docker must never be invoked")
+            self.assertIn("daemon-wide location", result.stderr)
+            self.assertIn("data-root", result.stderr)
+            self.assertIn("/etc/docker/daemon.json", result.stderr)
+            self.assertIn("/var/snap/docker/current/config/daemon.json", result.stderr)
+            self.assertIn("snap connect docker:removable-media", result.stderr)
+            self.assertIn("install podman", result.stderr)
+
+    def test_podman_low_space_refusal_names_the_numbers_and_puts_the_rootless_option_first(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            container_root = tmp / "storage"
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            self.write_df(fake, str(container_root), 8 * 1024 * 1024)  # 8 GB, below the 30 GB threshold
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_CONTAINER_ROOT": str(container_root)}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            message = result.stderr
+            self.assertIn("needs 30 GB free", message)
+            self.assertIn("only 8 GB is free", message)
+            self.assertIn(str(container_root), message)
+            self.assertIn("no root needed", message)
+            self.assertLess(message.index("no root needed"), message.index("move podman's own default storage"),
+                            "the option that needs no root must come first")
+            self.assertFalse(log.exists() and log.read_text(encoding="utf-8").strip(), "no podman call before the refusal")
+
+    def test_docker_low_space_refusal_names_the_numbers_and_both_daemon_json_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            store_dir = tmp / "docker-storage"
+            store_dir.mkdir()
+            log = tmp / "runtime.log"
+            self.write_docker_reporting_store(fake, log, store_dir)
+            self.write_df(fake, str(store_dir), 5 * 1024 * 1024)  # 5 GB, below the 30 GB threshold
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            message = result.stderr
+            self.assertIn("needs 30 GB free", message)
+            self.assertIn("only 5 GB is free", message)
+            self.assertIn(str(store_dir), message)
+            self.assertIn("install podman", message)
+            self.assertIn("plain install", message)
+            self.assertIn("/etc/docker/daemon.json", message)
+            self.assertIn("snap install", message)
+            self.assertIn("/var/snap/docker/current/config/daemon.json", message)
+            self.assertIn("snap connect docker:removable-media", message)
+
+    def test_a_location_on_a_filesystem_that_cannot_back_an_overlay_is_refused_clearly(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            # A fake `stat -f -c %T` reporting a filesystem podman cannot use for an overlay.
+            (fake / "stat").unlink()
+            write_executable(fake / "stat", "#!/bin/sh\necho vfat\n")
+            container_root = tmp / "storage"
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_CONTAINER_ROOT": str(container_root)}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("vfat", result.stderr)
+            self.assertIn("cannot back a container's overlay filesystem", result.stderr)
+            self.assertFalse(log.exists() and log.read_text(encoding="utf-8").strip(), "no podman call before the refusal")
+
+    def test_launcher_script_documents_the_new_flags(self) -> None:
+        text = (ROOT / "tools" / "bundle_launcher.sh").read_text(encoding="utf-8")
+        for needle in ("SYNOS_CONTAINER_ROOT", "SYNOS_CONTAINER_RUNROOT", "--container-root=", "--container-runroot="):
+            self.assertIn(needle, text, needle)
 
 
 LAUNCHER_UPDATE_TOOLS = ("sh", "sed", "head", "awk", "grep", "cat", "cp", "tr", "dirname", "printf",
