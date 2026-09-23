@@ -70,6 +70,19 @@ engine validates signed and unsigned bundles exactly the same way.
 engine refuses to build when it is older, so a bundle generated against a
 newer catalog fails early instead of producing a wrong image.
 
+`channel` names which engine pipeline this bundle was generated for and must
+be built against: `stable` (the default, and assumed when the key is absent,
+so every bundle generated before this key existed keeps working exactly as
+it does today) builds against the newest *released* engine that satisfies
+`engine.min`; `development` builds against the unreleased tip of the
+engine's main branch, for a bundle made by a development instance of the
+front end that is not meant to be relied on as a release. The front end
+decides this when it generates the bundle - typically by asking whether it
+is itself running from a deployed, released location or a local/staging one
+- not the person building it, though the launcher's own
+`SYNOS_CHANNEL`/`--channel` override it for someone who knows what they are
+doing.
+
 ## Building without a checkout
 
 The builder container images CI publishes carry the engine itself at

@@ -81,6 +81,29 @@ class BundleValidationTests(unittest.TestCase):
             code, payload = run("bundle", "validate", str(archive))
             self.assertEqual(0, code, payload)
 
+    def test_channel_stable_and_development_validate_absent_defaults_and_others_are_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            for channel in ("stable", "development"):
+                bundle = write_bundle(Path(tmp) / channel, {"format": 1, "manifest": "manifests/x.yml",
+                                                             "engine": {"min": "0.1.0"}, "channel": channel},
+                                      {"manifests/x.yml": MANIFEST})
+                code, payload = run("bundle", "validate", str(bundle))
+                self.assertEqual(0, code, payload)
+                self.assertEqual([], payload["report"]["errors"])
+            # absent: still valid, exactly like every bundle generated before "channel" existed
+            bundle = write_bundle(Path(tmp) / "absent", {"format": 1, "manifest": "manifests/x.yml", "engine": {"min": "0.1.0"}},
+                                  {"manifests/x.yml": MANIFEST})
+            code, payload = run("bundle", "validate", str(bundle))
+            self.assertEqual(0, code, payload)
+            self.assertEqual([], payload["report"]["errors"])
+            # anything else is refused, not silently accepted
+            bundle = write_bundle(Path(tmp) / "bogus", {"format": 1, "manifest": "manifests/x.yml",
+                                                         "engine": {"min": "0.1.0"}, "channel": "nightly"},
+                                  {"manifests/x.yml": MANIFEST})
+            code, payload = run("bundle", "validate", str(bundle))
+            self.assertEqual(1, code)
+            self.assertTrue(any("channel" in e for e in payload["report"]["errors"]), payload["report"]["errors"])
+
     def test_unsupported_format_future_engine_and_foreign_paths_are_refused(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             bundle = write_bundle(Path(tmp), {"format": 2, "manifest": "manifests/x.yml", "engine": {"min": "99.0.0"}},
