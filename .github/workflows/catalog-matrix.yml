@@ -87,7 +87,8 @@ jobs:
       - name: The matrix plan and the conformance tool (report.json shape) stay stable
         run: |
           PYTHONPATH=tests python3 -m unittest tests.unit.test_build_matrix tests.unit.test_smoke_test \
-            tests.unit.test_catalog_conformance tests.unit.test_bundle_catalog -v
+            tests.unit.test_catalog_conformance tests.unit.test_bundle_catalog tests.unit.test_scratch_checkout \
+            tests.unit.test_host_resources tests.unit.test_job_queue -v
 
   matrix:
     needs: plan

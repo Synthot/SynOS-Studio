@@ -75,9 +75,12 @@ Honest as of engine 0.2.0 (September 2026):
   brand, boot menu theme, default language and installer language order
   were checked on screen. Debian 13 images build and boot; they have been
   exercised less.
-- 409 unit tests run on every push and pass on a bare Ubuntu 24.04
-  machine. They cover the manifest renderer, the package builder, the
-  brand kit, the bundle tool, the launchers and the catalog.
+- 693 unit tests (`PYTHONPATH=tests python3 -m unittest discover -s
+  tests/unit -p 'test_*.py'`, the same command CI runs — count it yourself
+  rather than trust this line, since it will drift again) run on every push
+  and pass on a bare Ubuntu 24.04 machine. They cover the manifest
+  renderer, the package builder, the brand kit, the bundle tool, the
+  launchers, the catalog and the build matrix.
 - The QEMU acceptance suite (`make test`: installs, regions, desktop
   behaviour) exists and has not yet been run end to end by this project.
 - Not tested on real GPU hardware (AI workstation), not tested on macOS,

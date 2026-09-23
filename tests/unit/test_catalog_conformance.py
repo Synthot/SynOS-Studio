@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import threading
 import unittest
 from pathlib import Path
 
@@ -79,6 +80,10 @@ FAKE_SYNOS = textwrap.dedent("""\
 
 
 class FakeSynos:
+    """cc._synos_for (called with the disposable scratch checkout build_one
+    just created) is pointed at this script for the duration of the test.
+    A real scratch checkout is still created and removed around it."""
+
     def __init__(self, mode: str = "success"):
         self._tmpdir = tempfile.TemporaryDirectory(prefix="fake-synos-cc-")
         self.path = Path(self._tmpdir.name) / "fake_synos.py"
@@ -88,15 +93,15 @@ class FakeSynos:
 
     def __enter__(self):
         import os
-        self._old_synos = cc.SYNOS
+        self._old_synos_for = cc._synos_for
         self._old_env = os.environ.get("FAKE_SYNOS_MODE")
-        cc.SYNOS = self.path
+        cc._synos_for = lambda scratch_path: self.path
         os.environ["FAKE_SYNOS_MODE"] = self.mode
         return self
 
     def __exit__(self, *exc):
         import os
-        cc.SYNOS = self._old_synos
+        cc._synos_for = self._old_synos_for
         if self._old_env is None:
             os.environ.pop("FAKE_SYNOS_MODE", None)
         else:
@@ -336,6 +341,153 @@ class BuildModeTests(unittest.TestCase):
             config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False, max_builds_per_run=2)
             report = cc.run_build(config, catalog=catalog, max_builds=2)
         self.assertEqual(2, len(report["targets"]))
+
+
+class ParallelismTests(unittest.TestCase):
+    """run_build's own use of tools/job_queue.py: each worker owns one
+    scratch checkout, reused across whatever entries that worker builds."""
+
+    def test_run_build_with_jobs_uses_more_than_one_scratch_checkout(self) -> None:
+        catalog = real_catalog()
+        entries = [entry_by_id(catalog, i) for i in ("web-server-nginx", "web-server-apache", "web-server-caddy", "git-server")]
+        sub_catalog = {"bundle_catalog": entries}
+        seen: list[str] = []
+        seen_lock = threading.Lock()
+
+        with FakeSynos("success") as fake:
+            def recording_synos_for(scratch_path, _fake_path=fake.path):
+                with seen_lock:
+                    seen.append(str(scratch_path))
+                return _fake_path
+
+            old = cc._synos_for
+            cc._synos_for = recording_synos_for
+            try:
+                with tempfile.TemporaryDirectory() as tmp:
+                    config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
+                    report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=4)
+            finally:
+                cc._synos_for = old
+
+        self.assertEqual(4, len(report["targets"]))
+        self.assertTrue(all(r["status"] == "success" for r in report["targets"].values()))
+        self.assertGreaterEqual(len(set(seen)), 2, "four entries across four workers must use more than one scratch checkout")
+
+    def test_run_build_with_jobs_1_reuses_one_checkout_across_entries(self) -> None:
+        catalog = real_catalog()
+        entries = [entry_by_id(catalog, i) for i in ("web-server-nginx", "web-server-apache")]
+        sub_catalog = {"bundle_catalog": entries}
+        scratch_paths_used: list[str] = []
+
+        with FakeSynos("success") as fake:
+            def recording_synos_for(scratch_path, _fake_path=fake.path):
+                scratch_paths_used.append(str(scratch_path))
+                return _fake_path
+
+            old = cc._synos_for
+            cc._synos_for = recording_synos_for
+            try:
+                with tempfile.TemporaryDirectory() as tmp:
+                    config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
+                    report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=1)
+            finally:
+                cc._synos_for = old
+
+        self.assertEqual(2, len(report["targets"]))
+        self.assertEqual(2, len(scratch_paths_used))
+        self.assertEqual(1, len(set(scratch_paths_used)), "one worker must reuse the same scratch checkout for both entries")
+
+    def test_a_parallel_conformance_run_leaves_this_checkout_unchanged(self) -> None:
+        catalog = real_catalog()
+        entries = [entry_by_id(catalog, i) for i in ("web-server-nginx", "web-server-apache", "web-server-caddy")]
+        sub_catalog = {"bundle_catalog": entries}
+        before_status = _git_status(ROOT)
+        before_worktrees = _git_worktree_list(ROOT)
+
+        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
+            report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=3)
+
+        self.assertEqual(3, len(report["targets"]))
+        self.assertEqual(before_status, _git_status(ROOT))
+        self.assertEqual(before_worktrees, _git_worktree_list(ROOT))
+
+    def test_resolve_jobs_is_wired_to_host_resources(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", jobs="auto")
+            jobs, problems = cc.resolve_jobs(config)
+        self.assertEqual([], problems)
+        self.assertGreaterEqual(jobs, 0)
+
+
+def _git_status(cwd: Path) -> str:
+    return subprocess.run(["git", "status", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
+
+
+def _git_worktree_list(cwd: Path) -> str:
+    return subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
+
+
+class IsolationTests(unittest.TestCase):
+    """Same regression as tests/unit/test_build_matrix.py's IsolationTests,
+    pinned here for build_one: a downloaded catalog entry's files must be
+    applied into a disposable scratch checkout, never into this engine
+    checkout `tools/catalog_conformance.py` itself runs from."""
+
+    def test_a_faked_build_over_a_real_downloaded_entry_leaves_this_checkout_unchanged(self) -> None:
+        catalog = real_catalog()
+        entry = entry_by_id(catalog, "web-server-nginx")
+        before_status = _git_status(ROOT)
+        before_worktrees = _git_worktree_list(ROOT)
+
+        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
+            record = cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t", root=ROOT)
+
+        self.assertEqual("success", record["status"])
+        self.assertEqual(before_status, _git_status(ROOT), "a conformance run must leave this checkout's git status exactly as it found it")
+        self.assertEqual(before_worktrees, _git_worktree_list(ROOT), "the scratch worktree must be removed, not left registered")
+        self.assertFalse((ROOT / "profiles" / "web-server-nginx.yml").exists())
+
+    def test_a_real_bundle_apply_over_a_real_downloaded_entry_lands_in_the_scratch_checkout_only(self) -> None:
+        catalog = real_catalog()
+        entry = entry_by_id(catalog, "web-server-nginx")
+        before_status = _git_status(ROOT)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_dir = cc.prepare_bundle_dir(entry, Path(tmp) / "bundle")
+            scratch_path = cc.scratch_checkout.create(ROOT, Path(tmp) / "scratch", label="cc-isolation-test")
+            try:
+                synos_path = cc._synos_for(scratch_path)
+                result = subprocess.run([sys.executable, str(synos_path), "--json", "bundle", "apply", str(bundle_dir)],
+                                        cwd=scratch_path, capture_output=True, text=True, check=False)
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                self.assertTrue((scratch_path / "profiles" / "web-server-nginx.yml").is_file())
+                self.assertFalse((ROOT / "profiles" / "web-server-nginx.yml").exists())
+            finally:
+                cc.scratch_checkout.remove(scratch_path)
+
+        self.assertEqual(before_status, _git_status(ROOT))
+
+    def test_scratch_checkout_is_cleaned_up_even_when_the_build_raises(self) -> None:
+        catalog = real_catalog()
+        entry = entry_by_id(catalog, "web-server-nginx")
+        before_worktrees = _git_worktree_list(ROOT)
+
+        def _boom(scratch_path):
+            raise RuntimeError("simulated crash before the build even starts")
+
+        old_synos_for = cc._synos_for
+        cc._synos_for = _boom
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
+                record = cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t", root=ROOT)
+        finally:
+            cc._synos_for = old_synos_for
+
+        self.assertEqual("error", record["status"])
+        self.assertEqual(before_worktrees, _git_worktree_list(ROOT))
 
 
 class DiffReportsTests(unittest.TestCase):

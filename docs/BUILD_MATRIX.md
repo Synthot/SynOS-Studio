@@ -31,18 +31,18 @@ python3 tools/build_matrix.py --base ubuntu --suite noble
 python3 tools/build_matrix.py --resume                 # a nightly run: skip what already succeeded
 ```
 
-Useful flags: `--jobs N` (more than one build at a time; refused when the
-machine does not have the disk or the CPUs to feed it), `--timeout MINUTES`
-(per build, default 90), `--image` or `$SYNOS_BUILDER_IMAGE` (use one
-builder image for every target instead of the engine building one per base
-and suite from `bases/<base>/Containerfile`), `--pull` (fetch the published
-builder image instead of building it locally), `--no-smoke` (skip
-`tools/smoke_test.py` even after a successful build), `--output DIR`
-(default `dist/matrix/`).
+Useful flags: `--jobs N` or `--jobs auto` (more than one build at a time;
+"Isolation and parallelism" below explains how many is safe and what each
+one gets), `--timeout MINUTES` (per build, default 90), `--image` or
+`$SYNOS_BUILDER_IMAGE` (use one builder image for every target instead of
+the engine building one per base and suite from `bases/<base>/Containerfile`),
+`--pull` (fetch the published builder image instead of building it locally),
+`--no-smoke` (skip `tools/smoke_test.py` even after a successful build),
+`--output DIR` (default `dist/matrix/`).
 
 Exit code: 0 when every target this run attempted succeeded, 1 when at
 least one failed or timed out, 2 when the host itself refuses to start
-(not enough disk, not enough CPUs for `--jobs`, no podman or docker).
+(not enough disk, memory or CPUs for `--jobs`, no podman or docker).
 
 ## What it proves, and what it does not
 
@@ -63,12 +63,12 @@ the engine's own record of the last time the matrix actually built it).
 Per target: the same as building it by hand — 40+ GB free under the
 checkout, another 30+ GB in the container runtime's own storage, and,
 uncached, on the order of 40 minutes (`bundle_launcher.sh`'s own estimate;
-a warm `synos-cache-<base>-<suite>` volume is faster). Fifty-odd catalog
-entries plus four cores, one at a time, is the better part of a day; `--jobs`
-shortens that at the cost of `--jobs` times the disk. This is why the
-matrix's own job in CI only runs on a self-hosted runner (below) and why
-`--resume` exists: a nightly run only rebuilds what changed or previously
-failed.
+a warm build cache is faster — "Isolation and parallelism" below). Fifty-odd
+catalog entries plus four cores, one at a time, is the better part of a day;
+`--jobs` shortens that at the cost of `--jobs` times the disk, memory and
+CPU a build needs. This is why the matrix's own job in CI only runs on a
+self-hosted runner (below) and why `--resume` exists: a nightly run only
+rebuilds what changed or previously failed.
 
 ## Resuming
 
@@ -79,6 +79,81 @@ at the end, so killing a run loses at most the target that was mid-build.
 bytes for a catalog entry, the generated manifest for a core) is skipped;
 everything else — never run, failed, timed out, or changed since — is
 retried. Without `--resume`, every planned target runs again from scratch.
+
+## Isolation and parallelism
+
+`tools/synos build <bundle>` applies the bundle's files (`profiles/`,
+`manifests/`, `branding/`, `keys/`, `answers/`) into whatever checkout its
+own `tools/synos` script lives in before building — exactly right for a
+person building by hand, wrong for an unattended run: invoked as this
+checkout's own `tools/synos`, it would leave one `profiles/<id>.yml` behind
+per catalog entry, dirtying the very checkout the matrix runs from (and
+tripping `tests/unit/test_bundle_catalog.py`'s own guard against a catalog
+entry shadowing an engine profile). `tools/scratch_checkout.py` fixes this:
+every build runs inside a disposable `git worktree` of this checkout — a
+fast, space-shared checkout of the current commit (deliberately *not* any
+uncommitted local edits: a proof run proves what is about to be committed)
+— never the checkout itself, removed again once the build using it is
+done, including when the run is killed (`atexit`/`SIGTERM`/`SIGINT`
+cleanup; `git status --porcelain` here is unchanged by a run either way,
+proven by `tests/unit/test_build_matrix.py`'s and
+`tests/unit/test_catalog_conformance.py`'s own `IsolationTests`).
+
+`--jobs` runs that many builds at once, each on its own worker. Each worker
+creates **one** scratch checkout the first time it is handed a target and
+reuses it for every target it builds after that, for as long as the run
+lasts — never created fresh per target, never shared with another worker.
+That reuse is this project's build cache (apt lists, downloaded packages:
+whatever of a build's own `.build/` survives between builds) and its
+isolation in the same move: two workers never share one checkout's apt
+state, which is exactly the collision a shared cache volume caused this
+project once before (two `./build.sh` runs on one bundle, the reason
+`bundle_launcher.sh` carries its own `dist/build.pid` guard today). A
+worker whose attempt at a target raises outright — not an ordinary failed
+build, which always comes back as a normal result, but a crash in the
+scheduling code around it — does not wedge the run: `tools/job_queue.py`
+requeues that one target once for another worker to attempt, and only
+records it as failed if the retry also raises. Each target's log still
+streams to its own file as it happens (`--log`, unaffected by how many
+workers are running; nothing here buffers a target's log until it finishes),
+so watching one target in a parallel run never shows another's output.
+
+`--jobs auto` derives the safe count from this machine rather than
+guessing: free disk under the checkout (40 GB/build), free space in the
+container runtime's own storage (30 GB/build), memory (4 GB/build — a
+documented assumption, not a measurement: this engine publishes no number,
+`tools/host_resources.py` names it so it can be argued with) and CPUs (2/build,
+the one factor floored at 1 regardless of core count, since running one
+build with fewer cores than assumed only slows it down — the other three
+are not floored, so a machine that cannot feed even one build is refused
+outright, `--jobs` value or not). The smallest of the four wins; an
+explicit `--jobs` above it is refused with the reason, not silently capped:
+
+```
+--jobs 11 exceeds what this machine can safely feed (10): disk allows 10
+(400 GB free / 40 GB per build), memory allows 16 (64 GB / 4 GB per build),
+CPUs allow 16 (32 cores / 2 per build); pass --jobs auto to use 10
+```
+
+`tools/catalog_conformance.py build` takes the same `jobs` key in its
+config (`"1"` or `"auto"`, default `"1"`) and the same treatment: one
+scratch checkout per worker, reused across whatever entries that worker is
+handed, `--jobs auto`'s formula unchanged.
+
+### The queue seam
+
+`tools/job_queue.py`'s `LocalJobQueue` is in-process and in-memory — gone
+when the run ends — behind a small interface (`take()` the next target,
+`mark_running()`, `record_result()`, `requeue()`) neither
+`tools/build_matrix.py` nor `tools/catalog_conformance.py` reaches past.
+Nothing here builds it, but that seam is where a later hosted build service
+("What a hosted build service would still need", below) would put a real
+queue shared across machines: a remote implementation leases the next
+target from a service over HTTP in `take()`, renews the lease in
+`mark_running()`, posts the outcome and releases the lease in
+`record_result()`, and abandons it early in `requeue()` — without changing
+a line of `run_parallel` or either caller, which only ever call those four
+methods on whatever `JobQueue` they were handed.
 
 ## The report
 
@@ -177,7 +252,15 @@ same rule for the conformance tool: its own fake `tools/synos` covers
 `build`, and `check`'s archive and registry lookups go through injectable
 `fetcher`/`inspector` parameters a test replaces with an in-memory fake
 `Packages.gz` and a fake `skopeo` answer — no test in that file opens a
-real network connection either.
+real network connection either. `tests/unit/test_scratch_checkout.py`,
+`tests/unit/test_host_resources.py` and `tests/unit/test_job_queue.py`
+carry the same rule down into the isolation and parallelism layer
+underneath both tools: the first two run the real `git`/disk-usage/CPU-count
+machinery against fixed numbers or this actual repository (worktree
+creation is not a build), and the third runs `tools/job_queue.py`'s
+scheduler — several fake builds at once, one made to crash and retried,
+several made to crash at once — entirely against in-memory fakes, never a
+real `tools/synos`.
 
 ## Proving the published catalog: tools/catalog_conformance.py
 

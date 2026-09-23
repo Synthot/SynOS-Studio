@@ -8,9 +8,11 @@ import importlib.util
 import json
 import os
 import stat
+import subprocess
 import sys
 import tempfile
 import textwrap
+import threading
 import unittest
 from pathlib import Path
 
@@ -63,8 +65,12 @@ FAKE_SYNOS = textwrap.dedent("""\
 
 
 class FakeSynos:
-    """A stand-in for tools/synos: build_matrix.SYNOS is pointed at this
-    script's path for the duration of the test, and restored after."""
+    """A stand-in for tools/synos: build_matrix._synos_for (called with the
+    disposable scratch checkout run_one just created) is pointed at this
+    script's path for the duration of the test, and restored after. A real
+    scratch checkout is still created and removed around it (run_one does
+    that regardless of which synos path it is handed), so these tests also
+    exercise the isolation machinery itself, just not a real build inside it."""
 
     def __init__(self, mode: str = "success"):
         self.mode = mode
@@ -74,14 +80,14 @@ class FakeSynos:
         self.path.chmod(self.path.stat().st_mode | stat.S_IEXEC)
 
     def __enter__(self):
-        self._old_synos = build_matrix.SYNOS
+        self._old_synos_for = build_matrix._synos_for
         self._old_env = os.environ.get("FAKE_SYNOS_MODE")
-        build_matrix.SYNOS = self.path
+        build_matrix._synos_for = lambda scratch_path: self.path
         os.environ["FAKE_SYNOS_MODE"] = self.mode
         return self
 
     def __exit__(self, *exc):
-        build_matrix.SYNOS = self._old_synos
+        build_matrix._synos_for = self._old_synos_for
         if self._old_env is None:
             os.environ.pop("FAKE_SYNOS_MODE", None)
         else:
@@ -239,28 +245,198 @@ class ResumeTests(unittest.TestCase):
             self.assertEqual([], to_run, "an unchanged, successful target must not be rebuilt on --resume")
 
 
+def _git_status(cwd: Path) -> str:
+    return subprocess.run(["git", "status", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
+
+
+def _git_worktree_list(cwd: Path) -> str:
+    return subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
+
+
+class IsolationTests(unittest.TestCase):
+    """Pins the regression this class is named for: `tools/synos build
+    <bundle>` applies the bundle's files into whatever checkout its own
+    tools/synos script lives in. Before tools/scratch_checkout.py, run_one
+    invoked *this* checkout's own tools/synos, so a real run wrote one
+    profiles/<id>.yml per catalog entry straight into this checkout — dirty
+    git status, and tests/unit/test_bundle_catalog.py's own guard against a
+    catalog entry shadowing an engine profile then failing for everyone,
+    not just whoever ran the matrix."""
+
+    def test_the_planner_and_a_faked_build_over_a_real_catalog_entry_leave_this_checkout_unchanged(self) -> None:
+        targets_by_id = {t.id: t for t in build_matrix.plan_catalog_targets(ROOT)}
+        target = targets_by_id["web-server-nginx"]
+        before_status = _git_status(ROOT)
+        before_worktrees = _git_worktree_list(ROOT)
+
+        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
+            record = build_matrix.run_one(target, output_dir=Path(tmp), timeout_seconds=30,
+                                          image=None, pull=False, run_smoke=False, root=ROOT)
+
+        self.assertEqual("success", record["status"])
+        self.assertEqual(before_status, _git_status(ROOT), "a matrix run must leave this checkout's git status exactly as it found it")
+        self.assertEqual(before_worktrees, _git_worktree_list(ROOT), "the scratch worktree must be removed, not left registered")
+        self.assertFalse((ROOT / "profiles" / "web-server-nginx.yml").exists(),
+                         "web-server-nginx's profile must never land in this checkout's own profiles/")
+
+    def test_a_real_bundle_apply_over_a_real_catalog_entry_lands_in_the_scratch_checkout_only(self) -> None:
+        """The same isolation, without faking tools/synos at all: a real
+        `bundle apply` (the part of `build` this regression is actually
+        about) really writes profiles/web-server-nginx.yml — inside the
+        scratch checkout it was run in, never here."""
+        targets_by_id = {t.id: t for t in build_matrix.plan_catalog_targets(ROOT)}
+        target = targets_by_id["web-server-nginx"]
+        before_status = _git_status(ROOT)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            scratch_path = build_matrix.scratch_checkout.create(ROOT, Path(tmp) / "scratch", label="isolation-test")
+            try:
+                build_source = build_matrix._materialize_source(target, ROOT, scratch_path)
+                synos_path = build_matrix._synos_for(scratch_path)
+                result = subprocess.run([sys.executable, str(synos_path), "--json", "bundle", "apply", str(build_source)],
+                                        cwd=scratch_path, capture_output=True, text=True, check=False)
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                self.assertTrue((scratch_path / "profiles" / "web-server-nginx.yml").is_file(),
+                               "the real apply must have written the profile inside the scratch checkout")
+                self.assertFalse((ROOT / "profiles" / "web-server-nginx.yml").exists(),
+                                 "and must never have written it into this checkout")
+            finally:
+                build_matrix.scratch_checkout.remove(scratch_path)
+
+        self.assertEqual(before_status, _git_status(ROOT))
+
+    def test_scratch_checkout_is_cleaned_up_even_when_the_build_raises(self) -> None:
+        targets_by_id = {t.id: t for t in build_matrix.plan_catalog_targets(ROOT)}
+        target = targets_by_id["web-server-nginx"]
+        before_worktrees = _git_worktree_list(ROOT)
+
+        def _boom(scratch_path):
+            raise RuntimeError("simulated crash before the build even starts")
+
+        old_synos_for = build_matrix._synos_for
+        build_matrix._synos_for = _boom
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                record = build_matrix.run_one(target, output_dir=Path(tmp), timeout_seconds=30,
+                                              image=None, pull=False, run_smoke=False, root=ROOT)
+        finally:
+            build_matrix._synos_for = old_synos_for
+
+        self.assertEqual("error", record["status"])
+        self.assertEqual(before_worktrees, _git_worktree_list(ROOT), "a crash mid-target must still remove its scratch worktree")
+
+
+class ParallelismTests(unittest.TestCase):
+    """tools/job_queue.py drives the real scheduling (tests/unit/test_job_queue.py
+    covers that in isolation); these prove the wiring in run_targets_in_parallel
+    itself: each worker gets its own scratch checkout, reuses it across every
+    target that worker is handed, and the checkout this runs from stays
+    exactly as it was found — no test here shells out to a real build."""
+
+    def _catalog_targets(self, ids: list[str]) -> list["build_matrix.Target"]:
+        by_id = {t.id: t for t in build_matrix.plan_catalog_targets(ROOT)}
+        return [by_id[i] for i in ids]
+
+    def test_each_worker_gets_its_own_scratch_checkout(self) -> None:
+        targets = self._catalog_targets(["web-server-nginx", "web-server-apache", "web-server-caddy", "git-server"])
+        seen: list[str] = []
+        seen_lock = threading.Lock()
+
+        with FakeSynos("success") as fake:
+            def recording_synos_for(scratch_path, _fake_path=fake.path):
+                with seen_lock:
+                    seen.append(str(scratch_path))
+                return _fake_path
+
+            old = build_matrix._synos_for
+            build_matrix._synos_for = recording_synos_for
+            try:
+                with tempfile.TemporaryDirectory() as tmp:
+                    results = build_matrix.run_targets_in_parallel(
+                        targets, output_dir=Path(tmp), timeout_seconds=30, image=None, pull=False,
+                        run_smoke=False, jobs=4, root=ROOT)
+            finally:
+                build_matrix._synos_for = old
+
+        self.assertEqual(4, len(results))
+        self.assertTrue(all(r["status"] == "success" for r in results.values()))
+        scratch_paths_used = set(seen)
+        self.assertGreaterEqual(len(scratch_paths_used), 2,
+                                "four targets across four workers must use more than one scratch checkout")
+        self.assertLessEqual(len(scratch_paths_used), 4, "no more scratch checkouts than workers")
+
+    def test_a_single_worker_reuses_its_scratch_checkout_across_targets(self) -> None:
+        targets = self._catalog_targets(["web-server-nginx", "web-server-apache"])
+        scratch_paths_used: list[str] = []
+
+        with FakeSynos("success") as fake:
+            def recording_synos_for(scratch_path, _fake_path=fake.path):
+                scratch_paths_used.append(str(scratch_path))
+                return _fake_path
+
+            old = build_matrix._synos_for
+            build_matrix._synos_for = recording_synos_for
+            try:
+                with tempfile.TemporaryDirectory() as tmp:
+                    results = build_matrix.run_targets_in_parallel(
+                        targets, output_dir=Path(tmp), timeout_seconds=30, image=None, pull=False,
+                        run_smoke=False, jobs=1, root=ROOT)
+            finally:
+                build_matrix._synos_for = old
+
+        self.assertEqual(2, len(results))
+        self.assertEqual(1, len(set(scratch_paths_used)), "one worker must reuse the same scratch checkout for both targets")
+
+    def test_a_parallel_run_leaves_this_checkout_unchanged_with_no_worktrees_left(self) -> None:
+        targets = self._catalog_targets(["web-server-nginx", "web-server-apache", "web-server-caddy"])
+        before_status = _git_status(ROOT)
+        before_worktrees = _git_worktree_list(ROOT)
+
+        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
+            results = build_matrix.run_targets_in_parallel(
+                targets, output_dir=Path(tmp), timeout_seconds=30, image=None, pull=False,
+                run_smoke=False, jobs=3, root=ROOT)
+
+        self.assertEqual(3, len(results))
+        self.assertEqual(before_status, _git_status(ROOT))
+        self.assertEqual(before_worktrees, _git_worktree_list(ROOT))
+
+    def test_resolve_jobs_auto_is_wired_to_host_resources(self) -> None:
+        jobs, problems = build_matrix.resolve_jobs("auto")
+        self.assertEqual([], problems)
+        self.assertGreaterEqual(jobs, 0)
+
+
 class DiskGuardTests(unittest.TestCase):
+    """build_matrix.resolve_jobs itself; the numbers behind it (disk, memory,
+    CPU derivation) are tested directly in tests/unit/test_host_resources.py."""
+
     def test_refuses_when_free_space_is_short(self) -> None:
         class TinyDisk:
             free = 1 * 1024**3
             total = 2 * 1024**3
             used = 1 * 1024**3
 
-        original = build_matrix.shutil.disk_usage
-        build_matrix.shutil.disk_usage = lambda path: TinyDisk()
+        original = build_matrix.host_resources.shutil.disk_usage
+        build_matrix.host_resources.shutil.disk_usage = lambda path: TinyDisk()
         try:
-            problems = build_matrix.guard_host(1)
+            jobs, problems = build_matrix.resolve_jobs("1")
         finally:
-            build_matrix.shutil.disk_usage = original
-        self.assertTrue(any("GB free" in p or "GB is needed" in p for p in problems))
+            build_matrix.host_resources.shutil.disk_usage = original
+        self.assertTrue(problems, "1 GB free must not be enough for even one build")
 
-    def test_refuses_a_jobs_count_this_machine_has_no_cpus_for(self) -> None:
-        problems = build_matrix.guard_host(10_000)
+    def test_refuses_an_explicit_count_above_the_derived_safe_maximum(self) -> None:
+        jobs, problems = build_matrix.resolve_jobs("10000")
         self.assertTrue(any("--jobs" in p for p in problems))
 
     def test_refuses_zero_or_negative_jobs(self) -> None:
-        problems = build_matrix.guard_host(0)
+        jobs, problems = build_matrix.resolve_jobs("0")
         self.assertTrue(any("--jobs" in p for p in problems))
+
+    def test_auto_never_needs_a_reason(self) -> None:
+        jobs, problems = build_matrix.resolve_jobs("auto")
+        self.assertEqual([], problems)
+        self.assertGreaterEqual(jobs, 1)
 
 
 class HumanSummaryTests(unittest.TestCase):

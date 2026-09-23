@@ -24,6 +24,15 @@ build succeeded and qemu-system-x86_64/xorriso are on PATH; its result is
 recorded alongside the build's, never fed back into the build's own
 exit code.
 
+`tools/synos build` applies a bundle's files into whatever checkout its own
+`tools/synos` script lives in before building; invoked as *this* checkout's
+`tools/synos` that would leave a `profiles/<id>.yml` behind per catalog
+entry. Every build here instead runs inside a disposable `git worktree` of
+this checkout (tools/scratch_checkout.py), so this checkout is left exactly
+as this run found it — verified by `tests/unit/test_build_matrix.py`'s own
+`git status --porcelain` check — no matter how many targets run or how the
+run ends, killed or not.
+
 The plan, the guard and the report never need the network; a build already
 does, and nothing here asks for more than that.
 
@@ -44,14 +53,12 @@ host cannot even start (disk, --jobs, missing engine).
 from __future__ import annotations
 
 import argparse
-import concurrent.futures
 import datetime
 import hashlib
 import importlib.machinery
 import importlib.util
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -63,8 +70,6 @@ ROOT = Path(__file__).resolve().parent.parent
 SYNOS = ROOT / "tools" / "synos"
 CORE_MANIFEST_DIR = ROOT / ".build" / "matrix" / "manifests"
 
-MIN_FREE_GB = 40          # tools/synos MIN_FREE_GB: the working checkout
-MIN_STORE_GB = 30         # bundle_launcher.sh: the container runtime's own storage
 DEFAULT_TIMEOUT_MINUTES = 90
 DEFAULT_OUTPUT = ROOT / "dist" / "matrix"
 LOG_TAIL_LINES = 60
@@ -85,6 +90,9 @@ render_manifest = _load("render_manifest_bm", ROOT / "tools" / "render_manifest.
 
 sys.path.insert(0, str(ROOT / "tools"))
 import smoke_test  # noqa: E402
+import scratch_checkout  # noqa: E402
+import host_resources  # noqa: E402
+import job_queue  # noqa: E402
 
 
 # --------------------------------------------------------------- planning
@@ -204,46 +212,16 @@ def select_targets(targets: list[Target], *, only: list[str] | None, base: list[
 
 
 # ------------------------------------------------------------- host guard
-def _container_engine() -> str | None:
-    return shutil.which("podman") or shutil.which("docker")
-
-
-def _container_store(engine: str) -> str | None:
-    for fmt in ("{{.DockerRootDir}}", "{{.Store.GraphRoot}}"):
-        result = subprocess.run([engine, "info", "--format", fmt], capture_output=True, text=True, check=False, timeout=20)
-        value = result.stdout.strip()
-        if result.returncode == 0 and value and "{{" not in value and value != "<no value>":
-            return value
-    return None
-
-
-def guard_host(jobs: int) -> list[str]:
-    """Refuses a run this machine cannot feed: not enough disk here, not
-    enough in the container runtime's own storage, no engine at all, or a
-    --jobs count this checkout has no evidence it can sustain (tools/synos
-    MIN_FREE_GB, bundle_launcher.sh's storage check, both scaled by jobs)."""
-    problems = []
-    if jobs < 1:
-        problems.append("--jobs must be at least 1")
-    cpu = os.cpu_count() or 1
-    if jobs > cpu:
-        problems.append(f"--jobs {jobs} exceeds {cpu} CPUs available; each build already uses several")
-    free_root = shutil.disk_usage(ROOT).free / 1024**3
-    need_root = MIN_FREE_GB * max(jobs, 1)
-    if free_root < need_root:
-        problems.append(f"at least {need_root:.0f} GB free is needed under {ROOT} for {jobs} concurrent build(s); {free_root:.0f} GB available")
-    engine = _container_engine()
-    if not engine:
+def resolve_jobs(requested: str) -> tuple[int, list[str]]:
+    """--jobs "auto" derives the safe count from this machine's own disk,
+    memory and CPUs (tools/host_resources.py, the same formula
+    tools/catalog_conformance.py uses); an explicit count above that is
+    refused with the reason, not silently capped. Also refuses when there
+    is no container engine at all, which no job count helps."""
+    jobs, problems = host_resources.resolve_jobs(requested, ROOT)
+    if not host_resources.container_engine():
         problems.append("podman or docker is required")
-    else:
-        store = _container_store(engine)
-        if store and Path(store).is_dir():
-            free_store = shutil.disk_usage(store).free / 1024**3
-            need_store = MIN_STORE_GB * max(jobs, 1)
-            if free_store < need_store:
-                problems.append(f"the container runtime keeps its storage under {store}, "
-                                f"which has {free_store:.0f} GB free; {need_store:.0f} GB are needed for {jobs} concurrent build(s)")
-    return problems
+    return jobs, problems
 
 
 # -------------------------------------------------------------- execution
@@ -269,13 +247,68 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _resolved_profile(profile_id: str) -> dict:
-    resolved, _chain = render_manifest.resolve_profile(profile_id)
-    return resolved
+def _resolve_bundle_profile(profile_id: str, own_text: str | None) -> dict:
+    """A profile as one bundle-catalog folder ships it, `extends` merged the
+    way tools/render_manifest.py merges it, read straight from that folder's
+    own profiles/<id>.yml (own_text) rather than from this checkout's
+    profiles/ — nothing is ever applied into this checkout any more, so its
+    own profiles/ never carries a catalog entry's profile to read back."""
+    import yaml
+    if own_text is None:
+        resolved, _chain = render_manifest.resolve_profile(profile_id)
+        return resolved
+    data = yaml.safe_load(own_text)
+    parent = data.get("extends")
+    body = {k: v for k, v in data.items() if k not in {"id", "extends", "description"}}
+    if not parent:
+        return body
+    parent_data, _chain = render_manifest.resolve_profile(parent)
+    return render_manifest.deep_merge(parent_data, body)
+
+
+def _resolved_profile(target: Target) -> dict:
+    if target.kind != "catalog":
+        resolved, _chain = render_manifest.resolve_profile(target.profile_id)
+        return resolved
+    profile_path = target.source / "profiles" / f"{target.profile_id}.yml"
+    own_text = profile_path.read_text(encoding="utf-8") if profile_path.is_file() else None
+    return _resolve_bundle_profile(target.profile_id, own_text)
+
+
+def _synos_for(scratch_path: Path) -> Path:
+    """The scratch checkout's own tools/synos — its ROOT resolves to the
+    scratch checkout, not this one, which is the entire point (tests
+    monkeypatch this name to stand in a fake build without needing a real
+    container runtime)."""
+    return scratch_path / "tools" / "synos"
+
+
+def _materialize_source(target: Target, root: Path, scratch_path: Path) -> Path:
+    """Where to point `synos build` inside the scratch checkout. A catalog
+    entry's bundle-catalog/<folder> is an ordinary tracked directory, so the
+    worktree already has it checked out; a core target's manifest lives
+    under this checkout's own .build/ (git-ignored, written at plan time),
+    which a worktree of a commit never carries, so its exact text is copied
+    into the scratch checkout's own .build/ before building."""
+    relative = target.source.relative_to(root)
+    if target.kind == "core":
+        dest = scratch_path / relative
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(target.source.read_text(encoding="utf-8"), encoding="utf-8")
+        return dest
+    return scratch_path / relative
 
 
 def run_one(target: Target, *, output_dir: Path, timeout_seconds: int, image: str | None,
-            pull: bool, run_smoke: bool) -> dict:
+            pull: bool, run_smoke: bool, root: Path = ROOT, scratch_path: Path | None = None,
+            scratch_base: Path | None = None) -> dict:
+    """Builds one target inside `scratch_path`. When `scratch_path` is not
+    given, a scratch checkout is created and removed just for this one call
+    (used directly by tests and by anything building a single target); a
+    parallel run instead passes in a scratch checkout one worker owns for
+    its whole run (tools/job_queue.py's run_parallel), so several targets
+    from the same worker share and reuse its cache without ever sharing a
+    checkout across workers."""
     target_dir = output_dir / "targets" / target.id
     target_dir.mkdir(parents=True, exist_ok=True)
     log_path = target_dir / "build.log"
@@ -284,15 +317,21 @@ def run_one(target: Target, *, output_dir: Path, timeout_seconds: int, image: st
               "duration_s": None, "exit_code": None, "status": "running", "iso": None, "log_path": str(log_path),
               "log_tail": [], "smoke": None}
 
-    argv = [sys.executable, str(SYNOS), "--json", "build", str(target.source), "--output", str(target_dir), "--log", str(log_path)]
-    if image:
-        argv += ["--image", image]
-    if pull:
-        argv.append("--pull")
-
+    owns_scratch = scratch_path is None
     payload: dict = {}
     try:
-        completed = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, timeout=timeout_seconds, check=False)
+        if owns_scratch:
+            scratch_base = scratch_base or (output_dir / "scratch")
+            scratch_path = scratch_checkout.create(root, scratch_base, label=target.id)
+        build_source = _materialize_source(target, root, scratch_path)
+        argv = [sys.executable, str(_synos_for(scratch_path)), "--json", "build", str(build_source),
+                "--output", str(target_dir), "--log", str(log_path)]
+        if image:
+            argv += ["--image", image]
+        if pull:
+            argv.append("--pull")
+        completed = subprocess.run(argv, cwd=scratch_path, capture_output=True, text=True,
+                                   timeout=timeout_seconds, check=False)
         result["exit_code"] = completed.returncode
         try:
             payload = json.loads(completed.stdout) if completed.stdout.strip() else {}
@@ -307,9 +346,15 @@ def run_one(target: Target, *, output_dir: Path, timeout_seconds: int, image: st
         result["status"] = "timeout"
         result["exit_code"] = None
         result["log_tail"] = _tail(log_path)
+    except scratch_checkout.ScratchCheckoutError as exc:
+        result["status"] = "error"
+        result["log_tail"] = [f"could not create a scratch checkout: {exc}"]
     except Exception as exc:  # noqa: BLE001 - one target's crash must not abort the run
         result["status"] = "error"
         result["log_tail"] = [f"{type(exc).__name__}: {exc}"]
+    finally:
+        if owns_scratch and scratch_path is not None:
+            scratch_checkout.remove(scratch_path)
 
     end = time.monotonic()
     result["end"] = _now()
@@ -324,7 +369,7 @@ def run_one(target: Target, *, output_dir: Path, timeout_seconds: int, image: st
     if result["status"] == "success" and run_smoke:
         if result["iso"]:
             try:
-                profile = _resolved_profile(target.profile_id)
+                profile = _resolved_profile(target)
             except Exception as exc:  # noqa: BLE001
                 profile = {}
                 result["smoke"] = {"status": "error", "reason": f"could not resolve profile {target.profile_id!r}: {exc}"}
@@ -412,6 +457,36 @@ def targets_to_run(targets: list["Target"], report: dict, *, resume: bool) -> li
     return to_run
 
 
+def run_targets_in_parallel(to_run: list["Target"], *, output_dir: Path, timeout_seconds: int, image: str | None,
+                            pull: bool, run_smoke: bool, jobs: int, root: Path = ROOT,
+                            scratch_root_dir: Path | None = None, on_result=None) -> dict:
+    """Runs `to_run` with `jobs` workers (tools/job_queue.py). Each worker
+    owns exactly one scratch checkout (tools/scratch_checkout.py) for this
+    call's whole lifetime, created the first time that worker is handed a
+    target and removed only once every target is done — reused across every
+    target that worker builds, never shared with another worker. That reuse
+    is this project's per-worker build cache (apt lists, downloaded
+    packages: whatever of .build/ survives between builds), the isolation
+    that keeps two concurrent builds from colliding the way two `./build.sh`
+    runs on one bundle once did (docs/BUILD_MATRIX.md)."""
+    scratch_root_dir = scratch_root_dir or (output_dir / "scratch")
+    worker_scratch: dict[int, Path] = {}
+
+    def build_one(target: "Target", worker_id: int) -> dict:
+        scratch_path = worker_scratch.get(worker_id)
+        if scratch_path is None:
+            scratch_path = scratch_checkout.create(root, scratch_root_dir, label=f"worker-{worker_id}")
+            worker_scratch[worker_id] = scratch_path
+        return run_one(target, output_dir=output_dir, timeout_seconds=timeout_seconds, image=image,
+                       pull=pull, run_smoke=run_smoke, root=root, scratch_path=scratch_path)
+
+    try:
+        return job_queue.run_parallel(to_run, jobs, build_one, on_result=on_result)
+    finally:
+        for scratch_path in worker_scratch.values():
+            scratch_checkout.remove(scratch_path)
+
+
 # --------------------------------------------------------------- summary
 def human_summary(report: dict) -> str:
     lines = [f"{'target':<28} {'kind':<8} {'result':<12} {'duration':>9} {'iso size':>10}"]
@@ -439,7 +514,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base", help="comma-separated base ids to restrict to")
     parser.add_argument("--suite", help="comma-separated suites to restrict to")
     parser.add_argument("--kind", choices=["catalog", "core"], help="restrict to one kind of target")
-    parser.add_argument("--jobs", type=int, default=1, help="builds to run at once (default 1)")
+    parser.add_argument("--jobs", default="1",
+                        help="builds to run at once: a number, or \"auto\" to derive the safe count from this "
+                             "machine's disk, memory and CPUs (tools/host_resources.py); default 1")
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_MINUTES, help="per-build timeout in minutes")
     parser.add_argument("--image", default=os.environ.get("SYNOS_BUILDER_IMAGE"),
                         help="builder image for every target (default: $SYNOS_BUILDER_IMAGE, else the engine's own selection)")
@@ -462,11 +539,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\n{len(targets)} target(s)")
         if args.dry_run:
             timeout_seconds = int(args.timeout * 60)
-            print(f"jobs={args.jobs} timeout={args.timeout:.0f}m image={args.image or '(engine default)'} "
+            safe_jobs, factors = host_resources.derive_safe_jobs(ROOT)
+            print(f"jobs={args.jobs} (auto would use {safe_jobs}: {host_resources.explain(factors)}) "
+                  f"timeout={args.timeout:.0f}m image={args.image or '(engine default)'} "
                   f"pull={args.pull} smoke={not args.no_smoke} output={args.output}")
             for target in targets:
-                argv_preview = [str(SYNOS), "--json", "build", str(target.source), "--output",
-                                str(args.output / 'targets' / target.id), "--log",
+                # The real synos path and build source are only known once a
+                # disposable scratch checkout exists (run_one, tools/scratch_checkout.py);
+                # this previews the shape of that command, not a literal one.
+                relative_source = target.source.relative_to(ROOT)
+                argv_preview = ["<scratch-checkout>/tools/synos", "--json", "build", f"<scratch-checkout>/{relative_source}",
+                                "--output", str(args.output / 'targets' / target.id), "--log",
                                 str(args.output / 'targets' / target.id / 'build.log')]
                 if args.image:
                     argv_preview += ["--image", args.image]
@@ -475,7 +558,7 @@ def main(argv: list[str] | None = None) -> int:
                 print("  " + " ".join(argv_preview))
         return EXIT_OK
 
-    problems = guard_host(args.jobs)
+    jobs, problems = resolve_jobs(args.jobs)
     if problems:
         for problem in problems:
             print(f"error: {problem}", file=sys.stderr)
@@ -495,18 +578,19 @@ def main(argv: list[str] | None = None) -> int:
 
     timeout_seconds = int(args.timeout * 60)
 
-    def _run_and_record(target: Target) -> None:
-        record = run_one(target, output_dir=output_dir, timeout_seconds=timeout_seconds, image=args.image,
-                          pull=args.pull, run_smoke=not args.no_smoke)
+    def _on_result(target: Target, record: dict) -> None:
         with _STATE_LOCK:
             report["targets"][target.id] = record
             _write_report(report_path, report)
             update_build_status(ROOT, targets_by_id, report)
-        print(f"{target.id}: {record['status']} ({record['duration_s']:.0f}s)", file=sys.stderr)
+        duration = record.get("duration_s")
+        suffix = f" ({duration:.0f}s)" if duration is not None else ""
+        print(f"{target.id}: {record['status']}{suffix}", file=sys.stderr)
 
     if to_run:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max(args.jobs, 1)) as pool:
-            list(pool.map(_run_and_record, to_run))
+        print(f"building {len(to_run)} target(s) with {jobs} worker(s)", file=sys.stderr)
+        run_targets_in_parallel(to_run, output_dir=output_dir, timeout_seconds=timeout_seconds, image=args.image,
+                                pull=args.pull, run_smoke=not args.no_smoke, jobs=jobs, root=ROOT, on_result=_on_result)
 
     _write_report(report_path, report)
     summary_text = human_summary(report)

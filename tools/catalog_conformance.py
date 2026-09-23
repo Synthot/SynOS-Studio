@@ -43,6 +43,12 @@ Never invents a shell command from a name read out of a catalog: every
 process here is started from an argument vector. Never runs a real build
 or hits a real network in its own test suite (tests/unit/test_catalog_conformance.py);
 both are behind pluggable fetch/inspect functions a test replaces with a fake.
+
+`tools/synos build` applies a bundle's files into whatever checkout its own
+`tools/synos` script lives in; `build` here runs every entry inside a
+disposable `git worktree` of this checkout (tools/scratch_checkout.py), the
+same fix tools/build_matrix.py uses, so a conformance run never applies a
+downloaded catalog entry's files into this checkout either.
 """
 from __future__ import annotations
 
@@ -86,6 +92,9 @@ render_manifest = _load("render_manifest_cc", ROOT / "tools" / "render_manifest.
 
 sys.path.insert(0, str(ROOT / "tools"))
 import smoke_test  # noqa: E402
+import scratch_checkout  # noqa: E402
+import host_resources  # noqa: E402
+import job_queue  # noqa: E402
 
 
 class ConformanceError(Exception):
@@ -107,6 +116,7 @@ class Config:
     min_store_gb: float = MIN_STORE_GB
     max_builds_per_run: int = DEFAULT_MAX_BUILDS
     build_timeout_minutes: float = DEFAULT_TIMEOUT_MINUTES
+    jobs: str = "1"
     smoke: bool = True
     image: str | None = None
     pull: bool = False
@@ -126,6 +136,8 @@ class Config:
             raise ConformanceError(f"{path}: unknown config key(s): {', '.join(sorted(unknown))}")
         data = dict(data)
         data["workdir"] = Path(data["workdir"]).expanduser()
+        if "jobs" in data:
+            data["jobs"] = str(data["jobs"])  # YAML "jobs: 2" parses as an int; "auto" stays a string either way
         return cls(**data)
 
 
@@ -233,29 +245,30 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def guard_host(config: Config) -> list[str]:
-    problems = []
-    free_root = shutil.disk_usage(ROOT).free / 1024**3
-    if free_root < config.min_free_gb:
-        problems.append(f"at least {config.min_free_gb:.0f} GB free is needed under {ROOT}; {free_root:.0f} GB available")
-    engine = shutil.which("podman") or shutil.which("docker")
-    if not engine:
+def resolve_jobs(config: Config) -> tuple[int, list[str]]:
+    """config.jobs ("auto" or a count) checked against what this machine can
+    actually feed (tools/host_resources.py, the same formula
+    tools/build_matrix.py uses); also refuses when there is no container
+    engine at all, which no job count helps."""
+    jobs, problems = host_resources.resolve_jobs(config.jobs, ROOT, min_free_gb=config.min_free_gb,
+                                                 min_store_gb=config.min_store_gb)
+    if not host_resources.container_engine():
         problems.append("podman or docker is required")
-    else:
-        for fmt in ("{{.DockerRootDir}}", "{{.Store.GraphRoot}}"):
-            result = subprocess.run([engine, "info", "--format", fmt], capture_output=True, text=True, check=False, timeout=20)
-            value = result.stdout.strip()
-            if result.returncode == 0 and value and "{{" not in value and value != "<no value>":
-                if Path(value).is_dir():
-                    free_store = shutil.disk_usage(value).free / 1024**3
-                    if free_store < config.min_store_gb:
-                        problems.append(f"the container runtime's storage under {value} has {free_store:.0f} GB free; "
-                                        f"{config.min_store_gb:.0f} GB are needed")
-                break
-    return problems
+    return jobs, problems
 
 
-def build_one(entry: dict, *, config: Config, work_dir: Path) -> dict:
+def _synos_for(scratch_path: Path) -> Path:
+    """The scratch checkout's own tools/synos — its ROOT resolves to the
+    scratch checkout, not this one (tests monkeypatch this name)."""
+    return scratch_path / "tools" / "synos"
+
+
+def build_one(entry: dict, *, config: Config, work_dir: Path, root: Path = ROOT,
+             scratch_path: Path | None = None, scratch_base: Path | None = None) -> dict:
+    """Builds one entry inside `scratch_path`. Without one, a scratch
+    checkout is created and removed just for this call (single-entry use,
+    tests); a parallel run instead passes in a scratch checkout one worker
+    owns for its whole run (tools/job_queue.py's run_parallel via run_build)."""
     result = {"id": entry["id"], "kind": "catalog", "base": None, "suite": None, "checksum": _sha256_entry(entry),
               "engine": synos_engine.engine_version(), "start": _now(), "end": None, "duration_s": None,
               "exit_code": None, "status": "running", "iso": None, "log_path": None, "log_tail": [], "smoke": None}
@@ -278,15 +291,23 @@ def build_one(entry: dict, *, config: Config, work_dir: Path) -> dict:
         result["duration_s"] = round(time.monotonic() - start, 1)
         return result
 
-    argv = [sys.executable, str(SYNOS), "--json", "build", str(bundle_dir), "--output", str(target_dir), "--log", str(log_path)]
-    if config.image:
-        argv += ["--image", config.image]
-    if config.pull:
-        argv.append("--pull")
-
+    owns_scratch = scratch_path is None
     payload: dict = {}
     try:
-        completed = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True,
+        # bundle_dir already lives outside `root` (prepare_bundle_dir wrote it
+        # under work_dir); what must not be `root` is the tools/synos that
+        # applies it, since `apply_bundle` always writes into whatever
+        # checkout *that script* lives in, not wherever bundle_dir is.
+        if owns_scratch:
+            scratch_base = scratch_base or (work_dir / "scratch")
+            scratch_path = scratch_checkout.create(root, scratch_base, label=entry["id"])
+        argv = [sys.executable, str(_synos_for(scratch_path)), "--json", "build", str(bundle_dir),
+                "--output", str(target_dir), "--log", str(log_path)]
+        if config.image:
+            argv += ["--image", config.image]
+        if config.pull:
+            argv.append("--pull")
+        completed = subprocess.run(argv, cwd=scratch_path, capture_output=True, text=True,
                                    timeout=config.build_timeout_minutes * 60, check=False)
         result["exit_code"] = completed.returncode
         try:
@@ -301,9 +322,15 @@ def build_one(entry: dict, *, config: Config, work_dir: Path) -> dict:
     except subprocess.TimeoutExpired:
         result["status"] = "timeout"
         result["log_tail"] = _tail(log_path)
+    except scratch_checkout.ScratchCheckoutError as exc:
+        result["status"] = "error"
+        result["log_tail"] = [f"could not create a scratch checkout: {exc}"]
     except Exception as exc:  # noqa: BLE001 - one entry's crash must not abort the run
         result["status"] = "error"
         result["log_tail"] = [f"{type(exc).__name__}: {exc}"]
+    finally:
+        if owns_scratch and scratch_path is not None:
+            scratch_checkout.remove(scratch_path)
 
     result["end"] = _now()
     result["duration_s"] = round(time.monotonic() - start, 1)
@@ -350,17 +377,54 @@ def resolve_published_profile(profile_id: str, own_text: str | None) -> dict:
     return render_manifest.deep_merge(parent_data, body)
 
 
-def run_build(config: Config, *, catalog: dict, max_builds: int | None = None) -> dict:
+class _EntryRef:
+    """job_queue.run_parallel only needs `.id` off whatever it schedules;
+    entries are plain dicts, so this is the thinnest wrapper that carries
+    both the id and the entry itself to the worker callback."""
+
+    def __init__(self, entry: dict):
+        self.id = entry["id"]
+        self.entry = entry
+
+
+def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, jobs: int = 1) -> dict:
     entries = catalog["bundle_catalog"]
     limit = max_builds if max_builds is not None else config.max_builds_per_run
+    selected = entries[:limit] if limit else entries
     report = {"mode": "build", "generated": _now(), "engine": synos_engine.engine_version(),
               "catalog_url": config.catalog_url, "targets": {}}
-    for entry in entries[:limit] if limit else entries:
+
+    for entry in selected:
         work_dir = config.workdir / "work" / entry["id"]
         if work_dir.exists():
             shutil.rmtree(work_dir)
-        record = build_one(entry, config=config, work_dir=work_dir)
-        report["targets"][entry["id"]] = record
+
+    # Always goes through job_queue.run_parallel, even at jobs=1: one worker
+    # still owns one scratch checkout across every entry it builds, the same
+    # reuse tools/build_matrix.py's run_targets_in_parallel gives a sequential
+    # run. Each worker owns one scratch checkout for the whole run (tools/job_queue.py,
+    # tools/scratch_checkout.py) — the same treatment tools/build_matrix.py gives
+    # a parallel matrix run, and for the same reason: apply_bundle always writes
+    # into whatever checkout its own tools/synos lives in, so two concurrent
+    # builds must never share one, and reusing it across a worker's own entries
+    # is that worker's build cache (docs/BUILD_MATRIX.md).
+    scratch_root_dir = config.workdir / "scratch"
+    worker_scratch: dict[int, Path] = {}
+
+    def build_one_for_worker(ref: _EntryRef, worker_id: int) -> dict:
+        scratch_path = worker_scratch.get(worker_id)
+        if scratch_path is None:
+            scratch_path = scratch_checkout.create(ROOT, scratch_root_dir, label=f"worker-{worker_id}")
+            worker_scratch[worker_id] = scratch_path
+        work_dir = config.workdir / "work" / ref.id
+        return build_one(ref.entry, config=config, work_dir=work_dir, scratch_path=scratch_path)
+
+    try:
+        results = job_queue.run_parallel([_EntryRef(entry) for entry in selected], jobs, build_one_for_worker)
+    finally:
+        for scratch_path in worker_scratch.values():
+            scratch_checkout.remove(scratch_path)
+    report["targets"] = results
     return report
 
 
@@ -531,12 +595,12 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None) -> int:
     previous = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
 
     if mode == "build":
-        problems = guard_host(config)
+        jobs, problems = resolve_jobs(config)
         if problems:
             for problem in problems:
                 print(f"error: {problem}", file=sys.stderr)
             return 2
-        report = run_build(config, catalog=catalog, max_builds=max_builds)
+        report = run_build(config, catalog=catalog, max_builds=max_builds, jobs=jobs)
     else:
         report = run_check(config, catalog=catalog)
 

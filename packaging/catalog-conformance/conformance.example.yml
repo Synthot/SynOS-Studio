@@ -24,6 +24,14 @@ min_store_gb: 30
 max_builds_per_run: 5
 build_timeout_minutes: 90
 
+# `build` only: how many entries to build at once. "1" (default) or "auto"
+# to derive the safe count from this machine's own disk, memory and CPUs
+# (tools/host_resources.py); an explicit number above what "auto" would
+# pick is refused with the reason. Each worker owns one scratch checkout
+# for the run, reused across every entry that worker builds (docs/BUILD_MATRIX.md,
+# "Isolation and parallelism") — never shared with another worker.
+jobs: "1"
+
 # `build` only: run tools/smoke_test.py on every entry that builds.
 smoke: true
 
