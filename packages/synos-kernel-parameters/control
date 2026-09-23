@@ -4,7 +4,7 @@ Section: admin
 Priority: optional
 Architecture: all
 Maintainer: ${BRAND_VENDOR} <${BRAND_URL_SUPPORT}>
-Depends: linux-generic-hwe-26.04, grub2-common
+Depends: linux-generic-hwe-26.04 | linux-generic-hwe-24.04 | linux-generic-hwe-22.04 | linux-generic, grub2-common
 Depends[debian]: linux-image-${ARCH}, grub2-common
 Conflicts: lowlatency-kernel
 Homepage: ${BRAND_URL_HOME}
