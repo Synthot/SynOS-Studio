@@ -581,6 +581,291 @@ def write_executable(path: Path, content: str) -> None:
     path.chmod(0o755)
 
 
+CHANNEL_TOOLS = ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "cp", "tr",
+                 "dirname", "printf", "mkdir", "rm", "tar", "date", "tee", "mv", "chmod", "cmp", "cksum", "sort")
+
+
+def make_channel_bundle(tmp: Path, channel: str | None, engine_min: str = "0.2.0") -> Path:
+    """A bundle whose bundle.json carries `channel` (omitted when None), for the
+    stable/development resolution tests below."""
+    descriptor = {"format": 1, "manifest": "manifests/x.yml", "engine": {"min": engine_min}}
+    if channel is not None:
+        descriptor["channel"] = channel
+    bundle = write_bundle(tmp / "bundle", descriptor, {"manifests/x.yml": MANIFEST})
+    shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
+    return bundle
+
+
+def fake_df_always(fake: Path, avail_kb: int = 100 * 1024 * 1024) -> None:
+    """A fake `df -Pk PATH` reporting avail_kb free for every path, so these
+    tests never depend on the real disk of the machine they run on."""
+    (fake / "df").unlink()
+    write_executable(fake / "df", (
+        "#!/bin/sh\n"
+        f"printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\\n'\n"
+        f"printf '/dev/fake 1 1 {avail_kb} 1%% %s\\n' \"$2\"\n"
+    ))
+
+
+class StableChannelTests(unittest.TestCase):
+    """docs/BUNDLE.md "Channels": the bundle's own bundle.json channel (default
+    stable), resolved from GitHub releases, refusing rather than guessing, and
+    never silently touching the development branch. Every runtime and network
+    call here is a fake that logs its argv; no real build or fetch ever runs."""
+
+    def make_fake(self, tmp: Path) -> Path:
+        fake = tmp / "bin"
+        fake.mkdir()
+        for tool in CHANNEL_TOOLS:
+            found = shutil.which(tool)
+            if found:
+                (fake / tool).symlink_to(found)
+        fake_df_always(fake)
+        return fake
+
+    def test_stable_is_the_default_and_never_fetches_the_branch_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel=None, engine_min="0.2.0")
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            write_executable(fake / "docker", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{}'\ncase \"$1\" in pull|image) exit 1;; *) exit 0;; esac\n".format(log))
+            curl_log = tmp / "curl.log"
+            # Both the release-list API and any archive download fail (no real
+            # network): this only has to prove which URL stable asks for.
+            write_executable(fake / "curl", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{}'\nexit 1\n".format(curl_log))
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("channel: stable (default; bundle.json names no channel)", result.stdout)
+            calls = curl_log.read_text(encoding="utf-8").splitlines() if curl_log.exists() else []
+            self.assertTrue(any("api.github.com/repos/Synthot/SynOS-Studio/tags" in c for c in calls), calls)
+            self.assertTrue(any("archive/refs/tags/v0.2.0.tar.gz" in c for c in calls), calls)
+            self.assertFalse(any("archive/refs/heads/main" in c for c in calls), "stable must never fetch the branch archive")
+
+    def test_development_channel_from_bundle_json_falls_back_to_the_branch_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel="development", engine_min="0.2.0")
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            write_executable(fake / "docker", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{}'\ncase \"$1\" in pull|image) exit 1;; *) exit 0;; esac\n".format(log))
+            curl_log = tmp / "curl.log"
+            write_executable(fake / "curl", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{}'\nexit 1\n".format(curl_log))
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("channel: development (this bundle was made by a development instance of the page)", result.stdout)
+            self.assertIn("note: the development channel builds against the unreleased tip", result.stdout)
+            calls = curl_log.read_text(encoding="utf-8").splitlines() if curl_log.exists() else []
+            self.assertTrue(any("archive/refs/heads/main.tar.gz" in c for c in calls), calls)
+            self.assertFalse(any("api.github.com" in c for c in calls), "development never calls the release API")
+
+    def test_an_override_wins_over_the_bundle_either_direction(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            write_executable(fake / "docker", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{}'\ncase \"$1\" in pull|image) exit 1;; *) exit 0;; esac\n".format(log))
+            write_executable(fake / "curl", "#!/bin/sh\nexit 1\n")
+            env_base = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+
+            bundle = make_channel_bundle(tmp, channel="development")
+            result = subprocess.run(["sh", "build.sh", "--channel=stable"], cwd=bundle, env=env_base,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertIn("channel: stable (override: the --channel flag)", result.stdout)
+
+            bundle2 = make_channel_bundle(tmp, channel="stable")
+            env2 = dict(env_base, SYNOS_CHANNEL="development")
+            result2 = subprocess.run(["sh", "build.sh"], cwd=bundle2, env=env2,
+                                     capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertIn("channel: development (override: the SYNOS_CHANNEL environment variable)", result2.stdout)
+
+    def test_refusal_when_no_release_satisfies_the_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel=None, engine_min="9.9.9")
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            write_executable(fake / "docker", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> '{}'\ncase \"$1\" in pull|image) exit 1;; *) exit 0;; esac\n".format(log))
+            tags_json = tmp / "tags.json"
+            tags_json.write_text('[{"name": "v0.1.0"}, {"name": "v0.2.0"}]', encoding="utf-8")
+            curl_script = (
+                "#!/bin/sh\n"
+                "out=\"\"; prev=\"\"\n"
+                "for a in \"$@\"; do\n"
+                "    if [ \"$prev\" = \"-o\" ]; then out=$a; fi\n"
+                "    prev=$a\n"
+                "done\n"
+                "case \"$*\" in\n"
+                f"    *'api.github.com/repos/Synthot/SynOS-Studio/tags'*) cp '{tags_json}' \"$out\" ;;\n"
+                "    *) exit 1 ;;\n"
+                "esac\n"
+            )
+            write_executable(fake / "curl", curl_script)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("this bundle needs engine 9.9.9; the newest release is 0.2.0.", result.stderr)
+
+    def test_stale_pulled_image_is_detected_and_rebuilt_from_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel=None, engine_min="0.2.0")
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            docker_script = (
+                "#!/bin/sh\n"
+                f"printf '%s\\n' \"$*\" >> '{log}'\n"
+                "case \"$1\" in\n"
+                "  pull) exit 0 ;;\n"
+                "  run)\n"
+                "    case \"$*\" in\n"
+                "      *'cat /opt/synos/VERSION'*) printf '0.1.0\\n'; exit 0 ;;\n"
+                "      *) exit 0 ;;\n"
+                "    esac\n"
+                "    ;;\n"
+                "  *) exit 0 ;;\n"
+                "esac\n"
+            )
+            write_executable(fake / "docker", docker_script)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_ENGINE_SOURCE": str(ROOT)}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("carries engine 0.1.0, older than this bundle needs (0.2.0); rebuilding it from the matching source instead of using a stale image.",
+                          result.stdout)
+            calls = log.read_text(encoding="utf-8").splitlines()
+            self.assertTrue(any(c.startswith("build --platform") and "-t synos-builder:ubuntu-resolute-local" in c for c in calls), calls)
+
+    def test_stale_explicit_builder_image_is_refused_not_silently_rebuilt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel=None, engine_min="0.2.0")
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            docker_script = (
+                "#!/bin/sh\n"
+                f"printf '%s\\n' \"$*\" >> '{log}'\n"
+                "case \"$1\" in\n"
+                "  run)\n"
+                "    case \"$*\" in\n"
+                "      *'cat /opt/synos/VERSION'*) printf '0.1.0\\n'; exit 0 ;;\n"
+                "      *) exit 0 ;;\n"
+                "    esac\n"
+                "    ;;\n"
+                "  *) exit 0 ;;\n"
+                "esac\n"
+            )
+            write_executable(fake / "docker", docker_script)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_BUILDER_IMAGE": "my-registry/synos-builder:old"}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("SYNOS_BUILDER_IMAGE=my-registry/synos-builder:old carries engine 0.1.0, older than this bundle needs (0.2.0)", result.stderr)
+            calls = log.read_text(encoding="utf-8").splitlines()
+            self.assertFalse(any(c.startswith("build ") for c in calls), "an explicit image is never silently replaced")
+
+    def test_channel_and_engine_recorded_in_a_catalog_export(self) -> None:
+        default = json.loads(subprocess.run([sys.executable, str(ROOT / "tools" / "export_catalog.py")],
+                                            capture_output=True, text=True, check=True).stdout)
+        self.assertEqual("stable", default["channel"])
+        dev = json.loads(subprocess.run([sys.executable, str(ROOT / "tools" / "export_catalog.py"), "--channel", "development"],
+                                        capture_output=True, text=True, check=True).stdout)
+        self.assertEqual("development", dev["channel"])
+        self.assertEqual(default["engine"], dev["engine"])
+        via_env = json.loads(subprocess.run([sys.executable, str(ROOT / "tools" / "export_catalog.py")],
+                                            capture_output=True, text=True, check=True,
+                                            env=dict(os.environ, SYNOS_CHANNEL="development")).stdout)
+        self.assertEqual("development", via_env["channel"])
+
+
+class SudoEnvironmentTests(unittest.TestCase):
+    """The launcher's documented variables must reach an elevated build rather
+    than being silently dropped by sudo's own environment reset (docs/BUNDLE.md
+    "Channels"). The fake sudo below mimics real sudo's own semantics for
+    `sudo VAR=value cmd` (export each leading NAME=value token, then exec)."""
+
+    def test_signing_key_and_engine_source_survive_sudo(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel=None, engine_min="0.2.0")
+            fake = tmp / "bin"
+            fake.mkdir()
+            for tool in CHANNEL_TOOLS:
+                found = shutil.which(tool)
+                if found:
+                    (fake / tool).symlink_to(found)
+            fake_df_always(fake)
+            real_id = shutil.which("id")
+            (fake / "id").unlink()
+            write_executable(fake / "id", (
+                "#!/bin/sh\ncase \"$1\" in\n  -u) echo 1000 ;;\n  -g) echo 1000 ;;\n"
+                f"  *) exec '{real_id}' \"$@\" ;;\nesac\n"
+            ))
+            write_executable(fake / "sudo", (
+                "#!/bin/sh\n"
+                "if [ \"$1\" = -v ]; then exit 0; fi\n"
+                "while [ $# -gt 0 ]; do\n"
+                "    case \"$1\" in\n"
+                "        *=*) export \"$1\"; shift ;;\n"
+                "        --) shift; break ;;\n"
+                "        *) break ;;\n"
+                "    esac\n"
+                "done\n"
+                "exec \"$@\"\n"
+            ))
+            log = tmp / "runtime.log"
+            marker = tmp / "marker"
+            podman_script = (
+                "#!/bin/sh\n"
+                f"printf '%s\\n' \"$*\" >> '{log}'\n"
+                "case \"$1\" in\n"
+                "  pull) exit 0 ;;\n"
+                "  run)\n"
+                "    case \"$*\" in\n"
+                f"      *'synos build /bundle'*) printf '%s\\n' \"$SYNOS_SIGNING_KEY\" > '{marker}'; printf '%s\\n' \"$SYNOS_ENGINE_SOURCE\" >> '{marker}' ;;\n"
+                "    esac\n"
+                "    exit 0 ;;\n"
+                "  *) exit 0 ;;\n"
+                "esac\n"
+            )
+            write_executable(fake / "podman", podman_script)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_SIGNING_KEY": "top-secret-signing-key", "SYNOS_ENGINE_SOURCE": str(ROOT)}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("will run through sudo", result.stdout)
+            lines = marker.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(["top-secret-signing-key", str(ROOT)], lines,
+                             "SYNOS_SIGNING_KEY and SYNOS_ENGINE_SOURCE must reach the elevated command unchanged")
+
+    def test_running_the_whole_launcher_under_sudo_is_explained(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel=None, engine_min="0.2.0")
+            fake = tmp / "bin"
+            fake.mkdir()
+            for tool in CHANNEL_TOOLS:
+                found = shutil.which(tool)
+                if found:
+                    (fake / tool).symlink_to(found)
+            fake_df_always(fake)
+            real_id = shutil.which("id")
+            (fake / "id").unlink()
+            write_executable(fake / "id", (
+                "#!/bin/sh\ncase \"$1\" in\n  -u) echo 0 ;;\n  -g) echo 0 ;;\n"
+                f"  *) exec '{real_id}' \"$@\" ;;\nesac\n"
+            ))
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SUDO_USER": "person"}
+            # no runtime on PATH: this only needs to reach the sudo-detection note before failing
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn("already running as root through sudo", result.stdout)
+            self.assertIn("sudo SYNOS_VAR=value ./build.sh", result.stdout)
+
+
 class ContainerStorageTests(unittest.TestCase):
     """SYNOS_CONTAINER_ROOT/SYNOS_CONTAINER_RUNROOT (and --container-root=/--container-runroot=):
     podman takes a per-build storage location with no root; docker's is

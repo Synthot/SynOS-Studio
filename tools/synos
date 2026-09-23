@@ -51,6 +51,15 @@ def engine_version() -> str:
     return (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 
 
+def resolved_channel() -> str:
+    """Which engine pipeline this build runs under (docs/BUNDLE.md "Channels"):
+    set by the launcher (SYNOS_CHANNEL, forwarded into the container) so the
+    build result records it - a stray or unknown value is treated as stable
+    rather than trusted blindly."""
+    channel = os.environ.get("SYNOS_CHANNEL", "stable")
+    return channel if channel in ("stable", "development") else "stable"
+
+
 def version_tuple(text: str) -> tuple[int, ...]:
     return tuple(int(part) for part in text.split("."))
 
@@ -432,7 +441,7 @@ def local_build(manifest: Path, log_to: Path | None, output: Path | None) -> dic
             pass
     if code != 0:
         raise Failure(f"the build failed with exit code {code}" + (f" (log: {log_to})" if log_to else ""), EXIT_BUILD)
-    return {"image": None, "engine": "local", **collect_outputs(output)}
+    return {"image": None, "engine": "local", "channel": resolved_channel(), **collect_outputs(output)}
 
 
 DOCKER_STORAGE_HELP = (
@@ -498,7 +507,7 @@ def container_build(manifest: Path, image: str | None, pull: bool, log_to: Path 
         if code != 0:
             raise Failure(f"'{engine} {label}' failed with exit code {code}" + (f" (log: {log_to})" if log_to else ""),
                           EXIT_BUILD, step=step, image=image)
-    return {"image": image, "engine": engine, **collect_outputs(output)}
+    return {"image": image, "engine": engine, "channel": resolved_channel(), **collect_outputs(output)}
 
 
 # ---------------------------------------------------------------- commands
@@ -623,6 +632,8 @@ def cmd_build(args) -> int:
     if not args.json:
         print(f"image built {('with ' + result['image']) if result['image'] else 'inside the builder image'}: "
               f"{result['iso'] or 'no ISO found in dist/'}")
+        if result.get("channel") == "development":
+            print("note: built with the development engine (unreleased, tip of the main branch) - not a released build.")
     return emit(args, {"manifest": str(manifest.relative_to(ROOT)), **applied, **result})
 
 

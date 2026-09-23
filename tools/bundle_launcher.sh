@@ -5,6 +5,7 @@
 #   ./build.sh check      only check that this machine can build (installs nothing)
 #   ./build.sh update     fetch the latest launcher scripts and replace these four files, then exit
 #   ./build.sh --yes      answer yes to the questions (install the container runtime)
+#   ./build.sh --channel=stable|development   override which engine pipeline builds this bundle
 #
 # Works on any Linux distribution (Debian, Ubuntu, Fedora, openSUSE, Arch and
 # their derivatives), on macOS (build.command, or this script from Terminal)
@@ -14,6 +15,21 @@
 # Nothing else is installed: the SynOS build engine runs inside a container
 # image published for the exact engine version this bundle was made for.
 # 40 GB free are needed for the first build.
+#
+# Channels: a bundle is generated for one of two engine pipelines, recorded
+# in its own bundle.json as "channel" ("stable" when the key is absent, so
+# every bundle that already exists keeps working exactly as it does today).
+# `stable` builds against the newest *released* engine that satisfies this
+# bundle (a GitHub release tag, never a branch tip). `development` builds
+# against the unreleased tip of the engine's main branch, for testing a
+# bundle against engine changes that have not shipped yet - the front end
+# that generated the bundle decides this, typically by asking whether it is
+# itself running from a deployed, released instance or a local/staging one.
+# SYNOS_CHANNEL (environment) or --channel=stable|development (flag) override
+# the bundle's own value, for a person who knows what they are doing; either
+# one wins over what the bundle says. A development build says so plainly in
+# this script's own output, in dist/build.log, and in the image it is built
+# from, so nobody mistakes it for a released build.
 #
 # Where the build's bytes land has nothing to do with where you run this
 # script: podman and docker keep their own storage (images, layers, the
@@ -36,9 +52,13 @@
 #   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
 #   (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive),
 #   SYNOS_LAUNCHER_URL (source for `update`, default the engine's tools/ on GitHub),
+#   SYNOS_CHANNEL=stable|development (override the bundle's own channel; see above),
 #   SYNOS_NO_UPDATE_CHECK=1 (skip the launcher update check at the start of
 #   check/build), SYNOS_YES=1 (same as --yes), SYNOS_CONTAINER_ROOT and
-#   SYNOS_CONTAINER_RUNROOT (podman only; see above).
+#   SYNOS_CONTAINER_RUNROOT (podman only; see above). When this script needs
+#   sudo to run the container runtime, all of the above (plus the signing key
+#   variables) are forwarded to it explicitly - sudo's own environment reset
+#   would otherwise silently drop them even though this script still has them.
 set -eu
 cd "$(dirname "$0")"
 
@@ -46,14 +66,16 @@ yes_to_all=${SYNOS_YES:-}
 command_word=""
 container_root=${SYNOS_CONTAINER_ROOT:-}
 container_runroot=${SYNOS_CONTAINER_RUNROOT:-}
+channel_flag=""
 remembered_root_file=".build/container-root"
 for arg in "$@"; do
     case "$arg" in
         --yes|-y) yes_to_all=1 ;;
         --container-root=*) container_root=${arg#--container-root=} ;;
         --container-runroot=*) container_runroot=${arg#--container-runroot=} ;;
+        --channel=*) channel_flag=${arg#--channel=} ;;
         check|build|update) command_word=$arg ;;
-        -h|--help) sed -n '2,41p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,58p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) printf 'unknown argument: %s\n' "$arg" >&2; exit 1 ;;
     esac
 done
@@ -75,6 +97,25 @@ ask_yes() {  # ask_yes "question" -> returns 0 unless the answer is explicitly n
     case "$answer" in n|N|no|NO|No) return 1 ;; *) return 0 ;; esac
 }
 field() { sed -n "s/^$2:[[:space:]]*\"\{0,1\}\([^\"#]*\)\"\{0,1\}.*/\1/p" "$1" | head -n 1 | sed 's/[[:space:]]*$//'; }
+# ver_ge A B -> success (0) when dotted-integer version A is >= B; both may
+# have any number of components (1.2 vs 1.2.0 vs 1.2.0.1), missing ones
+# treated as 0. Pure POSIX parameter expansion, no bashisms, no `sort -V`
+# (not available on macOS/BSD sort or a plain BusyBox system).
+ver_ge() {
+    a=$1; b=$2
+    while [ -n "$a" ] || [ -n "$b" ]; do
+        an=${a%%.*}; bn=${b%%.*}
+        [ -n "$an" ] || an=0
+        [ -n "$bn" ] || bn=0
+        [ "$an" -gt "$bn" ] 2>/dev/null && return 0
+        [ "$an" -lt "$bn" ] 2>/dev/null && return 1
+        case "$a" in *.*) a=${a#*.} ;; *) a="" ;; esac
+        case "$b" in *.*) b=${b#*.} ;; *) b="" ;; esac
+    done
+    return 0
+}
+case "$channel_flag" in ""|stable|development) ;; *) fail "--channel must be 'stable' or 'development' (got '$channel_flag')" ;; esac
+case "${SYNOS_CHANNEL:-}" in ""|stable|development) ;; *) fail "SYNOS_CHANNEL must be 'stable' or 'development' (got '$SYNOS_CHANNEL')" ;; esac
 # Two files are "the same" launcher when they agree ignoring CR bytes: a bundle
 # downloaded (or applied) on a system that turns build.cmd's CRLF into LF must
 # not be offered an update forever over a line-ending difference alone. A real
@@ -197,7 +238,7 @@ refresh_siblings() {
         if [ -n "${src:-}" ] && [ -f "$src/tools/bundle_launcher.$ext" ]; then
             cp "$src/tools/bundle_launcher.$ext" "$tmp" 2>/dev/null
         else
-            $run_as "$runtime" $runtime_root_args run --rm --platform "linux/$arch" "$image" cat "/opt/synos/tools/bundle_launcher.$ext" > "$tmp" 2>/dev/null
+            run_runtime run --rm --platform "linux/$arch" "$image" cat "/opt/synos/tools/bundle_launcher.$ext" > "$tmp" 2>/dev/null
         fi
         if ! validate_launcher "$ext" "$tmp"; then
             say "warning: $target was not refreshed ($fetch_error); it was left unchanged."
@@ -301,6 +342,41 @@ arch=$(field "$manifest" arch)
 [ -n "$arch" ] || arch=amd64
 [ -n "$base" ] && [ -n "$suite" ] || fail "$manifest does not name a base and a suite"
 
+# ------------------------------------------------------------- the channel
+# Which engine pipeline this bundle builds against: recorded by the front end
+# that generated it, in its own bundle.json ("stable" assumed when the key is
+# absent, so every bundle generated before this existed keeps working exactly
+# as it does today). SYNOS_CHANNEL/--channel override it for a person who
+# knows what they are doing, and win over the bundle's own value either way.
+bundle_channel=$(sed -n 's/.*"channel"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' bundle.json | head -n 1)
+case "$bundle_channel" in
+    ""|stable|development) ;;
+    *) say "note: bundle.json names an unknown channel '$bundle_channel'; treating this bundle as stable."; bundle_channel="" ;;
+esac
+if [ -n "$channel_flag" ]; then
+    channel=$channel_flag; channel_reason="the --channel flag"
+elif [ -n "${SYNOS_CHANNEL:-}" ]; then
+    channel=$SYNOS_CHANNEL; channel_reason="the SYNOS_CHANNEL environment variable"
+elif [ -n "$bundle_channel" ]; then
+    channel=$bundle_channel; channel_reason="bundle"
+else
+    channel=stable; channel_reason="default"
+fi
+case "$channel_reason" in
+    bundle)
+        if [ "$channel" = development ]; then
+            say "channel: development (this bundle was made by a development instance of the page)"
+        else
+            say "channel: stable (this bundle was made by the released page)"
+        fi
+        ;;
+    default) say "channel: stable (default; bundle.json names no channel)" ;;
+    *) say "channel: $channel (override: $channel_reason)" ;;
+esac
+if [ "$channel" = development ]; then
+    say "note: the development channel builds against the unreleased tip of the engine's main branch, not a released version."
+fi
+
 check_for_launcher_update "$@"
 
 # ---------------------------------------------------------------- the machine
@@ -389,6 +465,16 @@ remember_container_root() {  # value ("default" or a path)
     printf '%s\n' "$1" > "$remembered_root_file" 2>/dev/null || true
 }
 
+# Already running as root through sudo (rather than this script deciding to
+# elevate a single command itself, below): sudo's default environment reset
+# drops every SYNOS_* variable set before it, even though this script would
+# otherwise still see them - there is no way to recover a value already gone
+# by the time this script started, so the honest thing is to say so plainly
+# rather than silently building with whatever defaults are left.
+if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
+    say "note: already running as root through sudo, which resets the environment by default: SYNOS_ENGINE_SOURCE, SYNOS_ENGINE_URL, SYNOS_BUILDER_IMAGE, SYNOS_CONTAINER_ROOT, SYNOS_CHANNEL and SYNOS_YES set before 'sudo' are dropped unless you run 'sudo SYNOS_VAR=value ./build.sh' (repeat per variable) or 'sudo -E ./build.sh'."
+fi
+
 runtime=$(command -v podman || command -v docker || true)
 if [ -z "$runtime" ]; then
     [ "$command_word" = check ] && fail "podman or docker is required; ./build.sh installs podman for you (Linux)" 2
@@ -417,6 +503,7 @@ fi
 # Decided before the storage question below, which also needs to run a
 # command through the runtime (podman info) to see what is free.
 run_as=""
+runtime_root_args=""
 if [ -n "$macos" ]; then
     case "$runtime" in
         *podman)
@@ -446,6 +533,26 @@ else
     fi
 fi
 
+# Runs the container runtime, elevated through sudo when this script decided
+# it needs to be (above). sudo's own environment reset would otherwise drop
+# this script's SYNOS_* variables even though this (non-root) shell still has
+# them: `sudo VAR=value cmd` (variables named directly on sudo's own command
+# line, not merely inherited) is what actually reaches the child process, so
+# the values are read here, from this script's own environment, and handed
+# to sudo explicitly rather than trusted to survive on their own.
+run_runtime() {
+    if [ -n "$run_as" ]; then
+        sudo \
+            SYNOS_ENGINE_SOURCE="${SYNOS_ENGINE_SOURCE:-}" SYNOS_ENGINE_URL="${SYNOS_ENGINE_URL:-}" \
+            SYNOS_BUILDER_IMAGE="${SYNOS_BUILDER_IMAGE:-}" SYNOS_CONTAINER_ROOT="${SYNOS_CONTAINER_ROOT:-}" \
+            SYNOS_CHANNEL="$channel" SYNOS_YES="${yes_to_all:-}" \
+            SYNOS_SIGNING_KEY="${SYNOS_SIGNING_KEY:-}" SYNOS_SIGNING_KEY_FILE="${SYNOS_SIGNING_KEY_FILE:-}" \
+            -- "$runtime" $runtime_root_args "$@"
+    else
+        "$runtime" $runtime_root_args "$@"
+    fi
+}
+
 free_kb=$(df -Pk . | awk 'NR==2 {print $4}')
 [ "$free_kb" -ge 41943040 ] || fail "at least 40 GB free is needed in $(pwd); $((free_kb / 1048576)) GB available" 2
 
@@ -473,7 +580,7 @@ fi
 # more room to offer.
 if is_podman && [ -z "$container_root" ] && [ -z "$macos" ] && [ -z "$storage_asked" ] \
    && [ "$command_word" != check ] && [ -z "$yes_to_all" ] && [ -t 0 ]; then
-    default_store=$($run_as "$runtime" info --format '{{.Store.GraphRoot}}' 2>/dev/null || true)
+    default_store=$(run_runtime info --format '{{.Store.GraphRoot}}' 2>/dev/null || true)
     case "$default_store" in ""|*"{{"*|"<no value>") default_store="" ;; esac
     if [ -n "$default_store" ] && [ -d "$default_store" ]; then
         default_store_kb=$(df -Pk "$default_store" | awk 'NR==2 {print $4}')
@@ -516,8 +623,8 @@ fi
 if [ -n "$container_root" ] && is_podman; then
     store=$container_root
 else
-    store=$($run_as "$runtime" info --format '{{.DockerRootDir}}' 2>/dev/null || true)
-    case "$store" in ""|*"{{"*|"<no value>") store=$($run_as "$runtime" info --format '{{.Store.GraphRoot}}' 2>/dev/null || true) ;; esac
+    store=$(run_runtime info --format '{{.DockerRootDir}}' 2>/dev/null || true)
+    case "$store" in ""|*"{{"*|"<no value>") store=$(run_runtime info --format '{{.Store.GraphRoot}}' 2>/dev/null || true) ;; esac
 fi
 if [ -n "$store" ] && [ -d "$store" ]; then
     store_kb=$(df -Pk "$store" | awk 'NR==2 {print $4}')
@@ -537,13 +644,85 @@ $(docker_storage_help)" 2
 fi
 
 # ---------------------------------------------------------------- the image
-# The published image is preferred. When none can be pulled (not published yet,
-# a registry that refuses anonymous pulls, no network to it), the same image is
-# built here from the engine source, once, and kept as synos-builder:<base>-<suite>-local.
-build_engine_image() {
+# The published image is preferred. On the stable channel only a release that
+# satisfies this bundle is ever pulled or built - never the moving tag, never
+# the development branch, in any form. The development channel is unchanged
+# from before: the moving tag, then a local build from the tip of the main
+# branch - both named so an image built this way is never mistaken for a
+# released one (the "-dev-" in its tag, and the note above in this script's
+# own output).
+GITHUB_REPO_URL="https://github.com/Synthot/SynOS-Studio"
+GITHUB_TAGS_API="https://api.github.com/repos/Synthot/SynOS-Studio/tags?per_page=100"
+
+fetch_url_to() {  # url out -> 0 on success; no error is printed here, the caller decides how to react
+    url=$1; out=$2
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL --connect-timeout 5 --max-time 20 -H 'Accept: application/vnd.github+json' "$url" -o "$out" 2>/dev/null
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q --timeout=20 --header='Accept: application/vnd.github+json' "$url" -O "$out" 2>/dev/null
+    else
+        return 1
+    fi
+}
+
+# Resolves the release this bundle should build against on the stable
+# channel: the newest tag (v<version> on the public repository) at or above
+# engine.min, read from GitHub's tags API - no token needed, and never
+# guessed from a moving branch. Sets resolved_version/resolved_tag/
+# resolved_note, or refuses with `fail` when nothing satisfies the bundle.
+# When the API cannot be reached at all (offline, or its anonymous rate
+# limit), this falls back to the one release the bundle names directly -
+# archive/refs/tags/v<engine.min>.tar.gz, no further API calls - rather than
+# leaving the person with an opaque network error; chosen over always
+# requiring the API precisely so a rate limit never turns into a build
+# failure for something this bundle already names plainly.
+resolve_stable_release() {
+    tags_tmp=".build/github-tags.$$"
+    mkdir -p .build 2>/dev/null || true
+    if fetch_url_to "$GITHUB_TAGS_API" "$tags_tmp" && [ -s "$tags_tmp" ]; then
+        overall_best=""; best=""
+        for v in $(grep -o '"name": *"v[0-9][0-9.]*"' "$tags_tmp" | sed 's/.*"v\([0-9.]*\)".*/\1/' | sort -u); do
+            case "$v" in ""|*[!0-9.]*) continue ;; esac
+            if [ -z "$overall_best" ] || ver_ge "$v" "$overall_best"; then overall_best=$v; fi
+            if [ -n "$engine" ] && ! ver_ge "$v" "$engine"; then continue; fi
+            if [ -z "$best" ] || ver_ge "$v" "$best"; then best=$v; fi
+        done
+        rm -f "$tags_tmp"
+        if [ -z "$overall_best" ]; then
+            fail "GitHub's release list for $GITHUB_REPO_URL came back but named no v<version> tag; set SYNOS_ENGINE_URL, SYNOS_ENGINE_SOURCE or SYNOS_BUILDER_IMAGE, or build with --channel=development" 2
+        fi
+        [ -n "$engine" ] || best=$overall_best
+        if [ -z "$best" ]; then
+            fail "this bundle needs engine $engine; the newest release is $overall_best. Wait for a release that satisfies it, build your own engine (SYNOS_ENGINE_SOURCE=<checkout> ./build.sh), or build with --channel=development for the unreleased engine." 2
+        fi
+        resolved_version=$best
+        resolved_tag="v$best"
+        resolved_note="the newest published release satisfying this bundle, from GitHub's release list"
+        return 0
+    fi
+    rm -f "$tags_tmp"
+    if [ -n "$engine" ]; then
+        resolved_version=$engine
+        resolved_tag="v$engine"
+        resolved_note="GitHub's release list could not be checked (offline, or its anonymous rate limit); using the release this bundle names directly"
+        return 0
+    fi
+    fail "this bundle names no minimum engine version and GitHub's release list could not be checked (offline, or its anonymous rate limit); set SYNOS_ENGINE_URL or SYNOS_ENGINE_SOURCE, try again shortly, or build with --channel=development" 2
+}
+
+build_engine_image() {  # build_engine_image [forced] - forced skips reusing a same-named image already on this machine
+    forced=${1:-}
     src=${SYNOS_ENGINE_SOURCE:-}
     if [ -z "$src" ]; then
-        url=${SYNOS_ENGINE_URL:-https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.tar.gz}
+        if [ -n "${SYNOS_ENGINE_URL:-}" ]; then
+            url=$SYNOS_ENGINE_URL
+        elif [ "$channel" = development ]; then
+            url=https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.tar.gz
+        else
+            [ -n "${resolved_tag:-}" ] || resolve_stable_release
+            url="$GITHUB_REPO_URL/archive/refs/tags/$resolved_tag.tar.gz"
+            say "channel stable: building from release $resolved_tag ($resolved_note)"
+        fi
         say "downloading the engine source from $url"
         mkdir -p .build/engine-src
         if command -v curl >/dev/null 2>&1; then
@@ -562,8 +741,12 @@ build_engine_image() {
         source_id="local"
     fi
     [ -f "$src/bases/$base/Containerfile" ] || fail "$src has no bases/$base/Containerfile: not an engine checkout" 2
-    local_tag="synos-builder:$base-$suite-$source_id"
-    if $run_as "$runtime" $runtime_root_args image inspect "$local_tag" >/dev/null 2>&1; then
+    if [ "$channel" = development ]; then
+        local_tag="synos-builder:$base-$suite-dev-$source_id"
+    else
+        local_tag="synos-builder:$base-$suite-$source_id"
+    fi
+    if [ -z "$forced" ] && run_runtime image inspect "$local_tag" >/dev/null 2>&1; then
         say "using the engine image built earlier on this machine from this engine source: $local_tag"
         image=$local_tag; return 0
     fi
@@ -574,7 +757,7 @@ build_engine_image() {
     # The full output goes to the log; the terminal gets the lines that show progress
     # (build steps from podman and docker, packages being fetched and set up).
     status_file=$PWD/dist/.image-build.status
-    ( cd "$src" && $run_as "$runtime" $runtime_root_args build --platform "linux/$arch" --build-arg "SUITE=$suite" -t "$local_tag" -f "bases/$base/Containerfile" . 2>&1; st=$?; echo "$st" >"$status_file" ) \
+    ( cd "$src" && run_runtime build --platform "linux/$arch" --build-arg "SUITE=$suite" -t "$local_tag" -f "bases/$base/Containerfile" . 2>&1; st=$?; echo "$st" >"$status_file" ) \
         | tee dist/image-build.log \
         | awk '/^(STEP [0-9]+\/[0-9]+|Step [0-9]+\/[0-9]+|#[0-9]+ \[[0-9]+\/[0-9]+\]|Get:[0-9]+ |Setting up |Successfully built|Successfully tagged|COMMIT|-->)/ { print "  " $0; fflush() }'
     status=$(cat "$status_file" 2>/dev/null || echo 1)
@@ -586,27 +769,86 @@ build_engine_image() {
 repository=${SYNOS_IMAGE_REPOSITORY:-ghcr.io/synthot/synos-builder}
 image=${SYNOS_BUILDER_IMAGE:-}
 if [ -z "$image" ]; then
-    pinned="$repository:$base-$suite${engine:+-v$engine}"
-    moving="$repository:$base-$suite"
-    say "pulling the build engine $pinned (one-time download, about 1.5 GB)"
-    if $run_as "$runtime" $runtime_root_args pull --platform "linux/$arch" "$pinned" >/dev/null 2>&1; then
-        image=$pinned
-    elif $run_as "$runtime" $runtime_root_args pull --platform "linux/$arch" "$moving" >/dev/null 2>&1; then
-        say "no image pinned to engine ${engine:-?}; using the current $moving"
-        image=$moving
-    elif [ "$command_word" = check ]; then
-        image="none published: it will be built here at the first build, about 20 minutes"
+    if [ "$channel" = development ]; then
+        pinned="$repository:$base-$suite${engine:+-v$engine}"
+        moving="$repository:$base-$suite"
+        say "pulling the build engine $pinned (one-time download, about 1.5 GB)"
+        if run_runtime pull --platform "linux/$arch" "$pinned" >/dev/null 2>&1; then
+            image=$pinned
+        elif run_runtime pull --platform "linux/$arch" "$moving" >/dev/null 2>&1; then
+            say "no image pinned to engine ${engine:-?}; using the current $moving"
+            image=$moving
+        elif [ "$command_word" = check ]; then
+            image="none published: it will be built here at the first build, about 20 minutes"
+        else
+            say "no published engine image can be pulled from $repository (not published yet, or the registry refused);"
+            say "the image is built here instead, from the engine source."
+            build_engine_image
+        fi
     else
-        say "no published engine image can be pulled from $repository (not published yet, or the registry refused);"
-        say "the image is built here instead, from the engine source."
-        build_engine_image
+        # stable: only ever a release that satisfies this bundle.
+        pulled=""
+        if [ -n "$engine" ]; then
+            pinned="$repository:$base-$suite-v$engine"
+            say "pulling the build engine $pinned (one-time download, about 1.5 GB)"
+            if run_runtime pull --platform "linux/$arch" "$pinned" >/dev/null 2>&1; then
+                image=$pinned; pulled=1
+            fi
+        fi
+        if [ -z "$pulled" ]; then
+            resolve_stable_release
+            say "channel stable: using release $resolved_tag ($resolved_note)"
+            pinned2="$repository:$base-$suite-v$resolved_version"
+            if [ "$pinned2" != "${pinned:-}" ]; then
+                say "pulling the build engine $pinned2 (one-time download, about 1.5 GB)"
+                if run_runtime pull --platform "linux/$arch" "$pinned2" >/dev/null 2>&1; then
+                    image=$pinned2; pulled=1
+                fi
+            fi
+        fi
+        if [ -z "$pulled" ]; then
+            if [ "$command_word" = check ]; then
+                image="none published: it will be built here at the first build, about 20 minutes"
+            else
+                say "no published engine image can be pulled from $repository for this release (not published yet, or the registry refused);"
+                say "the image is built here instead, from the matching release source - never from the development branch."
+                build_engine_image
+            fi
+        fi
     fi
 fi
+
+# The failure this guards against: a cached image (built earlier, from an
+# older source, or pulled once and kept) carrying an engine below what this
+# bundle needs. Read plainly instead of assumed, and rebuilt from the right
+# source rather than left to fail deep in the build with two bare numbers and
+# no explanation. Skipped for `check` (no build is about to happen) and when
+# the image could not be resolved to a real tag at all.
+verify_engine_version() {
+    [ -n "$engine" ] || return 0
+    case "$image" in "none published:"*) return 0 ;; esac
+    if [ -n "${src:-}" ] && [ -f "$src/VERSION" ]; then
+        # image was just built from this exact source a moment ago (above):
+        # its baked-in VERSION is this one, no need to start a container to ask.
+        actual=$(tr -d '[:space:]' < "$src/VERSION")
+    else
+        actual=$(run_runtime run --rm --platform "linux/$arch" "$image" cat /opt/synos/VERSION 2>/dev/null | tr -d '[:space:]')
+    fi
+    case "$actual" in ""|*[!0-9.]*) return 0 ;; esac
+    ver_ge "$actual" "$engine" && return 0
+    if [ -n "${SYNOS_BUILDER_IMAGE:-}" ]; then
+        fail "SYNOS_BUILDER_IMAGE=$image carries engine $actual, older than this bundle needs ($engine); use a newer image, or unset SYNOS_BUILDER_IMAGE to let this script choose one" 2
+    fi
+    say "the image $image carries engine $actual, older than this bundle needs ($engine); rebuilding it from the matching source instead of using a stale image."
+    build_engine_image forced
+}
 
 if [ "$command_word" = check ]; then
     say "ready: $run_as $runtime${runtime_root_args:+ $runtime_root_args}, $((free_kb / 1048576)) GB free here${store:+, $((store_kb / 1048576)) GB free in $store}, engine image $image"
     exit 0
 fi
+
+verify_engine_version
 
 # ---------------------------------------------------------------- this script
 # The engine that builds the image also carries the current launcher. A bundle
@@ -617,7 +859,7 @@ if [ -z "${SYNOS_LAUNCHER_REFRESHED:-}" ]; then
     if [ -n "${src:-}" ] && [ -f "$src/tools/bundle_launcher.sh" ]; then
         latest=$(cat "$src/tools/bundle_launcher.sh")
     else
-        latest=$($run_as "$runtime" $runtime_root_args run --rm --platform "linux/$arch" "$image" cat /opt/synos/tools/bundle_launcher.sh 2>/dev/null || true)
+        latest=$(run_runtime run --rm --platform "linux/$arch" "$image" cat /opt/synos/tools/bundle_launcher.sh 2>/dev/null || true)
     fi
     case "$latest" in
         "#!/bin/sh"*)
@@ -646,17 +888,26 @@ printf '%s\n' "$$" > dist/build.pid
 trap 'rm -f dist/build.pid' EXIT INT TERM
 # One log per run: the previous one is kept as build.previous.log, so the errors shown below are this run's.
 [ -f dist/build.log ] && mv -f dist/build.log dist/build.previous.log
+# Seeded here, before the container appends to it, so a development build is
+# obvious in the log itself and not only in this script's own terminal output.
+if [ "$channel" = development ]; then
+    printf 'channel: development (unreleased engine, tip of the main branch - not a release build)\n' > dist/build.log
+    say "building with the development engine (unreleased, tip of the main branch) - this image and ISO are not a release build."
+else
+    printf 'channel: stable\n' > dist/build.log
+fi
 say "building $manifest with $image"
 say "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
 say "the full output is kept in dist/build.log"
 set +e
-$run_as "$runtime" $runtime_root_args run --rm --privileged --platform "linux/$arch" \
+run_runtime run --rm --privileged --platform "linux/$arch" \
     -v "$PWD:/bundle:z" \
     -v "synos-cache-$base-$suite:/opt/synos/.build" \
     -v /opt/synos/new_building_os -v /opt/synos/image \
     -e SYNOS_KEYS_DIR=.build/keys \
     -e "SYNOS_UID=$(id -u)" -e "SYNOS_GID=$(id -g)" \
     -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE \
+    -e SYNOS_CHANNEL="$channel" \
     "$image" synos build /bundle --output /bundle/dist --log /bundle/dist/build.log
 status=$?
 set -e
