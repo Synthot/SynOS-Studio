@@ -237,6 +237,7 @@ bundle_catalog:
     folder: classroom-workstation
     services: []
     ports: []
+    verified: true
   - id: home-automation
     name: Home Automation
     summary: "A Home Assistant server for home automation and device integrations, its configuration kept on its own volume."
@@ -344,6 +345,7 @@ bundle_catalog:
     folder: vpn-server
     services: [wg-easy]
     ports: [22, 51820]
+    verified: true
   - id: clickhouse-server
     name: ClickHouse Analytics Database
     summary: "ClickHouse, a column-oriented SQL database built for fast analytics over huge tables, serving HTTP on port 8123 and its native protocol on port 9000; give it plenty of RAM once real data lands."
@@ -371,8 +373,8 @@ bundle_catalog:
     summary: "Apache Cassandra, a wide-column store built to scale out, started here as a single node on CQL port 9042 that can grow into a real cluster; wants several GB of heap even alone."
     first_boot:
       - "Cassandra's default authenticator accepts every connection with no login at all, so port 9042 stays closed until you turn authentication on yourself."
-      - "Tunnel in (`ssh -L 9042:localhost:9042 you@host`), then enable password authentication and restart: `docker exec cassandra sed -i 's/^authenticator:.*/authenticator: PasswordAuthenticator/' /etc/cassandra/cassandra.yaml && sudo systemctl restart cassandra`."
-      - "Log in with Cassandra's own default superuser and change it immediately: `docker exec -it cassandra cqlsh -u cassandra -p cassandra -e \"ALTER USER cassandra WITH PASSWORD 'a-real-password';\"`, then open port 9042 yourself."
+      - "Tunnel in (`ssh -L 9042:localhost:9042 you@host`), then enable password authentication and restart: `sudo podman exec cassandra sed -i 's/^authenticator:.*/authenticator: PasswordAuthenticator/' /etc/cassandra/cassandra.yaml && sudo systemctl restart cassandra`."
+      - "Log in with Cassandra's own default superuser and change it immediately: `sudo podman exec -it cassandra cqlsh -u cassandra -p cassandra -e \"ALTER USER cassandra WITH PASSWORD 'a-real-password';\"`, then open port 9042 yourself."
     tags: [cassandra, wide-column, nosql, database, cluster]
     folder: cassandra-server
     services: [cassandra]
@@ -383,7 +385,7 @@ bundle_catalog:
     summary: "CockroachDB, a distributed SQL database that speaks the PostgreSQL wire protocol and dialect, started here as a single node (SQL on port 26257, admin UI on 8080) that can grow into a cluster."
     first_boot:
       - "CockroachDB starts in its normal secure mode: it generates its own certificate authority and certificates inside the container on first boot, and nobody outside can authenticate yet — root only holds a certificate, no other user has a password."
-      - "Tunnel in (`ssh -L 26257:localhost:26257 you@host`), then create a real user from inside the container: `docker exec -it cockroach cockroach sql --certs-dir=/cockroach/certs -e \"CREATE USER appuser WITH PASSWORD 'a-real-password';\"`."
+      - "Tunnel in (`ssh -L 26257:localhost:26257 you@host`), then create a real user from inside the container: `sudo podman exec -it cockroach cockroach sql --certs-dir=/cockroach/certs -e \"CREATE USER appuser WITH PASSWORD 'a-real-password';\"`."
       - "Open port 26257 (and 8080 for the admin UI, which asks that user to log in) yourself once that password is something private of your own."
     tags: [cockroachdb, distributed-sql, postgresql-compatible, database, cluster]
     folder: cockroachdb-server
@@ -444,6 +446,7 @@ bundle_catalog:
     folder: milvus-server
     services: [milvus]
     ports: [22]
+    verified: true
   - id: event-streaming
     name: Event Streaming (Kafka)
     summary: "A single-broker Apache Kafka cluster running in KRaft mode as a system service — no separate ZooKeeper ensemble to run or lose quorum in."
@@ -498,7 +501,7 @@ bundle_catalog:
     summary: "OpenBao running as a system service: the open-source fork of HashiCorp Vault, kept after Vault's licence changed to the Business Source Licence."
     first_boot:
       - "It ships sealed and completely uninitialised — no unseal key and no root token exist anywhere in this repository or the image — so reach it only over an SSH tunnel first (`ssh -L 8200:localhost:8200 you@host`)."
-      - "Initialise it there, once (`docker exec -it openbao bao operator init`), and save the unseal key and the root token it prints somewhere safe: OpenBao never shows them again."
+      - "Initialise it there, once (`sudo podman exec -it openbao bao operator init`), and save the unseal key and the root token it prints somewhere safe: OpenBao never shows them again."
       - "Unseal it with that key (`bao operator unseal`), sign in with the root token, and put a TLS-terminating proxy in front of it (this catalog's own edge-proxy, or your own) before opening the port yourself (`sudo ufw allow 8200/tcp`) — it ships with TLS disabled for simplicity, so anything sent to it beyond your own tunnel travels in the clear otherwise."
     tags: [openbao, secret-manager, vault, secrets, encryption]
     folder: secret-manager
@@ -546,7 +549,7 @@ bundle_catalog:
     summary: "Self-hosted GitLab Community Edition as a system service — never Enterprise Edition, which needs a paid licence. It is heavy: at least 8 GB memory (16 GB is GitLab's own baseline) and about 40 GB disk for the application alone, before repositories or a growing database."
     first_boot:
       - "Git over SSH (port 2222) is open from the start — cloning or pushing needs a registered account and key, and none exists yet."
-      - "The web UI (80/443) stays closed by default: GitLab writes a random root password inside the container on first start, valid only 24 hours. Tunnel in first (`ssh -L 8080:localhost:80 you@host`), read it (`docker exec gitlab cat /etc/gitlab/initial_root_password`), sign in as root at http://localhost:8080/, and set a real password."
+      - "The web UI (80/443) stays closed by default: GitLab writes a random root password inside the container on first start, valid only 24 hours. Tunnel in first (`ssh -L 8080:localhost:80 you@host`), read it (`sudo podman exec gitlab cat /etc/gitlab/initial_root_password`), sign in as root at http://localhost:8080/, and set a real password."
       - "Public sign-up ships on (GitLab's own default): turn it off in the admin area (Settings > General > Sign-up restrictions) while you are in there, unless you want it."
       - "Then open the web ports yourself (`sudo ufw allow 80/tcp && sudo ufw allow 443/tcp`)."
     tags: [gitlab, devops-platform, version-control, ci-cd, code-review]
