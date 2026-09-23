@@ -31,6 +31,12 @@
         }
       }
     },
+    "channel": {
+      "type": "string",
+      "enum": ["stable", "development"],
+      "default": "stable",
+      "description": "Which engine pipeline this bundle was generated for and must be built against: stable (the default, and assumed when this key is absent) builds against the newest released engine satisfying engine.min; development builds against the unreleased tip of the engine's main branch. Set by the front end that generated the bundle (docs/BUNDLE.md); a person building the bundle can still override it."
+    },
     "generator": {
       "type": "object",
       "additionalProperties": false,

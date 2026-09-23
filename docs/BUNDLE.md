@@ -70,6 +70,81 @@ engine validates signed and unsigned bundles exactly the same way.
 engine refuses to build when it is older, so a bundle generated against a
 newer catalog fails early instead of producing a wrong image.
 
+`channel` names which engine pipeline this bundle was generated for and must
+be built against: `stable` (the default, and assumed when the key is absent,
+so every bundle generated before this key existed keeps working exactly as
+it does today) builds against the newest *released* engine that satisfies
+`engine.min`; `development` builds against the unreleased tip of the
+engine's main branch, for a bundle made by a development instance of the
+front end that is not meant to be relied on as a release. The front end
+decides this when it generates the bundle - typically by asking whether it
+is itself running from a deployed, released location or a local/staging one
+- not the person building it, though the launcher's own
+`SYNOS_CHANNEL`/`--channel` override it for someone who knows what they are
+doing.
+
+## Channels
+
+`tools/bundle_launcher.*` (every bundle's `build.sh`/`build.ps1`) reads
+`bundle.json`'s `channel` and fetches the matching engine:
+
+- **stable** (the default): the newest engine *release* (a `v<version>` tag
+  on the public repository, and the container image CI publishes for it)
+  that satisfies `engine.min`, resolved from GitHub's tags API - no token
+  needed, and never guessed from a branch. When the API cannot be reached at
+  all (offline, or its anonymous rate limit), the launcher falls back to the
+  one release the bundle names directly (`archive/refs/tags/v<engine.min>`)
+  rather than turning a rate limit into a build failure. When `engine.min`
+  needs a release that does not exist yet, the launcher refuses plainly
+  (naming the newest release that does exist) rather than silently building
+  something else. When the image the launcher was about to use (pulled, or
+  built earlier and cached) carries an engine below `engine.min`, the
+  launcher says so and rebuilds from the right source instead of letting the
+  build fail deep inside with two bare version numbers.
+- **development**: the unreleased tip of the engine's main branch, exactly
+  as every bundle behaved before channels existed. A development build says
+  so in the launcher's own output, in `dist/build.log`, and in the name of
+  any image it builds locally (a `-dev-` tag component) and in what
+  `tools/synos build --json` records about the build, so it is never
+  mistaken for a released build.
+
+`SYNOS_CHANNEL` (environment) or `--channel=stable|development`
+(`-Channel` on Windows) override the bundle's own value, for a person who
+knows what they are doing; either one wins over what `bundle.json` says.
+When the launcher needs `sudo` to run the container runtime, the resolved
+channel and this script's other documented variables
+(`SYNOS_ENGINE_SOURCE`, `SYNOS_ENGINE_URL`, `SYNOS_BUILDER_IMAGE`,
+`SYNOS_CONTAINER_ROOT`, `SYNOS_YES`) are forwarded to it explicitly -
+`sudo`'s own environment reset would otherwise silently drop them even
+though the launcher itself still has them. Running the whole launcher
+through `sudo` directly (rather than letting it elevate a single command
+itself) still drops them before the script even starts, since `sudo`
+resets the environment before anything downstream can see it; the launcher
+detects this and says so, since there is no way to recover a value already
+gone.
+
+A release is cut by: landing the change on the main branch with `VERSION`
+bumped to the new version, confirming `.github/workflows/build.yml`'s
+`validate` job (the schema, manifest and unit tests) is green on that
+commit, then tagging it `v<VERSION>` and pushing the tag.
+`.github/workflows/builder-image.yml` runs on that tag push, refuses to
+publish when the tag does not match `VERSION`, and publishes the builder
+images for every base and suite tagged both `<base>-<suite>-v<VERSION>`
+(what the stable channel pulls) and the moving `<base>-<suite>` tag (what
+the development channel pulls).
+
+A development *instance* of the front end (run locally, or otherwise not
+the deployed production page, against a checkout that may be ahead of the
+last release) generates bundles with `"channel": "development"` and an
+engine version that may not be released yet; the production instance
+generates `"channel": "stable"` (or omits the key) against a released
+engine. `tools/export_catalog.py --channel development` (default `stable`,
+or `SYNOS_CHANNEL`) records which pipeline a catalogue export itself came
+from, alongside the engine version it embeds, so a page build - and anyone
+looking at the export - can tell a production export from a development one
+by looking at it, independently of what it goes on to write into any one
+bundle's `bundle.json`.
+
 ## Building without a checkout
 
 The builder container images CI publishes carry the engine itself at

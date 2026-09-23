@@ -31,15 +31,26 @@
 # del .build\container-root). -ContainerRoot always wins, and updates what
 # is remembered.
 #
+# Channels: a bundle is generated for one of two engine pipelines, recorded
+# in its own bundle.json as "channel" ("stable" when the key is absent, so
+# every bundle that already exists keeps working exactly as it does today).
+# stable builds against the newest *released* engine that satisfies this
+# bundle (a GitHub release tag, never a branch tip); development builds
+# against the unreleased tip of the engine's main branch. SYNOS_CHANNEL (or
+# -Channel) overrides the bundle's own value for a person who knows what
+# they are doing. A development build says so plainly in this script's own
+# output, in dist\build.log, and in the image it is built from.
+#
 # Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
 #   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
 #   (an engine checkout to build the image from), SYNOS_ENGINE_URL (source archive),
 #   SYNOS_LAUNCHER_URL (source for `update`, default the engine's tools/ on GitHub),
+#   SYNOS_CHANNEL=stable|development (override the bundle's own channel; see above),
 #   SYNOS_NO_UPDATE_CHECK=1 (skip the launcher update check at the start of
 #   check/build), SYNOS_YES=1, SYNOS_CONTAINER_ROOT and SYNOS_CONTAINER_RUNROOT
 #   (Podman only; see above).
 [CmdletBinding()]
-param([string]$Command = "", [switch]$Yes, [string]$ContainerRoot = "", [string]$ContainerRunroot = "")
+param([string]$Command = "", [switch]$Yes, [string]$ContainerRoot = "", [string]$ContainerRunroot = "", [string]$Channel = "")
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
 if ($env:SYNOS_YES) { $Yes = $true }
@@ -47,6 +58,9 @@ if (-not $ContainerRoot -and $env:SYNOS_CONTAINER_ROOT) { $ContainerRoot = $env:
 if (-not $ContainerRunroot -and $env:SYNOS_CONTAINER_RUNROOT) { $ContainerRunroot = $env:SYNOS_CONTAINER_RUNROOT }
 
 function Fail([string]$Message, [int]$Code = 1) { Write-Host "error: $Message" -ForegroundColor Red; exit $Code }
+foreach ($value in @($Channel, $env:SYNOS_CHANNEL)) {
+    if ($value -and $value -notin @("stable", "development")) { Fail "channel must be 'stable' or 'development' (got '$value')" }
+}
 function Ask([string]$Question) {
     if ($Yes) { return $true }
     $answer = Read-Host "$Question [y/N]"
@@ -284,6 +298,7 @@ function Test-ForLauncherUpdate {
     if ($Yes) { $reExecArgs += "-Yes" }
     if ($ContainerRoot) { $reExecArgs += @("-ContainerRoot", $ContainerRoot) }
     if ($ContainerRunroot) { $reExecArgs += @("-ContainerRunroot", $ContainerRunroot) }
+    if ($Channel) { $reExecArgs += @("-Channel", $Channel) }
     & powershell -ExecutionPolicy Bypass -File $PSCommandPath @reExecArgs
     exit $LASTEXITCODE
 }
@@ -299,6 +314,31 @@ $engine = if ($descriptor.engine -and $descriptor.engine.min) { $descriptor.engi
 $base = Field $manifest "base"
 $suite = Field $manifest "suite"
 if (-not $base -or -not $suite) { Fail "$manifest does not name a base and a suite" }
+
+# ------------------------------------------------------------- the channel
+# Which engine pipeline this bundle builds against: recorded by the front end
+# that generated it (bundle.json's "channel", "stable" assumed when absent,
+# so every bundle generated before this existed keeps working exactly as it
+# does today). -Channel/SYNOS_CHANNEL override it, and win over the bundle's
+# own value either way.
+$bundleChannel = if ($descriptor.channel -and $descriptor.channel -in @("stable", "development")) { $descriptor.channel }
+                 elseif ($descriptor.channel) { Write-Host "note: bundle.json names an unknown channel '$($descriptor.channel)'; treating this bundle as stable."; "" }
+                 else { "" }
+if ($Channel) { $resolvedChannel = $Channel; $channelReason = "the -Channel flag" }
+elseif ($env:SYNOS_CHANNEL) { $resolvedChannel = $env:SYNOS_CHANNEL; $channelReason = "the SYNOS_CHANNEL environment variable" }
+elseif ($bundleChannel) { $resolvedChannel = $bundleChannel; $channelReason = "bundle" }
+else { $resolvedChannel = "stable"; $channelReason = "default" }
+switch ($channelReason) {
+    "bundle" {
+        if ($resolvedChannel -eq "development") { Write-Host "channel: development (this bundle was made by a development instance of the page)" }
+        else { Write-Host "channel: stable (this bundle was made by the released page)" }
+    }
+    "default" { Write-Host "channel: stable (default; bundle.json names no channel)" }
+    default { Write-Host "channel: $resolvedChannel (override: $channelReason)" }
+}
+if ($resolvedChannel -eq "development") {
+    Write-Host "note: the development channel builds against the unreleased tip of the engine's main branch, not a released version."
+}
 
 Test-ForLauncherUpdate
 
@@ -447,14 +487,75 @@ $(Get-DockerStorageHelp)
 }
 
 # ---------------------------------------------------------------- the image
-# The published image is preferred. When none can be pulled (not published yet,
-# a registry that refuses anonymous pulls, no network to it), the same image is
-# built here from the engine source, once, and kept as synos-builder:<base>-<suite>-local.
-function Build-EngineImage {
+# The published image is preferred. On the stable channel only a release that
+# satisfies this bundle is ever pulled or built - never the moving tag, never
+# the development branch, in any form. The development channel is unchanged
+# from before: the moving tag, then a local build from the tip of the main
+# branch - both named so an image built this way is never mistaken for a
+# released one.
+$GithubRepoUrl = "https://github.com/Synthot/SynOS-Studio"
+$GithubTagsApi = "https://api.github.com/repos/Synthot/SynOS-Studio/tags?per_page=100"
+
+function Test-VersionGe([string]$A, [string]$B) {
+    try { return ([version]$A) -ge ([version]$B) } catch { return $false }
+}
+
+# Resolves the release this bundle should build against on the stable
+# channel: the newest tag (v<version> on the public repository) at or above
+# engine.min, read from GitHub's tags API - no token needed, never guessed
+# from a moving branch. Sets $script:resolvedVersion/resolvedTag/resolvedNote,
+# or refuses with Fail when nothing satisfies the bundle. When the API cannot
+# be reached at all (offline, or its anonymous rate limit) this falls back to
+# the one release the bundle names directly - archive/refs/tags/v<engine>.zip,
+# no further API calls - rather than an opaque network error.
+function Resolve-StableRelease {
+    $tags = $null
+    try { $tags = Invoke-RestMethod -Uri $GithubTagsApi -TimeoutSec 20 -Headers @{ Accept = "application/vnd.github+json" } }
+    catch { $tags = $null }
+    if ($tags) {
+        $versions = $tags | ForEach-Object { $_.name } | Where-Object { $_ -match '^v\d+(\.\d+)*$' } |
+            ForEach-Object { $_.Substring(1) } | Select-Object -Unique
+        $overallBest = $null
+        foreach ($v in $versions) { if (-not $overallBest -or (Test-VersionGe $v $overallBest)) { $overallBest = $v } }
+        if (-not $overallBest) {
+            Fail "GitHub's release list for $GithubRepoUrl came back but named no v<version> tag; set SYNOS_ENGINE_URL, SYNOS_ENGINE_SOURCE or SYNOS_BUILDER_IMAGE, or build with -Channel development" 2
+        }
+        $best = $null
+        foreach ($v in $versions) {
+            if ($engine -and -not (Test-VersionGe $v $engine)) { continue }
+            if (-not $best -or (Test-VersionGe $v $best)) { $best = $v }
+        }
+        if (-not $engine) { $best = $overallBest }
+        if (-not $best) {
+            Fail "this bundle needs engine $engine; the newest release is $overallBest. Wait for a release that satisfies it, build your own engine (SYNOS_ENGINE_SOURCE=<checkout> .\build.ps1), or build with -Channel development for the unreleased engine." 2
+        }
+        $script:resolvedVersion = $best
+        $script:resolvedTag = "v$best"
+        $script:resolvedNote = "the newest published release satisfying this bundle, from GitHub's release list"
+        return
+    }
+    if ($engine) {
+        $script:resolvedVersion = $engine
+        $script:resolvedTag = "v$engine"
+        $script:resolvedNote = "GitHub's release list could not be checked (offline, or its anonymous rate limit); using the release this bundle names directly"
+        return
+    }
+    Fail "this bundle names no minimum engine version and GitHub's release list could not be checked (offline, or its anonymous rate limit); set SYNOS_ENGINE_URL or SYNOS_ENGINE_SOURCE, try again shortly, or build with -Channel development" 2
+}
+
+function Build-EngineImage([switch]$Forced) {
     $src = $env:SYNOS_ENGINE_SOURCE
     $sourceId = "local"
     if (-not $src) {
-        $url = if ($env:SYNOS_ENGINE_URL) { $env:SYNOS_ENGINE_URL } else { "https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.zip" }
+        if ($env:SYNOS_ENGINE_URL) {
+            $url = $env:SYNOS_ENGINE_URL
+        } elseif ($resolvedChannel -eq "development") {
+            $url = "https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.zip"
+        } else {
+            if (-not $script:resolvedTag) { Resolve-StableRelease }
+            $url = "$GithubRepoUrl/archive/refs/tags/$($script:resolvedTag).zip"
+            Write-Host "channel stable: building from release $($script:resolvedTag) ($($script:resolvedNote))"
+        }
         Write-Host "downloading the engine source from $url"
         New-Item -ItemType Directory -Force -Path ".build" | Out-Null
         Invoke-WebRequest -Uri $url -OutFile ".build\engine-src.zip"
@@ -466,9 +567,12 @@ function Build-EngineImage {
         $sourceId = (Get-FileHash -Algorithm SHA256 ".build\engine-src.zip").Hash.Substring(0, 12).ToLower()
     }
     if (-not (Test-Path (Join-Path $src "bases\$base\Containerfile"))) { Fail "$src has no bases\$base\Containerfile: not an engine checkout" 2 }
-    $localTag = "synos-builder:$base-$suite-$sourceId"
-    & $runtime @runtimeRootArgs image inspect $localTag *> $null
-    if ($LASTEXITCODE -eq 0) { Write-Host "using the engine image built earlier on this machine from this engine source: $localTag"; return $localTag }
+    $script:buildSrc = $src
+    $localTag = if ($resolvedChannel -eq "development") { "synos-builder:$base-$suite-dev-$sourceId" } else { "synos-builder:$base-$suite-$sourceId" }
+    if (-not $Forced) {
+        & $runtime @runtimeRootArgs image inspect $localTag *> $null
+        if ($LASTEXITCODE -eq 0) { Write-Host "using the engine image built earlier on this machine from this engine source: $localTag"; return $localTag }
+    }
     Write-Host "building the engine image $localTag from $src (about 20 minutes, once)."
     Write-Host "Each build step and package is shown as it happens; the complete output is kept in dist\image-build.log"
     New-Item -ItemType Directory -Force -Path "dist" | Out-Null
@@ -487,21 +591,72 @@ function Build-EngineImage {
 $repository = if ($env:SYNOS_IMAGE_REPOSITORY) { $env:SYNOS_IMAGE_REPOSITORY } else { "ghcr.io/synthot/synos-builder" }
 $image = $env:SYNOS_BUILDER_IMAGE
 if (-not $image) {
-    $pinned = if ($engine) { "${repository}:$base-$suite-v$engine" } else { "${repository}:$base-$suite" }
-    $moving = "${repository}:$base-$suite"
-    Write-Host "pulling the build engine $pinned (one-time download, about 1.5 GB)"
-    & $runtime @runtimeRootArgs pull $pinned *> $null
-    if ($LASTEXITCODE -eq 0) { $image = $pinned }
-    else {
-        & $runtime @runtimeRootArgs pull $moving *> $null
-        if ($LASTEXITCODE -eq 0) { Write-Host "no image pinned to engine $engine; using the current $moving"; $image = $moving }
-        elseif ($Command -eq "check") { $image = "none published: it will be built here at the first build, about 20 minutes" }
+    if ($resolvedChannel -eq "development") {
+        $pinned = if ($engine) { "${repository}:$base-$suite-v$engine" } else { "${repository}:$base-$suite" }
+        $moving = "${repository}:$base-$suite"
+        Write-Host "pulling the build engine $pinned (one-time download, about 1.5 GB)"
+        & $runtime @runtimeRootArgs pull $pinned *> $null
+        if ($LASTEXITCODE -eq 0) { $image = $pinned }
         else {
-            Write-Host "no published engine image can be pulled from $repository (not published yet, or the registry refused);"
-            Write-Host "the image is built here instead, from the engine source."
-            $image = Build-EngineImage
+            & $runtime @runtimeRootArgs pull $moving *> $null
+            if ($LASTEXITCODE -eq 0) { Write-Host "no image pinned to engine $engine; using the current $moving"; $image = $moving }
+            elseif ($Command -eq "check") { $image = "none published: it will be built here at the first build, about 20 minutes" }
+            else {
+                Write-Host "no published engine image can be pulled from $repository (not published yet, or the registry refused);"
+                Write-Host "the image is built here instead, from the engine source."
+                $image = Build-EngineImage
+            }
+        }
+    } else {
+        $pulled = $false
+        $pinned = $null
+        if ($engine) {
+            $pinned = "${repository}:$base-$suite-v$engine"
+            Write-Host "pulling the build engine $pinned (one-time download, about 1.5 GB)"
+            & $runtime @runtimeRootArgs pull $pinned *> $null
+            if ($LASTEXITCODE -eq 0) { $image = $pinned; $pulled = $true }
+        }
+        if (-not $pulled) {
+            Resolve-StableRelease
+            Write-Host "channel stable: using release $($script:resolvedTag) ($($script:resolvedNote))"
+            $pinned2 = "${repository}:$base-$suite-v$($script:resolvedVersion)"
+            if ($pinned2 -ne $pinned) {
+                Write-Host "pulling the build engine $pinned2 (one-time download, about 1.5 GB)"
+                & $runtime @runtimeRootArgs pull $pinned2 *> $null
+                if ($LASTEXITCODE -eq 0) { $image = $pinned2; $pulled = $true }
+            }
+        }
+        if (-not $pulled) {
+            if ($Command -eq "check") { $image = "none published: it will be built here at the first build, about 20 minutes" }
+            else {
+                Write-Host "no published engine image can be pulled from $repository for this release (not published yet, or the registry refused);"
+                Write-Host "the image is built here instead, from the matching release source - never from the development branch."
+                $image = Build-EngineImage
+            }
         }
     }
+}
+
+# The failure this guards against: a cached image (built earlier, from an
+# older source, or pulled once and kept) carrying an engine below what this
+# bundle needs. Read plainly instead of assumed, and rebuilt from the right
+# source rather than left to fail deep in the build with two bare numbers.
+function Test-EngineVersion {
+    if (-not $engine) { return }
+    if ($image -like "none published:*") { return }
+    $actual = ""
+    if ($script:buildSrc -and (Test-Path (Join-Path $script:buildSrc "VERSION"))) {
+        $actual = (Get-Content -Raw (Join-Path $script:buildSrc "VERSION")).Trim()
+    } else {
+        $actual = ((& $runtime @runtimeRootArgs run --rm $image cat /opt/synos/VERSION 2>$null) -join "").Trim()
+    }
+    if (-not $actual -or $actual -notmatch '^\d+(\.\d+)*$') { return }
+    if (Test-VersionGe $actual $engine) { return }
+    if ($env:SYNOS_BUILDER_IMAGE) {
+        Fail "SYNOS_BUILDER_IMAGE=$image carries engine $actual, older than this bundle needs ($engine); use a newer image, or unset SYNOS_BUILDER_IMAGE to let this script choose one" 2
+    }
+    Write-Host "the image $image carries engine $actual, older than this bundle needs ($engine); rebuilding it from the matching source instead of using a stale image."
+    $script:image = Build-EngineImage -Forced
 }
 
 if ($Command -eq "check") {
@@ -510,6 +665,8 @@ if ($Command -eq "check") {
     Write-Host "ready: $runtime$rootArgsText, $freeGb GB free here$storeText, engine image $image"
     exit 0
 }
+
+Test-EngineVersion
 
 # ---------------------------------------------------------------- this script
 # The engine that builds the image also carries the current launcher. A bundle
@@ -531,6 +688,7 @@ if (-not $env:SYNOS_LAUNCHER_REFRESHED) {
         if ($Yes) { $reExecArgs += "-Yes" }
         if ($ContainerRoot) { $reExecArgs += @("-ContainerRoot", $ContainerRoot) }
         if ($ContainerRunroot) { $reExecArgs += @("-ContainerRunroot", $ContainerRunroot) }
+        if ($Channel) { $reExecArgs += @("-Channel", $Channel) }
         & powershell -ExecutionPolicy Bypass -File $PSCommandPath @reExecArgs
         exit $LASTEXITCODE
     }
@@ -548,6 +706,14 @@ if (Test-Path "dist\build.pid") {
 }
 Set-Content -Path "dist\build.pid" -Value $PID
 if (Test-Path "dist\build.log") { Move-Item -Force "dist\build.log" "dist\build.previous.log" }
+# Seeded here, before the container appends to it, so a development build is
+# obvious in the log itself and not only in this script's own terminal output.
+if ($resolvedChannel -eq "development") {
+    Set-Content -Path "dist\build.log" -Value "channel: development (unreleased engine, tip of the main branch - not a release build)"
+    Write-Host "building with the development engine (unreleased, tip of the main branch) - this image and ISO are not a release build."
+} else {
+    Set-Content -Path "dist\build.log" -Value "channel: stable"
+}
 Write-Host "building $manifest with $image"
 Write-Host "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
 Write-Host "the full output is kept in dist\build.log"
@@ -557,6 +723,7 @@ Write-Host "the full output is kept in dist\build.log"
     -v /opt/synos/new_building_os -v /opt/synos/image `
     -e SYNOS_KEYS_DIR=.build/keys `
     -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE `
+    -e SYNOS_CHANNEL="$resolvedChannel" `
     $image synos build /bundle --output /bundle/dist --log /bundle/dist/build.log
 $status = $LASTEXITCODE
 Remove-Item -Force "dist\build.pid" -ErrorAction SilentlyContinue

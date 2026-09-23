@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -28,6 +29,7 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(render_manifest)
 
 BUNDLE_FORMAT = 1
+CHANNELS = ("stable", "development")
 LAUNCHERS = {"build.sh": "bundle_launcher.sh", "build.ps1": "bundle_launcher.ps1", "build.cmd": "bundle_launcher.cmd",
              "build.command": "bundle_launcher.command"}
 
@@ -122,7 +124,7 @@ def bundle_catalog() -> list[dict]:
     return catalog
 
 
-def collect() -> dict:
+def collect(channel: str = "stable") -> dict:
     load_yaml = render_manifest.load_yaml
     catalog = load_yaml(ROOT / "profiles" / "catalog.yml")
 
@@ -197,6 +199,7 @@ def collect() -> dict:
     default_manifest = load_yaml(ROOT / "manifest.yml")
     return {
         "generated_from": str(ROOT.name),
+        "channel": channel,
         "engine": engine_version(),
         "bundle_format": BUNDLE_FORMAT,
         "launchers": launchers(),
@@ -222,14 +225,19 @@ def collect() -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--output", type=Path, help="write the JSON here instead of stdout")
+    parser.add_argument("--channel", choices=CHANNELS, default=os.environ.get("SYNOS_CHANNEL", "stable"),
+                        help="which engine pipeline this export is for (default: stable, or SYNOS_CHANNEL): "
+                             "stamped into the export so a page build can tell a production export from a "
+                             "development one, and so bundles it writes can carry the same value (docs/BUNDLE.md)")
     args = parser.parse_args(argv)
-    data = collect()
+    data = collect(args.channel)
     text = json.dumps(data, ensure_ascii=False, indent=None if args.output else 2)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(text + "\n", encoding="utf-8")
         print(f"wrote {args.output} ({len(data['profiles'])} profiles, {len(data['regions'])} regions, "
-              f"{len(data['bases'])} bases, engine {data['engine']}, bundle format {data['bundle_format']})", file=sys.stderr)
+              f"{len(data['bases'])} bases, engine {data['engine']}, bundle format {data['bundle_format']}, "
+              f"channel {data['channel']})", file=sys.stderr)
     else:
         print(text)
     return 0
