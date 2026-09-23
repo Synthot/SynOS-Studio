@@ -1,0 +1,10 @@
+id: photography-workstation
+extends: workstation
+description: >-
+  Photography workstation on ubuntu noble: darktable and RawTherapee for
+  RAW processing, ArgyllCMS for display and printer colour profiling with
+  DisplayCAL as its graphical front end (DisplayCAL is missing from
+  jammy, which is why this entry pins noble), and gphoto2 for tethered
+  shooting.
+software:
+  bundles: [photography]

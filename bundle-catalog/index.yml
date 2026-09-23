@@ -147,3 +147,94 @@ bundle_catalog:
     services: []
     ports: [22, 6443, 10250]
     verified: true
+  - id: audio-workstation
+    name: Audio Production Workstation
+    summary: "A digital audio workstation: Ardour on PipeWire's JACK-compatible layer (pipewire-jack, qpwgraph, a2jmidid), realtime scheduling already granted to the audio group, and a set of instrument and effect plugins (Calf, x42, LSP, Hydrogen, Guitarix, Rakarrack)."
+    first_boot:
+      - "If your account is not already in the audio group (most desktop installs add it automatically), add it yourself: `sudo usermod -aG audio $USER`, then log out and back in — the realtime limits only apply to that group."
+      - "Open qpwgraph to see and rewire PipeWire's audio graph; Ardour connects to it automatically, no separate server to start."
+    tags: [audio, daw, pipewire, jack, music-production, realtime, ardour]
+    folder: audio-workstation
+    services: []
+    ports: []
+    verified: true
+  - id: video-editing-workstation
+    name: Video Editing Workstation
+    summary: "A video editing workstation: Kdenlive with ffmpeg's codecs, and VA-API/VDPAU hardware acceleration for faster encode and decode on Intel and AMD GPUs."
+    first_boot:
+      - "Run `vainfo` to confirm your GPU's VA-API driver loaded before relying on hardware acceleration in Kdenlive's render settings."
+    tags: [video, editing, kdenlive, ffmpeg, hardware-acceleration, vaapi]
+    folder: video-editing-workstation
+    services: []
+    ports: []
+    verified: true
+  - id: photography-workstation
+    name: Photography Workstation
+    summary: "A photography workstation: darktable and RawTherapee for RAW processing, ArgyllCMS and DisplayCAL for colour management and display calibration, and gphoto2 for tethered shooting."
+    first_boot:
+      - "Calibrate your monitor with DisplayCAL (a graphical front end for ArgyllCMS, from a colorimeter) and load the resulting ICC profile in Settings > Color before trusting on-screen colour."
+    tags: [photography, raw-processing, darktable, rawtherapee, color-management]
+    folder: photography-workstation
+    services: []
+    ports: []
+    verified: true
+  - id: cad-3d-printing-workstation
+    name: CAD and 3D Printing Workstation
+    summary: "A CAD and 3D printing workstation on Debian trixie: FreeCAD and OpenSCAD for modelling and Cura for slicing, with a udev rule already granting the dialout group access to common printer and microcontroller boards."
+    first_boot:
+      - "If your account is not already in the dialout group (most desktop installs add it automatically), add it yourself: `sudo usermod -aG dialout $USER`, then log out and back in before your printer or board appears without sudo."
+    tags: [cad, 3d-printing, freecad, openscad, cura, udev, dialout]
+    folder: cad-3d-printing-workstation
+    services: []
+    ports: []
+    verified: true
+  - id: data-science-workstation
+    name: Data Science Workstation
+    summary: "A data science workstation: the developer profile plus the Python scientific stack (NumPy, SciPy, pandas, scikit-learn, Matplotlib, seaborn) and a Jupyter Notebook launcher already on the applications menu."
+    first_boot:
+      - "Open \"Jupyter Notebook\" from the applications menu, or run `jupyter-notebook` yourself; it starts in your home directory."
+    tags: [data-science, python, jupyter, numpy, pandas, scikit-learn]
+    folder: data-science-workstation
+    services: []
+    ports: []
+    verified: true
+  - id: security-research-workstation
+    name: Security Research Workstation
+    summary: "A security research workstation for lawful, authorised network and web analysis: nmap, Wireshark, tcpdump, aircrack-ng, sqlmap, Nikto, Hydra, John the Ripper, Hashcat, Gobuster, WhatWeb and dirb, with a pcap group already granted non-root packet capture."
+    first_boot:
+      - "Add your account to the pcap group so packet capture needs no sudo — `sudo usermod -aG pcap $USER` — then log out and back in before opening Wireshark or running tcpdump."
+    tags: [security-research, penetration-testing, network-analysis, wireshark, nmap, packet-capture]
+    folder: security-research-workstation
+    services: []
+    ports: []
+    verified: true
+  - id: digital-signage
+    name: Digital Signage
+    summary: "A kiosk that boots straight into a full-screen browser showing one URL, set in a single configuration file."
+    first_boot:
+      - "Edit /etc/firefox/policies/policies.json and change the Homepage URL to your sign's page, then restart the browser (or reboot)."
+    tags: [digital-signage, kiosk, browser, display]
+    folder: digital-signage
+    services: []
+    ports: []
+    verified: true
+  - id: retro-gaming-console
+    name: Retro Gaming Console
+    summary: "A console-style kiosk that boots straight into RetroArch, with joystick and gamepad autodetection and six libretro cores already installed (SNES, Game Boy Advance, Game Boy, Nintendo DS, NES, PC Engine)."
+    first_boot:
+      - "No ROMs are shipped (that content is yours to provide lawfully): add them under a content directory of your choice and point RetroArch's playlists at it from its own menu."
+    tags: [retro-gaming, retroarch, emulation, kiosk, controller-support]
+    folder: retro-gaming-console
+    services: []
+    ports: []
+    verified: true
+  - id: classroom-workstation
+    name: Classroom / Shared-Desk Workstation
+    summary: "A locked-down workstation for a school or library: no command line, no user administration, a short auto screen-lock, and USBGuard blocking any USB device beyond keyboards, mice and hubs until an administrator allows it."
+    first_boot:
+      - "USBGuard already blocks anything beyond keyboards, mice and hubs: plug in and allow a device this room genuinely needs as an administrator (`sudo usbguard allow-device <id>`) before handing the machine to the next person."
+    tags: [classroom, shared-desk, lockdown, usbguard, education, library]
+    folder: classroom-workstation
+    services: []
+    ports: []
+    verified: true

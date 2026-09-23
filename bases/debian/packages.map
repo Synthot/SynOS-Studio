@@ -43,3 +43,20 @@ yocto-practical-tools = rsync bc bison flex libssl-dev git-lfs bmap-tools pigz c
 # Building the Yocto Project documentation, including PDFs (texlive is large:
 # this is its own bundle so a person opts in rather than always paying for it).
 yocto-doc-tools    = make librsvg2-bin python3-saneyaml python3-venv fonts-freefont-otf latexmk tex-gyre texlive-fonts-extra texlive-fonts-recommended texlive-lang-all texlive-latex-extra texlive-latex-recommended texlive-xetex
+# Bundle-catalog workstation appliances (docs/BUNDLE.md, "The bundle
+# catalog"): each catalogued bundle pins one base and one suite in its own
+# manifest (this base's only supported suite is trixie, base.env), so a
+# package below only has to exist on trixie, checked with rmadison there.
+audio-production-tools = ardour pipewire-jack qpwgraph a2jmidid jack-mixer calf-plugins x42-plugins lsp-plugins-jack hydrogen guitarix rakarrack rtkit
+video-editing-tools    = kdenlive ffmpeg va-driver-all vainfo mesa-va-drivers vdpau-driver-all
+photography-tools      = darktable rawtherapee argyll gphoto2 displaycal
+# cad-3d-printing-workstation targets this base specifically for FreeCAD:
+# it and Cura are on trixie (and on Ubuntu jammy, but not noble or
+# resolute) with a modern FreeCAD 1.0, so this group ships the full CAD
+# suite here instead of the OpenSCAD/PrusaSlicer-only set on Ubuntu.
+cad-3d-printing-tools  = freecad cura openscad
+data-science-tools     = jupyter-notebook python3-numpy python3-scipy python3-pandas python3-matplotlib python3-sklearn python3-seaborn
+security-research-tools = nmap wireshark tcpdump aircrack-ng sqlmap nikto hydra john hashcat gobuster whatweb dirb netcat-openbsd libcap2-bin
+# libretro-beetle-pce-fast (PC Engine/TurboGrafx-16) is missing from
+# trixie, so it is Ubuntu-only (see bases/ubuntu/packages.map).
+retro-gaming-tools     = retroarch retroarch-assets joystick jstest-gtk libretro-snes9x libretro-mgba libretro-gambatte libretro-desmume libretro-nestopia

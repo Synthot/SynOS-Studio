@@ -1,0 +1,35 @@
+id: classroom-workstation
+extends: workstation
+description: >-
+  Locked-down workstation for a school or library: command-line access and
+  user administration are disabled, the screen locks itself after a short
+  idle period, USBGuard blocks any USB device beyond keyboards, mice and
+  hubs until an administrator allows it, and a Polkit rule blocks account
+  and system network changes from anyone outside the sudo group. The
+  desktop stays otherwise normal: this is a workstation a stranger can use,
+  not a single-app kiosk.
+software:
+  files:
+    - path: /etc/polkit-1/rules.d/50-classroom-lockdown.rules
+      content: |
+        // Only an administrator (sudo group) may change user accounts or
+        // this machine's network configuration; every other signed-in
+        // person is refused, whatever the desktop's own menus offer them.
+        polkit.addRule(function(action, subject) {
+            if (action.id.indexOf("org.freedesktop.accounts.user-administration") == 0 &&
+                !subject.isInGroup("sudo")) {
+                return polkit.Result.NO;
+            }
+            if (action.id.indexOf("org.freedesktop.NetworkManager.settings.modify.system") == 0 &&
+                !subject.isInGroup("sudo")) {
+                return polkit.Result.NO;
+            }
+        });
+security:
+  usbguard: true
+policy:
+  dconf:
+    "org/gnome/desktop/lockdown/disable-command-line": "true"
+    "org/gnome/desktop/lockdown/user-administration-disabled": "true"
+    "org/gnome/desktop/screensaver/lock-enabled": "true"
+    "org/gnome/desktop/session/idle-delay": "uint32 60"

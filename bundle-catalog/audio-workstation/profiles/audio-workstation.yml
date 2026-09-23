@@ -1,0 +1,27 @@
+id: audio-workstation
+extends: workstation
+description: >-
+  Digital audio workstation on ubuntu noble: the audio server is PipeWire,
+  used through its JACK-compatible layer (pipewire-jack) so Ardour and
+  every JACK-API tool here (jack-mixer, a2jmidid for ALSA-MIDI bridging)
+  work without a separate jackd2 daemon; qpwgraph is PipeWire's own patchbay,
+  replacing qjackctl. Noble and resolute carry PipeWire's JACK packages;
+  jammy does not, which is why this entry pins noble rather than the
+  engine's oldest supported Ubuntu suite. Calf, x42 and LSP plugin
+  bundles, plus Hydrogen (drum machine), Guitarix and Rakarrack (guitar
+  effects). Realtime scheduling and locked memory for the audio group are
+  still granted in /etc/security/limits.d — PipeWire's own rtkit path
+  covers most of this, but the limits file is kept as a fallback for
+  anything that still asks the kernel directly — applied automatically by
+  the PAM stack every desktop install already ships.
+software:
+  bundles: [audio-production]
+  files:
+    - path: /etc/security/limits.d/99-audio-realtime.conf
+      content: |
+        # Realtime priority and locked memory for low-latency JACK audio,
+        # members of the audio group only (see first_boot in the bundle
+        # catalog if your account needs adding to that group).
+        @audio   -  rtprio     95
+        @audio   -  memlock    unlimited
+        @audio   -  nice      -19

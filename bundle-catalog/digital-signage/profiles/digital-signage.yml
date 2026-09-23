@@ -1,0 +1,24 @@
+id: digital-signage
+extends: kiosk
+description: >-
+  Kiosk that boots straight into a full-screen browser showing one URL:
+  /etc/firefox/policies/policies.json ships with a placeholder Homepage the
+  person replaces with their own sign's page.
+software:
+  files:
+    - path: /etc/firefox/policies/policies.json
+      content: |
+        {
+          "policies": {
+            "Homepage": {
+              "URL": "https://example.com/",
+              "StartPage": "homepage",
+              "Locked": true
+            },
+            "DisableTelemetry": true,
+            "NoDefaultBookmarks": true,
+            "OverrideFirstRunPage": ""
+          }
+        }
+policy:
+  kiosk_app: browser

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "digital-signage",
+  "manifest": "manifests/digital-signage.yml",
+  "engine": {
+    "min": "0.2.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Digital Signage — ubuntu noble amd64, profile digital-signage",
+  "files": [
+    "manifests/digital-signage.yml",
+    "profiles/digital-signage.yml"
+  ]
+}

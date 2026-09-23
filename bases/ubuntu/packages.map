@@ -46,3 +46,28 @@ yocto-practical-tools = rsync bc bison flex libssl-dev git-lfs bmap-tools pigz c
 # Building the Yocto Project documentation, including PDFs (texlive is large:
 # this is its own bundle so a person opts in rather than always paying for it).
 yocto-doc-tools    = make librsvg2-bin python3-saneyaml python3-venv fonts-freefont-otf latexmk tex-gyre texlive-fonts-extra texlive-fonts-recommended texlive-lang-all texlive-latex-extra texlive-latex-recommended texlive-xetex
+# Bundle-catalog workstation appliances (docs/BUNDLE.md, "The bundle
+# catalog"): each catalogued bundle pins one base and one suite in its own
+# manifest, so a package below only has to exist on that entry's suite,
+# checked with rmadison against that suite specifically (noted per group);
+# it need not exist on every suite this base supports.
+# audio-workstation targets noble: PipeWire's JACK compatibility layer
+# (pipewire-jack, qpwgraph) is on noble/resolute but missing from jammy,
+# so a jammy-based derived profile using this group would need jackd2/
+# qjackctl instead.
+audio-production-tools = ardour pipewire-jack qpwgraph a2jmidid jack-mixer calf-plugins x42-plugins lsp-plugins-jack hydrogen guitarix rakarrack rtkit
+# video-editing-workstation targets noble.
+video-editing-tools    = kdenlive ffmpeg va-driver-all vainfo mesa-va-drivers vdpau-driver-all
+# photography-workstation targets noble (displaycal is missing from jammy).
+photography-tools      = darktable rawtherapee argyll gphoto2 displaycal
+# cad-3d-printing-workstation targets Debian trixie instead (see
+# bases/debian/packages.map): FreeCAD and Cura are missing from noble and
+# resolute, so the Ubuntu side of this group stays the OpenSCAD/PrusaSlicer
+# set, which is available on every Ubuntu suite this engine supports.
+cad-3d-printing-tools  = openscad prusa-slicer
+data-science-tools     = jupyter-notebook python3-numpy python3-scipy python3-pandas python3-matplotlib python3-sklearn python3-seaborn
+security-research-tools = nmap wireshark tcpdump aircrack-ng sqlmap nikto hydra john hashcat gobuster whatweb dirb netcat-openbsd libcap2-bin
+# retro-gaming-console targets noble, which also carries Nestopia (NES) and
+# Beetle PCE Fast (PC Engine/TurboGrafx-16); Beetle PCE Fast is missing
+# from Debian trixie, so it is Ubuntu-only (see bases/debian/packages.map).
+retro-gaming-tools     = retroarch retroarch-assets joystick jstest-gtk libretro-snes9x libretro-mgba libretro-gambatte libretro-desmume libretro-nestopia libretro-beetle-pce-fast

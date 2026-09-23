@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "security-research-workstation",
+  "manifest": "manifests/security-research-workstation.yml",
+  "engine": {
+    "min": "0.2.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Security Research Workstation — ubuntu noble amd64, profile security-research-workstation",
+  "files": [
+    "manifests/security-research-workstation.yml",
+    "profiles/security-research-workstation.yml"
+  ]
+}

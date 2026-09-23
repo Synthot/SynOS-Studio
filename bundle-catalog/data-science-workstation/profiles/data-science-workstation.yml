@@ -1,0 +1,20 @@
+id: data-science-workstation
+extends: developer
+description: >-
+  Data science workstation: the developer profile plus the Python
+  scientific stack (NumPy, SciPy, pandas, scikit-learn, Matplotlib,
+  seaborn) and Jupyter Notebook, with a launcher already on the
+  applications menu that opens it in the user's home directory.
+software:
+  bundles: [data-science]
+  files:
+    - path: /usr/local/share/applications/jupyter-notebook.desktop
+      content: |
+        [Desktop Entry]
+        Type=Application
+        Name=Jupyter Notebook
+        Comment=Python scientific stack (NumPy, SciPy, pandas, scikit-learn) in a notebook
+        Exec=sh -c 'jupyter-notebook --notebook-dir="$HOME"'
+        Icon=text-x-python
+        Terminal=true
+        Categories=Development;Science;

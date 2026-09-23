@@ -1,0 +1,12 @@
+id: video-editing-workstation
+extends: workstation
+description: >-
+  Video editing workstation on ubuntu noble: Kdenlive (MLT-based non-linear
+  editor) and ffmpeg's codecs, plus VA-API and VDPAU hardware video
+  acceleration (va-driver-all, mesa-va-drivers, vdpau-driver-all, vainfo)
+  for faster encode and decode on Intel and AMD GPUs. mesa-va-drivers and
+  vdpau-driver-all are missing from resolute, which is why this entry
+  pins noble rather than resolute; a resolute-based derived profile
+  reusing this group would need to drop back to va-driver-all alone.
+software:
+  bundles: [video-editing]

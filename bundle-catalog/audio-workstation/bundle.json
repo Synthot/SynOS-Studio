@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "audio-workstation",
+  "manifest": "manifests/audio-workstation.yml",
+  "engine": {
+    "min": "0.2.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Audio Production Workstation — ubuntu noble amd64, profile audio-workstation",
+  "files": [
+    "manifests/audio-workstation.yml",
+    "profiles/audio-workstation.yml"
+  ]
+}

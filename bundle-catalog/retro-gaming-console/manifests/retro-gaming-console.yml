@@ -1,0 +1,19 @@
+schema_version: 1
+name: retro-gaming-console
+version: 1.0.0
+
+base: ubuntu
+suite: noble
+arch: amd64
+
+profile: retro-gaming-console
+regions: [us]
+brand: synos
+
+mirrors: {}
+
+packages:
+  repository: ""
+  takeover: all
+
+overrides: {}
