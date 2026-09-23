@@ -87,10 +87,13 @@ class IndexAndFoldersTests(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)), "duplicate id in bundle-catalog/index.yml")
         self.assertNotIn(TEMPLATE_FOLDER, indexed_folders, "the template is not a catalog entry")
 
+    SUMMARY_MAX_LENGTH = 280
+    NO_FIRST_BOOT_ENTRIES = {"yocto-builder", "yocto-builder-docs", "ai-workstation"}
+
     def test_every_entry_has_the_required_index_fields(self) -> None:
         for entry in index_entries():
             with self.subTest(entry=entry["id"]):
-                for field in ("id", "name", "summary", "tags", "folder", "services", "ports"):
+                for field in ("id", "name", "summary", "first_boot", "tags", "folder", "services", "ports"):
                     self.assertIn(field, entry)
                 self.assertRegex(entry["id"], r"^[a-z0-9][a-z0-9-]*$")
                 self.assertTrue(entry["tags"], "no tags")
@@ -99,6 +102,50 @@ class IndexAndFoldersTests(unittest.TestCase):
                 for port in entry["ports"]:
                     self.assertIsInstance(port, int, f"{entry['id']}: port {port!r} must be a bare number")
                 self.assertIsInstance(entry.get("verified", False), bool)
+
+    def test_summary_is_one_short_sentence_with_no_command_and_no_first_boot_clause(self) -> None:
+        """A card is not a manual page: the long first-boot prose belongs in
+        first_boot, not summary (owner feedback after building the page)."""
+        for entry in index_entries():
+            with self.subTest(entry=entry["id"]):
+                summary = entry["summary"]
+                self.assertLessEqual(len(summary), self.SUMMARY_MAX_LENGTH,
+                                      f"{entry['id']}: summary is {len(summary)} chars, over {self.SUMMARY_MAX_LENGTH}")
+                self.assertNotIn("`", summary, f"{entry['id']}: summary contains a shell command")
+                self.assertNotIn("$(", summary, f"{entry['id']}: summary contains a shell command")
+                self.assertNotRegex(summary.lower(), r"first boot", f"{entry['id']}: summary keeps a 'first boot' clause")
+
+    def test_first_boot_is_a_list_of_short_strings_or_empty_by_design(self) -> None:
+        for entry in index_entries():
+            with self.subTest(entry=entry["id"]):
+                first_boot = entry["first_boot"]
+                self.assertIsInstance(first_boot, list)
+                if entry["id"] in self.NO_FIRST_BOOT_ENTRIES:
+                    self.assertEqual([], first_boot, f"{entry['id']} is expected to have no meaningful first step")
+                else:
+                    self.assertTrue(first_boot, f"{entry['id']}: empty first_boot must be a deliberate choice, not an oversight")
+                for step in first_boot:
+                    self.assertIsInstance(step, str)
+                    self.assertLess(len(step), 400, f"{entry['id']}: a first_boot step reads like more than a line or two")
+
+    def test_nothing_from_the_old_combined_summaries_was_quietly_dropped(self) -> None:
+        """Everything that used to live in the long summary (before it was
+        split) must still be reachable: an appliance with something to say
+        about first boot still says it, just in first_boot now."""
+        must_mention = {
+            "container-registry": ["htpasswd"],
+            "git-server": ["2222", "3000"],
+            "media-server": ["8096"],
+            "monitoring-server": ["admin/admin", "3000"],
+            "database-server": ["superuser-password", "5432"],
+            "kubernetes-server": ["kubeadm init", "cgroup"],
+        }
+        by_id = {e["id"]: e for e in index_entries()}
+        for entry_id, needles in must_mention.items():
+            combined = by_id[entry_id]["summary"] + " ".join(by_id[entry_id]["first_boot"])
+            for needle in needles:
+                with self.subTest(entry=entry_id, needle=needle):
+                    self.assertIn(needle, combined)
 
     def test_appliances_are_not_plain_copies_of_a_machine_kind(self) -> None:
         """The catalog was rewritten around appliances: every entry either ships
@@ -297,9 +344,9 @@ class AppliancePolicyTests(unittest.TestCase):
             with self.subTest(line=line):
                 self.assertNotRegex(line, r":\$2[aby]\$\d\d\$", "this line is a real bcrypt hash and could authenticate someone")
         entry = next(e for e in index_entries() if e["id"] == "database-server")
-        self.assertIn("fails to start", entry["summary"].lower())
+        self.assertIn("fails to start", " ".join(entry["first_boot"]).lower())
         registry_entry = next(e for e in index_entries() if e["id"] == "container-registry")
-        self.assertIn("htpasswd", registry_entry["summary"])
+        self.assertIn("htpasswd", " ".join(registry_entry["first_boot"]))
 
     def test_first_arrival_admin_claiming_ports_are_closed_by_default(self) -> None:
         """Gitea's web UI, Grafana, and Jellyfin's setup wizard each let whoever
@@ -316,7 +363,8 @@ class AppliancePolicyTests(unittest.TestCase):
                 entry = next(e for e in index_entries() if e["id"] == entry_id)
                 self.assertNotIn(risky_port, entry["ports"], f"{entry_id}: port {risky_port} must stay closed by default")
                 self.assertIn(22, entry["ports"], f"{entry_id}: SSH access must remain available")
-                self.assertRegex(entry["summary"].lower(), r"tunnel|locally", f"{entry_id}: summary must say how to reach it safely first")
+                self.assertRegex(" ".join(entry["first_boot"]).lower(), r"tunnel|locally",
+                                  f"{entry_id}: first_boot must say how to reach it safely first")
 
     def test_gitea_ssh_port_stays_open_because_nothing_is_reachable_before_an_account_exists(self) -> None:
         profile, _ = render_manifest.resolve_profile("git-server")
@@ -394,7 +442,14 @@ class YoctoProfileTests(unittest.TestCase):
         lean_entry = next(e for e in index_entries() if e["id"] == "yocto-builder")
         full_entry = next(e for e in index_entries() if e["id"] == "yocto-builder-docs")
         self.assertNotEqual(lean_entry["summary"], full_entry["summary"])
-        self.assertRegex(full_entry["summary"].lower(), r"larger|documentation")
+        # the two summaries must tell the entries apart at a glance: different first clause
+        lean_first_clause = lean_entry["summary"].split(":")[0]
+        full_first_clause = full_entry["summary"].split(":")[0]
+        self.assertNotEqual(lean_first_clause, full_first_clause)
+        self.assertRegex(lean_first_clause.lower(), r"everyday")
+        self.assertRegex(full_first_clause.lower(), r"larger")
+        self.assertRegex(full_entry["summary"].lower(), r"documentation")
+        self.assertRegex(full_entry["summary"].lower(), r"pdf")
 
     def test_yocto_builder_is_exported_as_an_archetype(self) -> None:
         data = json.loads(subprocess.run([sys.executable, str(ROOT / "tools" / "export_catalog.py")],
@@ -419,9 +474,12 @@ class ExportedCatalogTests(unittest.TestCase):
         self.assertEqual([e["id"] for e in entries], [c["id"] for c in catalog], "export order must follow index.yml")
         for entry in catalog:
             with self.subTest(entry=entry["id"]):
-                for field in ("id", "name", "summary", "tags", "kind", "files", "services", "ports", "verified"):
+                for field in ("id", "name", "summary", "first_boot", "tags", "kind", "files", "services", "ports", "verified"):
                     self.assertIn(field, entry)
                 self.assertIsInstance(entry["tags"], list)
+                self.assertIsInstance(entry["first_boot"], list)
+                for step in entry["first_boot"]:
+                    self.assertIsInstance(step, str)
                 self.assertIsInstance(entry["services"], list)
                 self.assertIsInstance(entry["ports"], list)
                 self.assertIsInstance(entry["verified"], bool)
@@ -429,6 +487,14 @@ class ExportedCatalogTests(unittest.TestCase):
                 self.assertIn("bundle.json", entry["files"])
                 manifest_rel = json.loads(entry["files"]["bundle.json"])["manifest"]
                 self.assertIn(manifest_rel, entry["files"])
+
+    def test_empty_first_boot_round_trips_as_an_empty_list_not_dropped(self) -> None:
+        by_id = {e["id"]: e for e in self.data["bundle_catalog"]}
+        for entry_id in ("yocto-builder", "yocto-builder-docs", "ai-workstation"):
+            with self.subTest(entry=entry_id):
+                self.assertIn("first_boot", by_id[entry_id])
+                self.assertEqual([], by_id[entry_id]["first_boot"])
+        self.assertTrue(by_id["kubernetes-server"]["first_boot"])
 
     def test_template_is_not_in_the_export(self) -> None:
         ids = {e["id"] for e in self.data["bundle_catalog"]}

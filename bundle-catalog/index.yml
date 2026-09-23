@@ -4,10 +4,17 @@
 # exports them verbatim as bundle_catalog[].files. Every entry here ships with
 # the engine, so verified is true and contributed_by is omitted throughout;
 # a community-proposed entry would set both (see docs/BUNDLE.md).
+#
+# summary: one sentence, no commands, no "first boot" clause — what the
+# machine is and what it runs, the way a catalogue entry reads. first_boot:
+# the steps a person does first, one short string per step (a command may
+# appear inside a step); [] when there is no meaningful first step rather
+# than invented filler.
 bundle_catalog:
   - id: yocto-builder
     name: Yocto Build Machine
-    summary: "A developer workstation with BitBake's required host packages and practical build tools (rsync, ccache, a lean QEMU for runqemu) preinstalled; needs an en_US.UTF-8 locale (this bundle's region supplies one) and at least 140 GB free disk space. Fast to build and install; pick the full build machine instead if you also want to build the Yocto documentation on this host."
+    summary: "The everyday Yocto/OpenEmbedded build host: BitBake's required host packages plus practical build tools (rsync, ccache, a lean QEMU for runqemu), needing an en_US.UTF-8 locale and at least 140 GB free disk space."
+    first_boot: []
     tags: [yocto, openembedded, bitbake, embedded, cross-compile, build-host]
     folder: yocto-builder
     services: []
@@ -15,7 +22,8 @@ bundle_catalog:
     verified: true
   - id: yocto-builder-docs
     name: Yocto Build Machine, full
-    summary: "The Yocto build machine plus its documentation and PDF toolchain (LaTeX, a full font set): much larger, for building the Yocto Project's own documentation, including PDFs, on this host rather than just embedded images. Needs an en_US.UTF-8 locale (this bundle's region supplies one) and well over 140 GB free disk space."
+    summary: "The larger Yocto/OpenEmbedded build host that also builds the Yocto Project's own documentation, including PDFs: everything the lean build host has, plus LaTeX and a full font set, needing well over 140 GB free disk space."
+    first_boot: []
     tags: [yocto, openembedded, bitbake, embedded, documentation, latex, build-host]
     folder: yocto-builder-docs
     services: []
@@ -23,7 +31,8 @@ bundle_catalog:
     verified: true
   - id: ai-workstation
     name: AI Workstation
-    summary: "A developer workstation with PyTorch and llama.cpp for local model work; the GPU compute stack and the inference services (Ollama, Open WebUI, vLLM) are chosen after opening this bundle."
+    summary: "A developer workstation with PyTorch and llama.cpp for local model work; the GPU compute stack and inference services (Ollama, Open WebUI, vLLM) are chosen when this bundle is opened."
+    first_boot: []
     tags: [ai, machine-learning, pytorch, llama.cpp, gpu, local-inference]
     folder: ai-workstation
     services: []
@@ -31,7 +40,10 @@ bundle_catalog:
     verified: true
   - id: kodi-media-centre
     name: Kodi Media Centre
-    summary: "A kiosk that boots straight into Kodi with remote/CEC and joystick support already installed. First boot: point Kodi at your media (Settings > Media > Library) and, only if you turn on Kodi's web interface yourself, set a password for it there before opening its port."
+    summary: "A kiosk that boots straight into Kodi, with remote/CEC and joystick support already installed."
+    first_boot:
+      - "Point Kodi at your media library (Settings > Media > Library)."
+      - "Kodi's own web interface is off by default; if you turn it on, set a password for it there before opening its port yourself."
     tags: [kodi, media-center, home-theater, kiosk, hdmi-cec, remote-control]
     folder: kodi-media-centre
     services: []
@@ -39,7 +51,10 @@ bundle_catalog:
     verified: true
   - id: web-server-nginx
     name: Web Server (Nginx)
-    summary: "Nginx serving a placeholder page on ports 80 and 443, ready as a reverse proxy; the leanest and fastest of the three web server appliances. First boot: replace /srv/www/index.html with your site, and put your certificate and key in /etc/nginx/certs to enable the commented-out TLS block in /etc/nginx/conf.d/site.conf."
+    summary: "Nginx serving a placeholder page on ports 80 and 443, ready as a reverse proxy — the leanest and fastest of the three web server appliances."
+    first_boot:
+      - "Replace /srv/www/index.html with your site."
+      - "Put your certificate and key in /etc/nginx/certs to enable the commented-out TLS block in /etc/nginx/conf.d/site.conf."
     tags: [nginx, web-server, reverse-proxy, http, tls]
     folder: web-server-nginx
     services: [nginx]
@@ -47,7 +62,10 @@ bundle_catalog:
     verified: true
   - id: web-server-apache
     name: Web Server (Apache)
-    summary: "Apache httpd serving a placeholder page on ports 80 and 443, ready as a reverse proxy; the traditional, most broadly documented and module-rich of the three web server appliances. First boot: replace /srv/www/index.html with your site, and put your certificate and key in /etc/apache/certs to enable the commented-out TLS block in /etc/apache/httpd.conf."
+    summary: "Apache httpd serving a placeholder page on ports 80 and 443, ready as a reverse proxy — the traditional, most broadly documented and module-rich of the three web server appliances."
+    first_boot:
+      - "Replace /srv/www/index.html with your site."
+      - "Put your certificate and key in /etc/apache/certs to enable the commented-out TLS block in /etc/apache/httpd.conf."
     tags: [apache, httpd, web-server, reverse-proxy, http, tls]
     folder: web-server-apache
     services: [apache]
@@ -55,7 +73,10 @@ bundle_catalog:
     verified: true
   - id: web-server-caddy
     name: Web Server (Caddy)
-    summary: "Caddy serving a placeholder page on ports 80 and 443, distinguished from the other two web server appliances by automatic HTTPS. First boot: replace /srv/www/index.html with your site, and replace \":80\" in /etc/caddy/Caddyfile with your real domain name — Caddy obtains and renews its certificate for you."
+    summary: "Caddy serving a placeholder page on ports 80 and 443 — distinguished from the other two web server appliances by automatic HTTPS."
+    first_boot:
+      - "Replace /srv/www/index.html with your site."
+      - "Replace \":80\" in /etc/caddy/Caddyfile with your real domain name — Caddy obtains and renews its certificate for you."
     tags: [caddy, web-server, https, acme, automatic-tls]
     folder: web-server-caddy
     services: [caddy]
@@ -63,7 +84,9 @@ bundle_catalog:
     verified: true
   - id: container-registry
     name: Container Registry
-    summary: "An OCI/Docker image registry on port 5000 with HTTP basic authentication already configured and storage on its own volume. First boot: the shipped htpasswd file is a placeholder that matches no real password, so every login is refused until you replace it — run `htpasswd -Bc /etc/registry/htpasswd <user>` and restart the registry service before pushing images."
+    summary: "An OCI/Docker image registry on port 5000 with HTTP basic authentication already configured and storage on its own volume."
+    first_boot:
+      - "The shipped htpasswd file is a placeholder that matches no real password, so every login is refused until you replace it: `htpasswd -Bc /etc/registry/htpasswd <user>`, then restart the registry service, before pushing images."
     tags: [registry, oci, docker, container-images, ci-cd]
     folder: container-registry
     services: [registry]
@@ -71,7 +94,10 @@ bundle_catalog:
     verified: true
   - id: git-server
     name: Git Server
-    summary: "Self-hosted Git (Gitea) with a web UI, issues and pull requests, and git over SSH on port 2222 (open from the start: it accepts nothing until an account with a registered key exists). The web UI's port 3000 stays closed by default, since whoever reaches it first would register the first account and Gitea makes that account an administrator — tunnel in first (`ssh -L 3000:localhost:3000 you@host`), register that account at http://localhost:3000/, then open 3000 yourself (`sudo ufw allow 3000/tcp`)."
+    summary: "Self-hosted Git (Gitea) with a web UI, issues and pull requests, and git over SSH on port 2222."
+    first_boot:
+      - "Git over SSH (port 2222) is open from the start — it accepts nothing until an account with a registered key exists."
+      - "The web UI's port 3000 stays closed by default, since whoever reaches it first would register the first account and Gitea makes it an administrator: tunnel in first (`ssh -L 3000:localhost:3000 you@host`), register that account at http://localhost:3000/, then open 3000 yourself (`sudo ufw allow 3000/tcp`)."
     tags: [git, gitea, version-control, code-review, ci-cd]
     folder: git-server
     services: [gitea]
@@ -79,7 +105,9 @@ bundle_catalog:
     verified: true
   - id: media-server
     name: Media Server
-    summary: "A Jellyfin media server pointed at /srv/media; drop your video and music library there. Port 8096 stays closed by default, since Jellyfin's own setup wizard (which creates the admin account) is open to whoever reaches it first — tunnel in first (`ssh -L 8096:localhost:8096 you@host`), finish the wizard at http://localhost:8096/, then open 8096 yourself (`sudo ufw allow 8096/tcp`)."
+    summary: "A Jellyfin media server pointed at /srv/media for your video and music library."
+    first_boot:
+      - "Port 8096 stays closed by default, since Jellyfin's own setup wizard (which creates the admin account) is open to whoever reaches it first: tunnel in first (`ssh -L 8096:localhost:8096 you@host`), finish the wizard at http://localhost:8096/, then open 8096 yourself (`sudo ufw allow 8096/tcp`)."
     tags: [jellyfin, media-server, streaming, movies, music]
     folder: media-server
     services: [jellyfin]
@@ -87,7 +115,10 @@ bundle_catalog:
     verified: true
   - id: monitoring-server
     name: Monitoring Server
-    summary: "Prometheus (port 9090, open by default — nothing to sign into) and Grafana as system services, Grafana already pointed at Prometheus as its default data source. Grafana's port 3000 stays closed by default: it signs in as admin/admin until changed, so whoever reaches it first owns it — tunnel in first (`ssh -L 3000:localhost:3000 you@host`), sign in and set a real password at http://localhost:3000/, then open 3000 yourself (`sudo ufw allow 3000/tcp`)."
+    summary: "Prometheus and Grafana as system services, Grafana already pointed at Prometheus as its default data source."
+    first_boot:
+      - "Prometheus (port 9090) is open by default — nothing to sign into."
+      - "Grafana's port 3000 stays closed by default: it signs in as admin/admin until changed, so whoever reaches it first owns it. Tunnel in first (`ssh -L 3000:localhost:3000 you@host`), sign in and set a real password at http://localhost:3000/, then open 3000 yourself (`sudo ufw allow 3000/tcp`)."
     tags: [monitoring, prometheus, grafana, metrics, dashboards, observability]
     folder: monitoring-server
     services: [prometheus, grafana]
@@ -95,7 +126,10 @@ bundle_catalog:
     verified: true
   - id: database-server
     name: Database Server
-    summary: "PostgreSQL as a system service; this profile ships no password file on purpose, so it fails to start until you create one — `printf '%s' 'a-real-password' | sudo tee /etc/postgres/superuser-password >/dev/null && sudo chmod 600 /etc/postgres/superuser-password && sudo systemctl restart postgres` — then open port 5432 yourself (`sudo ufw allow 5432/tcp`) once that password is set to something private of your own."
+    summary: "PostgreSQL as a system service, its superuser password read from a file this profile deliberately does not ship."
+    first_boot:
+      - "It fails to start until you create that password file: `printf '%s' 'a-real-password' | sudo tee /etc/postgres/superuser-password >/dev/null && sudo chmod 600 /etc/postgres/superuser-password && sudo systemctl restart postgres`."
+      - "Open port 5432 yourself (`sudo ufw allow 5432/tcp`) once that password is set to something private of your own."
     tags: [postgresql, database, sql, postgres]
     folder: database-server
     services: [postgres]
@@ -103,7 +137,11 @@ bundle_catalog:
     verified: true
   - id: kubernetes-server
     name: Kubernetes Server
-    summary: "A single-node Kubernetes control plane (kubeadm, kubelet, kubectl, containerd) from the community pkgs.k8s.io repository pinned to v1.31, with the kernel modules and sysctl settings a node needs already in place. Only the API server (6443) and the kubelet API (10250) are opened by default; etcd (2379-2380/tcp) and the NodePort range (30000-32767/tcp) are documented, not opened, since a single node does not need them reachable until you add nodes or expose a service. First boot, as one documented step: fix containerd's cgroup driver and initialise the cluster with `containerd config default | sed 's/SystemdCgroup = false/SystemdCgroup = true/' | sudo tee /etc/containerd/config.toml >/dev/null && sudo systemctl restart containerd && sudo kubeadm init --pod-network-cidr=10.244.0.0/16`, then install a CNI plugin."
+    summary: "A single-node Kubernetes control plane (kubeadm, kubelet, kubectl, containerd) from the community pkgs.k8s.io repository pinned to v1.31, with the kernel modules and sysctl settings a node needs already in place."
+    first_boot:
+      - "Only the API server (6443) and the kubelet API (10250) are opened by default; etcd (2379-2380/tcp) and the NodePort range (30000-32767/tcp) stay closed until you add nodes or expose a service that way."
+      - "Fix containerd's cgroup driver and initialise the cluster: `containerd config default | sed 's/SystemdCgroup = false/SystemdCgroup = true/' | sudo tee /etc/containerd/config.toml >/dev/null && sudo systemctl restart containerd && sudo kubeadm init --pod-network-cidr=10.244.0.0/16`."
+      - "Install a CNI plugin."
     tags: [kubernetes, k8s, kubeadm, container-orchestration, cluster]
     folder: kubernetes-server
     services: []

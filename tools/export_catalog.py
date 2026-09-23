@@ -73,7 +73,8 @@ def bundle_catalog() -> list[dict]:
     scratch". Each entry's files are read as bytes and decoded, not read_text,
     for the same reason as launchers() above, and must come back byte-identical
     to what bundle-catalog/<folder> holds so a front end can write them out
-    unchanged."""
+    unchanged. summary is one sentence for the catalogue card; first_boot is
+    the steps to show after a bundle is chosen, [] when there is none."""
     load_yaml = render_manifest.load_yaml
     index_path = ROOT / "bundle-catalog" / "index.yml"
     if not index_path.is_file():
@@ -92,6 +93,7 @@ def bundle_catalog() -> list[dict]:
             "id": entry["id"],
             "name": entry["name"],
             "summary": entry["summary"],
+            "first_boot": list(entry.get("first_boot", [])),
             "tags": list(entry.get("tags", [])),
             "kind": manifest["profile"],
             "files": files,

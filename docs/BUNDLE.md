@@ -182,22 +182,35 @@ word is worth being careful with.
 
 Layout: `bundle-catalog/<folder>/` holds one bundle per folder, and
 `bundle-catalog/index.yml` lists them under a `bundle_catalog` key, each
-entry naming its `id`, `name`, one-sentence `summary` (state plainly what
-the appliance does and what to do first: a password to change, a directory
-to fill), lowercase `tags` for search, its `folder`, `services` (the
-`software.services` names the profile runs, `[]` for an appliance with
-none), `ports` (the bare port numbers `security.open_ports` opens, as
-integers), and optionally `contributed_by` (a name or handle) and
-`verified` (whether a maintainer checked the package names and image tags
-below actually resolve; every entry shipped with the engine is `true`).
+entry naming its `id`, `name`, `folder`, lowercase `tags` for search,
+`services` (the `software.services` names the profile runs, `[]` for an
+appliance with none), `ports` (the bare port numbers `security.open_ports`
+opens by default, as integers), and optionally `contributed_by` (a name or
+handle) and `verified` (whether a maintainer checked the package names and
+image tags below actually resolve; every entry shipped with the engine is
+`true`).
+
+Two fields carry the prose, kept deliberately separate so a catalogue card
+is not a wall of text:
+
+- `summary`: one sentence, no shell commands, no "first boot" clause —
+  what the machine is and what it runs, the way a catalogue entry reads.
+  A front end shows this on the card.
+- `first_boot`: the steps a person does first, as a list of short strings,
+  one step each (a command may appear inside a step, but keep each step
+  to a line or two). `[]`, not invented filler, when there is no
+  meaningful first step — the AI workstation and both Yocto entries are
+  `[]` because there is nothing to do before using them. A front end
+  shows this after the bundle is chosen, not on the card.
+
 `tools/export_catalog.py` reads every listed folder and exports a
 `bundle_catalog` array of
-`{id, name, summary, tags, kind, files, services, ports, verified,
-contributed_by?}`, where `kind` is the machine-kind (profile) id the
-bundle's manifest names and `files` maps every path the folder contains
-(`bundle.json`, `manifests/<id>.yml`, `profiles/<id>.yml`) to that file's
-exact text, read as bytes and decoded like `launchers()` above, so a front
-end can write the bundle out unchanged.
+`{id, name, summary, first_boot, tags, kind, files, services, ports,
+verified, contributed_by?}`, where `kind` is the machine-kind (profile) id
+the bundle's manifest names and `files` maps every path the folder
+contains (`bundle.json`, `manifests/<id>.yml`, `profiles/<id>.yml`) to
+that file's exact text, read as bytes and decoded like `launchers()`
+above, so a front end can write the bundle out unchanged.
 
 `verified: true` means a maintainer checked the package names and image
 tags resolve; it does not by itself mean every appliance was booted and
@@ -242,8 +255,11 @@ read by anyone with this public repository.
    real released version, never `latest`. List every port the appliance
    needs in `security.open_ports` (it replaces the parent profile's list
    entirely, so re-list `22/tcp` too if you extend `server`).
-3. Add one entry to `bundle-catalog/index.yml`, with a `summary` that says
-   what to do first.
+3. Add one entry to `bundle-catalog/index.yml`: a one-sentence `summary`
+   with no commands and no "first boot" clause, and the steps a person
+   does first as a list of short strings in `first_boot` (`[]` if there
+   genuinely is none). See `bundle-catalog/_template/README.md` for the
+   exact shape.
 4. Run `PYTHONPATH=tests python3 -m unittest discover -s tests/unit -p
    'test_*.py'`. `tests/unit/test_bundle_catalog.py` checks, automatically,
    for every entry: `bundle.json` and the manifest and profile schemas
@@ -251,11 +267,15 @@ read by anyone with this public repository.
    `extends` and every package group it names exists and resolves to a
    non-empty package list on both bases; every `software.files` path stays
    inside the allowed directories, contains no `..`, and fits the size
-   limits (`tools/render_manifest.py`'s `validate_profile_files`); and the
-   folder and the index agree, with `bundle-catalog/_template/` exempt from
-   that last check on both sides.
+   limits (`tools/render_manifest.py`'s `validate_profile_files`); `summary`
+   is a plain sentence under a sensible length with no shell command in it
+   and `first_boot` is a list of strings; and the folder and the index
+   agree, with `bundle-catalog/_template/` exempt from that last check on
+   both sides.
 5. Open a pull request. A reviewer additionally checks, by eye, what the
    automated tests cannot: that no shipped file contains a real secret,
    that image tags and package names were actually verified rather than
-   guessed (say how, in the description), and that the summary honestly
-   states what to do before trusting the appliance with anything.
+   guessed (say how, in the description), and that `first_boot` honestly
+   covers everything a person needs to do before trusting the appliance
+   with anything — nothing quietly left only in the profile's own
+   `description`.
