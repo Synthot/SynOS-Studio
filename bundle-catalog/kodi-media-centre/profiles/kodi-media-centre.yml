@@ -1,0 +1,21 @@
+id: kodi-media-centre
+extends: kiosk
+description: >-
+  Kiosk profile pointed at Kodi instead of a browser: automatic login
+  straight into Kodi, full screen, with joystick and HDMI-CEC remote
+  support (cec-utils; kodi's own package dependencies bring in whichever
+  libcec version this suite needs) and an infrared remote daemon (lirc).
+  Kodi's web interface is off by default, as Kodi ships it: turn it on
+  yourself in Settings > Services > Control, and only then open its port.
+software:
+  packages:
+    add:
+      - kodi
+      - kodi-peripheral-joystick
+      - kodi-inputstream-adaptive
+      - kodi-eventclients-kodi-send
+      - cec-utils
+      - lirc
+      - libavcodec-extra
+policy:
+  kiosk_app: kodi

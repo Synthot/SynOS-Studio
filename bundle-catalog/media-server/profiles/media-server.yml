@@ -1,0 +1,17 @@
+id: media-server
+extends: server
+description: >-
+  Server profile running Jellyfin as a system service on port 8096,
+  pointed at /srv/media: drop a video and music library there and
+  Jellyfin finds it.
+software:
+  services:
+    - name: jellyfin
+      image: docker.io/jellyfin/jellyfin:12.1
+      ports: ["8096:8096"]
+      volumes:
+        - jellyfin-config:/config
+        - jellyfin-cache:/cache
+        - /srv/media:/media
+security:
+  open_ports: [22/tcp, 8096/tcp]

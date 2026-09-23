@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "monitoring-server",
+  "manifest": "manifests/monitoring-server.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Monitoring Server \u2014 ubuntu noble amd64, profile monitoring-server",
+  "files": [
+    "manifests/monitoring-server.yml",
+    "profiles/monitoring-server.yml"
+  ]
+}

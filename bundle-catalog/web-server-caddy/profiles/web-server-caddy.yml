@@ -1,0 +1,40 @@
+id: web-server-caddy
+extends: server
+description: >-
+  Server profile running Caddy as a system service: a placeholder site on
+  port 80, distinguished from the other two web server appliances by
+  automatic HTTPS — point a real domain at it and Caddy requests and
+  renews a certificate for it itself, with nothing to manage by hand.
+software:
+  services:
+    - name: caddy
+      image: docker.io/library/caddy:2.11.4
+      ports: ["80:80", "443:443"]
+      volumes:
+        - /srv/www:/srv/www:ro
+        - /etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+        - caddy-data:/data
+        - caddy-config:/config
+  files:
+    - path: /srv/www/index.html
+      content: |
+        <!doctype html>
+        <title>It works</title>
+        <p>This SynOS web server appliance is running Caddy. Replace this
+        page under /srv/www.</p>
+    - path: /etc/caddy/Caddyfile
+      content: |
+        :80 {
+            root * /srv/www
+            file_server
+        }
+
+        # Automatic HTTPS: replace ":80" above with your domain, for example
+        #   example.com {
+        #       root * /srv/www
+        #       file_server
+        #   }
+        # and make sure port 443 reaches this machine; Caddy obtains and
+        # renews a certificate for that domain itself.
+security:
+  open_ports: [22/tcp, 80/tcp, 443/tcp]

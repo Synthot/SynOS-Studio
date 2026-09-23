@@ -1,0 +1,20 @@
+# Configuration files a profile ships (software.files in the profile schema,
+# validated by tools/render_manifest.py: path allowlist, no .., mode, size).
+# Written verbatim so an appliance profile boots to something that works.
+- name: Parent directories for the profile's configuration files
+  ansible.builtin.file:
+    path: "{{ item.path | dirname }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ profile_files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Configuration files from the profile
+  ansible.builtin.copy:
+    dest: "{{ item.path }}"
+    content: "{{ item.content }}"
+    mode: "{{ item.mode | default('0644') }}"
+  loop: "{{ profile_files }}"
+  loop_control:
+    label: "{{ item.path }}"

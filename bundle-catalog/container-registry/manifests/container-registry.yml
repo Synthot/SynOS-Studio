@@ -1,0 +1,19 @@
+schema_version: 1
+name: container-registry
+version: 1.0.0
+
+base: ubuntu
+suite: noble
+arch: amd64
+
+profile: container-registry
+regions: [us]
+brand: synos
+
+mirrors: {}
+
+packages:
+  repository: ""
+  takeover: all
+
+overrides: {}

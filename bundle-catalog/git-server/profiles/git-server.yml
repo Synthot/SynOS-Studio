@@ -1,0 +1,43 @@
+id: git-server
+extends: server
+description: >-
+  Server profile running Gitea as a system service on port 3000 (git over
+  SSH on 2222): self-hosted Git with a web UI, issues and pull requests,
+  using SQLite so there is no separate database to configure.
+software:
+  services:
+    - name: gitea
+      image: docker.io/gitea/gitea:1.27.3
+      ports: ["3000:3000", "2222:22"]
+      volumes:
+        - gitea-data:/data
+        - /etc/gitea/app.ini:/data/gitea/conf/app.ini:ro
+      env:
+        USER_UID: "1000"
+        USER_GID: "1000"
+  files:
+    - path: /etc/gitea/app.ini
+      content: |
+        APP_NAME = Git Server
+        RUN_MODE = prod
+        WORK_PATH = /data/gitea
+
+        [server]
+        DOMAIN      = localhost
+        SSH_DOMAIN  = localhost
+        ROOT_URL    = http://localhost:3000/
+        HTTP_PORT   = 3000
+        SSH_PORT    = 22
+        DISABLE_SSH = false
+
+        [database]
+        DB_TYPE = sqlite3
+        PATH    = /data/gitea/gitea.db
+
+        [security]
+        INSTALL_LOCK = true
+
+        [service]
+        DISABLE_REGISTRATION = false
+security:
+  open_ports: [22/tcp, 3000/tcp, 2222/tcp]

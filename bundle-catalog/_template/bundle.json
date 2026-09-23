@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "template-appliance",
+  "manifest": "manifests/template-appliance.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Template appliance — ubuntu noble amd64, profile template-appliance",
+  "files": [
+    "manifests/template-appliance.yml",
+    "profiles/template-appliance.yml"
+  ]
+}

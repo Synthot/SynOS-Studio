@@ -1,0 +1,32 @@
+id: template-appliance
+extends: server
+description: >-
+  Template for a new bundle catalog entry: copy this folder, rename the
+  id everywhere (bundle.json, the manifest, this file's name and its id:),
+  then replace this description with what the appliance actually does and
+  what to do on first boot. Extend the machine kind that fits (server for
+  most appliances, kiosk for a locked-down single application); do not
+  invent new profile keys.
+# software.services: one container per service (docs/ARCHITECTURE.md,
+# "GPU and container services"); delete this whole key for a
+# non-container appliance (see kodi-media-centre or kubernetes-server for
+# examples that only use software.packages and software.files instead).
+software:
+  services:
+    - name: example
+      image: docker.io/library/example:1.0.0
+      ports: ["8080:8080"]
+      volumes: ["example-data:/data"]
+# software.files: configuration written into the image, checked by
+# tools/render_manifest.py (path under /etc, /srv, /opt or /usr/local; no
+# ..; text content up to 16 KiB per file and 64 KiB per profile; mode
+# defaults to 0644). Never a real password: a shipped credential must be
+# an obvious, documented placeholder the person is told to change.
+  files:
+    - path: /etc/example/example.conf
+      content: |
+        # Replace this with the appliance's real configuration.
+        listen 8080
+security:
+  # server already opens 22/tcp; list every port this appliance needs too.
+  open_ports: [22/tcp, 8080/tcp]

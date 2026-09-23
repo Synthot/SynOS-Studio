@@ -1,0 +1,40 @@
+id: container-registry
+extends: server
+description: >-
+  Server profile running an OCI/Docker image registry as a system service
+  on port 5000, with HTTP basic authentication already wired up and
+  storage on its own volume.
+software:
+  services:
+    - name: registry
+      image: docker.io/library/registry:3.1.1
+      ports: ["5000:5000"]
+      volumes:
+        - registry-data:/var/lib/registry
+        - /etc/registry/config.yml:/etc/distribution/config.yml:ro
+        - /etc/registry/htpasswd:/auth/htpasswd:ro
+  files:
+    - path: /etc/registry/config.yml
+      content: |
+        version: 0.1
+        log:
+          fields:
+            service: registry
+        storage:
+          filesystem:
+            rootdirectory: /var/lib/registry
+        auth:
+          # /etc/registry/htpasswd ships as a placeholder that matches no
+          # password: see docs/BUNDLE.md, "The bundle catalog".
+          htpasswd:
+            realm: basic-realm
+            path: /auth/htpasswd
+        http:
+          addr: :5000
+          headers:
+            X-Content-Type-Options: [nosniff]
+    - path: /etc/registry/htpasswd
+      content: |
+        placeholder:REPLACE-THIS-WITH-A-REAL-HTPASSWD-BCRYPT-HASH
+security:
+  open_ports: [22/tcp, 5000/tcp]

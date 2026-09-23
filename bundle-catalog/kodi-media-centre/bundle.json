@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "kodi-media-centre",
+  "manifest": "manifests/kodi-media-centre.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Kodi Media Centre \u2014 ubuntu noble amd64, profile kodi-media-centre",
+  "files": [
+    "manifests/kodi-media-centre.yml",
+    "profiles/kodi-media-centre.yml"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "web-server-caddy",
+  "manifest": "manifests/web-server-caddy.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Web Server (Caddy) \u2014 ubuntu noble amd64, profile web-server-caddy",
+  "files": [
+    "manifests/web-server-caddy.yml",
+    "profiles/web-server-caddy.yml"
+  ]
+}

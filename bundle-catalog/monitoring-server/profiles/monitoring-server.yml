@@ -1,0 +1,41 @@
+id: monitoring-server
+extends: server
+description: >-
+  Server profile running Prometheus (port 9090) and Grafana (port 3000) as
+  system services, Grafana pre-wired to Prometheus as its default data
+  source.
+software:
+  services:
+    - name: prometheus
+      image: docker.io/prom/prometheus:v3.13.3
+      ports: ["9090:9090"]
+      volumes:
+        - prometheus-data:/prometheus
+        - /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - name: grafana
+      image: docker.io/grafana/grafana:13.2.2
+      ports: ["3000:3000"]
+      volumes:
+        - grafana-data:/var/lib/grafana
+        - /etc/grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+  files:
+    - path: /etc/prometheus/prometheus.yml
+      content: |
+        global:
+          scrape_interval: 15s
+
+        scrape_configs:
+          - job_name: prometheus
+            static_configs:
+              - targets: ["localhost:9090"]
+    - path: /etc/grafana/provisioning/datasources/prometheus.yml
+      content: |
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            access: proxy
+            url: http://host.containers.internal:9090
+            isDefault: true
+security:
+  open_ports: [22/tcp, 3000/tcp, 9090/tcp]

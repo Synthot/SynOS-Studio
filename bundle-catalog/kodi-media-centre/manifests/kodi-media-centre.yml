@@ -1,0 +1,19 @@
+schema_version: 1
+name: kodi-media-centre
+version: 1.0.0
+
+base: ubuntu
+suite: noble
+arch: amd64
+
+profile: kodi-media-centre
+regions: [us]
+brand: synos
+
+mirrors: {}
+
+packages:
+  repository: ""
+  takeover: all
+
+overrides: {}

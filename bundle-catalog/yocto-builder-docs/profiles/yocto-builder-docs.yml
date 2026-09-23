@@ -1,0 +1,11 @@
+id: yocto-builder-docs
+extends: yocto-builder
+description: >-
+  The Yocto build machine plus the Yocto Project's own documentation and
+  PDF toolchain (LaTeX and a full font set): much larger than the plain
+  build machine, for someone who also wants to build the Yocto Project's
+  documentation, including PDFs, on this host. Still needs an en_US.UTF-8
+  locale (any region supplies one) and at least 140 GB free disk space,
+  more here because of the LaTeX packages.
+software:
+  bundles: [yocto-build-docs]

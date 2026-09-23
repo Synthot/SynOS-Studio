@@ -1,0 +1,43 @@
+id: web-server-nginx
+extends: server
+description: >-
+  Server profile running Nginx as a system service: a placeholder site on
+  port 80, ready as a reverse proxy, and a place for a TLS certificate on
+  port 443. The leanest and fastest of the three web server appliances.
+software:
+  services:
+    - name: nginx
+      image: docker.io/library/nginx:1.31.2
+      ports: ["80:80", "443:443"]
+      volumes:
+        - /srv/www:/usr/share/nginx/html:ro
+        - /etc/nginx/conf.d/site.conf:/etc/nginx/conf.d/default.conf:ro
+        - /etc/nginx/certs:/etc/nginx/certs:ro
+  files:
+    - path: /srv/www/index.html
+      content: |
+        <!doctype html>
+        <title>It works</title>
+        <p>This SynOS web server appliance is running nginx. Replace this
+        page under /srv/www.</p>
+    - path: /etc/nginx/conf.d/site.conf
+      content: |
+        server {
+            listen 80 default_server;
+            server_name _;
+            root /usr/share/nginx/html;
+            index index.html;
+
+            location / {
+                try_files $uri $uri/ =404;
+            }
+
+            # Reverse proxy example:
+            # location /app/ { proxy_pass http://host.containers.internal:8080/; }
+
+            # TLS: put fullchain.pem and privkey.pem in /etc/nginx/certs (already
+            # bind-mounted read-only) and add a "listen 443 ssl;" server block
+            # naming them with ssl_certificate / ssl_certificate_key.
+        }
+security:
+  open_ports: [22/tcp, 80/tcp, 443/tcp]
