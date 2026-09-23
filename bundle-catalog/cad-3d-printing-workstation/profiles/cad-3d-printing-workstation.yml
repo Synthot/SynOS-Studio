@@ -1,0 +1,26 @@
+id: cad-3d-printing-workstation
+extends: workstation
+description: >-
+  CAD and 3D printing workstation, built on Debian trixie rather than this
+  engine's usual ubuntu noble: FreeCAD and Cura are both missing from
+  noble and resolute (Cura is also missing from noble specifically but is
+  on resolute; FreeCAD is on neither), and jammy's FreeCAD is a very old
+  0.19.2 while trixie carries a modern FreeCAD 1.0 alongside Cura and
+  OpenSCAD — the better software, not just an available one, so trixie
+  drives the base choice here. A udev rule already grants the dialout
+  group direct access to common 3D printer and microcontroller board
+  USB-serial adapters (FTDI, CH340, Arduino, Prusa Research, Adafruit)
+  so a person can talk to one without sudo.
+software:
+  bundles: [cad-3d-printing]
+  files:
+    - path: /etc/udev/rules.d/70-cad-3dprinting-boards.rules
+      content: |
+        # Common 3D printer and microcontroller board USB-serial
+        # adapters: dialout group, no sudo needed (see first_boot in the
+        # bundle catalog if your account is not already a member).
+        SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", GROUP="dialout", MODE="0660"
+        SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", GROUP="dialout", MODE="0660"
+        SUBSYSTEM=="tty", ATTRS{idVendor}=="2341", GROUP="dialout", MODE="0660"
+        SUBSYSTEM=="tty", ATTRS{idVendor}=="2c99", GROUP="dialout", MODE="0660"
+        SUBSYSTEM=="tty", ATTRS{idVendor}=="239a", GROUP="dialout", MODE="0660"

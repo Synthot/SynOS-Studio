@@ -423,6 +423,264 @@ class AppliancePolicyTests(unittest.TestCase):
                         self.assertIn("22/tcp", open_ports, f"{profile_path.name} drops SSH by replacing open_ports without 22/tcp")
 
 
+class DesktopWorkstationBundleTests(unittest.TestCase):
+    """The nine preconfigured workstation entries: each keeps a normal desktop
+    (extends workstation/developer) unless it is deliberately a kiosk, and
+    every capability or group that grants power is named where a person will
+    actually see it (docs/BUNDLE.md: "nothing that weakens a machine
+    silently")."""
+
+    def _profile(self, entry_id: str) -> dict:
+        profile, _ = render_manifest.resolve_profile(entry_id)
+        return profile
+
+    def _raw(self, folder: str) -> dict:
+        return render_manifest.load_yaml(CATALOG_DIR / folder / "profiles" / f"{folder}.yml")
+
+    def _manifest(self, folder: str) -> dict:
+        return render_manifest.load_yaml(CATALOG_DIR / folder / "manifests" / f"{folder}.yml")
+
+    def _resolved_bundle(self, bundle_id: str, base_id: str) -> list[str]:
+        """The concrete package list bundle_id resolves to on base_id — the
+        same resolution the real build does, so a test asserting a package
+        is shipped checks the base the entry actually targets, not just
+        that the abstract bundle name exists."""
+        bundles = render_manifest.load_bundles()
+        pkg_map = render_manifest.load_package_map(ROOT / "bases" / base_id / "packages.map")
+        concrete, _ = render_manifest.resolve_packages(bundles[bundle_id], pkg_map, "amd64", ["en"], base_id)
+        return concrete
+
+    def test_workstations_keep_a_normal_desktop_unless_deliberately_a_kiosk(self) -> None:
+        expected_parent = {
+            "audio-workstation": "workstation",
+            "video-editing-workstation": "workstation",
+            "photography-workstation": "workstation",
+            "cad-3d-printing-workstation": "workstation",
+            "data-science-workstation": "developer",
+            "security-research-workstation": "workstation",
+            "classroom-workstation": "workstation",
+            "digital-signage": "kiosk",
+            "retro-gaming-console": "kiosk",
+        }
+        for entry_id, parent in expected_parent.items():
+            with self.subTest(entry=entry_id):
+                self.assertEqual(parent, self._raw(entry_id).get("extends"))
+
+    def test_each_entrys_manifest_pins_the_base_and_suite_its_software_needs(self) -> None:
+        """Each catalogued bundle pins one base and one suite in its own
+        manifest (docs/BUNDLE.md), so a package only has to exist on the
+        suite named here. Every entry stays on this engine's usual
+        ubuntu/noble except cad-3d-printing-workstation, which moves to
+        debian/trixie for a modern FreeCAD (see its profile description)."""
+        expected = {
+            "audio-workstation": ("ubuntu", "noble"),
+            "video-editing-workstation": ("ubuntu", "noble"),
+            "photography-workstation": ("ubuntu", "noble"),
+            "cad-3d-printing-workstation": ("debian", "trixie"),
+            "data-science-workstation": ("ubuntu", "noble"),
+            "security-research-workstation": ("ubuntu", "noble"),
+            "digital-signage": ("ubuntu", "noble"),
+            "retro-gaming-console": ("ubuntu", "noble"),
+            "classroom-workstation": ("ubuntu", "noble"),
+        }
+        for folder, (base, suite) in expected.items():
+            with self.subTest(entry=folder):
+                manifest = self._manifest(folder)
+                self.assertEqual(base, manifest["base"])
+                self.assertEqual(suite, manifest["suite"])
+
+    def test_audio_workstation_grants_realtime_scheduling_to_the_audio_group(self) -> None:
+        profile = self._profile("audio-workstation")
+        files = profile["software"]["files"]
+        limits = next(f for f in files if f["path"] == "/etc/security/limits.d/99-audio-realtime.conf")
+        self.assertIn("@audio", limits["content"])
+        self.assertIn("rtprio", limits["content"])
+        self.assertIn("audio-production", profile["software"]["bundles"])
+        entry = next(e for e in index_entries() if e["id"] == "audio-workstation")
+        self.assertRegex(" ".join(entry["first_boot"]).lower(), r"audio group")
+
+    def test_audio_workstation_uses_pipewire_jack_not_classic_jackd2(self) -> None:
+        """Audio pins noble specifically because PipeWire's JACK
+        compatibility layer (pipewire-jack, qpwgraph) is there and on
+        resolute/trixie but missing from jammy; ardour still needs no
+        separate jackd2/qjackctl daemon."""
+        concrete = self._resolved_bundle("audio-production", "ubuntu")
+        self.assertIn("pipewire-jack", concrete)
+        self.assertIn("qpwgraph", concrete)
+        self.assertIn("ardour", concrete)
+        self.assertNotIn("jackd2", concrete)
+        self.assertNotIn("qjackctl", concrete)
+        # also resolves on debian (trixie carries pipewire-jack/qpwgraph too)
+        debian_concrete = self._resolved_bundle("audio-production", "debian")
+        self.assertIn("pipewire-jack", debian_concrete)
+        self.assertIn("qpwgraph", debian_concrete)
+
+    def test_cad_3d_printing_grants_dialout_access_by_udev_rule(self) -> None:
+        profile = self._profile("cad-3d-printing-workstation")
+        files = profile["software"]["files"]
+        rules = next(f for f in files if f["path"] == "/etc/udev/rules.d/70-cad-3dprinting-boards.rules")
+        self.assertIn('GROUP="dialout"', rules["content"])
+        self.assertIn("SUBSYSTEM==\"tty\"", rules["content"])
+        entry = next(e for e in index_entries() if e["id"] == "cad-3d-printing-workstation")
+        self.assertRegex(" ".join(entry["first_boot"]).lower(), r"dialout group")
+
+    def test_cad_3d_printing_ships_freecad_cura_and_openscad_on_debian_trixie(self) -> None:
+        """FreeCAD and Cura together are missing from every Ubuntu suite
+        this engine defaults to (noble, resolute) and jammy's FreeCAD is a
+        very old 0.19.2, so this entry pins debian/trixie instead, which
+        carries a modern FreeCAD 1.0, Cura and OpenSCAD together — checked
+        with rmadison against trixie specifically, documented in the
+        profile description rather than silently substituted."""
+        raw = self._raw("cad-3d-printing-workstation")
+        self.assertIn("FreeCAD", raw["description"])
+        self.assertIn("Cura", raw["description"])
+        self.assertIn("trixie", raw["description"])
+        concrete = self._resolved_bundle("cad-3d-printing", "debian")
+        self.assertIn("freecad", concrete)
+        self.assertIn("cura", concrete)
+        self.assertIn("openscad", concrete)
+        # the ubuntu side of the same abstract bundle stays on the
+        # OpenSCAD/PrusaSlicer set available on every ubuntu suite
+        ubuntu_concrete = self._resolved_bundle("cad-3d-printing", "ubuntu")
+        self.assertIn("openscad", ubuntu_concrete)
+        self.assertIn("prusa-slicer", ubuntu_concrete)
+
+    def test_security_research_grants_packet_capture_to_a_pcap_group(self) -> None:
+        profile = self._profile("security-research-workstation")
+        files = profile["software"]["files"]
+        sysusers = next(f for f in files if f["path"] == "/etc/sysusers.d/pcap.conf")
+        self.assertIn("g pcap", sysusers["content"])
+        unit_paths = [f["path"] for f in files if f["path"].endswith("pcap-permissions.service")]
+        self.assertEqual(2, len(unit_paths), "the unit must exist both in /etc/systemd/system and enabled under multi-user.target.wants")
+        for f in files:
+            if f["path"].endswith("pcap-permissions.service"):
+                self.assertIn("cap_net_raw,cap_net_admin", f["content"])
+                self.assertIn("dumpcap", f["content"])
+        entry = next(e for e in index_entries() if e["id"] == "security-research-workstation")
+        self.assertRegex(" ".join(entry["first_boot"]).lower(), r"pcap group")
+
+    def test_security_research_summary_states_lawful_use(self) -> None:
+        entry = next(e for e in index_entries() if e["id"] == "security-research-workstation")
+        self.assertRegex(entry["summary"].lower(), r"lawful|authorised|authorized")
+        raw = self._raw("security-research-workstation")
+        self.assertRegex(raw["description"].lower(), r"lawful|authorised|authorized")
+
+    def test_digital_signage_ships_the_url_in_one_file(self) -> None:
+        profile = self._profile("digital-signage")
+        files = profile["software"]["files"]
+        policies = next(f for f in files if f["path"] == "/etc/firefox/policies/policies.json")
+        payload = json.loads(policies["content"])
+        self.assertIn("URL", payload["policies"]["Homepage"])
+        self.assertEqual("browser", profile["policy"]["kiosk_app"])
+        entry = next(e for e in index_entries() if e["id"] == "digital-signage")
+        self.assertIn("policies.json", " ".join(entry["first_boot"]))
+
+    def test_retro_gaming_console_boots_into_retroarch_with_controller_support(self) -> None:
+        profile = self._profile("retro-gaming-console")
+        self.assertEqual("retroarch", profile["policy"]["kiosk_app"])
+        files = profile["software"]["files"]
+        cfg = next(f for f in files if f["path"] == "/etc/retroarch.cfg")
+        self.assertIn("input_joypad_driver", cfg["content"])
+        entry = next(e for e in index_entries() if e["id"] == "retro-gaming-console")
+        self.assertIn("controller-support", entry["tags"])
+
+    def test_retro_gaming_console_ships_six_cores_on_noble_five_on_trixie(self) -> None:
+        """Nestopia (NES) needs noble or newer, missing from jammy; Beetle
+        PCE Fast (PC Engine) is on every Ubuntu suite this engine supports
+        but missing from trixie — so the Ubuntu side of this bundle (what
+        this entry actually ships) carries six cores and the Debian side
+        five, checked against noble and trixie respectively."""
+        ubuntu_concrete = self._resolved_bundle("retro-gaming", "ubuntu")
+        for core in ("libretro-snes9x", "libretro-mgba", "libretro-gambatte", "libretro-desmume",
+                     "libretro-nestopia", "libretro-beetle-pce-fast"):
+            with self.subTest(core=core):
+                self.assertIn(core, ubuntu_concrete)
+        debian_concrete = self._resolved_bundle("retro-gaming", "debian")
+        for core in ("libretro-snes9x", "libretro-mgba", "libretro-gambatte", "libretro-desmume", "libretro-nestopia"):
+            with self.subTest(core=core):
+                self.assertIn(core, debian_concrete)
+        self.assertNotIn("libretro-beetle-pce-fast", debian_concrete)
+
+    def test_video_editing_ships_mesa_and_vdpau_drivers_on_noble(self) -> None:
+        """mesa-va-drivers and vdpau-driver-all are missing from resolute
+        but present on noble (this entry's target suite), so they are
+        shipped alongside va-driver-all rather than dropped."""
+        concrete = self._resolved_bundle("video-editing", "ubuntu")
+        for pkg in ("va-driver-all", "vainfo", "mesa-va-drivers", "vdpau-driver-all"):
+            with self.subTest(package=pkg):
+                self.assertIn(pkg, concrete)
+
+    def test_photography_ships_displaycal_on_noble(self) -> None:
+        """displaycal is missing from jammy but present on noble."""
+        concrete = self._resolved_bundle("photography", "ubuntu")
+        self.assertIn("displaycal", concrete)
+
+    def test_classroom_workstation_locks_down_and_says_so(self) -> None:
+        profile = self._profile("classroom-workstation")
+        self.assertTrue(profile["security"]["usbguard"])
+        dconf = profile["policy"]["dconf"]
+        self.assertEqual("true", dconf["org/gnome/desktop/lockdown/disable-command-line"])
+        self.assertEqual("true", dconf["org/gnome/desktop/lockdown/user-administration-disabled"])
+        files = profile["software"]["files"]
+        polkit_rule = next(f for f in files if f["path"] == "/etc/polkit-1/rules.d/50-classroom-lockdown.rules")
+        self.assertIn("polkit.addRule", polkit_rule["content"])
+        entry = next(e for e in index_entries() if e["id"] == "classroom-workstation")
+        self.assertRegex(entry["summary"].lower(), r"usbguard|no command line|locked-down")
+
+    def test_classroom_workstation_keeps_a_normal_desktop_not_a_kiosk(self) -> None:
+        """Instruction: a shared-desk machine is a workstation, not a
+        single-app kiosk, so it must not carry a kiosk_app."""
+        profile = self._profile("classroom-workstation")
+        self.assertNotIn("kiosk_app", profile.get("policy", {}))
+
+    def test_dconf_policy_keys_use_slash_paths_not_dotted_gsettings_names(self) -> None:
+        """ansible/collections/.../desktop_policy/tasks/main.yml splits a
+        dconf key on its last '/' to get the [group] and the entry name; a
+        dotted GSettings-style key (no '/') would index past the end of the
+        one-element list that rsplit returns and crash the role at build
+        time for any entry whose value is not the literal sentinel
+        "locked". Every non-"locked" policy.dconf key added here must
+        therefore already be in path/key form."""
+        for folder_name in ("classroom-workstation",):
+            raw = self._raw(folder_name)
+            dconf = (raw.get("policy") or {}).get("dconf") or {}
+            for key, value in dconf.items():
+                with self.subTest(entry=folder_name, key=key):
+                    if value == "locked":
+                        continue
+                    self.assertIn("/", key, f"{key!r} must be slash-separated (path/key), not a dotted GSettings name")
+
+    def test_every_new_workstation_bundle_resolves_to_a_non_empty_package_list_on_both_bases(self) -> None:
+        bundles = render_manifest.load_bundles()
+        pkg_maps = {
+            base_dir.name: render_manifest.load_package_map(base_dir / "packages.map")
+            for base_dir in sorted(p for p in (ROOT / "bases").iterdir() if p.is_dir() and not p.name.startswith("_"))
+        }
+        new_bundles = ("audio-production", "video-editing", "photography", "cad-3d-printing", "data-science", "security-research", "retro-gaming")
+        for bundle_id in new_bundles:
+            self.assertIn(bundle_id, bundles)
+            for base_id, pkg_map in pkg_maps.items():
+                with self.subTest(bundle=bundle_id, base=base_id):
+                    concrete, unmapped = render_manifest.resolve_packages(bundles[bundle_id], pkg_map, "amd64", ["en"], base_id)
+                    self.assertTrue(concrete, f"{bundle_id} resolves to nothing on {base_id}")
+                    self.assertEqual([], unmapped, f"{bundle_id} has an unmapped abstract name on {base_id}")
+
+    def test_new_workstation_files_stay_within_the_allowed_directories(self) -> None:
+        """render_manifest.validate_profile_files re-checks path, mode and
+        size at render time; call it directly here too so a future edit
+        that breaks one of these files fails fast in this file's own test,
+        not only in the generic per-entry loop above."""
+        for entry_id in (
+            "audio-workstation", "video-editing-workstation", "photography-workstation",
+            "cad-3d-printing-workstation", "data-science-workstation", "security-research-workstation",
+            "digital-signage", "retro-gaming-console", "classroom-workstation",
+        ):
+            with self.subTest(entry=entry_id):
+                profile = self._profile(entry_id)
+                files = (profile.get("software") or {}).get("files", [])
+                render_manifest.validate_profile_files(files)
+
+
 class YoctoProfileTests(unittest.TestCase):
     def test_yocto_builder_extends_developer_and_mentions_locale_and_disk(self) -> None:
         data = render_manifest.load_yaml(ROOT / "profiles" / "yocto-builder.yml")

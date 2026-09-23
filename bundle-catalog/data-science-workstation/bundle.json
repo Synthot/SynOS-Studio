@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "data-science-workstation",
+  "manifest": "manifests/data-science-workstation.yml",
+  "engine": {
+    "min": "0.2.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Data Science Workstation — ubuntu noble amd64, profile data-science-workstation",
+  "files": [
+    "manifests/data-science-workstation.yml",
+    "profiles/data-science-workstation.yml"
+  ]
+}

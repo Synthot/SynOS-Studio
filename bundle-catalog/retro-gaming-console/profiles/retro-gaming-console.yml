@@ -1,0 +1,25 @@
+id: retro-gaming-console
+extends: kiosk
+description: >-
+  Console-style kiosk on ubuntu noble that boots straight into RetroArch,
+  with joystick and gamepad autodetection (input_joypad_driver = udev)
+  and six libretro cores already installed: SNES9x, mGBA, Gambatte,
+  DeSmuME, Nestopia and Beetle PCE Fast (SNES, Game Boy Advance, Game
+  Boy, Nintendo DS, NES and PC Engine/TurboGrafx-16). Nestopia needs
+  noble or newer (missing from jammy); Beetle PCE Fast is on every
+  supported Ubuntu suite but missing from Debian trixie, so a
+  Debian-based build of this entry would ship five cores, not six. No
+  ROMs are shipped.
+software:
+  bundles: [retro-gaming]
+  files:
+    - path: /etc/retroarch.cfg
+      content: |
+        # System-wide RetroArch defaults, used until a person's own
+        # ~/.config/retroarch/retroarch.cfg exists.
+        video_fullscreen = "true"
+        input_autodetect_enable = "true"
+        input_joypad_driver = "udev"
+        menu_driver = "xmb"
+policy:
+  kiosk_app: retroarch

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "photography-workstation",
+  "manifest": "manifests/photography-workstation.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Photography Workstation — ubuntu noble amd64, profile photography-workstation",
+  "files": [
+    "manifests/photography-workstation.yml",
+    "profiles/photography-workstation.yml"
+  ]
+}

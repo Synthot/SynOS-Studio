@@ -20,6 +20,13 @@ bundles:
   ai-dev: PyTorch, Python tooling and llama.cpp for local model work
   yocto-build: Host tools required to build embedded images with the Yocto Project / OpenEmbedded (BitBake and friends), plus practical extras (rsync, ccache, QEMU for runqemu, and the like)
   yocto-build-docs: Packages to build the Yocto Project's own documentation, including PDFs (large — LaTeX and a full font set)
+  audio-production: Ardour and a PipeWire studio setup (JACK compatibility, patchbay, MIDI bridge, plugins, a drum machine)
+  video-editing: Kdenlive, ffmpeg and VA-API/VDPAU hardware video acceleration
+  photography: RAW processing (darktable, RawTherapee), colour management and display calibration (ArgyllCMS, DisplayCAL) and tethered shooting
+  cad-3d-printing: FreeCAD, OpenSCAD and a slicer (PrusaSlicer on Ubuntu, Cura on Debian)
+  data-science: Jupyter Notebook and the Python scientific stack (NumPy, SciPy, pandas, scikit-learn, Matplotlib, seaborn)
+  security-research: Network and web analysis tools (nmap, Wireshark, sqlmap and friends) for lawful, authorised testing only
+  retro-gaming: RetroArch with several libretro cores, plus joystick/gamepad tools
 
 compliance:
   - {id: none, name: None}

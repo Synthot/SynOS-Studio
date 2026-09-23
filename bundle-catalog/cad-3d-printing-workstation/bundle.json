@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "cad-3d-printing-workstation",
+  "manifest": "manifests/cad-3d-printing-workstation.yml",
+  "engine": {
+    "min": "0.2.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "CAD and 3D Printing Workstation — debian trixie amd64, profile cad-3d-printing-workstation",
+  "files": [
+    "manifests/cad-3d-printing-workstation.yml",
+    "profiles/cad-3d-printing-workstation.yml"
+  ]
+}

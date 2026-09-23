@@ -1,0 +1,52 @@
+id: security-research-workstation
+extends: workstation
+description: >-
+  Security research workstation for lawful, authorised network and web
+  analysis only: nmap, Wireshark, tcpdump, aircrack-ng, sqlmap, Nikto,
+  Hydra, John the Ripper, Hashcat, Gobuster, WhatWeb and dirb. Packet
+  capture needs no root: a pcap system group is declared and a first-boot
+  systemd unit grants dumpcap and tcpdump the CAP_NET_RAW and
+  CAP_NET_ADMIN capabilities and hands dumpcap to that group, re-applied
+  on every boot so a package upgrade never silently drops it.
+software:
+  bundles: [security-research]
+  files:
+    - path: /etc/sysusers.d/pcap.conf
+      content: |
+        # Declarative group for non-root packet capture; see
+        # pcap-permissions.service and first_boot in the bundle catalog.
+        g pcap -
+    - path: /etc/systemd/system/pcap-permissions.service
+      content: |
+        [Unit]
+        Description=Grant the pcap group non-root packet capture (CAP_NET_RAW, CAP_NET_ADMIN)
+        ConditionFileIsExecutable=/usr/bin/dumpcap
+        After=local-fs.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/sbin/setcap cap_net_raw,cap_net_admin+eip /usr/bin/dumpcap
+        ExecStart=-/usr/sbin/setcap cap_net_raw,cap_net_admin+eip /usr/bin/tcpdump
+        ExecStart=/bin/chgrp pcap /usr/bin/dumpcap
+        ExecStart=/bin/chmod 750 /usr/bin/dumpcap
+
+        [Install]
+        WantedBy=multi-user.target
+    - path: /etc/systemd/system/multi-user.target.wants/pcap-permissions.service
+      content: |
+        [Unit]
+        Description=Grant the pcap group non-root packet capture (CAP_NET_RAW, CAP_NET_ADMIN)
+        ConditionFileIsExecutable=/usr/bin/dumpcap
+        After=local-fs.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        ExecStart=/usr/sbin/setcap cap_net_raw,cap_net_admin+eip /usr/bin/dumpcap
+        ExecStart=-/usr/sbin/setcap cap_net_raw,cap_net_admin+eip /usr/bin/tcpdump
+        ExecStart=/bin/chgrp pcap /usr/bin/dumpcap
+        ExecStart=/bin/chmod 750 /usr/bin/dumpcap
+
+        [Install]
+        WantedBy=multi-user.target
