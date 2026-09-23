@@ -532,5 +532,134 @@ class ExportedCatalogTests(unittest.TestCase):
         self.assertNotIn("starter", bundle_doc.lower())
 
 
+class DataStoreApplianceTests(unittest.TestCase):
+    """The nine enterprise data-store appliances (ClickHouse, InfluxDB,
+    Cassandra, CockroachDB, CouchDB, Valkey, MongoDB, Neo4j, Milvus): every
+    one of them ships with no working credential and a closed port, on top
+    of the generic catalog checks above."""
+
+    IDS = {
+        "clickhouse-server": "clickhouse",
+        "influxdb-server": "influxdb",
+        "cassandra-server": "cassandra",
+        "cockroachdb-server": "cockroach",
+        "couchdb-server": "couchdb",
+        "valkey-server": "valkey",
+        "mongodb-server": "mongodb",
+        "neo4j-server": "neo4j",
+        "milvus-server": "milvus",
+    }
+
+    def test_all_nine_are_indexed_and_verified(self) -> None:
+        by_id = {e["id"]: e for e in index_entries()}
+        for entry_id, service_name in self.IDS.items():
+            with self.subTest(entry=entry_id):
+                self.assertIn(entry_id, by_id, f"{entry_id} is missing from bundle-catalog/index.yml")
+                entry = by_id[entry_id]
+                self.assertTrue(entry.get("verified"), f"{entry_id} must be verified: true")
+                self.assertEqual([service_name], entry["services"])
+
+    def test_every_one_closes_its_data_port_by_default(self) -> None:
+        """None of the nine ships a working credential, so none of them opens
+        anything but SSH by default (docs/BUNDLE.md, "Fail closed")."""
+        by_id = {e["id"]: e for e in index_entries()}
+        for entry_id in self.IDS:
+            with self.subTest(entry=entry_id):
+                profile, _ = render_manifest.resolve_profile(entry_id)
+                self.assertEqual(["22/tcp"], profile["security"]["open_ports"],
+                                  f"{entry_id} must close every port but SSH until a real credential exists")
+                self.assertEqual([22], by_id[entry_id]["ports"])
+
+    def test_every_service_is_gpu_free_and_pinned_to_a_real_tag(self) -> None:
+        catalog = render_manifest.load_yaml(ROOT / "profiles" / "catalog.yml")
+        by_service_id = {s["id"]: s for s in catalog["services"]}
+        for entry_id, service_name in self.IDS.items():
+            with self.subTest(service=service_name):
+                self.assertIn(service_name, by_service_id, f"{service_name} is missing from profiles/catalog.yml")
+                service = by_service_id[service_name]
+                self.assertFalse(service.get("gpu", False), f"{service_name} must not need a GPU")
+                for image in service["images"].values():
+                    self.assertIn(":", image, f"{service_name}: {image} is not pinned to a tag")
+                    tag = image.rsplit(":", 1)[1]
+                    self.assertNotEqual("latest", tag, f"{service_name}: {image} is pinned to latest")
+
+    def test_profile_and_catalog_service_agree_on_the_image(self) -> None:
+        """The image a profile's software.services entry runs must be the exact
+        same pinned tag profiles/catalog.yml advertises for that service."""
+        catalog = render_manifest.load_yaml(ROOT / "profiles" / "catalog.yml")
+        by_service_id = {s["id"]: s for s in catalog["services"]}
+        for entry_id, service_name in self.IDS.items():
+            with self.subTest(entry=entry_id):
+                profile, _ = render_manifest.resolve_profile(entry_id)
+                services = profile["software"]["services"]
+                self.assertEqual(1, len(services))
+                self.assertEqual(service_name, services[0]["name"])
+                self.assertEqual(by_service_id[service_name]["images"]["default"], services[0]["image"])
+
+    def test_mongodb_and_neo4j_are_community_never_enterprise(self) -> None:
+        mongo_profile, _ = render_manifest.resolve_profile("mongodb-server")
+        mongo_image = mongo_profile["software"]["services"][0]["image"]
+        self.assertNotIn("enterprise", mongo_image.lower())
+        self.assertEqual("docker.io/library/mongo", mongo_image.rsplit(":", 1)[0])
+
+        neo4j_profile, _ = render_manifest.resolve_profile("neo4j-server")
+        neo4j_image = neo4j_profile["software"]["services"][0]["image"]
+        self.assertNotIn("enterprise", neo4j_image.lower())
+        self.assertEqual("docker.io/library/neo4j", neo4j_image.rsplit(":", 1)[0])
+
+    def test_valkey_is_not_redis(self) -> None:
+        """docs/BUNDLE.md: ship the BSD-licensed fork, never the software it
+        forked from, and the image must actually come from the fork's own
+        publisher rather than a same-named impostor."""
+        profile, _ = render_manifest.resolve_profile("valkey-server")
+        image = profile["software"]["services"][0]["image"]
+        self.assertTrue(image.startswith("docker.io/valkey/valkey:"), image)
+        entry = next(e for e in index_entries() if e["id"] == "valkey-server")
+        self.assertIn("protocol", entry["summary"].lower())
+
+    def test_none_of_the_nine_ships_a_working_password_file(self) -> None:
+        """Each of these fails closed by pointing a *_FILE / *_PATH secret env
+        var at a host path this profile deliberately does not ship, exactly
+        like database-server's postgres superuser password. None of the
+        mounted "secret" targets may be shipped as a software.files entry
+        (which would make it a real, checked-in credential)."""
+        secret_targets = {
+            "clickhouse-server": "/run/secrets/clickhouse-password",
+            "influxdb-server": "/run/secrets/influxdb-admin-password",
+            "mongodb-server": "/run/secrets/mongo-root-password",
+            "neo4j-server": "/run/secrets/neo4j-auth",
+            "couchdb-server": "/opt/couchdb/etc/local.d/admins.ini",
+            "valkey-server": "/etc/valkey/users.acl",
+        }
+        for entry_id, target in secret_targets.items():
+            with self.subTest(entry=entry_id):
+                profile, _ = render_manifest.resolve_profile(entry_id)
+                service = profile["software"]["services"][0]
+                mounted = [v for v in service.get("volumes", []) if v.endswith(f":{target}:ro")]
+                self.assertTrue(mounted, f"{entry_id} must bind-mount a not-shipped secret at {target}")
+                shipped_paths = {f["path"] for f in profile.get("software", {}).get("files", [])}
+                self.assertFalse(shipped_paths, f"{entry_id} must not ship any of its own files as a credential")
+
+    def test_milvus_is_the_only_one_shipping_files_and_needs_the_newer_engine(self) -> None:
+        for entry_id in self.IDS:
+            with self.subTest(entry=entry_id):
+                folder = CATALOG_DIR / entry_id
+                bundle = json.loads((folder / "bundle.json").read_text(encoding="utf-8"))
+                profile, _ = render_manifest.resolve_profile(entry_id)
+                ships_files = bool(profile.get("software", {}).get("files"))
+                if entry_id == "milvus-server":
+                    self.assertTrue(ships_files)
+                    self.assertEqual("0.2.0", bundle["engine"]["min"])
+                else:
+                    self.assertFalse(ships_files)
+                    self.assertEqual("0.1.0", bundle["engine"]["min"])
+
+    def test_milvus_authorization_is_turned_on_since_it_is_off_upstream_by_default(self) -> None:
+        profile, _ = render_manifest.resolve_profile("milvus-server")
+        files = {f["path"]: f["content"] for f in profile["software"]["files"]}
+        self.assertIn("/etc/milvus/user.yaml", files)
+        self.assertIn("authorizationEnabled: true", files["/etc/milvus/user.yaml"])
+
+
 if __name__ == "__main__":
     unittest.main()

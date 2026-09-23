@@ -1,0 +1,29 @@
+id: valkey-server
+extends: server
+description: >-
+  Server profile running Valkey (in-memory data structure store, port
+  6379) as a system service. Valkey speaks the same RESP protocol and
+  command set as the software it was forked from, so any Redis client or
+  library works against it unchanged; SynOS ships Valkey rather than that
+  software because Valkey stayed a true open-source, BSD-3-Clause project
+  under the Linux Foundation after the original project's licence changed
+  in 2024, which matters for an engine that promises to ship no
+  GPL-incompatible surprises. Started with --aclfile pointed at
+  /etc/valkey/users.acl, a file this profile deliberately does not ship:
+  Valkey aborts startup outright when an --aclfile is named but missing
+  (verified: "Aborting Valkey startup because of ACL errors", exit 1)
+  rather than falling back to its unauthenticated default. Once a real
+  ACL file exists (disabling the default user and giving a named user a
+  real password) the service starts, an unauthenticated command is
+  refused with NOAUTH, and the named user's commands succeed.
+software:
+  services:
+    - name: valkey
+      image: docker.io/valkey/valkey:8.1.10
+      ports: ["6379:6379"]
+      volumes:
+        - valkey-data:/data
+        - /etc/valkey/users.acl:/etc/valkey/users.acl:ro
+      exec: "--protected-mode yes --aclfile /etc/valkey/users.acl"
+security:
+  open_ports: [22/tcp]

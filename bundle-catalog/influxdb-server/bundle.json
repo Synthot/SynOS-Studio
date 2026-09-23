@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "influxdb-server",
+  "manifest": "manifests/influxdb-server.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-23T00:00:00Z",
+  "description": "InfluxDB Time-Series Database — ubuntu noble amd64, profile influxdb-server",
+  "files": [
+    "manifests/influxdb-server.yml",
+    "profiles/influxdb-server.yml"
+  ]
+}

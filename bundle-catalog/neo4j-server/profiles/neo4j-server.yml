@@ -1,0 +1,26 @@
+id: neo4j-server
+extends: server
+description: >-
+  Server profile running Neo4j Community Edition (never Enterprise; graph
+  database with its browser/HTTP interface on 7474 and the Bolt protocol
+  on 7687) as a system service. NEO4J_AUTH_FILE points at
+  /etc/neo4j/auth, a file this profile deliberately does not ship: Neo4j's
+  own entrypoint checks for that file before anything else starts and
+  exits 1 when it is missing (verified: "The secret file
+  '/run/secrets/neo4j-auth' does not exist or is not readable"), rather
+  than falling back to the well-known neo4j/neo4j default. Once a real
+  auth file exists (username/password, e.g. neo4j/a-real-password) the
+  service starts, a wrong password is refused, and real Cypher queries
+  (creating and matching a node) succeed against it.
+software:
+  services:
+    - name: neo4j
+      image: docker.io/library/neo4j:5.26.14
+      ports: ["7474:7474", "7687:7687"]
+      volumes:
+        - neo4j-data:/data
+        - /etc/neo4j/auth:/run/secrets/neo4j-auth:ro
+      env:
+        NEO4J_AUTH_FILE: /run/secrets/neo4j-auth
+security:
+  open_ports: [22/tcp]

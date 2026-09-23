@@ -1,0 +1,28 @@
+id: influxdb-server
+extends: server
+description: >-
+  Server profile running InfluxDB 2.x (time-series database, HTTP API and
+  UI on port 8086) as a system service. DOCKER_INFLUXDB_INIT_MODE is set
+  to setup, which requires a username, password, organisation and bucket
+  before InfluxDB will do anything; the password comes from
+  DOCKER_INFLUXDB_INIT_PASSWORD_FILE at /etc/influxdb/admin-password, a
+  file this profile deliberately does not ship, so the container refuses
+  to start at all until that file exists (verified: with the file absent
+  the entrypoint logs "missing parameter, cannot init InfluxDB" and exits
+  1 rather than falling back to an open setup wizard).
+software:
+  services:
+    - name: influxdb
+      image: docker.io/library/influxdb:2.7.12
+      ports: ["8086:8086"]
+      volumes:
+        - influxdb-data:/var/lib/influxdb2
+        - /etc/influxdb/admin-password:/run/secrets/influxdb-admin-password:ro
+      env:
+        DOCKER_INFLUXDB_INIT_MODE: setup
+        DOCKER_INFLUXDB_INIT_USERNAME: admin
+        DOCKER_INFLUXDB_INIT_PASSWORD_FILE: /run/secrets/influxdb-admin-password
+        DOCKER_INFLUXDB_INIT_ORG: synos
+        DOCKER_INFLUXDB_INIT_BUCKET: metrics
+security:
+  open_ports: [22/tcp]

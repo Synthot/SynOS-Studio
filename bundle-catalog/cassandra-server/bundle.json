@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "cassandra-server",
+  "manifest": "manifests/cassandra-server.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-23T00:00:00Z",
+  "description": "Cassandra Wide-Column Store — ubuntu noble amd64, profile cassandra-server",
+  "files": [
+    "manifests/cassandra-server.yml",
+    "profiles/cassandra-server.yml"
+  ]
+}

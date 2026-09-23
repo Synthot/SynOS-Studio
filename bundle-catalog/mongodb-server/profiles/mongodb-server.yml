@@ -1,0 +1,27 @@
+id: mongodb-server
+extends: server
+description: >-
+  Server profile running MongoDB Community Server (never Enterprise, port
+  27017) as a system service. MongoDB has no authentication at all by
+  default, even for an administrative user; this profile sets
+  MONGO_INITDB_ROOT_USERNAME and points MONGO_INITDB_ROOT_PASSWORD_FILE at
+  /etc/mongodb/root-password, a file this profile deliberately does not
+  ship, so the container fails to start until that file exists (verified:
+  with the file absent the entrypoint's file_env helper fails to read it
+  and mongod never starts; with a real password file mounted, the image's
+  own entrypoint automatically adds --auth, an unauthenticated query is
+  refused with "requires authentication", and the created root user can
+  insert and read real documents).
+software:
+  services:
+    - name: mongodb
+      image: docker.io/library/mongo:8.0.12
+      ports: ["27017:27017"]
+      volumes:
+        - mongodb-data:/data/db
+        - /etc/mongodb/root-password:/run/secrets/mongo-root-password:ro
+      env:
+        MONGO_INITDB_ROOT_USERNAME: root
+        MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo-root-password
+security:
+  open_ports: [22/tcp]
