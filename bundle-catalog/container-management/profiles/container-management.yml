@@ -1,0 +1,21 @@
+id: container-management
+extends: server
+description: >-
+  Server profile running Portainer Community Edition as a system
+  service, managing this machine's own Podman containers through its
+  Docker-compatible API socket. Portainer generates a random one-time
+  setup token at every first start and prints it only to the container's
+  own log, so even someone who reaches the web UI cannot create the
+  admin account without also reading that log; port 9443 still stays
+  closed by default, the same as every other appliance in this catalog
+  with an account-claiming first screen.
+software:
+  services:
+    - name: portainer
+      image: docker.io/portainer/portainer-ce:2.45.1
+      ports: ["9443:9443"]
+      volumes:
+        - portainer-data:/data
+        - /run/podman/podman.sock:/var/run/docker.sock
+security:
+  open_ports: [22/tcp]

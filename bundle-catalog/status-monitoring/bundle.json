@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "status-monitoring",
+  "manifest": "manifests/status-monitoring.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Status Monitoring \u2014 ubuntu noble amd64, profile status-monitoring",
+  "files": [
+    "manifests/status-monitoring.yml",
+    "profiles/status-monitoring.yml"
+  ]
+}

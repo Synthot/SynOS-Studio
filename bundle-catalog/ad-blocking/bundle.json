@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "ad-blocking",
+  "manifest": "manifests/ad-blocking.yml",
+  "engine": {
+    "min": "0.2.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Ad and Tracker Blocking \u2014 ubuntu noble amd64, profile ad-blocking",
+  "files": [
+    "manifests/ad-blocking.yml",
+    "profiles/ad-blocking.yml"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "home-automation",
+  "manifest": "manifests/home-automation.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Home Automation \u2014 ubuntu noble amd64, profile home-automation",
+  "files": [
+    "manifests/home-automation.yml",
+    "profiles/home-automation.yml"
+  ]
+}

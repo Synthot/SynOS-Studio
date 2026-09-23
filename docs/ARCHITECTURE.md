@@ -145,7 +145,24 @@ toolkit comes from NVIDIA's repository, whose key ships with the engine
 `container_services` role writes podman quadlet units, images are pulled on
 first start (the image stays small and reproducible), and `gpu: true` maps
 the GPU into the container the way each vendor needs (CDI for NVIDIA,
-generated at boot; /dev/kfd and /dev/dri for AMD and Intel). The catalog
+generated at boot; /dev/kfd and /dev/dri for AMD and Intel). `ports` are
+quadlet `PublishPort=` strings (`host:container`, protocol suffix optional
+and defaulting to tcp — `51820:51820/udp` for a UDP-only service such as
+WireGuard); `cap_add` lists Linux capabilities the container needs beyond
+the runtime default (quadlet `AddCapability=`), for a service that manages
+its own network interface or similar; `env_file` names a host path read as
+the container's environment (quadlet `EnvironmentFile=`) for a service
+whose credentials must never be baked into the image — the profile that
+uses it deliberately does not ship that path, the same fail-closed shape
+`software.files` already gives the database appliance, so the service
+refuses to start until the person creates the file (docs/BUNDLE.md, "The
+bundle catalog"). `cap_add` is a closed enum, not a free-form list: a
+container that can request `SYS_ADMIN` or `ALL` has defeated the point of
+containing it, so `schema/profile.schema.json` enumerates only the
+capabilities an appliance in this catalog actually needs today
+(`NET_ADMIN`, `NET_RAW`, `NET_BIND_SERVICE`, `SYS_TIME`, `SYS_NICE`) and
+refuses anything else outright; widening it is a reviewed change, not
+something a bundle can opt into on its own. The catalog
 (`profiles/catalog.yml`, `services`) describes the ones Studio offers with
 the image per GPU. The `ai-workstation` archetype uses all of this.
 

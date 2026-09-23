@@ -182,6 +182,82 @@ services:
     env: {POSTGRES_PASSWORD_FILE: "/run/secrets/postgres-superuser-password"}
     gpu: false
     images: {default: docker.io/library/postgres:17.11}
+  - id: homeassistant
+    title: Home Assistant
+    summary: Home automation hub on port 8123; its own onboarding wizard creates the first (administrator) account
+    ports: ["8123:8123"]
+    volumes: ["homeassistant-config:/config"]
+    gpu: false
+    images: {default: docker.io/homeassistant/home-assistant:2026.9.3}
+  - id: pihole
+    title: Pi-hole
+    summary: Network-wide ad and tracker blocking over DNS on port 53; the web UI's password is generated at random on first start
+    ports: ["53:53/tcp", "53:53/udp", "80:80"]
+    volumes: ["pihole-etc:/etc/pihole", "pihole-dnsmasq:/etc/dnsmasq.d"]
+    env: {TZ: "UTC"}
+    gpu: false
+    images: {default: docker.io/pihole/pihole:2026.09.0}
+  - id: nextcloud
+    title: Nextcloud
+    summary: Personal cloud for files, contacts and calendars on port 80, using SQLite so there is no separate database
+    ports: ["80:80"]
+    volumes: ["nextcloud-data:/var/www/html"]
+    env: {SQLITE_DATABASE: "nextcloud"}
+    gpu: false
+    images: {default: docker.io/library/nextcloud:35.0.0-apache}
+  - id: vaultwarden
+    title: Vaultwarden
+    summary: Bitwarden-compatible password manager on port 80; sign-ups disabled by default and must sit behind TLS before it is exposed
+    ports: ["80:80"]
+    volumes: ["vaultwarden-data:/data"]
+    env: {SIGNUPS_ALLOWED: "false"}
+    gpu: false
+    images: {default: docker.io/vaultwarden/server:1.37.3}
+  - id: portainer
+    title: Portainer
+    summary: Container management web UI on port 9443 for this machine's own containers; a random setup token gates the first admin account
+    ports: ["9443:9443"]
+    volumes: ["portainer-data:/data", "/run/podman/podman.sock:/var/run/docker.sock"]
+    gpu: false
+    images: {default: docker.io/portainer/portainer-ce:2.45.1}
+  - id: uptime-kuma
+    title: Uptime Kuma
+    summary: Uptime and status-page monitoring on port 3001; its own setup screen creates the one admin account
+    ports: ["3001:3001"]
+    volumes: ["uptime-kuma-data:/app/data"]
+    gpu: false
+    images: {default: docker.io/louislam/uptime-kuma:2.5.5}
+  - id: syncthing
+    title: Syncthing
+    summary: Peer-to-peer file synchronisation; sync (22000, TCP/UDP) and discovery (21027/UDP) are open, the unauthenticated web GUI (8384) is not
+    ports: ["8384:8384", "22000:22000/tcp", "22000:22000/udp", "21027:21027/udp"]
+    volumes: ["syncthing-config:/var/syncthing/config", "syncthing-data:/var/syncthing/data"]
+    gpu: false
+    images: {default: docker.io/syncthing/syncthing:2.1.5}
+  - id: minio
+    title: MinIO
+    summary: S3-compatible object storage, API on port 9000 and console on port 9001; falls back to minioadmin:minioadmin if no root credentials are set
+    ports: ["9000:9000", "9001:9001"]
+    volumes: ["minio-data:/data"]
+    exec: "server /data --console-address :9001"
+    gpu: false
+    images: {default: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z.hotfix.7aa24e772}
+  - id: n8n
+    title: n8n
+    summary: Workflow automation on port 5678 with a large library of ready integrations; its own setup screen creates the first (owner) account
+    ports: ["5678:5678"]
+    volumes: ["n8n-data:/home/node/.n8n"]
+    gpu: false
+    images: {default: docker.io/n8nio/n8n:2.41.0}
+  - id: wg-easy
+    title: wg-easy
+    summary: WireGuard VPN server with a peer-management web UI; the VPN itself (51820/udp) is open, its account-claiming web UI (51821) is not
+    ports: ["51820:51820/udp", "51821:51821"]
+    volumes: ["wg-easy-data:/etc/wireguard"]
+    env: {WG_HOST: "192.0.2.1"}
+    cap_add: [NET_ADMIN]
+    gpu: false
+    images: {default: ghcr.io/wg-easy/wg-easy:15.4.0}
 
 # GPU compute stacks a profile may ship (hardware.gpu); what each adds is in the
 # bases' package maps (gpu-nvidia, gpu-amd, gpu-intel).

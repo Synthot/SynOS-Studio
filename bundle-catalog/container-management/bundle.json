@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "container-management",
+  "manifest": "manifests/container-management.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Container Management \u2014 ubuntu noble amd64, profile container-management",
+  "files": [
+    "manifests/container-management.yml",
+    "profiles/container-management.yml"
+  ]
+}

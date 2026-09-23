@@ -1,0 +1,42 @@
+id: ad-blocking
+extends: server
+description: >-
+  Server profile running Pi-hole as a system service: network-wide ad
+  and tracker blocking over DNS, on port 53. Pi-hole is picked over
+  AdGuard Home for this catalog because it is the lighter of the two (a
+  single container, no separate setup wizard exposed on the network) and
+  because its web password is never a static default: when none is set,
+  Pi-hole itself generates a random one at first start and prints it to
+  the container's own log, so nothing this profile ships can authenticate
+  anyone. Port 53 collides with the DNS stub resolver a Debian/Ubuntu
+  desktop runs (systemd-resolved listens on 127.0.0.53:53, which overlaps
+  the wildcard bind Pi-hole needs on 0.0.0.0:53): this profile ships
+  /etc/systemd/resolved.conf.d/pihole-no-stub.conf, disabling that stub
+  listener before systemd-resolved ever starts it, so Pi-hole can bind
+  port 53 without a conflict. The web UI (port 80) stays closed by
+  default, since even a random password is worth keeping off the network
+  until the person has seen it.
+software:
+  services:
+    - name: pihole
+      image: docker.io/pihole/pihole:2026.09.0
+      ports: ["53:53/tcp", "53:53/udp", "80:80"]
+      volumes:
+        - pihole-etc:/etc/pihole
+        - pihole-dnsmasq:/etc/dnsmasq.d
+      env:
+        TZ: "UTC"
+  files:
+    - path: /etc/systemd/resolved.conf.d/pihole-no-stub.conf
+      content: |
+        # Pi-hole needs to bind port 53 itself; systemd-resolved's own stub
+        # resolver listens on 127.0.0.53:53 by default, which overlaps
+        # Pi-hole's wildcard bind on 0.0.0.0:53 and would otherwise refuse
+        # the container's port. This does not touch the upstream DNS
+        # servers systemd-resolved learned over DHCP/netplan (still
+        # readable at /run/systemd/resolve/resolv.conf) — only the internal
+        # stub listener that would collide with Pi-hole.
+        [Resolve]
+        DNSStubListener=no
+security:
+  open_ports: [22/tcp, 53/tcp, 53/udp]

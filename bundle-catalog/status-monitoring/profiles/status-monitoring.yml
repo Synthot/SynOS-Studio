@@ -1,0 +1,16 @@
+id: status-monitoring
+extends: server
+description: >-
+  Server profile running Uptime Kuma as a system service on port 3001:
+  uptime and status-page monitoring for other hosts and services.
+  Whoever visits it first is invited to create the one admin account, so
+  port 3001 stays closed by default until that account exists.
+software:
+  services:
+    - name: uptime-kuma
+      image: docker.io/louislam/uptime-kuma:2.5.5
+      ports: ["3001:3001"]
+      volumes:
+        - uptime-kuma-data:/app/data
+security:
+  open_ports: [22/tcp]

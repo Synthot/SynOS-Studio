@@ -15,12 +15,18 @@ PublishPort={{ port }}
 {% for volume in item.volumes | default([]) %}
 Volume={{ volume }}
 {% endfor %}
+{% for cap in item.cap_add | default([]) %}
+AddCapability={{ cap }}
+{% endfor %}
 {% if item.exec | default('') %}
 Exec={{ item.exec }}
 {% endif %}
 {% for key, value in (item.env | default({})).items() %}
 Environment={{ key }}={{ value }}
 {% endfor %}
+{% if item.env_file | default('') %}
+EnvironmentFile={{ item.env_file }}
+{% endif %}
 {% if item.gpu | default(false) %}
 {% if container_services_gpu == 'nvidia' %}
 AddDevice=nvidia.com/gpu=all

@@ -227,6 +227,28 @@ very slow first-run database migrations unrelated to the shipped
 configuration. Say which kind of verification an entry got when proposing
 one.
 
+The self-hosting round (home automation, ad/tracker blocking, personal
+cloud, password manager, container management, status monitoring, file
+sync, object storage, automation flows, VPN server) was built, run and hit
+with a real request for every entry except two things this environment
+could not exercise: a full WireGuard handshake between two real peers
+(the server side — key generation, the wg0 interface, and the UDP
+listener — was confirmed running) and Vaultwarden's registration
+endpoint under `SIGNUPS_ALLOWED=false` (the setting is real and
+documented upstream; the exact route to hit by hand was not found in the
+time available). Two schema gaps came out of this round and were fixed
+rather than worked around: `software.services[].ports` now accepts an
+optional `/tcp` or `/udp` suffix (WireGuard and Pi-hole both need a
+UDP-bound port), and services gained `cap_add` for the rare container
+that has to manage its own network interface (`NET_ADMIN`, for
+WireGuard) — both checked against this engine's actual container
+runtime, not assumed from the images' documentation. MinIO's official
+image is no longer published to Docker Hub (moved to `quay.io/minio/minio`
+partway through 2024); its tag was verified against quay.io's own
+registry API instead, and `MINIO_ROOT_USER_FILE`/`MINIO_ROOT_PASSWORD_FILE`
+were tried and found not to work in the pinned release, which is why that
+entry ships neither variable and instead keeps its ports closed.
+
 An appliance's profile carries its own configuration through
 `software.files` (see "Configuration files a profile ships" in
 `docs/ARCHITECTURE.md`): real files written into the image, never a
@@ -275,7 +297,11 @@ read by anyone with this public repository.
 5. Open a pull request. A reviewer additionally checks, by eye, what the
    automated tests cannot: that no shipped file contains a real secret,
    that image tags and package names were actually verified rather than
-   guessed (say how, in the description), and that `first_boot` honestly
+   guessed (say how, in the description), that `first_boot` honestly
    covers everything a person needs to do before trusting the appliance
    with anything — nothing quietly left only in the profile's own
-   `description`.
+   `description` — and that any capability a service requests through
+   `cap_add` is one the appliance actually needs (the schema only allows
+   choosing among a fixed, reviewed set; widening that set is itself a
+   reviewed change to `schema/profile.schema.json`, not something a
+   single bundle can do on its own).

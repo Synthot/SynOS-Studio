@@ -76,11 +76,13 @@
                 "properties": {
                   "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
                   "image": { "type": "string" },
-                  "ports": { "type": "array", "items": { "type": "string", "pattern": "^[0-9]{1,5}:[0-9]{1,5}$" } },
+                  "ports": { "type": "array", "items": { "type": "string", "pattern": "^[0-9]{1,5}:[0-9]{1,5}(/(tcp|udp))?$", "description": "podman quadlet PublishPort=; protocol suffix optional, defaults to tcp (e.g. 51820:51820/udp for a UDP-only service)" } },
                   "volumes": { "type": "array", "items": { "type": "string" } },
                   "env": { "type": "object", "additionalProperties": { "type": "string" } },
                   "gpu": { "type": "boolean" },
                   "exec": { "type": "string", "description": "Arguments passed to the container's entry point" },
+                  "cap_add": { "type": "array", "items": { "enum": ["NET_ADMIN", "NET_RAW", "NET_BIND_SERVICE", "SYS_TIME", "SYS_NICE"] }, "description": "Linux capabilities the container needs beyond the runtime default (podman quadlet AddCapability=). Closed list, not free-form: only capabilities an appliance in this catalog actually needs are enumerated (NET_ADMIN for a service that manages its own network interface, such as WireGuard); a reviewer checks any addition to this list the same way image tags are checked, since a broad capability such as SYS_ADMIN or ALL defeats the point of a container." },
+                  "env_file": { "type": "string", "pattern": "^/(etc|srv|opt|usr/local)/.+$", "description": "Host path read as the container's environment (podman quadlet EnvironmentFile=), for a service whose credentials must never be baked into the image: this profile deliberately does not ship the file, so the service fails to start until the person creates it (docs/BUNDLE.md, 'The bundle catalog')" },
                   "description": { "type": "string" }
                 }
               }

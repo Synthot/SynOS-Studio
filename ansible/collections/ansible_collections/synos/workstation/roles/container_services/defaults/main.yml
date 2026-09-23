@@ -1,2 +1,2 @@
-container_services: []            # [{name, image, ports, volumes, env, gpu, description}]
+container_services: []            # [{name, image, ports, volumes, env, env_file, gpu, cap_add, description}]
 container_services_gpu: none      # none | nvidia | amd | intel: how gpu: true services reach the GPU

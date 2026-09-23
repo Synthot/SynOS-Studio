@@ -1,0 +1,20 @@
+id: file-sync
+extends: server
+description: >-
+  Server profile running Syncthing as a system service: continuous,
+  peer-to-peer file synchronisation with no server-side account system
+  at all. The sync protocol (port 22000, TCP and UDP) and local discovery
+  (port 21027/UDP) stay open by default — pairing a device still needs
+  that device's own ID, so nothing is reachable without one. The web GUI
+  (port 8384) ships with no username or password at all until one is set
+  from inside it, so it stays closed by default.
+software:
+  services:
+    - name: syncthing
+      image: docker.io/syncthing/syncthing:2.1.5
+      ports: ["8384:8384", "22000:22000/tcp", "22000:22000/udp", "21027:21027/udp"]
+      volumes:
+        - syncthing-config:/var/syncthing/config
+        - syncthing-data:/var/syncthing/data
+security:
+  open_ports: [22/tcp, 22000/tcp, 22000/udp, 21027/udp]

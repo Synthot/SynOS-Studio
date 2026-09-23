@@ -1,0 +1,25 @@
+id: automation-flows
+extends: server
+description: >-
+  Server profile running n8n as a system service on port 5678:
+  general-purpose workflow automation with a large library of ready
+  integrations. Picked over Node-RED for this catalog because n8n fails
+  closed on its own: it ships no authentication by default and needs an
+  owner account created through its own setup screen before it does
+  anything (the same "whoever arrives first" shape as this catalog's
+  Gitea and Jellyfin entries, so port 5678 stays closed the same way).
+  Node-RED has no such gate — its editor is wide open until someone adds
+  a settings.js of their own — and the usual fix (bind-mounting a custom
+  settings.js into its default data volume) was tried by hand for this
+  catalog and does not reliably take effect on first creation of that
+  volume in this engine's container runtime, so it was not shipped that
+  way.
+software:
+  services:
+    - name: n8n
+      image: docker.io/n8nio/n8n:2.41.0
+      ports: ["5678:5678"]
+      volumes:
+        - n8n-data:/home/node/.n8n
+security:
+  open_ports: [22/tcp]
