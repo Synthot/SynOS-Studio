@@ -33,3 +33,8 @@ gpu-nvidia         = nvidia-driver-580-open nvidia-cuda-toolkit nvidia-utils-580
 gpu-amd            = rocminfo rocm-smi
 gpu-intel          = intel-opencl-icd libze-intel-gpu1 libze1 intel-media-va-driver-non-free
 ai-dev             = python3-torch python3-venv python3-pip llama.cpp
+# Yocto Project reference manual, "Ubuntu and Debian" required packages, plus
+# python3-websockets (needed on every supported suite but jammy/22.04, where
+# the archive version is too old for BitBake's hash equivalence server; use
+# a venv there instead). lz4, not the transitional liblz4-tool.
+yocto-host-tools   = gawk wget git diffstat unzip texinfo build-essential chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils iputils-ping python3-git python3-jinja2 python3-subunit zstd lz4 file locales libacl1 libcrypt-dev gcc python3-websockets

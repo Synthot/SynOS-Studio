@@ -1,0 +1,40 @@
+# The bundle catalog: ready-made bundles a person can start from instead of
+# starting from scratch (docs/BUNDLE.md, "The bundle catalog"). Each entry
+# names one folder here; tools/export_catalog.py reads the folder's files and
+# exports them verbatim as bundle_catalog[].files.
+bundle_catalog:
+  - id: yocto-builder
+    name: Yocto Build Machine
+    summary: A developer workstation with BitBake's required host packages preinstalled, ready to build embedded Linux images with the Yocto Project.
+    tags: [yocto, openembedded, bitbake, embedded, cross-compile, build-host]
+    folder: yocto-builder
+  - id: developer-workstation
+    name: Developer Workstation
+    summary: An office workstation plus containers, compilers and a debugger, with no policy lockdown.
+    tags: [developer, coding, containers, build-tools, git, podman]
+    folder: developer-workstation
+  - id: ai-workstation
+    name: AI Workstation
+    summary: A developer workstation with PyTorch and llama.cpp for local model work; GPU stack and inference services are chosen afterwards.
+    tags: [ai, machine-learning, pytorch, llama.cpp, gpu, local-inference]
+    folder: ai-workstation
+  - id: office-workstation
+    name: Office Workstation
+    summary: Office suite, mail, browser, printing, VPN and remote desktop for everyday business use.
+    tags: [office, business, productivity, mail, browser, printing]
+    folder: office-workstation
+  - id: kiosk
+    name: Kiosk
+    summary: Single application, automatic login, no shell access and no USB storage, for a public or unattended terminal.
+    tags: [kiosk, single-app, locked-down, public-terminal, digital-signage]
+    folder: kiosk
+  - id: small-server
+    name: Small Server
+    summary: Headless-ready server with SSH, Cockpit web administration, containers and automatic security updates.
+    tags: [server, headless, ssh, cockpit, containers, web-admin]
+    folder: small-server
+  - id: thin-client
+    name: Thin Client
+    summary: Boots straight into a VDI or RDP session, for a machine whose desktop lives elsewhere.
+    tags: [thin-client, vdi, rdp, remote-desktop, terminal]
+    folder: thin-client

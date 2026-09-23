@@ -1,0 +1,11 @@
+id: yocto-builder
+extends: developer
+description: >-
+  Build host for Yocto Project / OpenEmbedded embedded images: the
+  developer profile plus BitBake's required host packages (compiler,
+  Python, git, texinfo and friends). Needs an en_US.UTF-8 locale, generated
+  by any region the manifest includes, and a lot of free disk space — the
+  Yocto Project's own guidance is at least 140 GB for a single target, more
+  for several machines or a shared build cache.
+software:
+  bundles: [yocto-build]

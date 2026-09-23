@@ -67,6 +67,38 @@ def launchers() -> dict[str, str]:
     return {name: (ROOT / "tools" / source).read_bytes().decode("utf-8") for name, source in LAUNCHERS.items()}
 
 
+def bundle_catalog() -> list[dict]:
+    """The bundle catalog (bundle-catalog/, docs/BUNDLE.md): ready-made, ordinary
+    bundles a front end can offer as starting points, alongside "start from
+    scratch". Each entry's files are read as bytes and decoded, not read_text,
+    for the same reason as launchers() above, and must come back byte-identical
+    to what bundle-catalog/<folder> holds so a front end can write them out
+    unchanged."""
+    load_yaml = render_manifest.load_yaml
+    index_path = ROOT / "bundle-catalog" / "index.yml"
+    if not index_path.is_file():
+        return []
+    entries = load_yaml(index_path).get("bundle_catalog", [])
+    catalog = []
+    for entry in entries:
+        folder = ROOT / "bundle-catalog" / entry["folder"]
+        bundle = json.loads((folder / "bundle.json").read_text(encoding="utf-8"))
+        manifest = load_yaml(folder / bundle["manifest"])
+        files = {
+            path.relative_to(folder).as_posix(): path.read_bytes().decode("utf-8")
+            for path in sorted(folder.rglob("*")) if path.is_file()
+        }
+        catalog.append({
+            "id": entry["id"],
+            "name": entry["name"],
+            "summary": entry["summary"],
+            "tags": list(entry.get("tags", [])),
+            "kind": manifest["profile"],
+            "files": files,
+        })
+    return catalog
+
+
 def collect() -> dict:
     load_yaml = render_manifest.load_yaml
     catalog = load_yaml(ROOT / "profiles" / "catalog.yml")
@@ -145,6 +177,7 @@ def collect() -> dict:
         "engine": engine_version(),
         "bundle_format": BUNDLE_FORMAT,
         "launchers": launchers(),
+        "bundle_catalog": bundle_catalog(),
         "bases": bases,
         "profiles": profiles,
         "bundles": bundle_list,

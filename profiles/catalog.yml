@@ -18,6 +18,7 @@ bundles:
   web-admin: Cockpit web administration (services, storage, containers, terminal)
   virtualization: KVM virtual machines with libvirt
   ai-dev: PyTorch, Python tooling and llama.cpp for local model work
+  yocto-build: Host tools required to build embedded images with the Yocto Project / OpenEmbedded (BitBake and friends)
 
 compliance:
   - {id: none, name: None}

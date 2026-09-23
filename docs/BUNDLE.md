@@ -164,3 +164,35 @@ Any tool can write one. The catalog (`tools/export_catalog.py`) lists the
 ids and schemas to generate against. A minimal bundle is a folder with
 `bundle.json` and a manifest; `tools/synos bundle validate` tells what is
 missing.
+
+## The bundle catalog
+
+A catalogued bundle is an ordinary bundle (`bundle.json`, its manifest, and a
+profile only when it overrides a machine kind) kept in this repository as a
+ready-made starting point, so a front end can offer "begin from an office
+workstation" or "begin from a Yocto build machine" next to "start from
+scratch" — the same as reopening any other downloaded bundle, nothing else
+changes. This is a third, distinct sense of "bundle" from the package groups
+named `bundles` in `profiles/bundles.yml` (office, containers, build-tools...)
+and from the downloadable configuration bundle itself; context tells them
+apart, but the word is worth being careful with.
+
+Layout: `bundle-catalog/<folder>/` holds one bundle per folder, and
+`bundle-catalog/index.yml` lists them under a `bundle_catalog` key, each
+entry naming its `id`, `name`, one-sentence `summary`, lowercase `tags` for
+search, and its `folder`. `tools/export_catalog.py` reads every listed
+folder and exports a `bundle_catalog` array of
+`{id, name, summary, tags, kind, files}`, where `kind` is the machine-kind
+(profile) id the bundle's manifest names and `files` maps every path the
+folder contains (`bundle.json`, `manifests/<id>.yml`, and `profiles/<id>.yml`
+when present) to that file's exact text, read as bytes and decoded like
+`launchers()` above, so a front end can write the bundle out unchanged.
+
+To add an entry: create `bundle-catalog/<id>/` with a valid `bundle.json` and
+manifest (a profile file only if the machine kind is not one already shipped
+under `profiles/`), keep it minimal — no branding assets, no invented
+profile keys, a neutral name and no logo, since the person personalizes
+those after choosing it — and add one entry to `bundle-catalog/index.yml`.
+`tests/unit/test_bundle_catalog.py` checks that every entry validates, every
+package group it uses resolves on both bases, and the folder and the index
+agree.

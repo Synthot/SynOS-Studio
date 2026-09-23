@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "name": "small-server",
+  "manifest": "manifests/small-server.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS Studio",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Small Server \u2014 debian trixie amd64, profile server",
+  "files": [
+    "manifests/small-server.yml"
+  ]
+}

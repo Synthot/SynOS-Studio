@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "name": "yocto-builder",
+  "manifest": "manifests/yocto-builder.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS Studio",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Yocto Build Machine \u2014 ubuntu noble amd64, profile yocto-builder",
+  "files": [
+    "manifests/yocto-builder.yml"
+  ]
+}

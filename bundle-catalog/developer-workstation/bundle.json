@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "name": "developer-workstation",
+  "manifest": "manifests/developer-workstation.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS Studio",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-22T00:00:00Z",
+  "description": "Developer Workstation \u2014 ubuntu noble amd64, profile developer",
+  "files": [
+    "manifests/developer-workstation.yml"
+  ]
+}

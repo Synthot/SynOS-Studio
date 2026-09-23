@@ -1,0 +1,19 @@
+schema_version: 1
+name: office-workstation
+version: 1.0.0
+
+base: debian
+suite: trixie
+arch: amd64
+
+profile: workstation
+regions: [us]
+brand: synos
+
+mirrors: {}
+
+packages:
+  repository: ""
+  takeover: all
+
+overrides: {}

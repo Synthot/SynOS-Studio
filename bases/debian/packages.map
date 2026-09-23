@@ -31,3 +31,7 @@ gpu-nvidia         = nvidia-driver nvidia-open-kernel-dkms nvidia-cuda-toolkit
 gpu-amd            = rocminfo rocm-smi firmware-amd-graphics
 gpu-intel          = libze1 intel-media-va-driver-non-free
 ai-dev             = python3-torch python3-venv python3-pip
+# Yocto Project reference manual, "Ubuntu and Debian" required packages, plus
+# python3-websockets (satisfied on trixie; older Debian 11 needs a venv
+# instead). lz4, not the transitional liblz4-tool.
+yocto-host-tools   = gawk wget git diffstat unzip texinfo build-essential chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils iputils-ping python3-git python3-jinja2 python3-subunit zstd lz4 file locales libacl1 libcrypt-dev gcc python3-websockets
