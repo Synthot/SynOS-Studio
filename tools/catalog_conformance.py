@@ -56,6 +56,10 @@ Config (YAML; see conformance.example.yml):
     container_root: null       # build only, podman only: SYNOS_CONTAINER_ROOT equivalent; also where free disk is measured
     container_runroot: null    # build only, podman only: SYNOS_CONTAINER_RUNROOT equivalent
     report_url: null           # optional: POST the finished report here
+    upload: null                # build only, optional: send workdir/build-status.json to the deployed site
+                                 # (tools/status_uploader.py; docs/BUILD_MATRIX.md's "Publishing the build-status badge")
+    cleanup: true                # build only: free a successful entry's heavy directories as it finishes; set
+                                 # false (or --no-cleanup) to keep everything for a debugging run
 
 Never invents a shell command from a name read out of a catalog: every
 process here is started from an argument vector. Never runs a real browser,
@@ -80,6 +84,7 @@ import io
 import json
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import tarfile
@@ -117,6 +122,9 @@ import smoke_test  # noqa: E402
 import host_resources  # noqa: E402
 import job_queue  # noqa: E402
 import devtools_browser  # noqa: E402
+import build_status  # noqa: E402
+import status_uploader  # noqa: E402
+import entry_cleanup  # noqa: E402
 
 
 class ConformanceError(Exception):
@@ -147,6 +155,9 @@ class Config:
     container_root: str | None = None      # podman only: SYNOS_CONTAINER_ROOT equivalent, also where free disk is measured
     container_runroot: str | None = None   # podman only: SYNOS_CONTAINER_RUNROOT equivalent
     report_url: str | None = None
+    upload: dict | None = None             # build only, optional: see tools/status_uploader.py; never committed
+    cleanup: bool = True                   # build only: free a successful entry's heavy directories as it finishes
+                                             # (tools/entry_cleanup.py); set false (or --no-cleanup) to keep everything
 
     @classmethod
     def load(cls, path: Path) -> "Config":
@@ -337,6 +348,70 @@ def collect_iso(bundle_dir: Path, target_dir: Path) -> dict | None:
     return {"path": str(dest), "size": dest.stat().st_size, "sha256": _sha256_file(dest)}
 
 
+def cleanup_one(result: dict, *, work_dir: Path) -> dict:
+    """Items 87-89: called only for a `result["status"] == "success"` entry
+    (a failed or skipped one keeps everything — that is exactly what
+    somebody will want to read — so this is never even called for one),
+    immediately after that entry finishes, never batched to the end of a
+    run (so a long run's peak disk usage stays near one build, not fifty).
+
+    Removes the heavy things: the unpacked bundle (its own build tree and
+    `dist/`, including the ISO `build.sh` left there before this tool
+    copied it out) and the copied ISO itself under `work_dir/output` —
+    "the image's name, size and checksum" already live in `result`/
+    build-report.json/build-status.json, which is what "record what a
+    person would need later" (item 87) actually means for the multi-GB
+    image: the bytes are disposable, the proof they existed and what they
+    checksummed to is not.
+
+    Keeps the small things: the build log (`tools/entry_cleanup.py`'s
+    `maybe_gzip`, compressed only if it is actually large), and the smoke
+    test's own evidence — this project's own smoke test
+    (tools/smoke_test.py) is serial-console-only by design and has no
+    screenshot capability (it says so in its own module docstring: "the
+    same recipe ... applied here without that suite's GRUB-menu and
+    screenshot machinery, which this headless smoke test does not need");
+    its transcript (the serial log) is the equivalent evidence, and is
+    kept in its place. `work_dir/output` itself (the small directory that
+    held both) is left in place, never removed.
+
+    Returns a summary — {"performed": True, "removed": [...], "kept":
+    [...]} — folded into the entry's own result so build-report.json and
+    the run's own summary can say exactly what happened (item 88)."""
+    bundle_dir = work_dir / "bundle"
+    target_dir = work_dir / "output"
+    removed: list[str] = []
+    kept: list[str] = []
+
+    if bundle_dir.exists():
+        entry_cleanup.safe_remove(work_dir, bundle_dir)
+        removed.append(str(bundle_dir))
+
+    iso = result.get("iso") or {}
+    if iso.get("path"):
+        iso_path = Path(iso["path"])
+        if iso_path.exists():
+            entry_cleanup.safe_remove(work_dir, iso_path)
+            removed.append(str(iso_path))
+
+    if result.get("log_path"):
+        log_path = Path(result["log_path"])
+        if log_path.exists():
+            final_log = entry_cleanup.maybe_gzip(log_path)
+            kept.append(str(final_log))
+
+    smoke = result.get("smoke") or {}
+    for key in ("screenshot", "transcript"):
+        evidence = smoke.get(key)
+        if evidence and Path(evidence).exists():
+            kept.append(str(evidence))
+
+    if target_dir.exists():
+        kept.append(str(target_dir))
+
+    return {"performed": True, "removed": removed, "kept": kept}
+
+
 def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=None) -> dict:
     """Downloads entry["id"] through the real Studio page, unpacks it, and
     runs its own launcher — see the module docstring for the full flow.
@@ -432,6 +507,17 @@ def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=No
         if result["smoke"] and result["smoke"]["status"] not in ("passed", "skipped"):
             result["stage"] = STAGE_SMOKE
 
+    # ---- items 87-89: free the heavy things this one entry created, as
+    # soon as it is done, keeping the evidence a person would need later ----
+    if result["status"] == "success" and config.cleanup:
+        try:
+            result["cleanup"] = cleanup_one(result, work_dir=work_dir)
+        except entry_cleanup.CleanupError as exc:
+            result["cleanup"] = {"performed": False, "removed": [], "kept": [], "error": str(exc)}
+    else:
+        reason = "cleanup is disabled" if not config.cleanup else "kept: not a successful entry"
+        result["cleanup"] = {"performed": False, "removed": [], "kept": [], "reason": reason}
+
     return result
 
 
@@ -464,8 +550,78 @@ class _EntryRef:
         self.entry = entry
 
 
+def _remove_cache_volume(engine: str, volume: str) -> tuple[bool, str]:
+    """The one real side effect in this module's storage reclaim: asks the
+    runtime itself to remove one named volume, no force flag, so its own
+    refusal when something still has it mounted is the safety check.
+    Returns (removed, reason) — reason is empty on success, otherwise the
+    runtime's own last output line."""
+    proc = subprocess.run([engine, "volume", "rm", volume], capture_output=True, text=True,
+                          check=False, timeout=30)
+    if proc.returncode == 0:
+        return True, ""
+    tail = (proc.stderr or proc.stdout or "").strip().splitlines()
+    return False, tail[-1] if tail else "unknown reason"
+
+
+def reclaim_container_storage(config: Config, *, jobs: int, targets: dict,
+                              container_engine=None, volume_remover=None) -> dict:
+    """Item 91: when this run owns the storage it used — `config.
+    container_root` was not set, meaning the person did not point this at
+    a location of their own ("never touch storage the person configured
+    themselves" then means leaving it alone entirely, skipped below) —
+    removes every per-worker podman storage root this run itself created
+    (`config.workdir/podman-storage/worker-N`) and asks the container
+    runtime itself to prune the launcher's own `synos-cache-<base>-<suite>`
+    volume (docs/BUNDLE.md) for every base/suite this run touched. Never
+    with a force flag: the runtime's own refusal to remove a volume still
+    mounted by a container *is* the "another build may be using it" check,
+    so this only ever removes a volume the runtime itself judges idle.
+    Returns exactly what was pruned and what was left alone and why —
+    never silent about either."""
+    result = {"worker_roots_removed": [], "worker_roots_left_alone": [],
+             "cache_volumes_pruned": [], "cache_volumes_left_alone": []}
+    if config.container_root:
+        return result
+
+    for worker_id in range(max(jobs, 1)):
+        worker_root = config.workdir / "podman-storage" / f"worker-{worker_id}"
+        if not worker_root.exists():
+            continue
+        try:
+            entry_cleanup.safe_remove(config.workdir, worker_root)
+            result["worker_roots_removed"].append(str(worker_root))
+        except entry_cleanup.CleanupError as exc:
+            result["worker_roots_left_alone"].append(f"{worker_root}: {exc}")
+
+    container_engine = container_engine or host_resources.container_engine
+    volume_remover = volume_remover or _remove_cache_volume
+    engine = container_engine()
+    if not engine:
+        return result
+    pairs = sorted({(r.get("base"), r.get("suite")) for r in targets.values() if r.get("base") and r.get("suite")})
+    for base, suite in pairs:
+        volume = f"synos-cache-{base}-{suite}"
+        removed, reason = volume_remover(engine, volume)
+        if removed:
+            result["cache_volumes_pruned"].append(volume)
+        else:
+            result["cache_volumes_left_alone"].append(f"{volume}: {reason}")
+    return result
+
+
 def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, jobs: int = 1,
-             only: list[str] | None = None, browser_factory=None) -> dict:
+             only: list[str] | None = None, browser_factory=None, upload_config=None,
+             dry_run_upload: bool = False, upload_transport=None, upload_sleeper=None,
+             container_engine=None, volume_remover=None) -> dict:
+    # Item 90: refuse the whole run, not only cleanup, when workdir looks
+    # like a filesystem root, a home directory, or a source checkout —
+    # a configuration mistake worth catching outright.
+    try:
+        entry_cleanup.guard_workdir(config.workdir)
+    except entry_cleanup.CleanupError as exc:
+        raise ConformanceError(str(exc)) from exc
+
     entries = catalog["bundle_catalog"]
     if only:
         wanted = set(only)
@@ -483,29 +639,76 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
         if work_dir.exists():
             shutil.rmtree(work_dir)
 
+    # Item 71-73, 93: a small build-status.json, updated live as each
+    # entry moves queued -> testing -> a real outcome (not only at the
+    # end — a run interrupted partway through fifty-odd entries must
+    # still leave a valid file behind, and a file fetched mid-run must
+    # say "testing", never yesterday's result) and uploaded, best-effort,
+    # whenever an entry's live state changes plus once more,
+    # unconditionally, when the whole run finishes. The uploader is
+    # entirely optional: no `upload:` section in the config means
+    # `changer.enabled` is False and `maybe_upload` is a no-op.
+    status_path = config.workdir / "build-status.json"
+    changer = status_uploader.ChangeUploader(upload_config, dry_run=dry_run_upload,
+                                             transport=upload_transport, sleeper=upload_sleeper)
+    status_updater = build_status.StatusUpdater(
+        status_path, on_change=(changer.maybe_upload if changer.enabled else None),
+        own_paths=[str(config.workdir), str(Path.home())], hostname=socket.gethostname())
+
+    # Item 93: an entry a previous run left "testing" (killed before it
+    # finished) is resolved to "failed" before anything new is queued —
+    # never guessed as "success". Said plainly in the report and the
+    # run's own summary, never left silent.
+    interrupted = status_updater.resolve_interrupted()
+    if interrupted:
+        report["resolved_interrupted"] = interrupted
+    for entry in selected:
+        status_updater.queue(entry["id"])
+
     if jobs <= 1:
         for entry in selected:
             work_dir = config.workdir / "work" / entry["id"]
-            report["targets"][entry["id"]] = build_one(entry, config=config, work_dir=work_dir,
-                                                        browser_factory=browser_factory)
-        return report
+            status_updater.start(entry["id"])
+            result = build_one(entry, config=config, work_dir=work_dir, browser_factory=browser_factory)
+            report["targets"][entry["id"]] = result
+            status_updater.record(entry["id"], result)
+    else:
+        def build_one_for_worker(ref: "_EntryRef", worker_id: int) -> dict:
+            work_dir = config.workdir / "work" / ref.id
+            worker_config = config
+            if not config.container_root:
+                # Each worker gets its own podman storage, so two workers that
+                # happen to build the same base/suite never share a cache
+                # volume name (docs/BUNDLE.md's own synos-cache-<base>-<suite>,
+                # written by the launcher itself, not by this tool) — the same
+                # collision that cost two concurrent ./build.sh runs once.
+                worker_root = config.workdir / "podman-storage" / f"worker-{worker_id}"
+                worker_root.mkdir(parents=True, exist_ok=True)
+                worker_config = dataclasses.replace(config, container_root=str(worker_root))
+            status_updater.start(ref.id)
+            return build_one(ref.entry, config=worker_config, work_dir=work_dir, browser_factory=browser_factory)
 
-    def build_one_for_worker(ref: "_EntryRef", worker_id: int) -> dict:
-        work_dir = config.workdir / "work" / ref.id
-        worker_config = config
-        if not config.container_root:
-            # Each worker gets its own podman storage, so two workers that
-            # happen to build the same base/suite never share a cache
-            # volume name (docs/BUNDLE.md's own synos-cache-<base>-<suite>,
-            # written by the launcher itself, not by this tool) — the same
-            # collision that cost two concurrent ./build.sh runs once.
-            worker_root = config.workdir / "podman-storage" / f"worker-{worker_id}"
-            worker_root.mkdir(parents=True, exist_ok=True)
-            worker_config = dataclasses.replace(config, container_root=str(worker_root))
-        return build_one(ref.entry, config=worker_config, work_dir=work_dir, browser_factory=browser_factory)
+        results = job_queue.run_parallel(
+            [_EntryRef(entry) for entry in selected], jobs, build_one_for_worker,
+            on_result=lambda ref, result: status_updater.record(ref.id, result))
+        report["targets"] = results
 
-    results = job_queue.run_parallel([_EntryRef(entry) for entry in selected], jobs, build_one_for_worker)
-    report["targets"] = results
+    # Item 91: reclaim the container storage this run itself owns, once,
+    # at the end — never mid-run, since a worker's own storage root is
+    # still in use by that worker until the whole run is done.
+    if config.cleanup:
+        report["storage_reclaimed"] = reclaim_container_storage(
+            config, jobs=jobs, targets=report["targets"],
+            container_engine=container_engine, volume_remover=volume_remover)
+
+    # The end-of-run upload item 73 asks for regardless of whether the
+    # last entry changed state — the same file every per-entry change
+    # already sent, so this is a low-cost final sync, not a second file.
+    if changer.enabled:
+        changer.maybe_upload(status_path)
+    if changer.warnings:
+        report["upload_warnings"] = list(changer.warnings)
+
     return report
 
 
@@ -660,6 +863,9 @@ def summary_text(report: dict, diff: dict) -> str:
         lines.append(f"newly failing: {', '.join(sorted(diff['newly_failed']))}")
     if diff["recovered"]:
         lines.append(f"recovered: {', '.join(sorted(diff['recovered']))}")
+    if report.get("resolved_interrupted"):
+        lines.append("resolved as failed (a previous run was interrupted mid-test): "
+                     + ", ".join(sorted(report["resolved_interrupted"])))
     # "skipped" (item 61: no browser available) is printed with its reason,
     # not left to be dug out of report.json — it means this run proved
     # nothing for that entry, which is worth saying plainly.
@@ -667,11 +873,33 @@ def summary_text(report: dict, diff: dict) -> str:
         if record.get("status") == "skipped":
             reason = (record.get("log_tail") or ["no reason recorded"])[0]
             lines.append(f"skipped {target_id}: {reason}")
+    # Items 87-89: say exactly which directories were freed and which were
+    # kept, and why — never leave that only in build-report.json.
+    cleanups = {tid: r["cleanup"] for tid, r in report["targets"].items() if r.get("cleanup")}
+    if cleanups:
+        cleaned = sorted(tid for tid, c in cleanups.items() if c.get("performed"))
+        kept = sorted(tid for tid, c in cleanups.items() if not c.get("performed"))
+        if cleaned:
+            lines.append(f"cleaned up {len(cleaned)} successful entr(y/ies)' working director(y/ies): "
+                         + ", ".join(cleaned))
+        for tid in kept:
+            reason = cleanups[tid].get("reason") or cleanups[tid].get("error") or "not cleaned"
+            lines.append(f"kept {tid}'s working directory ({reason})")
+    reclaimed = report.get("storage_reclaimed")
+    if reclaimed and (reclaimed["worker_roots_removed"] or reclaimed["cache_volumes_pruned"]
+                      or reclaimed["worker_roots_left_alone"] or reclaimed["cache_volumes_left_alone"]):
+        if reclaimed["worker_roots_removed"]:
+            lines.append(f"removed {len(reclaimed['worker_roots_removed'])} worker podman storage root(s)")
+        if reclaimed["cache_volumes_pruned"]:
+            lines.append("pruned cache volume(s): " + ", ".join(sorted(reclaimed["cache_volumes_pruned"])))
+        if reclaimed["cache_volumes_left_alone"]:
+            lines.append("left cache volume(s) alone: " + "; ".join(sorted(reclaimed["cache_volumes_left_alone"])))
     return "\n".join(lines)
 
 
 # ---------------------------------------------------------------- CLI
-def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list[str] | None = None) -> int:
+def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list[str] | None = None,
+        dry_run_upload: bool = False, no_cleanup: bool = False) -> int:
     catalog = fetch_catalog(config.catalog_url)
     config.workdir.mkdir(parents=True, exist_ok=True)
     report_path = config.workdir / f"{mode}-report.json"
@@ -681,13 +909,24 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
         if not config.site_url:
             _eprint("error: site_url is required to build (the real Studio page this tool drives)")
             return 2
+        # Item 90: --no-cleanup only ever moves the effective setting
+        # towards keeping more, never towards deleting more than the
+        # config file itself already says.
+        if no_cleanup:
+            config = dataclasses.replace(config, cleanup=False)
         jobs, problems = resolve_jobs(config)
         if problems:
             for problem in problems:
                 _eprint(f"error: {problem}")
             return 2
         try:
-            report = run_build(config, catalog=catalog, max_builds=max_builds, jobs=jobs, only=only)
+            upload_config = status_uploader.parse_upload_config(config.upload)
+        except status_uploader.UploadConfigError as exc:
+            _eprint(f"error: {exc}")
+            return 2
+        try:
+            report = run_build(config, catalog=catalog, max_builds=max_builds, jobs=jobs, only=only,
+                               upload_config=upload_config, dry_run_upload=dry_run_upload)
         except ConformanceError as exc:
             _eprint(f"error: {exc}")
             return 2
@@ -699,6 +938,12 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
     text = summary_text(report, diff)
     (config.workdir / f"{mode}-summary.txt").write_text(text + "\n", encoding="utf-8")
     print(text)
+
+    # A failed upload is a warning, never a build failure (item 73) — said
+    # plainly here, same as a skipped entry's reason, never left to be dug
+    # out of report.json alone.
+    for warning in report.get("upload_warnings", []):
+        _eprint(f"warning: {warning}")
 
     if config.report_url:
         post_report({"report": report, "diff": diff}, config.report_url)
@@ -718,6 +963,14 @@ def main(argv: list[str] | None = None) -> int:
         if name == "build":
             p.add_argument("--max", type=int, help="override max_builds_per_run for this run")
             p.add_argument("--only", help="comma-separated entry ids to build (e.g. one entry, to watch it work by hand)")
+            p.add_argument("--dry-run-upload", action="store_true",
+                          help="run for real, but only print where build-status.json would be sent, never send it "
+                               "(tools/status_uploader.py has a standalone way to test the upload config on its own)")
+            p.add_argument("--no-cleanup", action="store_true",
+                          help="keep every entry's full working directory (the unpacked bundle, dist/, the ISO) "
+                               "even on success, instead of the default of freeing it as soon as that entry "
+                               "finishes - for a debugging run; only ever keeps more than conformance.yml's own "
+                               "cleanup: setting, never less")
     args = parser.parse_args(argv)
 
     try:
@@ -746,7 +999,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        return _run(args.mode, config, max_builds=getattr(args, "max", None), only=only)
+        return _run(args.mode, config, max_builds=getattr(args, "max", None), only=only,
+                   dry_run_upload=getattr(args, "dry_run_upload", False),
+                   no_cleanup=getattr(args, "no_cleanup", False))
     except ConformanceError as exc:
         _eprint(f"error: {exc}")
         return 2

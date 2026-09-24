@@ -73,3 +73,34 @@ container_runroot: null
 # webhook, a small collector of your own). Leave null to only write the
 # report files under workdir.
 report_url: null
+
+# `build` only, optional: where to send workdir/build-status.json — the
+# small, public file the Studio page fetches to show each bundle's "built
+# and safe to use" badge (tools/build_status.py, tools/status_uploader.py).
+# Leave the whole section out (or leave it commented, as below) to build
+# the file locally and never upload it. See docs/BUILD_MATRIX.md's
+# "Publishing the build-status badge" for the full shape and how to check
+# a delivered file arrived. NEVER fill this in inside a copy of this
+# example that is committed anywhere; the real values belong only in the
+# private /etc/synos/conformance.yml a service user's process reads.
+#
+# upload:
+#   protocol: sftp                # sftp | scp | ftps | ftp (ftp refused unless allow_insecure_ftp: true)
+#   host: studio.example
+#   port: 22
+#   username: synos-conformance-upload
+#   password: null                 # or key_path below; ssh password auth also needs `sshpass` installed
+#   key_path: /etc/synos/conformance-upload-key
+#   remote_path: /var/www/studio/data/build-status.json
+#   allow_insecure_ftp: false
+#   retries: 3
+#   retry_backoff_s: 5
+
+# `build` only: free a successful entry's heavy directories (the unpacked
+# bundle, its build tree, the multi-GB ISO) as soon as that entry
+# finishes, keeping the small evidence (checksum, size, build log, smoke
+# result) — docs/BUILD_MATRIX.md's "Freeing disk as it goes". A failed or
+# skipped entry always keeps everything, regardless of this setting. Set
+# to false (or pass --no-cleanup on the command line for one run) to keep
+# every entry's full working directory, e.g. for a debugging run.
+cleanup: true

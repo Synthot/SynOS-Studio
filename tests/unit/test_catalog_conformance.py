@@ -467,7 +467,7 @@ class LauncherEnvironmentTests(unittest.TestCase):
         raw = make_bundle_archive(entry_id="x", build_sh=FAKE_BUILD_SH_ENV_CAPTURE)
         session = FakeSession(default_archive=raw)
         with tempfile.TemporaryDirectory() as tmp:
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False, cleanup=False)
             record = cc.build_one({"id": "x"}, config=config, work_dir=Path(tmp) / "work" / "t", browser_factory=session)
             env_text = (Path(tmp) / "work" / "t" / "bundle" / "dist" / "env.txt").read_text()
         self.assertIn("SYNOS_YES=1", env_text)
@@ -480,6 +480,7 @@ class LauncherEnvironmentTests(unittest.TestCase):
         session = FakeSession(default_archive=raw)
         with tempfile.TemporaryDirectory() as tmp:
             config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False,
+                               cleanup=False,
                                container_root="/mnt/big/synos-storage", container_runroot="/mnt/big/synos-runroot",
                                image="ghcr.io/example/synos-builder:ubuntu-noble", engine_source="/opt/synos-engine")
             cc.build_one({"id": "x"}, config=config, work_dir=Path(tmp) / "work" / "t", browser_factory=session)
@@ -493,7 +494,7 @@ class LauncherEnvironmentTests(unittest.TestCase):
         raw = make_bundle_archive(entry_id="x", build_sh=FAKE_BUILD_SH_ENV_CAPTURE)
         session = FakeSession(default_archive=raw)
         with tempfile.TemporaryDirectory() as tmp:
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False, cleanup=False)
             cc.build_one({"id": "x"}, config=config, work_dir=Path(tmp) / "work" / "t", browser_factory=session)
             env_text = (Path(tmp) / "work" / "t" / "bundle" / "dist" / "env.txt").read_text()
         for key in ("SYNOS_CONTAINER_ROOT", "SYNOS_CONTAINER_RUNROOT", "SYNOS_BUILDER_IMAGE", "SYNOS_ENGINE_SOURCE"):
@@ -545,7 +546,8 @@ class ParallelismTests(unittest.TestCase):
         session = FakeSession(archives_by_id={i: self._archive_for(i) for i in ids})
 
         with tempfile.TemporaryDirectory() as tmp:
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False,
+                               cleanup=False)
             report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=4, browser_factory=session)
             roots_used = set()
             for entry_id in ids:
@@ -566,7 +568,8 @@ class ParallelismTests(unittest.TestCase):
         session = FakeSession(archives_by_id={i: self._archive_for(i) for i in ids})
 
         with tempfile.TemporaryDirectory() as tmp:
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False,
+                               cleanup=False)
             report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=1, browser_factory=session)
             for entry_id in ids:
                 env_text = (Path(tmp) / "work" / "work" / entry_id / "bundle" / "dist" / "env.txt").read_text()
@@ -583,7 +586,7 @@ class ParallelismTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False,
-                               container_root="/mnt/big/synos-storage")
+                               cleanup=False, container_root="/mnt/big/synos-storage")
             cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=2, browser_factory=session)
             for entry_id in ids:
                 env_text = (Path(tmp) / "work" / "work" / entry_id / "bundle" / "dist" / "env.txt").read_text()
@@ -755,6 +758,397 @@ class DryRunCliTests(unittest.TestCase):
         finally:
             cc.fetch_catalog = original
         self.assertEqual(0, code)
+
+
+class BuildStatusWiringTests(unittest.TestCase):
+    """Items 71-73: run_build's own use of tools/build_status.py and
+    tools/status_uploader.py — the small public build-status.json, written
+    after every entry, uploaded (through a fake transport; never a real
+    network call) only when an entry's state changed, plus once more,
+    unconditionally, when the run finishes."""
+
+    def test_build_status_json_is_written_with_the_expected_entries(self) -> None:
+        catalog = real_catalog()
+        raw = make_bundle_archive(entry_id="placeholder")
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            cc.run_build(config, catalog=catalog, only=["web-server-nginx", "git-server"], browser_factory=session)
+            status_path = Path(tmp) / "work" / "build-status.json"
+            status = json.loads(status_path.read_text(encoding="utf-8"))
+        self.assertEqual(cc.build_status.SCHEMA_VERSION, status["schema_version"])
+        self.assertEqual({"web-server-nginx", "git-server"}, set(status["entries"]))
+        self.assertEqual("success", status["entries"]["web-server-nginx"]["state"])
+        self.assertIsNotNone(status["entries"]["web-server-nginx"]["checksum"])
+
+    def test_a_failed_entry_is_recorded_with_state_failed(self) -> None:
+        catalog = real_catalog()
+        entry_id = "web-server-nginx"
+        raw = make_bundle_archive(entry_id=entry_id, build_sh=FAKE_BUILD_SH_ENGINE_FAIL)
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
+            status = json.loads((Path(tmp) / "work" / "build-status.json").read_text(encoding="utf-8"))
+        self.assertEqual("failed", status["entries"][entry_id]["state"])
+
+    def test_upload_is_called_for_every_live_transition_plus_once_at_the_end(self) -> None:
+        """Item 93: each entry moves queued -> testing -> a real outcome,
+        and each of those three live-state writes is itself a change worth
+        uploading (a run in progress must not look stale) - so two brand
+        new entries produce 2*3 = 6 change-triggered uploads, plus one
+        more, unconditionally, at the end of the run."""
+        ids = ["web-server-nginx", "git-server"]
+        catalog = real_catalog()
+        session = FakeSession(archives_by_id={i: make_bundle_archive(entry_id=i) for i in ids})
+        calls: list = []
+        upload_config = cc.status_uploader.UploadConfig(protocol="sftp", host="h", remote_path="/p", retries=1)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=ids, browser_factory=session,
+                                  upload_config=upload_config,
+                                  upload_transport=lambda c, p: calls.append(p), upload_sleeper=lambda s: None)
+        self.assertEqual(7, len(calls))
+        self.assertNotIn("upload_warnings", report)
+
+    def test_an_entry_whose_final_outcome_did_not_change_still_uploads_its_live_transitions(self) -> None:
+        """An entry that was already recorded as "success" still moves
+        through "queued" and "testing" for real on this run - both are
+        live-progress changes item 93 wants visible - but the *final*
+        record() call, seeing the outcome is still "success" same as
+        history, is the one call item 73's original "not every entry"
+        intent skips. So 2 (queue, start) + 1 (end-of-run) = 3, never a
+        3rd change-triggered upload for the repeated success."""
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        calls: list = []
+        upload_config = cc.status_uploader.UploadConfig(protocol="sftp", host="h", remote_path="/p", retries=1)
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            work.mkdir(parents=True)
+            pre = cc.build_status.empty_status()
+            pre, _ = cc.build_status.apply_result(pre, entry_id, {
+                "id": entry_id, "status": "success", "engine": "0.2.0", "base": "ubuntu", "suite": "noble",
+                "end": "2020-01-01T00:00:00+00:00", "duration_s": 1.0, "stage": None,
+                "iso": {"size": 1, "sha256": "x"}, "smoke": {"status": "passed"}, "log_tail": []})
+            cc.build_status.write_status_atomic(work / "build-status.json", pre)
+
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False)
+            cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                        upload_config=upload_config,
+                        upload_transport=lambda c, p: calls.append(p), upload_sleeper=lambda s: None)
+        self.assertEqual(3, len(calls))
+
+    def test_a_failing_upload_is_a_warning_never_a_failed_build(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        upload_config = cc.status_uploader.UploadConfig(protocol="sftp", host="h", remote_path="/p", retries=1)
+
+        def always_fails(config, path):
+            raise RuntimeError("network unreachable")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  upload_config=upload_config,
+                                  upload_transport=always_fails, upload_sleeper=lambda s: None)
+        self.assertEqual("success", report["targets"][entry_id]["status"])
+        self.assertGreaterEqual(len(report.get("upload_warnings", [])), 1)
+
+    def test_dry_run_upload_never_calls_the_transport(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        calls: list = []
+        upload_config = cc.status_uploader.UploadConfig(protocol="sftp", host="h", remote_path="/p", retries=1)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                        upload_config=upload_config, dry_run_upload=True,
+                        upload_transport=lambda c, p: calls.append(p), upload_sleeper=lambda s: None)
+        self.assertEqual([], calls)
+
+    def test_no_upload_config_means_no_status_file_upload_attempt_at_all(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
+        self.assertNotIn("upload_warnings", report)
+
+    def test_credentials_never_appear_in_the_report(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        secret = "hunter2-super-secret"
+        upload_config = cc.status_uploader.UploadConfig(protocol="sftp", host="h", remote_path="/p",
+                                                        username="u", password=secret, retries=1)
+
+        def always_fails(config, path):
+            raise RuntimeError(f"auth failed with password={secret}")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  upload_config=upload_config,
+                                  upload_transport=always_fails, upload_sleeper=lambda s: None)
+        self.assertNotIn(secret, json.dumps(report))
+
+    def test_a_run_resolves_an_entry_left_testing_by_a_previous_interrupted_run(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            work.mkdir(parents=True)
+            stuck, _ = cc.build_status.mark_testing(cc.build_status.empty_status(), "some-other-entry")
+            cc.build_status.write_status_atomic(work / "build-status.json", stuck)
+
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
+            status = json.loads((work / "build-status.json").read_text(encoding="utf-8"))
+        self.assertEqual(["some-other-entry"], report.get("resolved_interrupted"))
+        self.assertEqual("failed", status["entries"]["some-other-entry"]["state"])
+        self.assertEqual(cc.build_status.INTERRUPTED_ERROR, status["entries"]["some-other-entry"]["error"])
+
+    def test_ftp_without_allow_insecure_is_refused_by_the_cli(self) -> None:
+        original = cc.fetch_catalog
+        cc.fetch_catalog = lambda url, **kwargs: {"bundle_catalog": []}
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                config_path = Path(tmp) / "c.yml"
+                config_path.write_text(
+                    f"catalog_url: http://x\nworkdir: {tmp}/work\nsite_url: http://fake\n"
+                    "upload:\n  protocol: ftp\n  host: h\n  remote_path: /p\n", encoding="utf-8")
+                code = cc.main(["build", "--config", str(config_path)])
+        finally:
+            cc.fetch_catalog = original
+        self.assertEqual(2, code)
+
+
+class EntryCleanupWiringTests(unittest.TestCase):
+    """Items 87-92: run_build's own use of tools/entry_cleanup.py - freeing
+    a successful entry's heavy directories as it finishes, keeping a
+    failed or skipped one untouched, the disabling flag, and refusing a
+    dangerous workdir."""
+
+    def test_a_successful_entrys_bundle_and_iso_are_gone_but_evidence_remains(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  container_engine=lambda: None)
+            entry_work_dir = work / "work" / entry_id
+            result = report["targets"][entry_id]
+            self.assertEqual("success", result["status"])
+            self.assertTrue(result["cleanup"]["performed"])
+            self.assertFalse((entry_work_dir / "bundle").exists(), "the unpacked bundle must be gone")
+            self.assertTrue((entry_work_dir / "output").exists(), "the small output directory itself stays")
+            # the evidence: build log present (possibly gzipped), and the
+            # checksum/size already recorded in the result whether or not the
+            # multi-GB ISO bytes themselves survive
+            self.assertIsNotNone(result["iso"]["sha256"])
+            self.assertIsNotNone(result["iso"]["size"])
+            log_files = list((entry_work_dir / "output").glob("build.log*"))
+            self.assertTrue(log_files, "the build log (or its .gz) must survive cleanup")
+
+    def test_a_failed_entrys_directory_is_left_completely_untouched(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        raw = make_bundle_archive(entry_id=entry_id, build_sh=FAKE_BUILD_SH_ENGINE_FAIL)
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  container_engine=lambda: None)
+            entry_work_dir = work / "work" / entry_id
+            result = report["targets"][entry_id]
+            self.assertNotEqual("success", result["status"])
+            self.assertFalse(result["cleanup"]["performed"])
+            self.assertTrue((entry_work_dir / "bundle").exists(), "a failed entry keeps its whole bundle directory")
+            self.assertTrue((entry_work_dir / "bundle" / "dist" / "build.log").exists())
+
+    def test_the_cleanup_config_key_set_false_keeps_everything(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False, cleanup=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  container_engine=lambda: None)
+            entry_work_dir = work / "work" / entry_id
+            result = report["targets"][entry_id]
+            self.assertEqual("success", result["status"])
+            self.assertFalse(result["cleanup"]["performed"])
+            self.assertEqual("cleanup is disabled", result["cleanup"]["reason"])
+            self.assertTrue((entry_work_dir / "bundle").exists())
+            self.assertTrue((entry_work_dir / "bundle" / "dist" / "fake.iso").exists())
+
+    def test_the_no_cleanup_cli_flag_keeps_everything_even_though_the_config_defaults_to_cleaning_up(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        entry = entry_by_id(catalog, entry_id)
+        fake_catalog = {"bundle_catalog": [entry]}
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+
+        original_fetch = cc.fetch_catalog
+        cc.fetch_catalog = lambda url, **kwargs: fake_catalog
+        original_container_store = cc.host_resources.container_store
+        cc.host_resources.container_store = lambda engine, container_root=None: None
+        original_studio_session = cc.devtools_browser.StudioSession
+        cc.devtools_browser.StudioSession = lambda *a, **k: session
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                work = Path(tmp) / "work"
+                config_path = Path(tmp) / "c.yml"
+                config_path.write_text(
+                    f"catalog_url: http://x\nworkdir: {work}\nsite_url: http://fake\nsmoke: false\n",
+                    encoding="utf-8")
+                code = cc.main(["build", "--config", str(config_path), "--only", entry_id, "--no-cleanup"])
+                entry_work_dir = work / "work" / entry_id
+                self.assertEqual(0, code)
+                self.assertTrue((entry_work_dir / "bundle").exists())
+        finally:
+            cc.fetch_catalog = original_fetch
+            cc.host_resources.container_store = original_container_store
+            cc.devtools_browser.StudioSession = original_studio_session
+
+    def test_run_build_refuses_a_home_directory_workdir(self) -> None:
+        catalog = {"bundle_catalog": []}
+        config = cc.Config(catalog_url="http://x", workdir=Path.home(), site_url="http://fake")
+        with self.assertRaises(cc.ConformanceError):
+            cc.run_build(config, catalog=catalog, browser_factory=FakeSession())
+
+    def test_run_build_refuses_a_workdir_that_looks_like_a_checkout(self) -> None:
+        catalog = {"bundle_catalog": []}
+        with tempfile.TemporaryDirectory() as tmp:
+            checkout = Path(tmp) / "some-checkout"
+            (checkout / ".git").mkdir(parents=True)
+            config = cc.Config(catalog_url="http://x", workdir=checkout, site_url="http://fake")
+            with self.assertRaises(cc.ConformanceError):
+                cc.run_build(config, catalog=catalog, browser_factory=FakeSession())
+
+    def test_peak_working_directory_usage_across_several_entries_stays_near_one_entrys_worth(self) -> None:
+        """Item 89: freed as it goes, not batched to the end - by the time
+        entry N+1 starts downloading, entry N's own bundle directory (the
+        heavy thing) must already be gone, serial run or not."""
+        ids = ["web-server-nginx", "web-server-apache", "git-server"]
+        catalog = real_catalog()
+
+        class TrackingSession(FakeSession):
+            def __init__(self, *a, work_root: Path, **kw):
+                super().__init__(*a, **kw)
+                self.work_root = work_root
+                self.bundle_dirs_present_at_start: list[int] = []
+
+            def download_bundle(self, entry_id, name=None):
+                count = sum(1 for p in self.work_root.glob("*/bundle") if p.is_dir())
+                self.bundle_dirs_present_at_start.append(count)
+                return super().download_bundle(entry_id, name=name)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            session = TrackingSession(archives_by_id={i: make_bundle_archive(entry_id=i) for i in ids},
+                                      work_root=work / "work")
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=ids, jobs=1, browser_factory=session,
+                                  container_engine=lambda: None)
+        self.assertTrue(all(r["status"] == "success" for r in report["targets"].values()))
+        self.assertEqual([0, 0, 0], session.bundle_dirs_present_at_start,
+                         "no previous entry's bundle directory should still exist when the next one starts")
+
+
+class StorageReclaimTests(unittest.TestCase):
+    """Item 91: per-worker podman storage roots this run created, and the
+    launcher's own cache volumes, reclaimed at the end of a run - using a
+    fake container engine and a fake volume remover throughout; nothing
+    here ever shells out to a real podman/docker."""
+
+    def test_worker_storage_roots_this_run_created_are_removed(self) -> None:
+        ids = ["web-server-nginx", "web-server-apache"]
+        catalog = real_catalog()
+        entries = [entry_by_id(catalog, i) for i in ids]
+        sub_catalog = {"bundle_catalog": entries}
+        session = FakeSession(archives_by_id={i: make_bundle_archive(entry_id=i) for i in ids})
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=sub_catalog, jobs=2, browser_factory=session,
+                                  container_engine=lambda: None)
+            roots = list((work / "podman-storage").glob("worker-*")) if (work / "podman-storage").exists() else []
+        self.assertEqual([], roots, "every worker storage root this run created must be gone")
+        self.assertGreaterEqual(len(report["storage_reclaimed"]["worker_roots_removed"]), 1)
+
+    def test_an_explicit_container_root_is_never_touched_by_reclaim(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            owned = Path(tmp) / "my-own-storage"
+            owned.mkdir()
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False,
+                               container_root=str(owned))
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  container_engine=lambda: "fake-engine")
+            self.assertTrue(owned.is_dir(), "a person's own configured storage is never removed")
+        reclaimed = report["storage_reclaimed"]
+        self.assertEqual([], reclaimed["worker_roots_removed"])
+        self.assertEqual([], reclaimed["cache_volumes_pruned"])
+
+    def test_cache_volumes_for_every_base_and_suite_built_are_pruned_via_the_fake_remover(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id, base="ubuntu", suite="noble"))
+        removed_calls: list[tuple[str, str]] = []
+
+        def fake_remover(engine: str, volume: str) -> tuple[bool, str]:
+            removed_calls.append((engine, volume))
+            return True, ""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  container_engine=lambda: "fake-engine", volume_remover=fake_remover)
+        self.assertEqual([("fake-engine", "synos-cache-ubuntu-noble")], removed_calls)
+        self.assertEqual(["synos-cache-ubuntu-noble"], report["storage_reclaimed"]["cache_volumes_pruned"])
+
+    def test_a_volume_the_remover_refuses_is_left_alone_and_reported(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id, base="ubuntu", suite="noble"))
+
+        def fake_remover(engine: str, volume: str) -> tuple[bool, str]:
+            return False, "volume is in use"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  container_engine=lambda: "fake-engine", volume_remover=fake_remover)
+        self.assertEqual([], report["storage_reclaimed"]["cache_volumes_pruned"])
+        self.assertEqual(1, len(report["storage_reclaimed"]["cache_volumes_left_alone"]))
+        self.assertIn("volume is in use", report["storage_reclaimed"]["cache_volumes_left_alone"][0])
+
+    def test_reclaim_is_skipped_entirely_when_cleanup_is_disabled(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False, cleanup=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  container_engine=lambda: "fake-engine")
+        self.assertNotIn("storage_reclaimed", report)
 
 
 if __name__ == "__main__":
