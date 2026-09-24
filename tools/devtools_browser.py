@@ -42,6 +42,7 @@ import shutil
 import socket
 import struct
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -49,7 +50,24 @@ from pathlib import Path
 DEFAULT_PORT = 9333
 DEFAULT_NAV_TIMEOUT = 30.0
 DEFAULT_DOWNLOAD_TIMEOUT = 30.0
+# The scripts (JSZip/jsyaml) and the wizard's own DOM exist as soon as the
+# page's <script> tags finish executing; the catalog data (window.D, fetched
+# separately, data/catalog.json) is not guaranteed to be populated at that
+# same moment — a real browser can and does race the two. Both are needed
+# before the Bundle Catalog can be used at all, so both are waited for.
 APP_READY_EXPR = "!!(window.JSZip && window.jsyaml && document.getElementById('open-file'))"
+CATALOG_READY_EXPR = "typeof D!=='undefined' && D && Array.isArray(D.bundle_catalog) && D.bundle_catalog.length>0"
+
+
+def _eprint(message: str) -> None:
+    """print(..., file=sys.stderr) that cannot itself raise: a caller with a
+    closed or redirected stderr (a test capturing output, a service manager
+    that already tore its pipe down) must never turn a non-fatal note into a
+    crash of its own."""
+    try:
+        print(message, file=sys.stderr)
+    except Exception:  # noqa: BLE001 - reporting a note must never itself raise
+        pass
 
 
 class BrowserUnavailable(Exception):
@@ -233,6 +251,20 @@ class StudioSession:
         self._ws.send("Page.navigate", url=f"{self.site_url}{path}")
         self.wait_for(APP_READY_EXPR)
 
+    def _clear_storage(self) -> None:
+        """Best-effort: only ever called after navigate(), never before —
+        the tab starts on about:blank, where localStorage access itself
+        raises a SecurityError (storage is not available on that origin at
+        all, real Chrome, not this driver, refuses it), so clearing before
+        the first navigation always fails. Even after navigating to a real
+        origin, a storage failure (a browser policy, a sandboxed profile)
+        is noted on stderr, never fatal: nothing a bundle download does
+        depends on localStorage being clearable, only on the site itself
+        loading."""
+        error = self.eval("(()=>{try{localStorage.clear();return null;}catch(e){return String(e);}})()")
+        if error:
+            _eprint(f"note: could not clear localStorage on {self.site_url} (continuing anyway): {error}")
+
     def click(self, selector: str) -> None:
         clicked = self.eval(f"(()=>{{const el=document.querySelector({json.dumps(selector)});"
                             f"if(!el) return false; el.click(); return true;}})()")
@@ -259,15 +291,32 @@ class StudioSession:
         for anything the page itself did wrong; never raises for a build
         failure downstream — there is none yet at this point."""
         name = name or entry_id
-        self.eval("localStorage.clear(); true;")
         self.navigate()
-        self.eval("localStorage.clear(); true;")
+        self._clear_storage()
+        self.wait_for(CATALOG_READY_EXPR)
         self.click("#btn-catalog")
         self.wait_for("!document.getElementById('catalog-page').hidden")
-        offered = self.eval(f"!!document.querySelector({json.dumps(f'[data-bundle={json.dumps(entry_id)}]')})")
+
+        # The catalog page only renders a page of cards at a time (12,
+        # "Show more" reveals the rest) — the entry can be real and still
+        # have no [data-bundle=...] card in the DOM yet, so "offered" is
+        # checked against the page's own full catalog data (window.D),
+        # never the DOM. Choosing it then calls the page's own
+        # chooseCatalogEntry() directly with that entry — the exact
+        # function a card's click handler calls — rather than depending on
+        # search or "Show more" to first scroll the entry into the DOM.
+        offered = self.eval(f"(D && Array.isArray(D.bundle_catalog)) ? "
+                            f"D.bundle_catalog.some(e => e && e.id === {json.dumps(entry_id)}) : false")
         if not offered:
             raise PageError(f"the Bundle Catalog at {self.site_url} does not offer an entry with id {entry_id!r}")
-        self.click(f'[data-bundle="{entry_id}"]')
+        chosen = self.eval(f"""(() => {{
+            const entry = (D.bundle_catalog || []).find(e => e && e.id === {json.dumps(entry_id)});
+            if (!entry || typeof chooseCatalogEntry !== 'function') return false;
+            chooseCatalogEntry(entry);
+            return true;
+        }})()""")
+        if not chosen:
+            raise PageError(f"could not choose {entry_id!r} through the page's own chooseCatalogEntry()")
         self.wait_for("document.querySelector('.step.active')?.dataset.step === '1'")
         self.set_input_value("#b-name", name)
         self.wait_for(f"typeof S!=='undefined' && S.name === {json.dumps(name)}")
@@ -315,5 +364,4 @@ def main(argv: list[str] | None = None) -> int:  # a small manual smoke check, n
 
 
 if __name__ == "__main__":
-    import sys
     sys.exit(main())

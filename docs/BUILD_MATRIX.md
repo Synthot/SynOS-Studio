@@ -445,6 +445,235 @@ whatever already receives webhooks). This is what turns "the catalog has
 fifty entries and three are broken" into "two entries broke since last
 time, here they are."
 
+## Publishing the build-status badge
+
+`build` also writes `<workdir>/build-status.json` — a small, versioned
+file meant to be fetched by a browser on every load of the Studio page, so
+each catalogued bundle can carry a badge saying it actually built and is
+safe to use. It is not the same file as `build-report.json` above (that
+one is the full record of a run — every stage, every log tail, every
+smoke-test detail — and is not meant for a browser to fetch) and not the
+same file as `tools/build_matrix.py`'s own tracked
+`bundle-catalog/build-status.yml` (that one is YAML, lives in this
+repository, and records whether *this checkout's* bundle-catalog builds,
+for a person reviewing a pull request; this one is JSON, lives only under
+a conformance run's own `workdir`, and records whether the *published*
+catalog builds, for a browser).
+
+Shape (`tools/build_status.py`)::
+
+    {
+      "schema_version": 1,
+      "generated_at": "2026-09-24T16:40:00+00:00",
+      "entries": {
+        "web-server-nginx": {
+          "state": "success",
+          "date": "2026-09-24T16:28:52+00:00",
+          "since": "2026-09-20T09:00:00+00:00",
+          "engine": "0.2.0",
+          "base": "ubuntu",
+          "suite": "noble",
+          "size": 1234567890,
+          "checksum": "b1946ac92492d2347c6235b4d2611184...",
+          "smoke_passed": true,
+          "error": null,
+          "history": [
+            {"date": "2026-09-20T09:00:00+00:00", "state": "success", "engine": "0.2.0",
+             "base": "ubuntu", "suite": "noble", "duration_s": 2412.3, "stage": null, "error": null}
+          ]
+        }
+      }
+    }
+
+`state` is one of `"queued"`, `"testing"`, `"success"`, `"failed"` or
+`"skipped"` (every finer distinction `build-report.json` records — which
+stage, a timeout, an invalid launcher exit — folds into `"failed"` here; a
+badge only needs to say not yet / safe / not safe). The sixth state the
+owner listed, **"never tested"**, is never written as a value: an entry id
+the catalog has but this file's `entries` does not is "never tested" by
+its absence. The page side was told to render three things at a glance:
+not yet tested (covers absent, `"queued"` and `"testing"` alike — none of
+those is a claim about safety either way), succeeded, or failed since a
+date; the finer `queued`/`testing` split exists so the file itself is
+never stale mid-run, even though the badge collapses them.
+
+`date` is when the current `state` was last (re-)confirmed; `since` is
+when the *current* `state` began as an unbroken streak — a bundle failing
+every night for a week shows the date the streak started, not last
+night's unremarkable re-confirmation, and a bundle that has been green for
+a month shows when it turned green. Both directions use the same rule
+(compare against the most recent `history` entry's state), and a
+`queued`/`testing` round-trip between two identical outcomes never
+disturbs it. `error` is `null` except for `"failed"` or `"skipped"`, where
+it is one sanitized line — see below.
+
+`history` is bounded to the most recent 10 entries (`tools/build_status.py`'s
+`HISTORY_LIMIT`), oldest first — a fixed count rather than a time window,
+because it bounds the file's worst-case size exactly regardless of how
+often builds run; the full, unbounded detail is what `build-report.json`
+is for. Only a real completed attempt (`success`/`failed`/`skipped`) adds
+a history entry — passing through `queued`/`testing` on the way there does
+not.
+
+`size`/`checksum` are the built ISO's, not the downloaded bundle
+archive's, and are `null` whenever there is none. `schema_version` lets
+the page refuse a shape it does not understand instead of guessing.
+
+### Live, not only final
+
+`build` marks every selected entry `"queued"` before starting, `"testing"`
+the moment its own build begins, and its real outcome once it finishes —
+written and (if uploading is configured) sent immediately at each step,
+not batched to the end, so a file fetched mid-run tells the truth about a
+run in progress. Only the *live* `queued`/`testing` transitions and a
+changed final outcome trigger an upload on their own; a bundle that
+re-confirms the same outcome as last time still gets its `queued` and
+`testing` moments uploaded (progress is always worth showing) but not a
+redundant third upload for an unchanged result — item 73's original
+"not every entry" still holds for the outcome itself.
+
+A run that is killed mid-build leaves an entry stuck at `"testing"`
+forever unless something resolves it. The next run, before queuing
+anything new, resolves every such entry to `"failed"` with
+`error: "the previous run was interrupted before this entry finished
+testing"` (`tools/build_status.py`'s `resolve_stuck_testing()`) — **never**
+guessed as `"success"`: a public "safe to use" badge must never claim an
+outcome nobody actually observed. Which ids this touched is printed in
+the run's own summary and recorded in `build-report.json`'s
+`resolved_interrupted`.
+
+It is written after every entry finishes, not only at the end — carrying
+forward every id it is not replacing — so a run interrupted partway
+through fifty-odd entries (the better part of a day) still leaves a valid
+file on disk (`tools/build_status.py`'s `StatusUpdater`, atomic
+write-then-rename: a reader never sees a half-written file).
+
+### The error line
+
+A failure's `error` (both the entry's own and each `history` entry's) is
+one sanitized line: the stage that failed and the first real error line,
+never the whole log tail. It is published on a public page, so it is
+treated as untrusted output being published, not an internal log line
+(`tools/build_status.py`'s `sanitize_error()`): control characters
+stripped, this machine's own working directory and home directory (plus
+the generic `/home/*` and `/root` patterns, as a backstop for some other
+user's path) and this machine's own hostname replaced with `<path>`/
+`<host>`, IPv4 addresses replaced with `<ip>`, anything shaped like
+`password=`/`token=`/`secret=`/`api_key=` redacted, and the whole line
+capped at 240 characters. Best-effort, not a guarantee — it catches the
+specific classes item 96 named, not every conceivable leak, and is not a
+substitute for keeping real secrets out of `build.sh`'s own log lines in
+the first place.
+
+### Getting it to the web server
+
+The owner is willing to give the conformance service upload credentials
+rather than move the file by hand. An optional `upload:` section in
+`conformance.yml` (`tools/status_uploader.py`) drives that — see the
+commented example in
+`packaging/catalog-conformance/conformance.example.yml`. Filled in, `build`
+uploads `build-status.json` once for every entry whose `state` changed
+(not every entry — most re-builds of an already-`success` bundle do not
+change anything a badge shows) plus once, unconditionally, when the whole
+run finishes; each attempt retries a few times with a growing pause
+between tries, and a failed upload after all retries is a warning printed
+on stderr and listed in `build-report.json`'s own `upload_warnings`, never
+a failed build.
+
+Two transports are supported:
+
+- **SSH** (`protocol: sftp` or `scp`) — shells out to the system `sftp`/
+  `scp` binary (this project's own rule against building a shell command
+  from a name read out of a file; the same reason
+  `tools/devtools_browser.py` spawns Chrome directly). Key auth
+  (`key_path`) needs nothing extra installed. Password auth additionally
+  needs `sshpass` on `PATH` (`apt install sshpass`); the password reaches
+  it only through the `SSHPASS` environment variable of that one short-
+  lived process, never as a command-line argument another user on the
+  machine could read with `ps`.
+- **FTP over TLS** (`protocol: ftps`) — the standard library's own
+  `ftplib.FTP_TLS`, nothing extra to install.
+
+Plain, unencrypted FTP (`protocol: ftp`) is refused with an explanation
+unless the config also sets `allow_insecure_ftp: true`: both the account's
+credentials and the file itself would otherwise cross the network in the
+clear. Set it only against a server you already trust for other reasons
+and that genuinely offers nothing better — `ftps` costs nothing extra to
+use wherever the server supports it.
+
+No credential is ever written to `build-report.json`, printed by this
+tool, or included in a warning: every message a transport can raise is
+scrubbed of the configured password first
+(`status_uploader.describe_destination()` is the only representation of a
+destination anything here ever prints, and it never includes one).
+
+### Checking a config, or that a file arrived
+
+`tools/status_uploader.py` works standalone, without running a build, to
+test an `upload:` section before trusting it to a timer::
+
+    # Prints the destination and file size it would send — no network, no secrets:
+    python3 tools/status_uploader.py --config /etc/synos/conformance.yml --file /var/lib/synos-conformance/build-status.json
+
+    # Sends it for real, once, no retry, and says whether it worked:
+    python3 tools/status_uploader.py --config /etc/synos/conformance.yml --file /var/lib/synos-conformance/build-status.json --send
+
+To confirm a file that a real `build` run uploaded actually landed, use
+whatever the server itself already offers — an HTTP `HEAD`/`GET` on the
+deployed URL (`curl -I https://studio.example/data/build-status.json`) is
+usually the simplest, since that is exactly what the page itself will do;
+an `ls -la` over the same SSH credentials works too (`sftp` in
+`packaging/catalog-conformance/conformance.example.yml`'s example one-off:
+`sftp user@host <<< "ls -la /var/www/studio/data/build-status.json"`).
+
+## Freeing disk as it goes
+
+Fifty-odd catalogued bundles, each producing a 2 GB image plus an unpacked
+bundle and a build tree, otherwise fill the disk long before a full pass
+finishes. `build` frees a *successful* entry's heavy directories as soon
+as that entry is done — never batched to the end, so a long run's peak
+usage stays near one build's worth, not fifty (`tools/entry_cleanup.py`,
+wired in by `tools/catalog_conformance.py`'s `cleanup_one()`).
+
+Removed: the unpacked bundle (its own build tree and `dist/`, including
+the ISO `build.sh` left there before this tool copied it out) and the
+copied ISO itself. Kept: the build log (compressed if it is actually
+large), the smoke test's own evidence (this project's own smoke test is
+serial-console-only by design and has no screenshot — see `tools/
+smoke_test.py`'s own module docstring — so its transcript is the
+equivalent evidence), and the small `output` directory that held both.
+The image's name, size and checksum are never lost even though the bytes
+are: they are already in `result`/`build-report.json`/`build-status.json`
+by the time cleanup runs. **Only on success** — a failed or skipped entry
+keeps its entire working directory untouched, because that is exactly
+what somebody will want to read to see why it failed; the run's own
+summary says which entries were cleaned and which were kept, and why.
+
+`cleanup: true` (the default) in `conformance.yml`, or `--no-cleanup` on
+the `build` subcommand for one debugging run without editing the config —
+the flag only ever keeps more than the config says, never less. Either
+way, `run_build` refuses to run at all — not only to clean up — when
+`workdir` looks like a filesystem root, the invoking user's home
+directory, or a source checkout (a `.git`/`.hg`/`.svn` entry directly
+inside it): a configuration mistake worth catching outright, since this
+tool otherwise deletes things inside it without asking again.
+`tools/entry_cleanup.py`'s own removal function additionally refuses
+anything outside `workdir`, and never follows a symlink out of it — a
+bundle's own `build.sh` runs arbitrary shell inside the tree it unpacked,
+so nothing here assumes that tree stayed well-behaved.
+
+When cleanup is enabled and this run owns the storage it used (`container_root`
+was not set — a person who *did* set it manages that storage themselves,
+so it and everything created inside it are left alone entirely), the end
+of a run also removes every per-worker podman storage root the run itself
+created (`workdir/podman-storage/worker-N`) and asks the container
+runtime to prune the launcher's own `synos-cache-<base>-<suite>` volume
+for every base/suite this run touched — with no force flag, so the
+runtime's own refusal to remove a volume something still has mounted *is*
+the "another build may be using it" check. Exactly what was pruned and
+what was left alone (and why) is in the run's own summary and
+`build-report.json`'s `storage_reclaimed`.
+
 ## Installing it as a service
 
 `packaging/catalog-conformance/` ships four systemd units and an example

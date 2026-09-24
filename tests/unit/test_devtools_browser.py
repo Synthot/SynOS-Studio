@@ -277,15 +277,22 @@ class StudioSessionPrimitiveTests(unittest.TestCase):
 
 
 class DownloadBundleFlowTests(unittest.TestCase):
-    """Pins download_bundle()'s own eval() call sequence: 1 localStorage.clear,
-    1 navigate's app-ready wait, 1 localStorage.clear, 1 click #btn-catalog,
-    1 wait for the catalog page, 1 "offered" check, 1 click the entry's
-    card, 1 wait for the naming step, 1 set #b-name, 1 wait for S.name, 1 to
-    arm the Blob tee, 1 validation() check, 1 click #btn-generate, 1 wait
-    for the Blob, 1 to read it back as base64, 1 for the filename."""
+    """Pins download_bundle()'s own eval() call sequence, in order:
+    1 navigate's app-ready wait, 1 _clear_storage (None = no error; a real
+    page only gets this call *after* navigating, never on about:blank — the
+    real-browser bug this class exists to prevent regressing on), 1 wait
+    for the catalog data itself (window.D.bundle_catalog, not just the
+    scripts, to be populated — a real page can race the two), 1 click
+    #btn-catalog, 1 wait for the catalog page, 1 "offered" check against
+    window.D (never the DOM: the catalog page only renders one page of
+    cards at a time), 1 call to the page's own chooseCatalogEntry() (not a
+    DOM click on a card, which might not be rendered), 1 wait for the
+    naming step, 1 set #b-name, 1 wait for S.name, 1 to arm the Blob tee,
+    1 validation() check, 1 click #btn-generate, 1 wait for the Blob, 1 to
+    read it back as base64, 1 for the filename."""
 
     def _happy_path_values(self, blob_b64: str, filename: str) -> list[object]:
-        return [True, True, True, True, True, True, True, True, True, True, True, [], True, True, blob_b64, filename]
+        return [True, None, True, True, True, True, True, True, True, True, True, [], True, True, blob_b64, filename]
 
     def test_downloads_and_decodes_the_real_bytes(self) -> None:
         raw = b"fake archive bytes"
@@ -296,19 +303,32 @@ class DownloadBundleFlowTests(unittest.TestCase):
         self.assertEqual(raw, data)
         self.assertEqual("web-server-nginx-bundle.tar.gz", filename)
         # sanity: the name field was actually set to the entry id, and the
-        # entry's own selector was used to find its card.
+        # entry's own id was used to find it in the page's own catalog data.
         self.assertTrue(any('"web-server-nginx"' in e for e in ws.expressions))
 
+    def test_a_noted_storage_clear_failure_does_not_abort_the_download(self) -> None:
+        """The regression this whole file exists to prevent regressing on:
+        a real page can refuse to clear storage (or, before this fix,
+        clearing it before the first navigation always raised); either way
+        it must be a note, never fatal."""
+        raw = b"fake archive bytes"
+        blob_b64 = base64.b64encode(raw).decode()
+        values = self._happy_path_values(blob_b64, "web-server-nginx-bundle.tar.gz")
+        values[1] = "SecurityError: Access is denied for this document."  # _clear_storage's own error string
+        session = _session_with(ScriptedWS(values))
+        data, filename = session.download_bundle("web-server-nginx")
+        self.assertEqual(raw, data)
+
     def test_entry_not_offered_raises_page_error(self) -> None:
-        # calls: clear, app-ready, clear, click #btn-catalog, wait catalog page, offered=False
-        values = [True, True, True, True, True, False]
+        # calls: app-ready, clear-storage, catalog-data-ready, click #btn-catalog, wait catalog page, offered=False
+        values = [True, None, True, True, True, False]
         session = _session_with(ScriptedWS(values))
         with self.assertRaises(db.PageError):
             session.download_bundle("no-such-entry")
 
     def test_validation_blocking_raises_page_error(self) -> None:
         # everything succeeds up through arming the Blob tee, then validation() returns a crit error
-        values = [True, True, True, True, True, True, True, True, True, True, True,
+        values = [True, None, True, True, True, True, True, True, True, True, True,
                  [["crit", "something is wrong"]]]
         session = _session_with(ScriptedWS(values))
         with self.assertRaises(db.PageError):
@@ -316,7 +336,7 @@ class DownloadBundleFlowTests(unittest.TestCase):
 
     def test_no_blob_ever_produced_raises_page_error(self) -> None:
         # validation passes, #btn-generate is clicked, but the Blob wait then times out
-        values = [True, True, True, True, True, True, True, True, True, True, True, [], True]
+        values = [True, None, True, True, True, True, True, True, True, True, True, [], True]
         session = _session_with(ScriptedWS(values))
         with self.assertRaises(db.PageError):
             session.download_bundle("web-server-nginx", download_timeout=0.3)
