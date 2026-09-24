@@ -56,7 +56,9 @@ Secure Boot enabled
         |
         +-- write explicit DKMS signing configuration
         |
-        +-- run dkms autoinstall when DKMS is installed
+        +-- when DKMS is installed, build its registered modules against
+        |   /target's own installed kernel(s) (not the live session's);
+        |   a module that fails to build is logged and skipped, never fatal
         |
         +-- update initramfs
         |
@@ -115,8 +117,53 @@ mok_certificate="/var/lib/shim-signed/mok/MOK.der"
 ```
 
 This matches SynOS OOBE policy and avoids relying on DKMS's unreliable
-implicit key discovery. If DKMS is present, `dkms autoinstall` is fatal on
-failure. The following initramfs rebuild includes the resulting modules.
+implicit key discovery. The following initramfs rebuild includes whatever
+modules DKMS actually managed to build.
+
+### Building against the target's kernel, not the live session's
+
+`dkms autoinstall` with no `-k` builds against `uname -r` of the process
+running it. Running it as `chroot /target dkms autoinstall` does not change
+that: chroot replaces the filesystem root a process sees, not what the
+kernel reports about itself, so an unqualified `dkms autoinstall` inside the
+chroot still asks to build for the *live session's* kernel — a version
+`/target` was never given headers for, because that is not the kernel being
+installed. This looked like "DKMS module build failed" but was really
+"there was nothing to build against for that kernel version at all."
+
+`VerifyDkmsSignaturesStep` instead:
+
+1. Reads the kernel version(s) actually installed in `/target` from
+   `/target/lib/modules/*`.
+2. For each one with any module registered (`dkms status -k <version>`),
+   confirms `/target/lib/modules/<version>/build` exists — the same check
+   DKMS itself needs to satisfy before it can build anything — before
+   calling `dkms autoinstall -k <version>`.
+3. If headers for that kernel are missing, it says so in the installer log
+   in words ("kernel headers for `<version>` are not installed; no
+   out-of-tree modules can be built") and moves on without attempting a
+   build that cannot succeed.
+
+### An optional driver never blocks the installation
+
+A package that installs DKMS (a third-party driver such as the Xbox
+controller driver) is not required to boot the system it is being added to.
+`dkms status -k <version>` is compared before and after `dkms autoinstall`;
+any module that does not reach `installed` is recorded — module, version,
+kernel and the tail of its DKMS build log
+(`/var/lib/dkms/<module>/<version>/.../make.log`) — into the installer's own
+log and into the step's result, and the step reports as a **warning**, not a
+failure. The installation continues.
+
+This is deliberately different from `PrepareSecureBootStep` and
+`EnrollSecureBootStep`, which stay fatal: a build failure in an optional
+out-of-tree driver is not a Secure Boot problem. The one case that stays
+fatal here is `VerifyDkmsSignaturesStep.verify()`: any module that *did* get
+built and installed under `/target/lib/modules/*/updates/dkms/` must be
+signed by this installation's own MOK. A module that never built is not
+checked (there is nothing under that path to check); a module that built but
+carries the wrong — or no — signature is a genuine Secure Boot violation and
+still fails the plan.
 
 ## Signed EFI artifacts
 
@@ -206,13 +253,28 @@ amd64 additionally retains `grub-pc-bin` for Legacy BIOS support.
 
 Unit tests cover ordering, password secrecy, key replacement, key-pair
 matching, retry idempotency, signed-chain rejection and architecture
-selection. Release still requires real UEFI tests for:
+selection. `tests/unit/test_secure_boot_dkms.py` covers
+`VerifyDkmsSignaturesStep` specifically: building against the target's own
+kernel version rather than the live session's, a missing-headers module
+being reported and skipped rather than failing the install, a module that
+fails to build being reported with its build log tail and also not failing
+the install, and a module that built but is signed by the wrong key still
+failing `verify()` fatally. None of those tests invoke a real `dkms`,
+`chroot` or `openssl`. `tests/unit/test_control_dependencies.py`'s
+`DkmsHeadersDependencyTests` separately guards every `packages/*/control`
+file: any package that depends on `dkms` must also depend on the kernel
+headers matching its base's kernel package, so a future package cannot
+reintroduce a DKMS driver with nothing to build against by construction.
+Release still requires real UEFI tests for:
 
 - amd64 Secure Boot enabled;
 - arm64 Secure Boot enabled;
 - enrollment completion in MOKManager;
 - boot before and after enrollment;
 - DKMS module loading after enrollment;
+- a real DKMS driver package (e.g. the Xbox controller driver) installing
+  cleanly and continuing the installation on a target with no matching
+  kernel headers available;
 - canceled or mistyped MOKManager password;
 - firmware that rejects EFI-variable writes;
 - interrupted installation before and after enrollment scheduling.

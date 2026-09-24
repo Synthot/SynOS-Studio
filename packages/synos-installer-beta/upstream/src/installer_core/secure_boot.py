@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import re
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 
 from .command import CommandRunner
 from .model import Architecture, InstallPlan, SecureBoot
-from .steps import FailurePolicy, InstallContext
+from .steps import FailurePolicy, InstallContext, StepWarning
 
 
 # SynOS documents this as the one-time MOKManager enrollment password.
@@ -118,10 +119,99 @@ class VerifyDkmsSignaturesStep:
 
     def execute(self, context: InstallContext) -> None:
         target = _target(context)
-        if (target / "usr/sbin/dkms").is_file():
+        context.values["dkms_modules"] = []
+        if not (target / "usr/sbin/dkms").is_file():
+            return
+
+        # `dkms autoinstall` with no `-k` builds against `uname -r` of the
+        # process running it. Under `chroot /target`, that is still the live
+        # session's own kernel, not the kernel the installer just put in
+        # /target — chroot changes the filesystem root, not what the kernel
+        # reports itself as. Naming the target's installed kernel explicitly
+        # is what makes this build against the system actually being
+        # installed, and lets us tell "nothing to build against" (missing
+        # headers) apart from "the module does not compile".
+        kernels = _target_kernel_releases(target)
+        if not kernels:
+            context.log(
+                f"[{self.id}] no installed kernel was found under /lib/modules "
+                "in the target; DKMS autoinstall was skipped"
+            )
+            return
+
+        outcomes: list[dict[str, str]] = []
+        for kernel in kernels:
+            registered = _dkms_status(self.runner, target, kernel)
+            if not registered:
+                continue
+            if not _kernel_headers_present(self.runner, target, kernel):
+                message = (
+                    f"kernel headers for {kernel} are not installed; "
+                    "no out-of-tree modules can be built"
+                )
+                context.log(f"[{self.id}] {message}")
+                for entry in registered:
+                    outcomes.append(
+                        {
+                            "module": entry["module"],
+                            "version": entry["version"],
+                            "kernel": kernel,
+                            "state": "headers-missing",
+                            "detail": message,
+                        }
+                    )
+                continue
+
             self.runner.run(
-                ("chroot", str(target), "dkms", "autoinstall"),
+                ("chroot", str(target), "dkms", "autoinstall", "-k", kernel),
+                check=False,
                 timeout=3600,
+            )
+            after = {
+                (entry["module"], entry["version"]): entry["state"]
+                for entry in _dkms_status(self.runner, target, kernel)
+            }
+            for entry in registered:
+                state = after.get((entry["module"], entry["version"]), "unknown")
+                if state == "installed":
+                    continue
+                log_tail = _module_build_log_tail(
+                    self.runner, target, entry["module"], entry["version"]
+                )
+                detail = (
+                    f"{entry['module']}/{entry['version']} for kernel {kernel} "
+                    f"did not reach 'installed' (dkms reports '{state}')"
+                )
+                if log_tail:
+                    detail += f"\n--- {entry['module']} build log tail ---\n{log_tail}"
+                context.log(f"[{self.id}] {detail}")
+                outcomes.append(
+                    {
+                        "module": entry["module"],
+                        "version": entry["version"],
+                        "kernel": kernel,
+                        "state": state,
+                        "detail": detail,
+                    }
+                )
+
+        context.values["dkms_modules"] = outcomes
+        if outcomes:
+            # A module that failed to build is never something an
+            # installation should abort over: it is not required to boot the
+            # system, and the person can retry it (or the person who packaged
+            # it can fix it) after the fact. VerifyDkmsSignaturesStep.verify
+            # still fails the plan, fatally, if a module that *did* get built
+            # is not signed by the installation's own MOK — that is the
+            # genuinely fatal case, because it is a Secure Boot violation on
+            # a module that will actually try to load.
+            summary = "; ".join(
+                f"{o['module']}/{o['version']} ({o['kernel']}): {o['state']}"
+                for o in outcomes
+            )
+            raise StepWarning(
+                "One or more DKMS modules could not be built and were left "
+                f"uninstalled: {summary}"
             )
 
     def verify(self, context: InstallContext) -> None:
@@ -244,6 +334,80 @@ class EnrollSecureBootStep:
     def cleanup(self, context: InstallContext) -> None:
         # Revoking all pending imports could destroy an unrelated user request.
         return None
+
+
+_DKMS_STATUS_RE = re.compile(
+    r"^(?P<module>[^/,\s]+)/(?P<version>[^,\s]+),\s*"
+    r"(?P<kernel>[^,\s]+),\s*(?P<architecture>[^:\s]+):\s*"
+    r"(?P<state>[a-z-]+)(?:\s.*)?$"
+)
+
+
+def _target_kernel_releases(target: Path) -> list[str]:
+    """Kernel versions actually installed in /target, from /lib/modules —
+    not the live session's `uname -r`, which chroot does not change."""
+    module_root = target / "lib/modules"
+    if not module_root.is_dir():
+        return []
+    return sorted(entry.name for entry in module_root.iterdir() if entry.is_dir())
+
+
+def _kernel_headers_present(runner: CommandRunner, target: Path, kernel: str) -> bool:
+    # A headers package for `kernel` symlinks /usr/src/linux-headers-<kernel>
+    # into /lib/modules/<kernel>/build; that is exactly what DKMS itself
+    # needs to build against, so it is the authoritative check. Resolved
+    # inside the chroot: an absolute symlink recorded under /target would
+    # otherwise resolve against the real root, not /target's.
+    result = runner.run(
+        ("chroot", str(target), "test", "-e", f"/lib/modules/{kernel}/build"),
+        check=False,
+        timeout=30,
+        log_output=False,
+    )
+    return result.returncode == 0
+
+
+def _dkms_status(
+    runner: CommandRunner, target: Path, kernel: str
+) -> list[dict[str, str]]:
+    result = runner.run(
+        ("chroot", str(target), "dkms", "status", "-k", kernel),
+        check=False,
+        timeout=120,
+        log_output=False,
+    )
+    if result.returncode != 0:
+        return []
+    entries = []
+    for line in result.stdout.splitlines():
+        match = _DKMS_STATUS_RE.match(line.strip())
+        if match:
+            entries.append(match.groupdict())
+    return entries
+
+
+def _module_build_log_tail(
+    runner: CommandRunner,
+    target: Path,
+    module: str,
+    version: str,
+    *,
+    lines: int = 40,
+) -> str:
+    """The last lines of the DKMS build log for one module/version, across
+    both the flat (.../build/make.log) and per-kernel/arch DKMS log layouts."""
+    script = (
+        f"f=$(find /var/lib/dkms/{shlex.quote(module)}/{shlex.quote(version)} "
+        "-name make.log 2>/dev/null | sort | tail -n1); "
+        f'[ -n "$f" ] && tail -n {int(lines)} "$f"'
+    )
+    result = runner.run(
+        ("chroot", str(target), "sh", "-c", script),
+        check=False,
+        timeout=30,
+        log_output=False,
+    )
+    return result.stdout.strip()
 
 
 def _enabled(plan: InstallPlan) -> bool:

@@ -109,6 +109,51 @@ class ControlDependencyNamingTests(unittest.TestCase):
         )
 
 
+class DkmsHeadersDependencyTests(unittest.TestCase):
+    """Fast, offline: a package that installs DKMS must also install kernel
+    headers matching this base's kernel package — otherwise DKMS has nothing
+    to build any of its registered modules against the moment it lands on
+    the image (see installer_core.secure_boot.VerifyDkmsSignaturesStep,
+    which now reports that case instead of failing the whole install, but
+    still can build nothing for a package shaped like this)."""
+
+    @staticmethod
+    def _expected_headers_name(kernel_package: str) -> str:
+        # "linux-image-${ARCH}" -> "linux-headers-${ARCH}"; "linux-generic"
+        # -> "linux-headers-generic": drop an "image-" segment if present,
+        # then insert "headers-" right after "linux-".
+        name = kernel_package.replace("image-", "", 1)
+        return name.replace("linux-", "linux-headers-", 1)
+
+    def test_every_dkms_dependency_ships_matching_kernel_headers(self) -> None:
+        offenders = []
+        for base_id, base in _bases().items():
+            suite = base.get("DEFAULT_SUITE", "")
+            # _dependency_groups renders every control with a fixed arch of
+            # "amd64" (see its manifest literal below); render KERNEL_PACKAGE
+            # the same way so the two sides are compared post-substitution.
+            kernel_package = base.get("KERNEL_PACKAGE", "").replace("${ARCH}", "amd64")
+            expected = self._expected_headers_name(kernel_package)
+            names_by_control: dict[Path, list[str]] = {}
+            for control, _field, alts in _dependency_groups(base_id, base, suite):
+                names = [CONSTRAINT_RE.sub("", a).strip() for a in alts]
+                names_by_control.setdefault(control, []).extend(names)
+            for control, names in names_by_control.items():
+                if "dkms" not in names:
+                    continue
+                if expected not in names:
+                    offenders.append(
+                        f"{control.relative_to(ROOT)} ({base_id}) depends on dkms but not on "
+                        f"{expected!r}, the headers matching this base's kernel package {kernel_package!r}"
+                    )
+        self.assertEqual(
+            [], offenders,
+            "a package that installs dkms must also install kernel headers matching "
+            "this base's kernel package, or DKMS has nothing to build its modules "
+            "against the moment it is installed: " + "; ".join(offenders),
+        )
+
+
 class ControlDependencyArchiveTests(unittest.TestCase):
     """Slow, online: every Depends/Pre-Depends group resolves against the real archive."""
 
