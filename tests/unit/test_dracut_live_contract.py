@@ -106,6 +106,256 @@ class DracutLiveContractTests(unittest.TestCase):
             self.assertEqual(1, on.returncode, "with updates on, the verifier's verdict is the wrapper's")
             self.assertEqual(["real -u -k 6.8.0-139-generic", "verify --verify"], log.read_text(encoding="utf-8").splitlines())
 
+    def test_update_initramfs_wrapper_computes_updates_off_before_checking_implementation(self) -> None:
+        """The 'updates off during the image build' state must be known
+        before a missing diverted implementation is treated as an error,
+        never after: otherwise a build with updates off can still depend on
+        an implementation that a base such as Debian never diverted."""
+        wrapper = (ROOT / "packages/synos-core-system/assets/usr/libexec/synos-update-initramfs").read_text()
+        self.assertLess(
+            wrapper.index("updates_off=false"),
+            wrapper.index('if [ -x "$REAL_UPDATE_INITRAMFS" ]'),
+            "updates_off must be computed before the implementation is required",
+        )
+
+    def _run_wrapper(self, tmp, args, real_exists, verify_exit=0, conf_text=None,
+                      maintscript=False):
+        """Run the update-initramfs wrapper against fakes: real_exists picks
+        whether SYNOS_UPDATE_INITRAMFS_REAL points at an executable fake or a
+        path that was never created (the diversion-target-missing case), and
+        the fake verifier logs its invocation and exits verify_exit. Returns
+        (CompletedProcess, log lines)."""
+        import os
+        import stat
+        import subprocess
+        wrapper = ROOT / "packages/synos-core-system/assets/usr/libexec/synos-update-initramfs"
+        real = tmp / "real"
+        verify = tmp / "verify"
+        log = tmp / "log"
+        if real_exists:
+            real.write_text('#!/bin/sh\nprintf "real %s\\n" "$*" >> "$SYNOS_TEST_LOG"\nexit 0\n', encoding="utf-8")
+            real.chmod(real.stat().st_mode | stat.S_IEXEC)
+        verify.write_text(
+            '#!/bin/sh\nprintf "verify %s\\n" "$*" >> "$SYNOS_TEST_LOG"\nexit {}\n'.format(verify_exit),
+            encoding="utf-8",
+        )
+        verify.chmod(verify.stat().st_mode | stat.S_IEXEC)
+        conf = tmp / "update-initramfs.conf"
+        if conf_text is not None:
+            conf.write_text(conf_text, encoding="utf-8")
+        env = dict(
+            os.environ,
+            SYNOS_UPDATE_INITRAMFS_REAL=str(real),
+            SYNOS_MIGRATION_VERIFY=str(verify),
+            SYNOS_UPDATE_INITRAMFS_CONF=str(conf),
+            SYNOS_TEST_LOG=str(log),
+        )
+        if maintscript:
+            env["DPKG_MAINTSCRIPT_PACKAGE"] = "some-package"
+        else:
+            env.pop("DPKG_MAINTSCRIPT_PACKAGE", None)
+        result = subprocess.run(["sh", str(wrapper), *args], env=env, capture_output=True, text=True)
+        lines = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+        return result, lines
+
+    def test_update_initramfs_wrapper_noop_when_implementation_missing_and_updates_off(self) -> None:
+        """A base such as Debian's, whose Dracut ships no update-initramfs
+        compatibility command, never gets a diversion (see postinst's
+        install_update_initramfs_guard). During an image build (updates
+        off) that must be a silent, successful no-op, exactly like the
+        implementation-present case -- never the fatal error that took the
+        real build down."""
+        with tempfile.TemporaryDirectory() as tmp:
+            result, lines = self._run_wrapper(
+                Path(tmp), ["-u", "-k", "6.8.0-139-generic"],
+                real_exists=False, conf_text="update_initramfs=no\n",
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual([], lines, "neither a real implementation nor the verifier should run")
+
+    def test_update_initramfs_wrapper_builds_with_dracut_when_implementation_missing_and_updates_on(self) -> None:
+        """On an installed, pure-Dracut system with updates on, a package
+        calling update-initramfs with no diverted implementation to call
+        must still get its initrd built -- through the synchronous
+        rebuild/verify path that already knows how to drive Dracut, not a
+        hard failure."""
+        with tempfile.TemporaryDirectory() as tmp:
+            result, lines = self._run_wrapper(
+                Path(tmp), ["-u", "-k", "6.8.0-139-generic"],
+                real_exists=False, conf_text="update_initramfs=yes\n",
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(["verify --rebuild", "verify --verify"], lines)
+
+    def test_update_initramfs_wrapper_noop_on_delete_when_implementation_missing(self) -> None:
+        """Deleting a removed kernel's image is left to the base's own
+        kernel hooks when there is no diverted implementation to ask;
+        the wrapper must not fail or invoke the verifier for -d."""
+        with tempfile.TemporaryDirectory() as tmp:
+            result, lines = self._run_wrapper(
+                Path(tmp), ["-d", "-k", "6.8.0-139-generic"],
+                real_exists=False, conf_text="update_initramfs=yes\n",
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual([], lines)
+
+    def test_update_initramfs_wrapper_noop_on_maintscript_trigger_when_implementation_missing(self) -> None:
+        """The shared dpkg trigger invocation (DPKG_MAINTSCRIPT_PACKAGE, a
+        bare -u) may run before a pending kernel postinst has produced a
+        modules tree; with no diverted implementation either, it must still
+        be a safe no-op rather than a failure or a premature rebuild."""
+        with tempfile.TemporaryDirectory() as tmp:
+            result, lines = self._run_wrapper(
+                Path(tmp), ["-u"],
+                real_exists=False, conf_text="update_initramfs=yes\n",
+                maintscript=True,
+            )
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual([], lines)
+
+    _FAKE_DPKG_DIVERT = (
+        "#!/bin/sh\n"
+        "set -eu\n"
+        'STATE="$FAKE_DIVERT_STATE"\n'
+        'if [ "$1" = --listpackage ]; then\n'
+        "    path=$2\n"
+        '    line=$(grep -F "|$path|" "$STATE" 2>/dev/null || true)\n'
+        '    [ -n "$line" ] || exit 1\n'
+        '    printf "%s\\n" "$line" | cut -d"|" -f1\n'
+        "    exit 0\n"
+        "fi\n"
+        'package=""; divert=""; original=""; add=false; rename=false\n'
+        "while [ $# -gt 0 ]; do\n"
+        "    case $1 in\n"
+        "        --package) shift; package=$1 ;;\n"
+        "        --add) add=true ;;\n"
+        "        --rename) rename=true ;;\n"
+        "        --divert) shift; divert=$1 ;;\n"
+        "        *) original=$1 ;;\n"
+        "    esac\n"
+        "    shift\n"
+        "done\n"
+        'if [ "$add" = true ]; then\n'
+        '    printf "%s|%s|%s\\n" "$package" "$original" "$divert" >> "$STATE"\n'
+        '    if [ "$rename" = true ] && [ -e "$original" ]; then\n'
+        '        mv "$original" "$divert"\n'
+        "    fi\n"
+        "fi\n"
+    )
+
+    def _run_postinst_configure(self, tmp):
+        """Run scripts/postinst 'configure' against a fake dpkg-divert and a
+        fake root, using only fakes -- no real dpkg. Returns the completed
+        process; callers set up usr/sbin and usr/libexec under tmp first."""
+        import os
+        import stat
+        import subprocess
+        postinst = ROOT / "packages/synos-core-system/scripts/postinst"
+        dpkg_divert = tmp / "dpkg-divert"
+        dpkg_divert.write_text(self._FAKE_DPKG_DIVERT, encoding="utf-8")
+        dpkg_divert.chmod(dpkg_divert.stat().st_mode | stat.S_IEXEC)
+        state = tmp / "divert-state"
+        if not state.exists():
+            state.write_text("", encoding="utf-8")
+        env = dict(
+            os.environ,
+            SYNOS_MIGRATION_DPKG_DIVERT=str(dpkg_divert),
+            FAKE_DIVERT_STATE=str(state),
+            SYNOS_MIGRATION_UPDATE_INITRAMFS=str(tmp / "usr/sbin/update-initramfs"),
+            SYNOS_MIGRATION_UPDATE_INITRAMFS_DIVERT=str(tmp / "usr/sbin/update-initramfs.synos-dracut"),
+            SYNOS_MIGRATION_UPDATE_INITRAMFS_WRAPPER=str(tmp / "usr/libexec/synos-update-initramfs"),
+            SYNOS_MIGRATION_UPDATE_GRUB=str(tmp / "usr/sbin/update-grub"),
+            SYNOS_MIGRATION_UPDATE_GRUB_DIVERT=str(tmp / "usr/sbin/update-grub.synos-grub"),
+            SYNOS_MIGRATION_UPDATE_GRUB_WRAPPER=str(tmp / "usr/libexec/synos-update-grub"),
+            SYNOS_MIGRATION_STATE_DIR=str(tmp / "var/lib/synos-dracut-migration"),
+        )
+        (tmp / "var/lib/synos-dracut-migration").mkdir(parents=True, exist_ok=True)
+        return subprocess.run(["sh", str(postinst), "configure"], env=env, capture_output=True, text=True)
+
+    def _write_executable(self, path, body="#!/bin/sh\nexit 0\n"):
+        import stat
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body, encoding="utf-8")
+        path.chmod(path.stat().st_mode | stat.S_IEXEC)
+
+    def test_postinst_update_initramfs_guard_is_idempotent_with_no_compat_shim(self) -> None:
+        """On a base whose Dracut ships no update-initramfs compatibility
+        command (Debian's), nothing should ever be diverted, on the first
+        postinst run or on any later reconfigure/upgrade. Diverting the
+        guard's own symlink onto itself on a second run would make the
+        wrapper's diverted implementation check see a "real" implementation
+        that is really itself, calling into it forever."""
+        import os
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            self._write_executable(tmp / "usr/libexec/synos-update-initramfs")
+            self._write_executable(tmp / "usr/libexec/synos-update-grub")
+            self._write_executable(tmp / "usr/sbin/update-grub")  # GRUB always ships this
+
+            first = self._run_postinst_configure(tmp)
+            self.assertEqual(0, first.returncode, first.stderr)
+            divert_state = (tmp / "divert-state").read_text(encoding="utf-8")
+            self.assertNotIn("update-initramfs", divert_state)
+            self.assertEqual(
+                str(tmp / "usr/libexec/synos-update-initramfs"),
+                os.path.realpath(tmp / "usr/sbin/update-initramfs"),
+            )
+            self.assertFalse((tmp / "usr/sbin/update-initramfs.synos-dracut").exists())
+
+            second = self._run_postinst_configure(tmp)
+            self.assertEqual(0, second.returncode, second.stderr)
+            divert_state = (tmp / "divert-state").read_text(encoding="utf-8")
+            self.assertNotIn(
+                "update-initramfs", divert_state,
+                "a reconfigure must not divert the guard's own symlink onto itself",
+            )
+            self.assertEqual(
+                str(tmp / "usr/libexec/synos-update-initramfs"),
+                os.path.realpath(tmp / "usr/sbin/update-initramfs"),
+            )
+            self.assertFalse(
+                (tmp / "usr/sbin/update-initramfs.synos-dracut").exists(),
+                "the diverted path must never come to exist as a symlink to the guard itself",
+            )
+
+    def test_postinst_diverts_a_real_compat_shim_and_stays_idempotent(self) -> None:
+        """When a base does provide a real update-initramfs (an upgrade from
+        a system where one was installed), the postinst must divert it
+        exactly once and keep it diverted -- not itself -- across a later
+        reconfigure."""
+        import os
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            self._write_executable(tmp / "usr/libexec/synos-update-initramfs")
+            self._write_executable(tmp / "usr/libexec/synos-update-grub")
+            self._write_executable(tmp / "usr/sbin/update-grub")
+            self._write_executable(
+                tmp / "usr/sbin/update-initramfs",
+                '#!/bin/sh\necho "real update-initramfs $*"\n',
+            )
+
+            first = self._run_postinst_configure(tmp)
+            self.assertEqual(0, first.returncode, first.stderr)
+            divert_target = tmp / "usr/sbin/update-initramfs.synos-dracut"
+            self.assertTrue(divert_target.exists())
+            self.assertIn("real update-initramfs", divert_target.read_text(encoding="utf-8"))
+            self.assertEqual(
+                str(tmp / "usr/libexec/synos-update-initramfs"),
+                os.path.realpath(tmp / "usr/sbin/update-initramfs"),
+            )
+
+            second = self._run_postinst_configure(tmp)
+            self.assertEqual(0, second.returncode, second.stderr)
+            self.assertIn(
+                "real update-initramfs", divert_target.read_text(encoding="utf-8"),
+                "the diverted file must still be the real implementation, not the guard",
+            )
+            divert_state = (tmp / "divert-state").read_text(encoding="utf-8")
+            self.assertEqual(
+                1, divert_state.count("update-initramfs.synos-dracut"),
+                "the diversion must be registered exactly once, not re-added on reconfigure",
+            )
+
     def test_build_recipe_leaves_artifact_validation_to_tests(self) -> None:
         build = (ROOT / "build.sh").read_text()
         makefile = (ROOT / "makefile").read_text()

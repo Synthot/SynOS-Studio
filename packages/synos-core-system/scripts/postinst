@@ -82,9 +82,29 @@ install_update_initramfs_guard() {
         return 1
     }
     diversion_owner=$($DPKG_DIVERT --listpackage "$UPDATE_INITRAMFS_DPKG_PATH" 2>/dev/null || true)
-    if [ ! -x "$UPDATE_INITRAMFS" ] && [ ! -x "$UPDATE_INITRAMFS_DIVERT" ] && [ ! -L "$UPDATE_INITRAMFS" ]; then
-        # No update-initramfs at all (Debian's dracut ships no compatibility
-        # wrapper): nothing to divert, the guard becomes the entry point.
+    # Nothing owned by us is diverted either when there was never anything to
+    # divert (Debian's Dracut ships no update-initramfs compatibility
+    # command) or when a previous run of this same postinst already found
+    # that and installed the guard directly, with no diversion, as the entry
+    # point. Both must take the same no-diversion path below: asking
+    # dpkg-divert to divert the guard's own symlink here on a later
+    # reconfigure would rename it to the "real" path, so the wrapper would
+    # find a diverted implementation that is really itself and call into it
+    # forever.
+    already_direct=false
+    if [ "$diversion_owner" != synos-core-system ] && [ -L "$UPDATE_INITRAMFS" ] \
+        && [ "$(readlink "$UPDATE_INITRAMFS")" = "$UPDATE_INITRAMFS_LINK_TARGET" ]; then
+        already_direct=true
+    fi
+    nothing_to_divert=false
+    if [ "$diversion_owner" != synos-core-system ] \
+        && [ ! -x "$UPDATE_INITRAMFS" ] && [ ! -x "$UPDATE_INITRAMFS_DIVERT" ] \
+        && [ ! -L "$UPDATE_INITRAMFS" ]; then
+        nothing_to_divert=true
+    fi
+    if [ "$already_direct" = true ] || [ "$nothing_to_divert" = true ]; then
+        # No update-initramfs to divert, or the guard is already the entry
+        # point from an earlier run: nothing to divert either way.
         log "no update-initramfs to divert; installing the guard as the entry point"
         checkpoint before_update_initramfs_divert
         temporary="$UPDATE_INITRAMFS.synos-new"

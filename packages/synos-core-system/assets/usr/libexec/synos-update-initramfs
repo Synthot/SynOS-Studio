@@ -4,11 +4,6 @@ set -eu
 REAL_UPDATE_INITRAMFS=${SYNOS_UPDATE_INITRAMFS_REAL:-/usr/sbin/update-initramfs.synos-dracut}
 VERIFY=${SYNOS_MIGRATION_VERIFY:-/usr/libexec/synos-dracut-verify}
 
-[ -x "$REAL_UPDATE_INITRAMFS" ] || {
-    printf '%s\n' 'synos-update-initramfs: diverted Dracut implementation is missing' >&2
-    exit 1
-}
-
 # dpkg does not order the shared Dracut trigger after pending kernel postinst
 # scripts. Both its activation call and its later invocation may therefore run
 # before a newly unpacked kernel has an initrd. The packages that add mandatory
@@ -24,22 +19,53 @@ for argument in "$@"; do
     [ "$argument" != -d ] || delete=true
 done
 
-"$REAL_UPDATE_INITRAMFS" "$@"
-
-[ "$maintscript_update" = false ] || exit 0
-[ "$delete" = false ] || exit 0
-# While updates are switched off (the image build installs packages with
-# update_initramfs=no and generates the initrd once at the end), nothing was
-# rebuilt, so there is nothing to verify yet.
+# Cheap and always answerable, whatever this base does or does not ship:
+# are updates switched off for this install? (The image build installs
+# packages with update_initramfs=no and generates the initrd once, at the
+# end.) This has to be known before anything that depends on what the base
+# provides, because a build with updates off has nothing to rebuild either
+# way, present implementation or not.
 CONF=${SYNOS_UPDATE_INITRAMFS_CONF:-${DPKG_ROOT:-}/etc/initramfs-tools/update-initramfs.conf}
+update_initramfs=yes
 if [ -r "$CONF" ]; then
-    update_initramfs=yes
     # shellcheck disable=SC1090
     . "$CONF"
-    [ "${update_initramfs:-yes}" != no ] || exit 0
 fi
+updates_off=false
+[ "${update_initramfs:-yes}" != no ] || updates_off=true
+
+if [ -x "$REAL_UPDATE_INITRAMFS" ]; then
+    "$REAL_UPDATE_INITRAMFS" "$@"
+    [ "$maintscript_update" = false ] || exit 0
+    [ "$delete" = false ] || exit 0
+    # While updates are switched off, nothing was rebuilt, so there is
+    # nothing to verify yet.
+    [ "$updates_off" = false ] || exit 0
+    [ -x "$VERIFY" ] || {
+        printf '%s\n' 'synos-update-initramfs: synchronous verifier is missing' >&2
+        exit 1
+    }
+    exec "$VERIFY" --verify
+fi
+
+# No diverted implementation exists. On a base whose Dracut ships no
+# update-initramfs compatibility command at all (Debian's does not: nothing
+# provides /usr/sbin/update-initramfs before this package is configured),
+# the postinst never diverts anything and installs this wrapper directly as
+# the entry point instead (see install_update_initramfs_guard in
+# scripts/postinst). A missing implementation is then the ordinary case on
+# that base, not an error, and must never fail an unrelated package's
+# configuration — during an image build (updates off) it is always a
+# successful no-op, and otherwise it is answered with Dracut directly.
+[ "$updates_off" = false ] || exit 0
+[ "$maintscript_update" = false ] || exit 0
+# A kernel being removed is cleaned up by the base's own kernel hooks
+# (/etc/kernel/postrm.d on a pure-Dracut base); there is no diverted
+# implementation here to ask to drop an image.
+[ "$delete" = false ] || exit 0
 [ -x "$VERIFY" ] || {
     printf '%s\n' 'synos-update-initramfs: synchronous verifier is missing' >&2
     exit 1
 }
-"$VERIFY" --verify
+"$VERIFY" --rebuild
+exec "$VERIFY" --verify
