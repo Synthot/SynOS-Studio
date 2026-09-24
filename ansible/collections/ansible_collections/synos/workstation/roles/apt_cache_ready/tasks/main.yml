@@ -1,0 +1,10 @@
+# Included at the top of any role that installs packages from the archive
+# (see container_services, base_hardening, workplace_apps, directory_join,
+# fleet_enrollment). Refreshes the apt index only when it is missing, so a
+# role never depends on a previous build step having left a cache behind,
+# without re-fetching it on every task that happens to run after one that
+# already did.
+- name: Ensure the apt package index is present before installing packages
+  ansible.builtin.script:
+    cmd: ensure_apt_cache.sh
+  changed_when: false

@@ -38,8 +38,31 @@ printf 'update_initramfs=no\n' > /etc/initramfs-tools/update-initramfs.conf
 #==========================
 # Execute mods
 #==========================
+# The mods run in two phases so the build order is a stated contract, not an
+# accident of numeric file naming. 85-cleanup-mod deletes /var/lib/apt/lists
+# (see its install.sh) to keep the image small; if it ran as just another
+# numbered mod here, anything that installs packages *after* the mods loop
+# (the Ansible profile step, build.sh's run_ansible_chroot) would silently
+# find an empty apt cache. build.sh instead runs this script twice:
+#   install_all_mods.sh early    -> every mod except the cleanup mod
+#   install_all_mods.sh cleanup  -> only the cleanup mod, run last, after
+#                                    the profile has been applied
+# Calling this script with no phase (or any other value) runs every mod in
+# file order, for anyone invoking it by hand outside build.sh.
+CLEANUP_MOD="85-cleanup-mod"
+PHASE="${1:-all}"
+
 for mod in "$SCRIPT_DIR"/*; do
     if [[ -d "$mod" && -f "$mod/install.sh" ]]; then
+        mod_name="$(basename "$mod")"
+        case "$PHASE" in
+            early)
+                [[ "$mod_name" == "$CLEANUP_MOD" ]] && continue
+                ;;
+            cleanup)
+                [[ "$mod_name" == "$CLEANUP_MOD" ]] || continue
+                ;;
+        esac
         print_info "Processing mod: $mod"
         (
             cd "$mod" && \

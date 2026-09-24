@@ -1,3 +1,7 @@
+- name: Ensure the apt cache is ready for the hardening packages
+  ansible.builtin.include_role:
+    name: synos.workstation.apt_cache_ready
+
 - name: Hardening packages
   ansible.builtin.apt:
     name: [ufw, auditd, fwupd, unattended-upgrades, apparmor-profiles-extra]

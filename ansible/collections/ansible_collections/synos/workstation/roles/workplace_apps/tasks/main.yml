@@ -1,3 +1,8 @@
+- name: Ensure the apt cache is ready for the workplace apps
+  ansible.builtin.include_role:
+    name: synos.workstation.apt_cache_ready
+  when: workplace_apps_packages | length > 0 or workplace_apps_flatpak_apps | length > 0 or workplace_apps_flatpak_remotes | length > 0
+
 - name: Install packages
   ansible.builtin.apt:
     name: "{{ workplace_apps_packages }}"

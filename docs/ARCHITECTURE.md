@@ -84,12 +84,24 @@ and the base's `packages.map` resolves it.
 
 7. **Done (except Packer).** `ansible/collections/ansible_collections/synos/workstation`
    with roles desktop_branding, base_hardening, directory_join,
-   workplace_apps, desktop_policy and fleet_enrollment. `build.sh` runs
-   `playbooks/customize_chroot.yml` plus the profile's `ansible.playbooks`
-   inside the chroot (connection `community.general.chroot`), passing the
-   resolved profile as variables; the renderer refuses playbooks that do
-   not exist and marks Ansible as required when the profile carries
-   policy, hardening or enrollment. `bases/<base>/Containerfile` and
+   workplace_apps, desktop_policy, fleet_enrollment, container_services
+   and apt_cache_ready. `build.sh` runs `playbooks/customize_chroot.yml`
+   plus the profile's `ansible.playbooks` inside the chroot (connection
+   `community.general.chroot`), passing the resolved profile as variables;
+   the renderer refuses playbooks that do not exist and marks Ansible as
+   required when the profile carries policy, hardening or enrollment.
+   **Build order is a stated contract, not mod numbering:** `mods/85-cleanup-mod`
+   deletes `/var/lib/apt/lists` (and the build-time local repository) to
+   keep the squashfs small, so it must be the very last thing that touches
+   the chroot. `build.sh` runs it as its own phase
+   (`install_all_mods.sh cleanup`, function `run_cleanup_mod`) *after*
+   `run_ansible_chroot`, not as part of the numbered mod loop in
+   `run_chroot` (`install_all_mods.sh early`), so the profile's own package
+   installs still see a populated apt cache. Any role that installs
+   packages from the archive also includes the `apt_cache_ready` role
+   first, which refreshes the index only when it is actually missing —
+   belt and braces against a future step that runs after cleanup, or is
+   invoked outside `build.sh` altogether. `bases/<base>/Containerfile` and
    `make container-build` run the whole build in a privileged Podman
    container of the target base (its pinned Rust toolchain is documented in
    `docs/BUNDLE.md`, "Building without a checkout"). `ci/gitlab-ci.yml` and

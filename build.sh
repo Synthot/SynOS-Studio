@@ -216,15 +216,20 @@ LOCALPIN
 }
 
 function run_chroot() {
-    print_ok "Running install_all_mods.sh in new_building_os..."
+    # Every mod except 85-cleanup-mod: the cleanup mod deletes the apt lists
+    # (to keep the squashfs small) and must not run until after the profile
+    # has been applied by Ansible (run_ansible_chroot), or the profile's own
+    # package installs (e.g. container_services) find an empty apt cache.
+    # See run_cleanup_mod() and mods/install_all_mods.sh for the two phases.
+    print_ok "Running install_all_mods.sh (early mods) in new_building_os..."
     print_warn "============================================"
     print_warn "   The following will run in chroot ENV!"
     print_warn "============================================"
-    sudo chroot new_building_os /usr/bin/env DEBIAN_FRONTEND=${DEBIAN_FRONTEND:-readline} /root/mods/install_all_mods.sh -
+    sudo chroot new_building_os /usr/bin/env DEBIAN_FRONTEND=${DEBIAN_FRONTEND:-readline} /root/mods/install_all_mods.sh early
     print_warn "============================================"
     print_warn "   chroot ENV execution completed!"
     print_warn "============================================"
-    judge "Run install_all_mods.sh in new_building_os"
+    judge "Run install_all_mods.sh (early mods) in new_building_os"
 
     print_ok "Sleeping for 5 seconds to allow chroot to exit cleanly..."
     sleep 5
@@ -254,6 +259,23 @@ function run_ansible_chroot() {
             --extra-vars "@$SCRIPT_DIR/${ANSIBLE_VARS_FILE:-.build/ansible-vars.json}" \
             "${playbooks[@]}"
     judge "Apply profile with Ansible in chroot"
+}
+
+function run_cleanup_mod() {
+    # The last thing to touch the chroot before it is unmounted: disables
+    # the Live SSH listener, strips host identity and log files, and
+    # deletes the apt lists to keep the squashfs small. It runs after
+    # run_ansible_chroot (not as part of run_chroot's mod loop) so the
+    # profile's own package installs still see a populated apt cache.
+    print_ok "Running the image-finalization cleanup mod in new_building_os..."
+    print_warn "============================================"
+    print_warn "   The following will run in chroot ENV!"
+    print_warn "============================================"
+    sudo chroot new_building_os /usr/bin/env DEBIAN_FRONTEND=${DEBIAN_FRONTEND:-readline} /root/mods/install_all_mods.sh cleanup
+    print_warn "============================================"
+    print_warn "   chroot ENV execution completed!"
+    print_warn "============================================"
+    judge "Run the image-finalization cleanup mod in new_building_os"
 }
 
 function umount_folders() {
@@ -728,6 +750,7 @@ mount_folders
 setup_apt
 run_chroot
 run_ansible_chroot
+run_cleanup_mod
 umount_folders
 prepare_iso_directory
 prepare_live_grub_font

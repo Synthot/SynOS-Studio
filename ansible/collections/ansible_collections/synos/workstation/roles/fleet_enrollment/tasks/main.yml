@@ -1,3 +1,8 @@
+- name: Ensure the apt cache is ready for the fleet enrollment packages
+  ansible.builtin.include_role:
+    name: synos.workstation.apt_cache_ready
+  when: fleet_enrollment_pull_url | length > 0
+
 - name: ansible-pull is available on the machine
   ansible.builtin.apt:
     name: [ansible-core, git, curl]

@@ -1,3 +1,8 @@
+- name: Ensure the apt cache is ready for the directory client packages
+  ansible.builtin.include_role:
+    name: synos.workstation.apt_cache_ready
+  when: directory_join_type in ['active-directory', 'freeipa', 'ldap']
+
 - name: Directory client packages
   ansible.builtin.apt:
     name: [sssd, sssd-tools, realmd, adcli, krb5-user, libpam-sss, libnss-sss, oddjob, oddjob-mkhomedir, packagekit]
