@@ -1,8 +1,10 @@
 [Unit]
-Description=SynOS catalog conformance: full build and smoke test of the published catalog
+Description=SynOS catalog conformance: drive the real page, run the real launcher, smoke-test the result
 Documentation=file:/opt/synos-engine/docs/BUILD_MATRIX.md
 # Edit ExecStart's checkout path (and this Documentation= line) if the
-# engine is not checked out at /opt/synos-engine.
+# engine is not checked out at /opt/synos-engine. Needs google-chrome or
+# chromium on PATH (the browser stage skips cleanly, with a reason, when
+# neither is installed) and a container runtime for the launcher stage.
 
 [Service]
 Type=oneshot
@@ -15,12 +17,19 @@ Group=synos-conformance
 # shorter per-entry timeout from the config (build_timeout_minutes).
 TimeoutStartSec=1day
 
-# This mode drives a container runtime (podman/docker, --privileged, the
-# same as tools/synos build itself) and cannot be sandboxed the way the
-# check service is; it needs the runtime's own socket/group access
-# (add synos-conformance to the podman or docker group) and read-write
-# access to this checkout (bundles are applied into it, docs/BUNDLE.md)
-# and its own workdir.
+# This mode downloads through a real browser and drives a container runtime
+# (podman/docker, the launcher's own --privileged, same as a person's own
+# ./build.sh) — it needs the runtime's own socket/group access (add
+# synos-conformance to the podman or docker group) — but, unlike the old
+# tools/synos-based design, never writes into the engine checkout itself
+# any more: every downloaded bundle is unpacked and built entirely under
+# workdir, so the checkout can stay read-only.
 NoNewPrivileges=true
 PrivateTmp=true
-ReadWritePaths=/var/lib/synos-conformance /opt/synos-engine
+ProtectSystem=strict
+ReadWritePaths=/var/lib/synos-conformance
+# ProtectSystem=strict makes the rest of the filesystem read-only, podman's
+# own default storage (/var/lib/containers, rootful) included: set
+# container_root/container_runroot in conformance.yml to somewhere under
+# /var/lib/synos-conformance (or add another ReadWritePaths= entry here) so
+# the launcher's own container runtime has somewhere to write.

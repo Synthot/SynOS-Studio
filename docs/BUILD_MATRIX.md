@@ -106,8 +106,11 @@ uncommitted local edits: a proof run proves what is about to be committed)
 — never the checkout itself, removed again once the build using it is
 done, including when the run is killed (`atexit`/`SIGTERM`/`SIGINT`
 cleanup; `git status --porcelain` here is unchanged by a run either way,
-proven by `tests/unit/test_build_matrix.py`'s and
-`tests/unit/test_catalog_conformance.py`'s own `IsolationTests`).
+proven by `tests/unit/test_build_matrix.py`'s own `IsolationTests`).
+`tools/catalog_conformance.py build` does not call `tools/synos` at all any
+more (below) and so has no engine checkout to protect this way; what it
+still shares with the matrix is the *reason* for a per-worker resource
+under `--jobs` — see the cache-volume paragraph a little further down.
 
 `--jobs` runs that many builds at once, each on its own worker. Each worker
 creates **one** scratch checkout the first time it is handed a target and
@@ -128,6 +131,15 @@ streams to its own file as it happens (`--log`, unaffected by how many
 workers are running; nothing here buffers a target's log until it finishes),
 so watching one target in a parallel run never shows another's output.
 
+`tools/catalog_conformance.py build` runs the real launcher instead of
+`tools/synos` (below), so it has no engine checkout to isolate — but it has
+the exact collision `bundle_launcher.sh`'s own cache volume
+(`synos-cache-<base>-<suite>`) can still cause between two of *its* own
+workers: above `jobs: "1"`, each worker that was not given an explicit
+`container_root` gets its own podman storage root under `workdir`, so two
+workers that happen to build the same base and suite never share that
+volume's name.
+
 `--jobs auto` derives the safe count from this machine rather than
 guessing: free disk under the checkout (40 GB/build), free space in the
 container runtime's own storage (30 GB/build), memory (4 GB/build — a
@@ -146,9 +158,8 @@ CPUs allow 16 (32 cores / 2 per build); pass --jobs auto to use 10
 ```
 
 `tools/catalog_conformance.py build` takes the same `jobs` key in its
-config (`"1"` or `"auto"`, default `"1"`) and the same treatment: one
-scratch checkout per worker, reused across whatever entries that worker is
-handed, `--jobs auto`'s formula unchanged.
+config (`"1"` or `"auto"`, default `"1"`) and the same `--jobs auto`
+formula, with the per-worker podman storage isolation described above.
 
 ### The queue seam
 
@@ -258,57 +269,149 @@ never shells out to a real build, standing a small fake script in for
 `tools/synos` (success, failure and hang, to cover the timeout path) so the
 report shape, the failure path and `--resume` are proven without touching a
 container runtime. `tests/unit/test_catalog_conformance.py` follows the
-same rule for the conformance tool: its own fake `tools/synos` covers
-`build`, and `check`'s archive and registry lookups go through injectable
-`fetcher`/`inspector` parameters a test replaces with an in-memory fake
-`Packages.gz` and a fake `skopeo` answer — no test in that file opens a
-real network connection either. `tests/unit/test_scratch_checkout.py`,
+same rule for the conformance tool: a fake `browser_factory` (a context
+manager whose `download_bundle()` returns fixed, in-memory `.tar.gz` bytes
+built with Python's own `tarfile` module) covers "drive the real page"
+without starting a real browser, and a fake `build.sh` script (one that
+writes `dist/build.log` then exits 3, one that exits 2 with no
+`dist/build.log` at all, one that succeeds) covers "behave like the
+person" and pins the `page`/`launcher`/`engine` stage split without
+starting a real launcher; `tests/unit/test_devtools_browser.py` covers
+`tools/devtools_browser.py`'s own CDP-message plumbing (the websocket
+frame format, `_wait_for_debug_port`'s retry loop) the same way, entirely
+against a fake socket — no test anywhere in this project starts
+`google-chrome`. `check`'s archive and registry lookups go through
+injectable `fetcher`/`inspector` parameters a test replaces with an
+in-memory fake `Packages.gz` and a fake `skopeo` answer — no test in that
+file opens a real network connection either. `tests/unit/test_scratch_checkout.py`,
 `tests/unit/test_host_resources.py` and `tests/unit/test_job_queue.py`
 carry the same rule down into the isolation and parallelism layer
-underneath both tools: the first two run the real `git`/disk-usage/CPU-count
-machinery against fixed numbers or this actual repository (worktree
-creation is not a build), and the third runs `tools/job_queue.py`'s
-scheduler — several fake builds at once, one made to crash and retried,
-several made to crash at once — entirely against in-memory fakes, never a
+underneath `tools/build_matrix.py`: the first two run the real
+`git`/disk-usage/CPU-count machinery against fixed numbers or this actual
+repository (worktree creation is not a build), and the third runs
+`tools/job_queue.py`'s scheduler — several fake builds at once, one made
+to crash and retried, several made to crash at once — entirely against
+in-memory fakes, never a
 real `tools/synos`.
 
 ## Proving the published catalog: tools/catalog_conformance.py
 
-`tools/build_matrix.py` builds what is in this checkout. It cannot catch a
-catalog that drifted after the Studio site last deployed, or a package or
-container image an upstream archive quietly dropped between deploys.
-`tools/catalog_conformance.py` is a separate, smaller tool for exactly
-that: it downloads the catalog a real person gets — the Studio site's own
-exported JSON (`tools/export_catalog.py`'s `bundle_catalog` key, typically
-served at `<site>/data/catalog.json`) — and builds every entry from that
-download, not from `bundle-catalog/`. It shares `tools/smoke_test.py` and
-the per-target report shape (`id`, `kind`, `base`, `suite`, `status`,
-`iso`, `log_tail`, `smoke`, ...) with the matrix, but is otherwise
-independent code, a different trigger, and, in production, a different
-machine: a plain, unattended checkout, not a developer's.
+`tools/build_matrix.py` builds what is in this checkout, through the
+engine's own `tools/synos`. It cannot catch a catalog that drifted after
+the Studio site last deployed, a package or container image an upstream
+archive quietly dropped between deploys, or — the failure that actually
+cost a day, found only by building an image and booting it — the Studio
+*page's own bundle generation* silently dropping fields
+(`software.files`, `security.open_ports`, a service's capability, an
+appliance's startup command) when it serializes a catalogued entry back
+out. A tool that reads the catalog's embedded `files` and hands them to
+`tools/synos` directly never asks the page to generate anything, so it
+cannot see that class of bug either. `tools/catalog_conformance.py build`
+exists specifically to see it: it drives the real page and runs the real
+launcher, not a shortcut through either.
 
 ```bash
 python3 tools/catalog_conformance.py build --config conformance.yml
+python3 tools/catalog_conformance.py build --config conformance.yml --only web-server-nginx
 python3 tools/catalog_conformance.py check --config conformance.yml
 python3 tools/catalog_conformance.py build --config conformance.yml --dry-run   # fetch and list, build nothing
 ```
 
 `packaging/catalog-conformance/conformance.example.yml` documents every
-config key: the catalog URL, a working directory, the same disk thresholds
-the matrix guards on, how many entries one `build` run attempts and its
+config key: the catalog URL, the Studio page's own URL (`site_url`,
+required to build), a working directory, the same disk thresholds the
+matrix guards on, how many entries one `build` run attempts and its
 per-entry timeout, and an optional URL to `POST` the finished report to.
 
-For each catalog entry, `build` writes the entry's own `files` (exactly as
-`tools/export_catalog.py` exports them) into a temporary bundle directory,
-fills in whatever a real person filling in the Studio form would have
-filled in — deterministically from the entry's id, today just the
-`bundle.json`/manifest `name` when either is absent — and then validates,
-builds and smoke-tests it exactly the way `tools/synos build` and the
-matrix do. An entry that is missing something no default can supply (no
-`manifest` key, a manifest missing `base` or `profile`) is recorded with
-status `unbuildable` and the reason, never silently dropped from the
-report: the point of this tool is to find exactly this kind of problem
-before a person does.
+### The flow, per entry
+
+1. **Drive the real page** (`tools/devtools_browser.py`, `StudioSession`).
+   Headless Chrome opens `site_url`, clicks "Bundle Catalog", clicks the
+   entry's own card (through the real `chooseCatalogEntry()` — the exact
+   code path that turned out to drop fields), fills the configuration's
+   name — deterministically, the entry's own id — into the real name
+   field, and clicks "Download bundle". The bytes are captured by
+   overriding `URL.createObjectURL` on the page and reading the `Blob`
+   back directly: the *exact* bytes `downloadBundle()` produced, the same
+   technique the Studio repository's own `tests/e2e_open_bundle.py`
+   already uses to verify a download, reused rather than reinvented. No
+   selenium, no non-stdlib driver: a small stdlib websocket client speaks
+   the Chrome DevTools Protocol directly, the same way that test does.
+   Missing `google-chrome`/`chromium` is a clean, printed skip, not a
+   failure — this stage, and only this stage, needs a browser.
+2. **Behave like the person.** The downloaded `.tar.gz` is unpacked into
+   the run's own working directory (refusing any archive member that would
+   write outside it) and its own `./build.sh` is run, unattended
+   (`SYNOS_YES=1`, so it never blocks on a prompt) but otherwise
+   untouched: no `SYNOS_NO_UPDATE_CHECK`, no `SYNOS_CHANNEL` override, so
+   the launcher's own update check and channel handling run for real,
+   because they are as much a part of what a person experiences as the
+   engine is. `tools/synos` is never called directly here. Container
+   storage location (`container_root`/`container_runroot`) and a pinned
+   builder image are the only environment this tool adds on top of what a
+   person would already have to set by hand.
+3. **Check the result**, exactly as `tools/build_matrix.py` does: the
+   newest ISO under the launcher's own `dist/`, its SHA-256, and
+   `tools/smoke_test.py` against the profile resolved from what the
+   archive actually contained (its own `profiles/<id>.yml`, not the
+   catalog JSON's copy) — so a smoke-test failure reflects what the page
+   really produced, not what it was supposed to.
+
+### What a failure was
+
+A build failure is recorded with a `stage`, because a failure in the
+page's generation, in the launcher, or in the engine are three different
+problems with three different owners:
+
+- `"page"` — the browser could not reach or drive the page, its own
+  validation refused to generate a bundle, the entry was not offered at
+  all, or the downloaded archive itself does not unpack or has no usable
+  `bundle.json`/manifest. The page's fault.
+- `"launcher"` — `./build.sh` exited before a containerized build ever
+  started (no container runtime, could not resolve or pull an engine
+  image, a host check failed) — no `dist/build.log` exists. The
+  launcher's fault.
+- `"engine"` — `dist/build.log` exists: the containerized build actually
+  ran and failed (or timed out) inside it. The engine's fault, the same
+  as a `tools/build_matrix.py` failure.
+- `"smoke"` — the build succeeded but `tools/smoke_test.py` did not pass.
+
+`status` keeps its existing meaning (`success`, `build_failed`, `host`,
+`invalid`, `timeout`, `error`, `skipped`) independent of `stage`; `stage`
+is `null` on a genuine success. An engine-stage failure, real:
+
+```json
+{
+  "id": "web-server-nginx", "kind": "catalog", "base": "ubuntu", "suite": "noble",
+  "checksum": "9c1f...", "status": "build_failed", "stage": "engine", "exit_code": 3,
+  "download": {"filename": "web-server-nginx-bundle.tar.gz", "size": 4318},
+  "iso": null, "log_path": ".../build.log",
+  "log_tail": ["debootstrap: retrieving Release", "E: Failed to fetch ..."],
+  "smoke": null
+}
+```
+
+### Running one entry by hand
+
+To watch it work, not just read a report:
+
+```bash
+# 1. Download exactly what the automated run would, and nothing else:
+python3 tools/devtools_browser.py https://studio.example web-server-nginx --output /tmp/synos-watch
+
+# 2. Unpack it yourself:
+mkdir -p /tmp/synos-watch/bundle
+tar xzf /tmp/synos-watch/web-server-nginx-bundle.tar.gz -C /tmp/synos-watch/bundle
+
+# 3. Run the real launcher interactively, watching its own output live:
+cd /tmp/synos-watch/bundle && SYNOS_YES=1 ./build.sh
+```
+
+`tools/devtools_browser.py <site_url> <entry_id> [--output DIR]` is the
+same `StudioSession` the automated run uses, run standalone; step 3 is
+exactly what `tools/catalog_conformance.py build` runs unattended, minus
+the environment variables — so this recipe and an automated `--only`
+run should behave identically, one silent, one on your own terminal.
 
 ## The cheap early warning: `catalog_conformance.py check`
 
@@ -355,14 +458,18 @@ the build).
 1. Clone this repository somewhere stable, e.g. `/opt/synos-engine`
    (`git clone … /opt/synos-engine && cd /opt/synos-engine && make check`
    to confirm the host can build at all — `tools/synos check`).
-2. Create a system user with access to the container runtime for `build`
-   (`useradd --system --home /var/lib/synos-conformance synos-conformance`,
-   then add it to the `podman` or `docker` group); `check` never touches a
+2. Install `google-chrome` or `chromium` (`build` skips every entry with a
+   printed reason, never a crash, when neither is on `PATH` — but then it
+   proves nothing) and a container runtime. Create a system user with
+   access to the runtime for `build` (`useradd --system --home
+   /var/lib/synos-conformance synos-conformance`, then add it to the
+   `podman` or `docker` group); `check` never touches a browser or a
    container runtime and can run as the same or a more restricted user.
 3. `install -d -o synos-conformance -g synos-conformance /var/lib/synos-conformance`
    and `install -d /etc/synos`, then copy
    `packaging/catalog-conformance/conformance.example.yml` to
-   `/etc/synos/conformance.yml` and fill in `catalog_url` at least.
+   `/etc/synos/conformance.yml` and fill in `catalog_url` and, for `build`,
+   `site_url` (the real Studio page this service will drive).
 4. Copy the four unit files in `packaging/catalog-conformance/` to
    `/etc/systemd/system/`, editing each `.service`'s `WorkingDirectory=`
    and `ExecStart=` path if the checkout from step 1 is not

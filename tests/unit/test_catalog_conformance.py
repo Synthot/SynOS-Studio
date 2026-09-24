@@ -1,18 +1,21 @@
-"""tools/catalog_conformance.py: proving the *published* catalog builds.
-Every test here uses a fake HTTP fetcher, a fake skopeo inspector and a fake
-tools/synos; nothing shells out to a real build and nothing opens a real
+"""tools/catalog_conformance.py: proving the *published* catalog builds
+through the real Studio page and its real launcher. Every test here uses a
+fake browser (a `browser_factory` returning fixed, in-memory `.tar.gz`
+bytes built with Python's own `tarfile` module — never a real
+`google-chrome`), a fake `build.sh` script (never a real launcher or a real
+container build), a fake HTTP fetcher and a fake skopeo inspector for
+`check`. Nothing here starts a real browser, a real build, or opens a real
 network connection."""
 from __future__ import annotations
 
 import gzip
 import importlib.util
+import io
 import json
-import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
-import textwrap
-import threading
 import unittest
 from pathlib import Path
 
@@ -49,64 +52,109 @@ def entry_by_id(catalog: dict, entry_id: str) -> dict:
     return next(e for e in catalog["bundle_catalog"] if e["id"] == entry_id)
 
 
-FAKE_SYNOS = textwrap.dedent("""\
-    #!/usr/bin/env python3
-    import json, os, pathlib, sys, time
-
-    args = sys.argv[1:]
-
-    def get(flag):
-        return args[args.index(flag) + 1] if flag in args else None
-
-    out, log = get("--output"), get("--log")
-    mode = os.environ.get("FAKE_SYNOS_MODE", "success")
-    if log:
-        pathlib.Path(log).parent.mkdir(parents=True, exist_ok=True)
-        with open(log, "a", encoding="utf-8") as handle:
-            handle.write("+ fake build\\n")
-            if mode == "fail":
-                handle.write("simulated failure\\n")
-
-    if mode == "fail":
-        print(json.dumps({"ok": False, "exit_code": 3, "error": "simulated failure"}))
-        sys.exit(3)
-
-    iso = pathlib.Path(out) / "fake.iso"
-    iso.parent.mkdir(parents=True, exist_ok=True)
-    iso.write_bytes(b"FAKE-ISO-BYTES" * 4)
-    print(json.dumps({"ok": True, "exit_code": 0, "iso": str(iso)}))
-    sys.exit(0)
-""")
+def _git_status(cwd: Path) -> str:
+    return subprocess.run(["git", "status", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
 
 
-class FakeSynos:
-    """cc._synos_for (called with the disposable scratch checkout build_one
-    just created) is pointed at this script for the duration of the test.
-    A real scratch checkout is still created and removed around it."""
+def _git_worktree_list(cwd: Path) -> str:
+    return subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
 
-    def __init__(self, mode: str = "success"):
-        self._tmpdir = tempfile.TemporaryDirectory(prefix="fake-synos-cc-")
-        self.path = Path(self._tmpdir.name) / "fake_synos.py"
-        self.path.write_text(FAKE_SYNOS, encoding="utf-8")
-        self.path.chmod(self.path.stat().st_mode | stat.S_IEXEC)
-        self.mode = mode
+
+# ------------------------------------------------------ fake bundle archives
+FAKE_BUILD_SH_SUCCESS = """#!/bin/bash
+mkdir -p dist
+echo "fake launcher output" > dist/build.log
+echo "FAKE-ISO-BYTES" > dist/fake.iso
+exit 0
+"""
+
+FAKE_BUILD_SH_LAUNCHER_FAIL = """#!/bin/bash
+echo "podman or docker is required" >&2
+exit 2
+"""
+
+FAKE_BUILD_SH_ENGINE_FAIL = """#!/bin/bash
+mkdir -p dist
+echo "debootstrap failed inside the container" > dist/build.log
+exit 3
+"""
+
+FAKE_BUILD_SH_ENV_CAPTURE = """#!/bin/bash
+mkdir -p dist
+env | grep '^SYNOS_' | sort > dist/env.txt
+echo "log" > dist/build.log
+echo "FAKE-ISO-BYTES" > dist/fake.iso
+exit 0
+"""
+
+
+def make_bundle_archive(*, entry_id: str = "web-server-nginx", base: str = "ubuntu", suite: str = "noble",
+                        profile: str | None = None, build_sh: str | None = None,
+                        extra_files: dict | None = None, omit: set | None = None) -> bytes:
+    """A minimal but realistic bundle .tar.gz — the same shape
+    tools/devtools_browser.py's StudioSession would capture from the real
+    page — built directly with Python's own tarfile module."""
+    profile = profile or entry_id
+    omit = omit or set()
+    manifest_yaml = (f"schema_version: 1\nname: {entry_id}\nversion: 1.0.0\nbase: {base}\nsuite: {suite}\n"
+                     f"arch: amd64\nprofile: {profile}\nregions: [us]\nbrand: synos\nmirrors: {{}}\n"
+                     f"packages: {{repository: '', takeover: all}}\noverrides: {{}}\n")
+    profile_yaml = ("id: " + profile + "\nextends: server\nsoftware:\n  services:\n    - name: nginx\n"
+                    "      image: docker.io/library/nginx:1.31.2\n      ports: ['80:80']\n"
+                    "security:\n  open_ports: [22/tcp, 80/tcp]\n")
+    bundle_json = json.dumps({"format": 1, "name": entry_id, "manifest": f"manifests/{entry_id}.yml"})
+    files = {
+        "bundle.json": bundle_json,
+        f"manifests/{entry_id}.yml": manifest_yaml,
+        f"profiles/{profile}.yml": profile_yaml,
+        "build.sh": FAKE_BUILD_SH_SUCCESS if build_sh is None else build_sh,
+    }
+    if extra_files:
+        files.update(extra_files)
+    for name in omit:
+        files.pop(name, None)
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+        for name, content in files.items():
+            data = content.encode("utf-8")
+            info = tarfile.TarInfo(name=name)
+            info.size = len(data)
+            info.mode = 0o755 if name == "build.sh" else 0o644
+            tar.addfile(info, io.BytesIO(data))
+    return buf.getvalue()
+
+
+class FakeSession:
+    """A fake StudioSession: `browser_factory()` returns one of these, used
+    as `with browser_factory() as session: session.download_bundle(id)`."""
+
+    def __init__(self, archives_by_id: dict | None = None, default_archive: bytes | None = None,
+                unavailable: bool = False, page_error: str | None = None):
+        self.archives_by_id = archives_by_id or {}
+        self.default_archive = default_archive
+        self.unavailable = unavailable
+        self.page_error = page_error
+        self.requested_ids: list[str] = []
+
+    def __call__(self):  # used directly as a browser_factory
+        return self
 
     def __enter__(self):
-        import os
-        self._old_synos_for = cc._synos_for
-        self._old_env = os.environ.get("FAKE_SYNOS_MODE")
-        cc._synos_for = lambda scratch_path: self.path
-        os.environ["FAKE_SYNOS_MODE"] = self.mode
+        if self.unavailable:
+            raise cc.devtools_browser.BrowserUnavailable("no browser available (test fixture)")
         return self
 
     def __exit__(self, *exc):
-        import os
-        cc._synos_for = self._old_synos_for
-        if self._old_env is None:
-            os.environ.pop("FAKE_SYNOS_MODE", None)
-        else:
-            os.environ["FAKE_SYNOS_MODE"] = self._old_env
-        self._tmpdir.cleanup()
+        return False
+
+    def download_bundle(self, entry_id: str, name: str | None = None) -> tuple[bytes, str]:
+        self.requested_ids.append(entry_id)
+        if self.page_error:
+            raise cc.devtools_browser.PageError(self.page_error)
+        raw = self.archives_by_id.get(entry_id, self.default_archive)
+        if raw is None:
+            raise cc.devtools_browser.PageError(f"the catalog does not offer {entry_id!r} (test fixture)")
+        return raw, f"{entry_id}-bundle.tar.gz"
 
 
 class ConfigTests(unittest.TestCase):
@@ -121,7 +169,14 @@ class ConfigTests(unittest.TestCase):
             config = cc.Config.load(path)
         self.assertEqual("https://example.com/catalog.json", config.catalog_url)
         self.assertEqual(cc.DEFAULT_MAX_BUILDS, config.max_builds_per_run)
+        self.assertIsNone(config.site_url)
         self.assertTrue(config.smoke)
+
+    def test_site_url_is_loaded_when_given(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(Path(tmp), "catalog_url: https://example.com\nworkdir: /tmp/x\nsite_url: https://studio.example\n")
+            config = cc.Config.load(path)
+        self.assertEqual("https://studio.example", config.site_url)
 
     def test_missing_catalog_url_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -157,62 +212,53 @@ class FetchCatalogTests(unittest.TestCase):
             cc.fetch_catalog("http://example", fetcher=lambda url: b"{}")
 
 
-class PrepareBundleDirTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.catalog = real_catalog()
+class ArchiveExtractionTests(unittest.TestCase):
+    """extract_bundle_archive / read_bundle_manifest: what happens to the
+    real bytes downloaded through the page, good and bad."""
 
-    def test_a_real_catalog_entry_prepares_and_validates(self) -> None:
-        entry = entry_by_id(self.catalog, "web-server-nginx")
+    def test_a_well_formed_archive_extracts_and_its_manifest_reads(self) -> None:
+        raw = make_bundle_archive(entry_id="web-server-nginx")
         with tempfile.TemporaryDirectory() as tmp:
-            bundle_dir = cc.prepare_bundle_dir(entry, Path(tmp) / "bundle")
-            result = subprocess.run([sys.executable, str(ROOT / "tools" / "synos"), "--json", "bundle", "validate", str(bundle_dir)],
-                                    capture_output=True, text=True, cwd=ROOT)
-            payload = json.loads(result.stdout)
-        self.assertEqual([], payload["report"]["errors"])
+            into = Path(tmp) / "bundle"
+            cc.extract_bundle_archive(raw, into)
+            self.assertTrue((into / "bundle.json").is_file())
+            self.assertTrue((into / "build.sh").is_file())
+            manifest_rel, manifest = cc.read_bundle_manifest(into)
+        self.assertEqual("manifests/web-server-nginx.yml", manifest_rel)
+        self.assertEqual("ubuntu", manifest["base"])
+        self.assertEqual("noble", manifest["suite"])
 
-    def test_missing_manifest_key_is_unbuildable(self) -> None:
-        entry = {"id": "broken", "files": {"bundle.json": json.dumps({"format": 1})}}
+    def test_not_a_tar_gz_at_all_is_an_archive_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaises(cc.EntryUnbuildable):
-                cc.prepare_bundle_dir(entry, Path(tmp) / "bundle")
+            with self.assertRaises(cc.ArchiveError):
+                cc.extract_bundle_archive(b"not a tar.gz file", Path(tmp) / "bundle")
 
-    def test_missing_manifest_file_is_unbuildable(self) -> None:
-        entry = {"id": "broken", "files": {"bundle.json": json.dumps({"format": 1, "manifest": "manifests/broken.yml"})}}
+    def test_a_path_that_escapes_the_target_directory_is_refused(self) -> None:
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+            data = b"malicious"
+            info = tarfile.TarInfo(name="../../etc/passwd")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
         with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaises(cc.EntryUnbuildable):
-                cc.prepare_bundle_dir(entry, Path(tmp) / "bundle")
+            with self.assertRaises(cc.ArchiveError):
+                cc.extract_bundle_archive(buf.getvalue(), Path(tmp) / "bundle")
 
-    def test_a_missing_name_is_filled_in_from_the_entry_id(self) -> None:
-        entry = {
-            "id": "acme-widget",
-            "files": {
-                "bundle.json": json.dumps({"format": 1, "manifest": "manifests/acme-widget.yml"}),
-                "manifests/acme-widget.yml": (
-                    "schema_version: 1\nbase: ubuntu\nsuite: noble\narch: amd64\n"
-                    "profile: server\nregions: [us]\nbrand: synos\n"
-                ),
-            },
-        }
+    def test_missing_bundle_json_is_an_archive_error(self) -> None:
+        raw = make_bundle_archive(entry_id="x", omit={"bundle.json"})
         with tempfile.TemporaryDirectory() as tmp:
-            bundle_dir = cc.prepare_bundle_dir(entry, Path(tmp) / "bundle")
-            bundle_json = json.loads((bundle_dir / "bundle.json").read_text())
-            manifest = cc.render_manifest.load_yaml(bundle_dir / "manifests/acme-widget.yml")
-        self.assertEqual("acme-widget", bundle_json["name"])
-        self.assertEqual("acme-widget", manifest["name"])
-        self.assertEqual("1.0.0", manifest["version"])
+            into = Path(tmp) / "bundle"
+            cc.extract_bundle_archive(raw, into)
+            with self.assertRaises(cc.ArchiveError):
+                cc.read_bundle_manifest(into)
 
-    def test_a_manifest_missing_base_is_unbuildable(self) -> None:
-        entry = {
-            "id": "acme-widget",
-            "files": {
-                "bundle.json": json.dumps({"format": 1, "manifest": "manifests/acme-widget.yml"}),
-                "manifests/acme-widget.yml": "schema_version: 1\nsuite: noble\narch: amd64\nprofile: server\nregions: [us]\nbrand: synos\n",
-            },
-        }
+    def test_manifest_named_by_bundle_json_but_missing_is_an_archive_error(self) -> None:
+        raw = make_bundle_archive(entry_id="x", omit={"manifests/x.yml"})
         with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaises(cc.EntryUnbuildable):
-                cc.prepare_bundle_dir(entry, Path(tmp) / "bundle")
+            into = Path(tmp) / "bundle"
+            cc.extract_bundle_archive(raw, into)
+            with self.assertRaises(cc.ArchiveError):
+                cc.read_bundle_manifest(into)
 
 
 class ResolveProfileTests(unittest.TestCase):
@@ -245,6 +291,9 @@ class ResolvedPackagesTests(unittest.TestCase):
 
 
 class CheckModeTests(unittest.TestCase):
+    """Unchanged by the browser/launcher rewrite (item 64): `check` still
+    reads the catalog JSON's own embedded files directly."""
+
     def test_ok_when_every_package_and_image_resolves(self) -> None:
         catalog = real_catalog()
         entry = entry_by_id(catalog, "web-server-nginx")
@@ -293,7 +342,6 @@ class CheckModeTests(unittest.TestCase):
         cache: dict = {}
         for entry_id in ("web-server-nginx", "web-server-apache", "web-server-caddy"):
             cc.check_one(entry_by_id(catalog, entry_id), archive_cache=cache, image_cache={}, fetcher=fetcher, inspector=lambda i: True)
-        # all three ship on the same base/suite (ubuntu noble): the archive is fetched once, not three times
         components_fetched = len({u for u in calls})
         self.assertEqual(components_fetched, len(calls), "no duplicate URL should be fetched twice across entries sharing a base/suite")
         self.assertEqual(1, len(cache))
@@ -305,101 +353,248 @@ class CheckModeTests(unittest.TestCase):
         self.assertEqual(0, result["images_checked"])
 
 
-class BuildModeTests(unittest.TestCase):
-    def test_successful_entry_report_shape(self) -> None:
-        catalog = real_catalog()
-        entry = entry_by_id(catalog, "web-server-nginx")
-        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
-            record = cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t")
+class BuildOneStageTests(unittest.TestCase):
+    """build_one's three-stage split (item 65): page, launcher, engine —
+    plus smoke — each pinned with a fake browser and a fake build.sh."""
+
+    def _config(self, tmp: str, **kwargs) -> "cc.Config":
+        kwargs.setdefault("smoke", False)
+        return cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake-studio", **kwargs)
+
+    def test_a_successful_entry_has_no_stage_and_an_iso(self) -> None:
+        raw = make_bundle_archive(entry_id="web-server-nginx")
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._config(tmp)
+            record = cc.build_one({"id": "web-server-nginx"}, config=config, work_dir=Path(tmp) / "work" / "t",
+                                  browser_factory=session)
         self.assertEqual("success", record["status"])
+        self.assertIsNone(record["stage"])
         self.assertEqual("ubuntu", record["base"])
         self.assertEqual("noble", record["suite"])
         self.assertIsNotNone(record["iso"])
+        self.assertEqual(64, len(record["checksum"]))
+        self.assertEqual("web-server-nginx-bundle.tar.gz", record["download"]["filename"])
+        self.assertEqual(["web-server-nginx"], session.requested_ids)
         json.dumps(record)  # report.json must serialize as-is
 
-    def test_failing_build_is_recorded_not_raised(self) -> None:
-        catalog = real_catalog()
-        entry = entry_by_id(catalog, "web-server-nginx")
-        with tempfile.TemporaryDirectory() as tmp, FakeSynos("fail"):
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
-            record = cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t")
-        self.assertEqual("build_failed", record["status"])
-        self.assertIsNone(record["iso"])
-
-    def test_unbuildable_entry_is_recorded_honestly_not_skipped(self) -> None:
-        entry = {"id": "broken", "files": {"bundle.json": json.dumps({"format": 1})}}
+    def test_browser_unavailable_is_skipped_not_a_crash(self) -> None:
+        session = FakeSession(unavailable=True)
         with tempfile.TemporaryDirectory() as tmp:
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
-            record = cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t")
-        self.assertEqual("unbuildable", record["status"])
-        self.assertTrue(record["log_tail"])
+            record = cc.build_one({"id": "x"}, config=self._config(tmp), work_dir=Path(tmp) / "work" / "t",
+                                  browser_factory=session)
+        self.assertEqual("skipped", record["status"])
+        self.assertEqual(cc.STAGE_PAGE, record["stage"])
 
+    def test_page_refuses_the_entry_is_a_page_stage_failure(self) -> None:
+        session = FakeSession(page_error="the page's own validation refuses this entry")
+        with tempfile.TemporaryDirectory() as tmp:
+            record = cc.build_one({"id": "x"}, config=self._config(tmp), work_dir=Path(tmp) / "work" / "t",
+                                  browser_factory=session)
+        self.assertEqual("failed", record["status"])
+        self.assertEqual(cc.STAGE_PAGE, record["stage"])
+
+    def test_entry_not_offered_by_the_page_is_a_page_stage_failure(self) -> None:
+        session = FakeSession(archives_by_id={})  # this entry id is simply not offered
+        with tempfile.TemporaryDirectory() as tmp:
+            record = cc.build_one({"id": "does-not-exist"}, config=self._config(tmp), work_dir=Path(tmp) / "work" / "t",
+                                  browser_factory=session)
+        self.assertEqual("failed", record["status"])
+        self.assertEqual(cc.STAGE_PAGE, record["stage"])
+
+    def test_a_corrupt_downloaded_archive_is_a_page_stage_failure(self) -> None:
+        session = FakeSession(default_archive=b"not actually a tar.gz")
+        with tempfile.TemporaryDirectory() as tmp:
+            record = cc.build_one({"id": "x"}, config=self._config(tmp), work_dir=Path(tmp) / "work" / "t",
+                                  browser_factory=session)
+        self.assertEqual("failed", record["status"])
+        self.assertEqual(cc.STAGE_PAGE, record["stage"])
+
+    def test_launcher_failure_before_any_containerized_build_is_a_launcher_stage_failure(self) -> None:
+        raw = make_bundle_archive(entry_id="x", build_sh=FAKE_BUILD_SH_LAUNCHER_FAIL)
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            record = cc.build_one({"id": "x"}, config=self._config(tmp), work_dir=Path(tmp) / "work" / "t",
+                                  browser_factory=session)
+        self.assertEqual("host", record["status"])
+        self.assertEqual(cc.STAGE_LAUNCHER, record["stage"])
+        self.assertEqual(2, record["exit_code"])
+
+    def test_engine_failure_inside_the_container_is_an_engine_stage_failure(self) -> None:
+        raw = make_bundle_archive(entry_id="x", build_sh=FAKE_BUILD_SH_ENGINE_FAIL)
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            record = cc.build_one({"id": "x"}, config=self._config(tmp), work_dir=Path(tmp) / "work" / "t",
+                                  browser_factory=session)
+        self.assertEqual("build_failed", record["status"])
+        self.assertEqual(cc.STAGE_ENGINE, record["stage"])
+        self.assertEqual(3, record["exit_code"])
+        self.assertIn("debootstrap failed inside the container", record["log_tail"])
+
+    def test_a_smoke_test_failure_is_recorded_as_the_smoke_stage_without_changing_status(self) -> None:
+        raw = make_bundle_archive(entry_id="web-server-nginx")
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._config(tmp, smoke=True)
+            old_smoke_run = cc.smoke_test.run
+            cc.smoke_test.run = lambda *a, **k: {"status": "failed", "checks": []}
+            try:
+                record = cc.build_one({"id": "web-server-nginx"}, config=config, work_dir=Path(tmp) / "work" / "t",
+                                      browser_factory=session)
+            finally:
+                cc.smoke_test.run = old_smoke_run
+        self.assertEqual("success", record["status"], "a smoke failure must not change the build's own status")
+        self.assertEqual(cc.STAGE_SMOKE, record["stage"])
+
+    def test_a_missing_iso_after_success_skips_smoke_honestly(self) -> None:
+        build_sh_no_iso = "#!/bin/bash\nmkdir -p dist\necho log > dist/build.log\nexit 0\n"
+        raw = make_bundle_archive(entry_id="x", build_sh=build_sh_no_iso)
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._config(tmp, smoke=True)
+            record = cc.build_one({"id": "x"}, config=config, work_dir=Path(tmp) / "work" / "t", browser_factory=session)
+        self.assertEqual("success", record["status"])
+        self.assertIsNone(record["iso"])
+        self.assertEqual("skipped", record["smoke"]["status"])
+
+
+class LauncherEnvironmentTests(unittest.TestCase):
+    """The environment ./build.sh actually runs under (item 62): SYNOS_YES=1
+    and nothing else unless the config says so — no update-check or channel
+    suppression, ever."""
+
+    def test_synos_yes_is_set_and_no_update_check_or_channel_override_is(self) -> None:
+        raw = make_bundle_archive(entry_id="x", build_sh=FAKE_BUILD_SH_ENV_CAPTURE)
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            record = cc.build_one({"id": "x"}, config=config, work_dir=Path(tmp) / "work" / "t", browser_factory=session)
+            env_text = (Path(tmp) / "work" / "t" / "bundle" / "dist" / "env.txt").read_text()
+        self.assertIn("SYNOS_YES=1", env_text)
+        self.assertNotIn("SYNOS_NO_UPDATE_CHECK", env_text)
+        self.assertNotIn("SYNOS_CHANNEL", env_text)
+        self.assertEqual("success", record["status"])
+
+    def test_container_root_and_runroot_and_image_and_engine_source_reach_the_launcher(self) -> None:
+        raw = make_bundle_archive(entry_id="x", build_sh=FAKE_BUILD_SH_ENV_CAPTURE)
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False,
+                               container_root="/mnt/big/synos-storage", container_runroot="/mnt/big/synos-runroot",
+                               image="ghcr.io/example/synos-builder:ubuntu-noble", engine_source="/opt/synos-engine")
+            cc.build_one({"id": "x"}, config=config, work_dir=Path(tmp) / "work" / "t", browser_factory=session)
+            env_text = (Path(tmp) / "work" / "t" / "bundle" / "dist" / "env.txt").read_text()
+        self.assertIn("SYNOS_CONTAINER_ROOT=/mnt/big/synos-storage", env_text)
+        self.assertIn("SYNOS_CONTAINER_RUNROOT=/mnt/big/synos-runroot", env_text)
+        self.assertIn("SYNOS_BUILDER_IMAGE=ghcr.io/example/synos-builder:ubuntu-noble", env_text)
+        self.assertIn("SYNOS_ENGINE_SOURCE=/opt/synos-engine", env_text)
+
+    def test_unset_optional_settings_are_simply_absent(self) -> None:
+        raw = make_bundle_archive(entry_id="x", build_sh=FAKE_BUILD_SH_ENV_CAPTURE)
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            cc.build_one({"id": "x"}, config=config, work_dir=Path(tmp) / "work" / "t", browser_factory=session)
+            env_text = (Path(tmp) / "work" / "t" / "bundle" / "dist" / "env.txt").read_text()
+        for key in ("SYNOS_CONTAINER_ROOT", "SYNOS_CONTAINER_RUNROOT", "SYNOS_BUILDER_IMAGE", "SYNOS_ENGINE_SOURCE"):
+            self.assertNotIn(key, env_text)
+
+
+class RunBuildTests(unittest.TestCase):
     def test_run_build_respects_max_builds_per_run(self) -> None:
         catalog = real_catalog()
-        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False, max_builds_per_run=2)
-            report = cc.run_build(config, catalog=catalog, max_builds=2)
+        raw = make_bundle_archive(entry_id="placeholder")  # download() below ignores the requested id anyway
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake",
+                               smoke=False, max_builds_per_run=2)
+            report = cc.run_build(config, catalog=catalog, max_builds=2, browser_factory=session)
         self.assertEqual(2, len(report["targets"]))
 
-
-class ContainerRootPassthroughTests(unittest.TestCase):
-    """config.container_root/container_runroot (SYNOS_CONTAINER_ROOT/SYNOS_CONTAINER_RUNROOT
-    equivalents): every entry's `tools/synos build` receives the same
-    setting, and resolve_jobs measures free disk there. subprocess.run is
-    faked here, so no scratch checkout or real synos process is started."""
-
-    def test_both_flags_reach_the_synos_build_invocation(self) -> None:
+    def test_only_selects_exactly_those_entries(self) -> None:
         catalog = real_catalog()
-        entry = entry_by_id(catalog, "web-server-nginx")
-        calls: list[list[str]] = []
+        raw = make_bundle_archive(entry_id="placeholder")
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=["web-server-nginx", "git-server"], browser_factory=session)
+        self.assertEqual({"web-server-nginx", "git-server"}, set(report["targets"]))
 
-        class FakeCompleted:
-            returncode = 0
-            stdout = "{}"
-            stderr = ""
-
-        original = cc.subprocess.run
-
-        def fake_run(argv, **kwargs):
-            calls.append(list(argv))
-            return FakeCompleted()
-
-        cc.subprocess.run = fake_run
-        try:
-            with tempfile.TemporaryDirectory() as tmp:
-                config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False,
-                                   container_root="/mnt/big/synos-storage", container_runroot="/mnt/big/synos-runroot")
-                cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t", scratch_path=Path(tmp) / "scratch")
-        finally:
-            cc.subprocess.run = original
-        self.assertEqual(1, len(calls))
-        argv = calls[0]
-        self.assertIn("--container-root", argv)
-        self.assertEqual("/mnt/big/synos-storage", argv[argv.index("--container-root") + 1])
-        self.assertIn("--container-runroot", argv)
-        self.assertEqual("/mnt/big/synos-runroot", argv[argv.index("--container-runroot") + 1])
-
-    def test_an_unset_container_root_omits_both_flags(self) -> None:
+    def test_only_with_an_unknown_id_is_refused(self) -> None:
         catalog = real_catalog()
-        entry = entry_by_id(catalog, "web-server-nginx")
-        calls: list[list[str]] = []
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            with self.assertRaises(cc.ConformanceError):
+                cc.run_build(config, catalog=catalog, only=["does-not-exist"], browser_factory=FakeSession())
 
-        class FakeCompleted:
-            returncode = 0
-            stdout = "{}"
-            stderr = ""
 
-        original = cc.subprocess.run
-        cc.subprocess.run = lambda argv, **kwargs: calls.append(list(argv)) or FakeCompleted()
-        try:
-            with tempfile.TemporaryDirectory() as tmp:
-                config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
-                cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t", scratch_path=Path(tmp) / "scratch")
-        finally:
-            cc.subprocess.run = original
-        self.assertNotIn("--container-root", calls[0])
-        self.assertNotIn("--container-runroot", calls[0])
+class ParallelismTests(unittest.TestCase):
+    """run_build's own use of tools/job_queue.py: above jobs=1, a worker
+    without an explicit container_root gets its own podman storage root, so
+    two workers building the same base/suite never share the launcher's own
+    cache-volume name."""
+
+    def _archive_for(self, entry_id: str) -> bytes:
+        return make_bundle_archive(entry_id=entry_id, build_sh=FAKE_BUILD_SH_ENV_CAPTURE)
+
+    def test_jobs_above_one_gives_each_worker_its_own_container_root(self) -> None:
+        ids = ["web-server-nginx", "web-server-apache", "web-server-caddy", "git-server"]
+        catalog = real_catalog()
+        entries = [entry_by_id(catalog, i) for i in ids]
+        sub_catalog = {"bundle_catalog": entries}
+        session = FakeSession(archives_by_id={i: self._archive_for(i) for i in ids})
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=4, browser_factory=session)
+            roots_used = set()
+            for entry_id in ids:
+                env_text = (Path(tmp) / "work" / "work" / entry_id / "bundle" / "dist" / "env.txt").read_text()
+                for line in env_text.splitlines():
+                    if line.startswith("SYNOS_CONTAINER_ROOT="):
+                        roots_used.add(line.split("=", 1)[1])
+
+        self.assertEqual(4, len(report["targets"]))
+        self.assertTrue(all(r["status"] == "success" for r in report["targets"].values()))
+        self.assertGreaterEqual(len(roots_used), 2, "four entries across four workers must use more than one podman storage root")
+
+    def test_jobs_1_sets_no_container_root_when_none_was_configured(self) -> None:
+        ids = ["web-server-nginx", "web-server-apache"]
+        catalog = real_catalog()
+        entries = [entry_by_id(catalog, i) for i in ids]
+        sub_catalog = {"bundle_catalog": entries}
+        session = FakeSession(archives_by_id={i: self._archive_for(i) for i in ids})
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=1, browser_factory=session)
+            for entry_id in ids:
+                env_text = (Path(tmp) / "work" / "work" / entry_id / "bundle" / "dist" / "env.txt").read_text()
+                self.assertNotIn("SYNOS_CONTAINER_ROOT", env_text)
+
+        self.assertEqual(2, len(report["targets"]))
+
+    def test_an_explicit_container_root_is_shared_by_every_worker(self) -> None:
+        ids = ["web-server-nginx", "web-server-apache"]
+        catalog = real_catalog()
+        entries = [entry_by_id(catalog, i) for i in ids]
+        sub_catalog = {"bundle_catalog": entries}
+        session = FakeSession(archives_by_id={i: self._archive_for(i) for i in ids})
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False,
+                               container_root="/mnt/big/synos-storage")
+            cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=2, browser_factory=session)
+            for entry_id in ids:
+                env_text = (Path(tmp) / "work" / "work" / entry_id / "bundle" / "dist" / "env.txt").read_text()
+                self.assertIn("SYNOS_CONTAINER_ROOT=/mnt/big/synos-storage", env_text)
+
+    def test_resolve_jobs_is_wired_to_host_resources(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", jobs="auto")
+            jobs, problems = cc.resolve_jobs(config)
+        self.assertEqual([], problems)
+        self.assertGreaterEqual(jobs, 0)
 
     def test_resolve_jobs_passes_container_root_to_host_resources(self) -> None:
         original = cc.host_resources.resolve_jobs
@@ -420,181 +615,56 @@ class ContainerRootPassthroughTests(unittest.TestCase):
         self.assertEqual("/mnt/big/synos-storage", captured.get("container_root"))
 
 
-class ParallelismTests(unittest.TestCase):
-    """run_build's own use of tools/job_queue.py: each worker owns one
-    scratch checkout, reused across whatever entries that worker builds."""
-
-    def test_run_build_with_jobs_uses_more_than_one_scratch_checkout(self) -> None:
-        catalog = real_catalog()
-        entries = [entry_by_id(catalog, i) for i in ("web-server-nginx", "web-server-apache", "web-server-caddy", "git-server")]
-        sub_catalog = {"bundle_catalog": entries}
-        seen: list[str] = []
-        seen_lock = threading.Lock()
-
-        with FakeSynos("success") as fake:
-            def recording_synos_for(scratch_path, _fake_path=fake.path):
-                with seen_lock:
-                    seen.append(str(scratch_path))
-                return _fake_path
-
-            old = cc._synos_for
-            cc._synos_for = recording_synos_for
-            try:
-                with tempfile.TemporaryDirectory() as tmp:
-                    config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
-                    report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=4)
-            finally:
-                cc._synos_for = old
-
-        self.assertEqual(4, len(report["targets"]))
-        self.assertTrue(all(r["status"] == "success" for r in report["targets"].values()))
-        self.assertGreaterEqual(len(set(seen)), 2, "four entries across four workers must use more than one scratch checkout")
-
-    def test_run_build_with_jobs_1_reuses_one_checkout_across_entries(self) -> None:
-        catalog = real_catalog()
-        entries = [entry_by_id(catalog, i) for i in ("web-server-nginx", "web-server-apache")]
-        sub_catalog = {"bundle_catalog": entries}
-        scratch_paths_used: list[str] = []
-
-        with FakeSynos("success") as fake:
-            def recording_synos_for(scratch_path, _fake_path=fake.path):
-                scratch_paths_used.append(str(scratch_path))
-                return _fake_path
-
-            old = cc._synos_for
-            cc._synos_for = recording_synos_for
-            try:
-                with tempfile.TemporaryDirectory() as tmp:
-                    config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
-                    report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=1)
-            finally:
-                cc._synos_for = old
-
-        self.assertEqual(2, len(report["targets"]))
-        self.assertEqual(2, len(scratch_paths_used))
-        self.assertEqual(1, len(set(scratch_paths_used)), "one worker must reuse the same scratch checkout for both entries")
-
-    def test_a_parallel_conformance_run_leaves_this_checkout_unchanged(self) -> None:
-        catalog = real_catalog()
-        entries = [entry_by_id(catalog, i) for i in ("web-server-nginx", "web-server-apache", "web-server-caddy")]
-        sub_catalog = {"bundle_catalog": entries}
-        before_status = _git_status(ROOT)
-        before_worktrees = _git_worktree_list(ROOT)
-
-        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
-            report = cc.run_build(config, catalog=sub_catalog, max_builds=None, jobs=3)
-
-        self.assertEqual(3, len(report["targets"]))
-        self.assertEqual(before_status, _git_status(ROOT))
-        self.assertEqual(before_worktrees, _git_worktree_list(ROOT))
-
-    def test_resolve_jobs_is_wired_to_host_resources(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", jobs="auto")
-            jobs, problems = cc.resolve_jobs(config)
-        self.assertEqual([], problems)
-        self.assertGreaterEqual(jobs, 0)
-
-
-def _git_status(cwd: Path) -> str:
-    return subprocess.run(["git", "status", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
-
-
-def _git_worktree_list(cwd: Path) -> str:
-    return subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
-
-
-class IsolationTests(unittest.TestCase):
-    """Same regression as tests/unit/test_build_matrix.py's IsolationTests,
-    pinned here for build_one: a downloaded catalog entry's files must be
-    applied into a disposable scratch checkout, never into this engine
-    checkout `tools/catalog_conformance.py` itself runs from."""
-
-    def test_a_faked_build_over_a_real_downloaded_entry_leaves_this_checkout_unchanged(self) -> None:
-        catalog = real_catalog()
-        entry = entry_by_id(catalog, "web-server-nginx")
-        before_status = _git_status(ROOT)
-        before_worktrees = _git_worktree_list(ROOT)
-
-        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
-            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
-            record = cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t", root=ROOT)
-
-        self.assertEqual("success", record["status"])
-        self.assertEqual(before_status, _git_status(ROOT), "a conformance run must leave this checkout's git status exactly as it found it")
-        self.assertEqual(before_worktrees, _git_worktree_list(ROOT), "the scratch worktree must be removed, not left registered")
-        self.assertFalse((ROOT / "profiles" / "web-server-nginx.yml").exists())
-
-    def test_a_real_bundle_apply_over_a_real_downloaded_entry_lands_in_the_scratch_checkout_only(self) -> None:
-        catalog = real_catalog()
-        entry = entry_by_id(catalog, "web-server-nginx")
-        before_status = _git_status(ROOT)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            bundle_dir = cc.prepare_bundle_dir(entry, Path(tmp) / "bundle")
-            scratch_path = cc.scratch_checkout.create(ROOT, Path(tmp) / "scratch", label="cc-isolation-test")
-            try:
-                synos_path = cc._synos_for(scratch_path)
-                result = subprocess.run([sys.executable, str(synos_path), "--json", "bundle", "apply", str(bundle_dir)],
-                                        cwd=scratch_path, capture_output=True, text=True, check=False)
-                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-                self.assertTrue((scratch_path / "profiles" / "web-server-nginx.yml").is_file())
-                self.assertFalse((ROOT / "profiles" / "web-server-nginx.yml").exists())
-            finally:
-                cc.scratch_checkout.remove(scratch_path)
-
-        self.assertEqual(before_status, _git_status(ROOT))
-
-    def test_scratch_checkout_is_cleaned_up_even_when_the_build_raises(self) -> None:
-        catalog = real_catalog()
-        entry = entry_by_id(catalog, "web-server-nginx")
-        before_worktrees = _git_worktree_list(ROOT)
-
-        def _boom(scratch_path):
-            raise RuntimeError("simulated crash before the build even starts")
-
-        old_synos_for = cc._synos_for
-        cc._synos_for = _boom
-        try:
-            with tempfile.TemporaryDirectory() as tmp:
-                config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", smoke=False)
-                record = cc.build_one(entry, config=config, work_dir=Path(tmp) / "work" / "t", root=ROOT)
-        finally:
-            cc._synos_for = old_synos_for
-
-        self.assertEqual("error", record["status"])
-        self.assertEqual(before_worktrees, _git_worktree_list(ROOT))
+class TrackedFileIsolationTests(unittest.TestCase):
+    """tools/catalog_conformance.py never calls tools/synos any more, so it
+    has no engine checkout to accidentally apply a bundle into — but it
+    still must never write anything into this checkout. Proven through the
+    real CLI entry point, the same way tests/unit/test_build_matrix.py's
+    own IsolationTests does for build_matrix.py."""
 
     def test_a_full_build_run_through_main_touches_no_tracked_file(self) -> None:
-        """tools/build_matrix.py had a second habit besides applying bundles
-        into this checkout: writing bundle-catalog/build-status.yml, a
-        tracked file, on every local run. tools/catalog_conformance.py never
-        grew that habit — its own report always lands under its config's
-        workdir — but this proves it through the real CLI entry point, the
-        same way tests/unit/test_build_matrix.py's own IsolationTests now
-        does for build_matrix.py."""
         catalog = real_catalog()
         entry = entry_by_id(catalog, "web-server-nginx")
         fake_catalog = {"bundle_catalog": [entry]}
         before_status = _git_status(ROOT)
+        before_worktrees = _git_worktree_list(ROOT)
+
+        raw = make_bundle_archive(entry_id="web-server-nginx")
+        session = FakeSession(default_archive=raw)
 
         original_fetch = cc.fetch_catalog
         cc.fetch_catalog = lambda url, **kwargs: fake_catalog
         original_container_store = cc.host_resources.container_store
         cc.host_resources.container_store = lambda engine, container_root=None: None
+        original_studio_session = cc.devtools_browser.StudioSession
+        cc.devtools_browser.StudioSession = lambda *a, **k: session
         try:
-            with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
+            with tempfile.TemporaryDirectory() as tmp:
                 config_path = Path(tmp) / "conformance.yml"
-                config_path.write_text(f"catalog_url: http://x\nworkdir: {tmp}/work\nsmoke: false\n", encoding="utf-8")
+                config_path.write_text(f"catalog_url: http://x\nsite_url: http://fake\nworkdir: {tmp}/work\nsmoke: false\n",
+                                       encoding="utf-8")
                 code = cc.main(["build", "--config", str(config_path)])
                 self.assertTrue((Path(tmp) / "work" / "build-report.json").is_file())
         finally:
             cc.fetch_catalog = original_fetch
             cc.host_resources.container_store = original_container_store
+            cc.devtools_browser.StudioSession = original_studio_session
 
         self.assertEqual(0, code)
         self.assertEqual(before_status, _git_status(ROOT), "a conformance run must leave every tracked file exactly as it found it")
+        self.assertEqual(before_worktrees, _git_worktree_list(ROOT))
+
+    def test_build_without_site_url_is_refused_cleanly(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "conformance.yml"
+            config_path.write_text(f"catalog_url: http://x\nworkdir: {tmp}/work\n", encoding="utf-8")
+            original_fetch = cc.fetch_catalog
+            cc.fetch_catalog = lambda url, **kwargs: {"bundle_catalog": []}
+            try:
+                code = cc.main(["build", "--config", str(config_path)])
+            finally:
+                cc.fetch_catalog = original_fetch
+        self.assertEqual(2, code)
 
 
 class DiffReportsTests(unittest.TestCase):
@@ -649,6 +719,15 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("1 ok", text)
         self.assertIn("newly failing: b", text)
 
+    def test_a_skipped_entrys_reason_is_printed_not_only_recorded(self) -> None:
+        report = {"mode": "build", "catalog_url": "http://x", "targets": {
+            "a": {"status": "skipped", "log_tail": ["no browser available to drive the page: no chrome"]},
+            "b": {"status": "success", "log_tail": []},
+        }}
+        diff = {"newly_failed": [], "recovered": [], "still_failing": [], "unchanged": []}
+        text = cc.summary_text(report, diff)
+        self.assertIn("skipped a: no browser available to drive the page: no chrome", text)
+
 
 class DryRunCliTests(unittest.TestCase):
     def test_dry_run_lists_entries_without_building(self) -> None:
@@ -660,6 +739,19 @@ class DryRunCliTests(unittest.TestCase):
                 config_path = Path(tmp) / "c.yml"
                 config_path.write_text(f"catalog_url: http://x\nworkdir: {tmp}/work\nmax_builds_per_run: 2\n", encoding="utf-8")
                 code = cc.main(["build", "--config", str(config_path), "--dry-run"])
+        finally:
+            cc.fetch_catalog = original
+        self.assertEqual(0, code)
+
+    def test_dry_run_with_only_lists_exactly_that_entry(self) -> None:
+        fake_catalog = {"bundle_catalog": [{"id": "a"}, {"id": "b"}, {"id": "c"}]}
+        original = cc.fetch_catalog
+        cc.fetch_catalog = lambda url, **kwargs: fake_catalog
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                config_path = Path(tmp) / "c.yml"
+                config_path.write_text(f"catalog_url: http://x\nworkdir: {tmp}/work\n", encoding="utf-8")
+                code = cc.main(["build", "--config", str(config_path), "--dry-run", "--only", "b"])
         finally:
             cc.fetch_catalog = original
         self.assertEqual(0, code)

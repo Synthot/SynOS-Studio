@@ -1,34 +1,50 @@
 #!/usr/bin/env python3
 """catalog_conformance — prove the *published* catalog builds, not this
-repository's copy of it.
+repository's copy of it, the way a real person actually gets it: through
+the real Studio page and its real launcher, not a shortcut through either.
 
 tools/build_matrix.py proves this checkout's bundle-catalog/ builds; it
 cannot catch a catalog that diverged after the Studio site last deployed,
-or a package or container image tag an upstream archive quietly dropped
-between deploys. This tool downloads the catalog a real person would get
-(the Studio site's exported JSON, `tools/export_catalog.py`'s
-`bundle_catalog` key), builds every entry the same way `tools/synos` does,
-and reports what would break before a person hits it. Kept as a separate
-tool from tools/build_matrix.py (a different report, a different trigger, a
-different machine to run it on), sharing only tools/smoke_test.py and the
-per-target report shape.
+a package or container image tag an upstream archive quietly dropped
+between deploys, or — the failure that actually cost a day, found only by
+building an image and booting it — the page's own bundle generation
+silently dropping fields (`software.files`, `security.open_ports`, a
+service's capability, an appliance's startup command) that a straight
+JSON-to-disk shortcut would never have noticed, because it never asked the
+page to generate anything.
 
     tools/catalog_conformance.py build --config conformance.yml
+    tools/catalog_conformance.py build --config conformance.yml --only web-server-nginx
     tools/catalog_conformance.py check --config conformance.yml
 
-"build" applies and builds every catalogued entry end to end (network,
-disk and time cost like tools/build_matrix.py's catalog targets: 40+ GB,
-tens of minutes, per entry) and smoke-tests what succeeds.
+"build" does what a person does, for every catalogued entry: open the real
+Studio page (`config.site_url`, the deployed site or a locally served
+release — this tool only ever connects to a URL, never builds or serves
+one itself) under headless Chrome (tools/devtools_browser.py), go to the
+Bundle Catalog, choose the entry, fill the configuration's name
+(deterministically, the entry's own id), and download the bundle through
+the page's real "Download bundle" path — the exact `.tar.gz` bytes the
+page's own `downloadBundle()` produces, not a reconstruction of them. Then
+it behaves like the person: unpacks the archive into its own working
+directory and runs the bundle's own `./build.sh`, unattended (`SYNOS_YES=1`)
+but otherwise untouched — its update check and its channel handling run
+for real, because the launcher is as much a part of what this proves as
+the engine is. Only then does it check the result: the image, its
+checksum, and the smoke test against the resolved configuration, same as
+before. A failure is recorded with which of the three stages it happened
+in — `page`, `launcher` or `engine` (`smoke` for a smoke-test failure) —
+because those are three different problems (docs/BUILD_MATRIX.md).
 
-"check" is the cheap early warning: no build, no container runtime. For
-every entry it resolves the profile's package list against its pinned
-base and suite's own archive (the real Packages index, not a guess) and
-checks every pinned container image tag still exists in its registry, in
-minutes rather than days. This is the mode meant to run often and page
-someone the moment a component a build depends on disappears upstream.
+"check" is unchanged by any of this: the cheap early warning, no browser,
+no build, no container runtime. For every entry it resolves the profile's
+package list (straight from the catalog JSON's embedded files — a
+generation bug there is exactly what "build" now exists to catch) against
+its pinned base and suite's own archive and checks every pinned container
+image tag still exists in its registry, in minutes rather than days.
 
 Config (YAML; see conformance.example.yml):
     catalog_url: https://studio.example/data/catalog.json
+    site_url: https://studio.example        # build only: the page itself
     workdir: /var/lib/synos-conformance
     min_free_gb: 40           # this checkout's own disk (build only)
     min_store_gb: 30          # the container runtime's storage (build only)
@@ -36,21 +52,20 @@ Config (YAML; see conformance.example.yml):
     build_timeout_minutes: 90 # build only: per entry
     smoke: true               # build only: run tools/smoke_test.py on success
     image: null                # build only: $SYNOS_BUILDER_IMAGE equivalent
-    pull: false                # build only
+    engine_source: null        # build only: $SYNOS_ENGINE_SOURCE equivalent (rare: pins a local engine checkout)
     container_root: null       # build only, podman only: SYNOS_CONTAINER_ROOT equivalent; also where free disk is measured
     container_runroot: null    # build only, podman only: SYNOS_CONTAINER_RUNROOT equivalent
     report_url: null           # optional: POST the finished report here
 
 Never invents a shell command from a name read out of a catalog: every
-process here is started from an argument vector. Never runs a real build
-or hits a real network in its own test suite (tests/unit/test_catalog_conformance.py);
-both are behind pluggable fetch/inspect functions a test replaces with a fake.
-
-`tools/synos build` applies a bundle's files into whatever checkout its own
-`tools/synos` script lives in; `build` here runs every entry inside a
-disposable `git worktree` of this checkout (tools/scratch_checkout.py), the
-same fix tools/build_matrix.py uses, so a conformance run never applies a
-downloaded catalog entry's files into this checkout either.
+process here is started from an argument vector. Never runs a real browser,
+a real build, or hits a real network in its own test suite
+(tests/unit/test_catalog_conformance.py); the browser is a pluggable
+factory a test replaces with a fake StudioSession, the launcher a fake
+`build.sh` script, and fetch/inspect (check mode) pluggable functions —
+see tools/devtools_browser.py's own `main()` and this module's "Running one
+entry by hand" note in docs/BUILD_MATRIX.md for how to watch it work for
+real, outside the test suite.
 """
 from __future__ import annotations
 
@@ -61,10 +76,13 @@ import gzip
 import hashlib
 import importlib.machinery
 import importlib.util
+import io
 import json
+import os
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import urllib.request
@@ -80,6 +98,8 @@ DEFAULT_MAX_BUILDS = 5
 LOG_TAIL_LINES = 60
 HTTP_TIMEOUT = 30
 
+STAGE_PAGE, STAGE_LAUNCHER, STAGE_ENGINE, STAGE_SMOKE = "page", "launcher", "engine", "smoke"
+
 
 def _load(name: str, path: Path):
     spec = importlib.util.spec_from_loader(name, importlib.machinery.SourceFileLoader(name, str(path)))
@@ -94,19 +114,20 @@ render_manifest = _load("render_manifest_cc", ROOT / "tools" / "render_manifest.
 
 sys.path.insert(0, str(ROOT / "tools"))
 import smoke_test  # noqa: E402
-import scratch_checkout  # noqa: E402
 import host_resources  # noqa: E402
 import job_queue  # noqa: E402
+import devtools_browser  # noqa: E402
 
 
 class ConformanceError(Exception):
     """Configuration or a catalog fetch is unusable; nothing to record per-entry."""
 
 
-class EntryUnbuildable(Exception):
-    """The published entry is missing something the engine truly needs and
-    nothing here can fill in (docstring: "records that honestly rather
-    than skipping silently")."""
+class ArchiveError(Exception):
+    """The downloaded bundle archive itself could not be trusted or read —
+    corrupt, unsafe paths, or missing bundle.json/manifest. This is the
+    page's own output going wrong, so it maps to the "page" stage same as
+    a devtools_browser.PageError."""
 
 
 # --------------------------------------------------------------- config
@@ -114,6 +135,7 @@ class EntryUnbuildable(Exception):
 class Config:
     catalog_url: str
     workdir: Path
+    site_url: str | None = None            # build only: the real Studio page this tool drives; required to `build`
     min_free_gb: float = MIN_FREE_GB
     min_store_gb: float = MIN_STORE_GB
     max_builds_per_run: int = DEFAULT_MAX_BUILDS
@@ -121,7 +143,7 @@ class Config:
     jobs: str = "1"
     smoke: bool = True
     image: str | None = None
-    pull: bool = False
+    engine_source: str | None = None       # build only: SYNOS_ENGINE_SOURCE equivalent; rarely set (docs/BUILD_MATRIX.md)
     container_root: str | None = None      # podman only: SYNOS_CONTAINER_ROOT equivalent, also where free disk is measured
     container_runroot: str | None = None   # podman only: SYNOS_CONTAINER_RUNROOT equivalent
     report_url: str | None = None
@@ -162,72 +184,62 @@ def fetch_catalog(url: str, fetcher=_http_get) -> dict:
     return data
 
 
-# ------------------------------------------------------- entry -> bundle
-def _sha256_entry(entry: dict) -> str:
-    digest = hashlib.sha256()
-    for path in sorted(entry.get("files", {})):
-        digest.update(path.encode("utf-8"))
-        digest.update(b"\0")
-        digest.update(entry["files"][path].encode("utf-8"))
-        digest.update(b"\0")
-    return digest.hexdigest()
-
-
-def ensure_required_fields(entry: dict, bundle_json: dict, manifest: dict) -> None:
-    """Fill what a real person filling in the Studio form would have filled
-    in, deterministically from the entry id; refuse (EntryUnbuildable) when
-    something is missing that nothing here can invent."""
-    if "manifest" not in bundle_json:
-        raise EntryUnbuildable("bundle.json has no manifest key")
-    if not bundle_json.get("name"):
-        bundle_json["name"] = entry["id"]
-    for required in ("base", "suite", "arch", "profile", "regions", "brand"):
-        if not manifest.get(required):
-            raise EntryUnbuildable(f"manifest is missing {required!r}, and there is no deterministic default for it")
-    if not manifest.get("name"):
-        manifest["name"] = entry["id"]
-    if not manifest.get("version"):
-        manifest["version"] = "1.0.0"
-    manifest.setdefault("schema_version", 1)
-    manifest.setdefault("mirrors", {})
-    manifest.setdefault("packages", {"repository": "", "takeover": "all"})
-    manifest.setdefault("overrides", {})
-
-
-def prepare_bundle_dir(entry: dict, into: Path) -> Path:
-    """Write one published catalog entry's files into `into`, filling the
-    fields a person would have (docstring: "essentially the name"). Raises
-    EntryUnbuildable, never silently drops the entry, when something the
-    catalog was supposed to supply is missing."""
-    import yaml
-    files = entry.get("files") or {}
-    if "bundle.json" not in files:
-        raise EntryUnbuildable("no bundle.json in this entry's files")
-    try:
-        bundle_json = json.loads(files["bundle.json"])
-    except ValueError as exc:
-        raise EntryUnbuildable(f"bundle.json is not valid JSON: {exc}") from exc
-    manifest_rel = bundle_json.get("manifest")
-    if not manifest_rel or manifest_rel not in files:
-        raise EntryUnbuildable(f"manifest {manifest_rel!r} named by bundle.json is not among this entry's files")
-    try:
-        manifest = yaml.safe_load(files[manifest_rel]) or {}
-    except Exception as exc:  # noqa: BLE001 - yaml errors
-        raise EntryUnbuildable(f"{manifest_rel} is not valid YAML: {exc}") from exc
-
-    ensure_required_fields(entry, bundle_json, manifest)
-
+# -------------------------------------------------------- archive -> bundle
+def extract_bundle_archive(raw: bytes, into: Path) -> None:
+    """Unpacks a bundle .tar.gz — the real bytes downloaded through the
+    page's own path — into `into`, the way a person's own `tar` would.
+    Refuses anything that would write outside `into`: a corrupt or unsafe
+    archive is the page's own output going wrong (ArchiveError, "page"
+    stage), never trusted blindly just because it came from the site."""
     into.mkdir(parents=True, exist_ok=True)
-    for path, content in files.items():
-        target = into / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if path == "bundle.json":
-            target.write_text(json.dumps(bundle_json, indent=2), encoding="utf-8")
-        elif path == manifest_rel:
-            target.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
-        else:
-            target.write_text(content, encoding="utf-8")
-    return into
+    try:
+        tar = tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz")
+    except tarfile.TarError as exc:
+        raise ArchiveError(f"not a valid tar.gz bundle archive: {exc}") from exc
+    with tar:
+        base = into.resolve()
+        for member in tar.getmembers():
+            if not member.isfile():
+                raise ArchiveError(f"{member.name!r} in the downloaded archive is not a regular file")
+            resolved = (into / member.name).resolve()
+            if resolved != base and not str(resolved).startswith(str(base) + os.sep):
+                raise ArchiveError(f"unsafe path in downloaded bundle archive: {member.name!r}")
+        tar.extractall(into, filter="data")  # noqa: S202 - every member was checked above; "data" is belt-and-braces
+
+
+def read_bundle_manifest(bundle_dir: Path) -> tuple[str, dict]:
+    """bundle.json's own manifest key, and that manifest parsed — both read
+    straight from what the archive actually contained, never assumed."""
+    import yaml
+    bundle_json_path = bundle_dir / "bundle.json"
+    if not bundle_json_path.is_file():
+        raise ArchiveError("the downloaded archive has no bundle.json")
+    try:
+        descriptor = json.loads(bundle_json_path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise ArchiveError(f"bundle.json is not valid JSON: {exc}") from exc
+    manifest_rel = descriptor.get("manifest")
+    if not manifest_rel:
+        raise ArchiveError("bundle.json names no manifest")
+    manifest_path = bundle_dir / manifest_rel
+    if not manifest_path.is_file():
+        raise ArchiveError(f"manifest {manifest_rel!r} named by bundle.json is missing from the archive")
+    try:
+        manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+    except Exception as exc:  # noqa: BLE001 - yaml errors
+        raise ArchiveError(f"{manifest_rel} is not valid YAML: {exc}") from exc
+    return manifest_rel, manifest
+
+
+def _eprint(message: str) -> None:
+    """print(..., file=sys.stderr) that cannot itself raise: a caller with a
+    closed or redirected stderr (a test capturing output, a service manager
+    that already tore its pipe down) must never turn "here is an error" into
+    a crash of its own."""
+    try:
+        print(message, file=sys.stderr)
+    except Exception:  # noqa: BLE001 - reporting an error must never itself raise
+        pass
 
 
 # --------------------------------------------------------------- build
@@ -261,100 +273,155 @@ def resolve_jobs(config: Config) -> tuple[int, list[str]]:
     return jobs, problems
 
 
-def _synos_for(scratch_path: Path) -> Path:
-    """The scratch checkout's own tools/synos — its ROOT resolves to the
-    scratch checkout, not this one (tests monkeypatch this name)."""
-    return scratch_path / "tools" / "synos"
+def _launcher_env(config: Config) -> dict:
+    """The environment `./build.sh` runs under: non-interactive
+    (SYNOS_YES=1, so it never blocks on a prompt) but otherwise untouched —
+    no SYNOS_NO_UPDATE_CHECK, no SYNOS_CHANNEL override, so the launcher's
+    own update check and channel handling run exactly as they would for a
+    real person (item 62's whole point). config.container_root/_runroot and
+    config.image/config.engine_source only add to the environment; unset,
+    they leave the launcher's own defaults (podman's own storage, whatever
+    the bundle's engine.min names, GHCR) alone, same as for a real person
+    who never heard of them."""
+    env = os.environ.copy()
+    env["SYNOS_YES"] = "1"
+    if config.container_root:
+        env["SYNOS_CONTAINER_ROOT"] = config.container_root
+    if config.container_runroot:
+        env["SYNOS_CONTAINER_RUNROOT"] = config.container_runroot
+    if config.image:
+        env["SYNOS_BUILDER_IMAGE"] = config.image
+    if config.engine_source:
+        env["SYNOS_ENGINE_SOURCE"] = config.engine_source
+    return env
 
 
-def build_one(entry: dict, *, config: Config, work_dir: Path, root: Path = ROOT,
-             scratch_path: Path | None = None, scratch_base: Path | None = None) -> dict:
-    """Builds one entry inside `scratch_path`. Without one, a scratch
-    checkout is created and removed just for this call (single-entry use,
-    tests); a parallel run instead passes in a scratch checkout one worker
-    owns for its whole run (tools/job_queue.py's run_parallel via run_build)."""
-    result = {"id": entry["id"], "kind": "catalog", "base": None, "suite": None, "checksum": _sha256_entry(entry),
+def run_launcher(bundle_dir: Path, *, config: Config, log_path: Path) -> tuple[int, str]:
+    """Runs the downloaded bundle's own ./build.sh, unattended, exactly the
+    way docs/BUNDLE.md tells a person to. Returns (exit_code, stage), where
+    stage distinguishes "launcher" (build.sh never got as far as starting
+    the containerized build: no runtime, couldn't resolve/pull an image, a
+    host check failed) from "engine" (the containerized build ran — dist/build.log
+    exists — and failed inside the container). Raises subprocess.TimeoutExpired
+    on a timeout; the caller records that itself, stage "engine" (a hang is
+    presumed to be the actual build, the by far longer-running part)."""
+    build_sh = bundle_dir / "build.sh"
+    if not build_sh.is_file():
+        raise ArchiveError("the downloaded archive has no build.sh")
+    argv = ["bash", str(build_sh)]
+    env = _launcher_env(config)
+    completed = subprocess.run(argv, cwd=bundle_dir, env=env, capture_output=True, text=True,
+                               timeout=config.build_timeout_minutes * 60, check=False)
+    dist_dir = bundle_dir / "dist"
+    launcher_log = dist_dir / "build.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    if launcher_log.is_file():
+        log_path.write_text(launcher_log.read_text(encoding="utf-8", errors="replace"), encoding="utf-8")
+    else:
+        log_path.write_text((completed.stdout or "") + (completed.stderr or ""), encoding="utf-8")
+    stage = STAGE_ENGINE if launcher_log.is_file() else STAGE_LAUNCHER
+    return completed.returncode, stage
+
+
+def collect_iso(bundle_dir: Path, target_dir: Path) -> dict | None:
+    """The newest ISO build.sh's own dist/ holds, copied to target_dir (which
+    survives after work_dir/bundle is cleaned up or reused for the next entry)."""
+    dist_dir = bundle_dir / "dist"
+    isos = sorted(dist_dir.glob("*.iso"), key=lambda p: p.stat().st_mtime) if dist_dir.is_dir() else []
+    if not isos:
+        return None
+    iso_path = isos[-1]
+    target_dir.mkdir(parents=True, exist_ok=True)
+    dest = target_dir / iso_path.name
+    shutil.copy2(iso_path, dest)
+    return {"path": str(dest), "size": dest.stat().st_size, "sha256": _sha256_file(dest)}
+
+
+def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=None) -> dict:
+    """Downloads entry["id"] through the real Studio page, unpacks it, and
+    runs its own launcher — see the module docstring for the full flow.
+    `browser_factory()` must return a context manager whose `__enter__`
+    gives something with a `download_bundle(entry_id) -> (bytes, filename)`
+    method (devtools_browser.StudioSession by default; tests substitute a
+    fake). Never raises: every failure mode is recorded with a `stage`."""
+    result = {"id": entry["id"], "kind": "catalog", "base": None, "suite": None, "checksum": None,
               "engine": synos_engine.engine_version(), "start": _now(), "end": None, "duration_s": None,
-              "exit_code": None, "status": "running", "iso": None, "log_path": None, "log_tail": [], "smoke": None}
+              "exit_code": None, "status": "running", "stage": None, "iso": None, "log_path": None,
+              "log_tail": [], "smoke": None, "download": None}
     start = time.monotonic()
-    bundle_dir = work_dir / "bundle"
-    target_dir = work_dir / "output"
-    log_path = target_dir / "build.log"
-    result["log_path"] = str(log_path)
 
-    resolved_profile: dict = {}
-    try:
-        prepare_bundle_dir(entry, bundle_dir)
-        manifest_rel = json.loads((bundle_dir / "bundle.json").read_text(encoding="utf-8"))["manifest"]
-        manifest = render_manifest.load_yaml(bundle_dir / manifest_rel)
-        result["base"], result["suite"] = manifest["base"], manifest["suite"]
-    except EntryUnbuildable as exc:
-        result["status"] = "unbuildable"
-        result["log_tail"] = [str(exc)]
+    def _finish(status: str, stage: str | None, log_tail: list[str]) -> dict:
+        result["status"] = status
+        result["stage"] = stage
+        result["log_tail"] = log_tail
         result["end"] = _now()
         result["duration_s"] = round(time.monotonic() - start, 1)
         return result
 
-    owns_scratch = scratch_path is None
-    payload: dict = {}
+    browser_factory = browser_factory or (lambda: devtools_browser.StudioSession(config.site_url))
+
+    # ---- stage: page (download the real bytes through the real page) ----
     try:
-        # bundle_dir already lives outside `root` (prepare_bundle_dir wrote it
-        # under work_dir); what must not be `root` is the tools/synos that
-        # applies it, since `apply_bundle` always writes into whatever
-        # checkout *that script* lives in, not wherever bundle_dir is.
-        if owns_scratch:
-            scratch_base = scratch_base or (work_dir / "scratch")
-            scratch_path = scratch_checkout.create(root, scratch_base, label=entry["id"])
-        argv = [sys.executable, str(_synos_for(scratch_path)), "--json", "build", str(bundle_dir),
-                "--output", str(target_dir), "--log", str(log_path)]
-        if config.image:
-            argv += ["--image", config.image]
-        if config.pull:
-            argv.append("--pull")
-        if config.container_root:
-            argv += ["--container-root", config.container_root]
-        if config.container_runroot:
-            argv += ["--container-runroot", config.container_runroot]
-        completed = subprocess.run(argv, cwd=scratch_path, capture_output=True, text=True,
-                                   timeout=config.build_timeout_minutes * 60, check=False)
-        result["exit_code"] = completed.returncode
-        try:
-            payload = json.loads(completed.stdout) if completed.stdout.strip() else {}
-        except ValueError:
-            payload = {}
-        if completed.returncode == 0:
+        with browser_factory() as session:
+            raw, filename = session.download_bundle(entry["id"])
+    except devtools_browser.BrowserUnavailable as exc:
+        return _finish("skipped", STAGE_PAGE, [f"no browser available to drive the page: {exc}"])
+    except devtools_browser.PageError as exc:
+        return _finish("failed", STAGE_PAGE, [str(exc)])
+    except Exception as exc:  # noqa: BLE001 - one entry's crash must not abort the run
+        return _finish("error", STAGE_PAGE, [f"{type(exc).__name__}: {exc}"])
+
+    result["checksum"] = hashlib.sha256(raw).hexdigest()
+    result["download"] = {"filename": filename, "size": len(raw)}
+
+    # ---- still "page": a bad archive is the page's own output, same stage ----
+    bundle_dir = work_dir / "bundle"
+    target_dir = work_dir / "output"
+    log_path = target_dir / "build.log"
+    result["log_path"] = str(log_path)
+    try:
+        extract_bundle_archive(raw, bundle_dir)
+        manifest_rel, manifest = read_bundle_manifest(bundle_dir)
+        result["base"], result["suite"] = manifest.get("base"), manifest.get("suite")
+    except ArchiveError as exc:
+        return _finish("failed", STAGE_PAGE, [str(exc)])
+    except Exception as exc:  # noqa: BLE001
+        return _finish("error", STAGE_PAGE, [f"{type(exc).__name__}: {exc}"])
+
+    # ---- stage: launcher / engine (behave like the person: run build.sh) ----
+    try:
+        exit_code, stage = run_launcher(bundle_dir, config=config, log_path=log_path)
+        result["exit_code"] = exit_code
+        if exit_code == 0:
             result["status"] = "success"
         else:
-            result["status"] = {1: "invalid", 2: "host", 3: "build_failed"}.get(completed.returncode, "failed")
-            result["log_tail"] = _tail(log_path) or completed.stderr.strip().splitlines()[-LOG_TAIL_LINES:]
+            result["stage"] = stage
+            result["status"] = {1: "invalid", 2: "host", 3: "build_failed"}.get(exit_code, "failed")
+            result["log_tail"] = _tail(log_path)
     except subprocess.TimeoutExpired:
         result["status"] = "timeout"
+        result["stage"] = STAGE_ENGINE
         result["log_tail"] = _tail(log_path)
-    except scratch_checkout.ScratchCheckoutError as exc:
+    except ArchiveError as exc:
+        return _finish("failed", STAGE_PAGE, [str(exc)])
+    except Exception as exc:  # noqa: BLE001
         result["status"] = "error"
-        result["log_tail"] = [f"could not create a scratch checkout: {exc}"]
-    except Exception as exc:  # noqa: BLE001 - one entry's crash must not abort the run
-        result["status"] = "error"
+        result["stage"] = STAGE_LAUNCHER
         result["log_tail"] = [f"{type(exc).__name__}: {exc}"]
-    finally:
-        if owns_scratch and scratch_path is not None:
-            scratch_checkout.remove(scratch_path)
 
     result["end"] = _now()
     result["duration_s"] = round(time.monotonic() - start, 1)
 
-    iso_str = payload.get("iso")
-    if iso_str and Path(iso_str).is_file():
-        iso_path = Path(iso_str)
-        result["iso"] = {"path": str(iso_path), "size": iso_path.stat().st_size, "sha256": _sha256_file(iso_path)}
+    if result["status"] == "success":
+        result["iso"] = collect_iso(bundle_dir, target_dir)
 
+    # ---- check the result: the smoke test against the resolved configuration ----
     if result["status"] == "success" and config.smoke:
         if result["iso"]:
+            resolved_profile: dict = {}
             try:
-                base_dir = ROOT / "bases" / manifest["base"]
-                base = render_manifest.load_env(base_dir / "base.env")
-                profile_text = (bundle_dir / f"profiles/{manifest['profile']}.yml").read_text(encoding="utf-8") \
-                    if (bundle_dir / f"profiles/{manifest['profile']}.yml").is_file() else None
+                profile_path = bundle_dir / "profiles" / f"{manifest['profile']}.yml"
+                profile_text = profile_path.read_text(encoding="utf-8") if profile_path.is_file() else None
                 resolved_profile = resolve_published_profile(manifest["profile"], profile_text)
             except Exception as exc:  # noqa: BLE001
                 result["smoke"] = {"status": "error", "reason": f"could not resolve profile: {exc}"}
@@ -362,6 +429,8 @@ def build_one(entry: dict, *, config: Config, work_dir: Path, root: Path = ROOT,
                 result["smoke"] = smoke_test.run(Path(result["iso"]["path"]), resolved_profile, output_dir=target_dir)
         else:
             result["smoke"] = {"status": "skipped", "reason": "build succeeded but produced no ISO"}
+        if result["smoke"] and result["smoke"]["status"] not in ("passed", "skipped"):
+            result["stage"] = STAGE_SMOKE
 
     return result
 
@@ -395,43 +464,47 @@ class _EntryRef:
         self.entry = entry
 
 
-def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, jobs: int = 1) -> dict:
+def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, jobs: int = 1,
+             only: list[str] | None = None, browser_factory=None) -> dict:
     entries = catalog["bundle_catalog"]
-    limit = max_builds if max_builds is not None else config.max_builds_per_run
+    if only:
+        wanted = set(only)
+        entries = [e for e in entries if e["id"] in wanted]
+        missing = wanted - {e["id"] for e in entries}
+        if missing:
+            raise ConformanceError(f"--only names entries the catalog does not have: {', '.join(sorted(missing))}")
+    limit = max_builds if max_builds is not None else (config.max_builds_per_run if not only else None)
     selected = entries[:limit] if limit else entries
     report = {"mode": "build", "generated": _now(), "engine": synos_engine.engine_version(),
-              "catalog_url": config.catalog_url, "targets": {}}
+              "catalog_url": config.catalog_url, "site_url": config.site_url, "targets": {}}
 
     for entry in selected:
         work_dir = config.workdir / "work" / entry["id"]
         if work_dir.exists():
             shutil.rmtree(work_dir)
 
-    # Always goes through job_queue.run_parallel, even at jobs=1: one worker
-    # still owns one scratch checkout across every entry it builds, the same
-    # reuse tools/build_matrix.py's run_targets_in_parallel gives a sequential
-    # run. Each worker owns one scratch checkout for the whole run (tools/job_queue.py,
-    # tools/scratch_checkout.py) — the same treatment tools/build_matrix.py gives
-    # a parallel matrix run, and for the same reason: apply_bundle always writes
-    # into whatever checkout its own tools/synos lives in, so two concurrent
-    # builds must never share one, and reusing it across a worker's own entries
-    # is that worker's build cache (docs/BUILD_MATRIX.md).
-    scratch_root_dir = config.workdir / "scratch"
-    worker_scratch: dict[int, Path] = {}
+    if jobs <= 1:
+        for entry in selected:
+            work_dir = config.workdir / "work" / entry["id"]
+            report["targets"][entry["id"]] = build_one(entry, config=config, work_dir=work_dir,
+                                                        browser_factory=browser_factory)
+        return report
 
-    def build_one_for_worker(ref: _EntryRef, worker_id: int) -> dict:
-        scratch_path = worker_scratch.get(worker_id)
-        if scratch_path is None:
-            scratch_path = scratch_checkout.create(ROOT, scratch_root_dir, label=f"worker-{worker_id}")
-            worker_scratch[worker_id] = scratch_path
+    def build_one_for_worker(ref: "_EntryRef", worker_id: int) -> dict:
         work_dir = config.workdir / "work" / ref.id
-        return build_one(ref.entry, config=config, work_dir=work_dir, scratch_path=scratch_path)
+        worker_config = config
+        if not config.container_root:
+            # Each worker gets its own podman storage, so two workers that
+            # happen to build the same base/suite never share a cache
+            # volume name (docs/BUNDLE.md's own synos-cache-<base>-<suite>,
+            # written by the launcher itself, not by this tool) — the same
+            # collision that cost two concurrent ./build.sh runs once.
+            worker_root = config.workdir / "podman-storage" / f"worker-{worker_id}"
+            worker_root.mkdir(parents=True, exist_ok=True)
+            worker_config = dataclasses.replace(config, container_root=str(worker_root))
+        return build_one(ref.entry, config=worker_config, work_dir=work_dir, browser_factory=browser_factory)
 
-    try:
-        results = job_queue.run_parallel([_EntryRef(entry) for entry in selected], jobs, build_one_for_worker)
-    finally:
-        for scratch_path in worker_scratch.values():
-            scratch_checkout.remove(scratch_path)
+    results = job_queue.run_parallel([_EntryRef(entry) for entry in selected], jobs, build_one_for_worker)
     report["targets"] = results
     return report
 
@@ -562,18 +635,13 @@ def diff_reports(previous: dict | None, current: dict) -> dict:
 
 
 def post_report(report: dict, url: str, poster=None) -> None:
-    """Best-effort delivery: a failure here is a warning, never an exception
-    a caller has to handle. The warning print itself is wrapped too, so a
-    closed or redirected stderr (as a caller might do while capturing
-    output) still cannot turn "could not deliver a report" into a crash."""
+    """Best-effort delivery: a failure here is a warning (via _eprint, which
+    cannot itself raise), never an exception a caller has to handle."""
     poster = poster or _http_post
     try:
         poster(url, json.dumps(report).encode("utf-8"))
     except Exception as exc:  # noqa: BLE001 - delivery is best-effort, never fatal to the run
-        try:
-            print(f"warning: could not POST the report to {url}: {exc}", file=sys.stderr)
-        except Exception:  # noqa: BLE001 - even the warning must never raise
-            pass
+        _eprint(f"warning: could not POST the report to {url}: {exc}")
 
 
 def _http_post(url: str, body: bytes) -> None:
@@ -592,23 +660,37 @@ def summary_text(report: dict, diff: dict) -> str:
         lines.append(f"newly failing: {', '.join(sorted(diff['newly_failed']))}")
     if diff["recovered"]:
         lines.append(f"recovered: {', '.join(sorted(diff['recovered']))}")
+    # "skipped" (item 61: no browser available) is printed with its reason,
+    # not left to be dug out of report.json — it means this run proved
+    # nothing for that entry, which is worth saying plainly.
+    for target_id, record in sorted(report["targets"].items()):
+        if record.get("status") == "skipped":
+            reason = (record.get("log_tail") or ["no reason recorded"])[0]
+            lines.append(f"skipped {target_id}: {reason}")
     return "\n".join(lines)
 
 
 # ---------------------------------------------------------------- CLI
-def _run(mode: str, config: Config, *, max_builds: int | None = None) -> int:
+def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list[str] | None = None) -> int:
     catalog = fetch_catalog(config.catalog_url)
     config.workdir.mkdir(parents=True, exist_ok=True)
     report_path = config.workdir / f"{mode}-report.json"
     previous = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
 
     if mode == "build":
+        if not config.site_url:
+            _eprint("error: site_url is required to build (the real Studio page this tool drives)")
+            return 2
         jobs, problems = resolve_jobs(config)
         if problems:
             for problem in problems:
-                print(f"error: {problem}", file=sys.stderr)
+                _eprint(f"error: {problem}")
             return 2
-        report = run_build(config, catalog=catalog, max_builds=max_builds, jobs=jobs)
+        try:
+            report = run_build(config, catalog=catalog, max_builds=max_builds, jobs=jobs, only=only)
+        except ConformanceError as exc:
+            _eprint(f"error: {exc}")
+            return 2
     else:
         report = run_check(config, catalog=catalog)
 
@@ -635,32 +717,38 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--dry-run", action="store_true", help="fetch the catalog and print what would run, nothing else")
         if name == "build":
             p.add_argument("--max", type=int, help="override max_builds_per_run for this run")
+            p.add_argument("--only", help="comma-separated entry ids to build (e.g. one entry, to watch it work by hand)")
     args = parser.parse_args(argv)
 
     try:
         config = Config.load(args.config)
     except ConformanceError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        _eprint(f"error: {exc}")
         return 2
+
+    only = args.only.split(",") if getattr(args, "only", None) else None
 
     if args.dry_run:
         try:
             catalog = fetch_catalog(config.catalog_url)
         except ConformanceError as exc:
-            print(f"error: {exc}", file=sys.stderr)
+            _eprint(f"error: {exc}")
             return 2
         entries = catalog["bundle_catalog"]
-        if args.mode == "build":
+        if only:
+            entries = [e for e in entries if e["id"] in set(only)]
+        if args.mode == "build" and not only:
             entries = entries[:args.max] if args.max else entries[:config.max_builds_per_run]
         for entry in entries:
             print(entry["id"])
-        print(f"\n{len(entries)} entr(y/ies) against {config.catalog_url}")
+        print(f"\n{len(entries)} entr(y/ies) against {config.catalog_url}"
+             + (f", site {config.site_url}" if args.mode == "build" and config.site_url else ""))
         return 0
 
     try:
-        return _run(args.mode, config, max_builds=getattr(args, "max", None))
+        return _run(args.mode, config, max_builds=getattr(args, "max", None), only=only)
     except ConformanceError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        _eprint(f"error: {exc}")
         return 2
 
 
