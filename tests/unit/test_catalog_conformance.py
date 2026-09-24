@@ -566,6 +566,36 @@ class IsolationTests(unittest.TestCase):
         self.assertEqual("error", record["status"])
         self.assertEqual(before_worktrees, _git_worktree_list(ROOT))
 
+    def test_a_full_build_run_through_main_touches_no_tracked_file(self) -> None:
+        """tools/build_matrix.py had a second habit besides applying bundles
+        into this checkout: writing bundle-catalog/build-status.yml, a
+        tracked file, on every local run. tools/catalog_conformance.py never
+        grew that habit — its own report always lands under its config's
+        workdir — but this proves it through the real CLI entry point, the
+        same way tests/unit/test_build_matrix.py's own IsolationTests now
+        does for build_matrix.py."""
+        catalog = real_catalog()
+        entry = entry_by_id(catalog, "web-server-nginx")
+        fake_catalog = {"bundle_catalog": [entry]}
+        before_status = _git_status(ROOT)
+
+        original_fetch = cc.fetch_catalog
+        cc.fetch_catalog = lambda url, **kwargs: fake_catalog
+        original_container_store = cc.host_resources.container_store
+        cc.host_resources.container_store = lambda engine, container_root=None: None
+        try:
+            with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"):
+                config_path = Path(tmp) / "conformance.yml"
+                config_path.write_text(f"catalog_url: http://x\nworkdir: {tmp}/work\nsmoke: false\n", encoding="utf-8")
+                code = cc.main(["build", "--config", str(config_path)])
+                self.assertTrue((Path(tmp) / "work" / "build-report.json").is_file())
+        finally:
+            cc.fetch_catalog = original_fetch
+            cc.host_resources.container_store = original_container_store
+
+        self.assertEqual(0, code)
+        self.assertEqual(before_status, _git_status(ROOT), "a conformance run must leave every tracked file exactly as it found it")
+
 
 class DiffReportsTests(unittest.TestCase):
     def test_no_previous_report_marks_everything_new(self) -> None:

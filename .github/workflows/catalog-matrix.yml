@@ -101,7 +101,13 @@ jobs:
           SYNOS_SIGNING_KEY: ${{ secrets.SYNOS_SIGNING_KEY }}
           SYNOS_BUILDER_IMAGE: ${{ vars.SYNOS_BUILDER_IMAGE }}
         run: |
-          args=(--resume)
+          # --update-catalog-status-file is deliberate here, and only here: a
+          # local run must never modify a file this repository tracks
+          # (tools/build_matrix.py's own default is --output/build-status.yml,
+          # not bundle-catalog/build-status.yml), but a scheduled run's whole
+          # purpose includes keeping that tracked record honest, with a person
+          # reviewing the diff below before it reaches a protected branch.
+          args=(--resume --update-catalog-status-file)
           [ -n "${{ github.event.inputs.only }}" ] && args+=(--only "${{ github.event.inputs.only }}")
           [ -n "${{ github.event.inputs.kind }}" ] && args+=(--kind "${{ github.event.inputs.kind }}")
           python3 tools/build_matrix.py "${args[@]}"
@@ -111,10 +117,11 @@ jobs:
           name: catalog-matrix-report
           path: |
             dist/matrix/report.json
+            dist/matrix/build-status.yml
             dist/matrix/summary.txt
             dist/matrix/targets/*/build.log
             dist/matrix/targets/*/smoke-serial.log
-      - name: Commit the honest build-status file
+      - name: Show the honest build-status file's diff
         # Only bundle-catalog/build-status.yml, never a report or a log: the
         # rest is the artifact above. A person reviews and merges this like
         # any other change; nothing here pushes directly to a protected branch.

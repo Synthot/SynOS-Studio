@@ -4,6 +4,7 @@ small script standing in for tools/synos); nothing shells out to a real
 build."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import json
 import os
@@ -249,6 +250,22 @@ def _git_status(cwd: Path) -> str:
     return subprocess.run(["git", "status", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
 
 
+@contextlib.contextmanager
+def _fake_container_store():
+    """Skips host_resources.container_store's real `<engine> info` subprocess
+    call (slow, and would need a genuinely runnable engine, not just one on
+    PATH) for tests that only need resolve_jobs to succeed with *some*
+    engine present — container_engine() (a cheap shutil.which) still runs
+    for real, so this only helps on a machine that actually has podman or
+    docker on PATH, same as the rest of this project already assumes."""
+    original = build_matrix.host_resources.container_store
+    build_matrix.host_resources.container_store = lambda engine, container_root=None: None
+    try:
+        yield
+    finally:
+        build_matrix.host_resources.container_store = original
+
+
 def _git_worktree_list(cwd: Path) -> str:
     return subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=cwd, capture_output=True, text=True, check=True).stdout
 
@@ -324,6 +341,107 @@ class IsolationTests(unittest.TestCase):
 
         self.assertEqual("error", record["status"])
         self.assertEqual(before_worktrees, _git_worktree_list(ROOT), "a crash mid-target must still remove its scratch worktree")
+
+    def test_a_full_run_through_main_never_touches_the_tracked_build_status_file(self) -> None:
+        """The regression that slipped past the tests above: run_one/run_targets_in_parallel
+        never wrote bundle-catalog/build-status.yml — only main()'s own
+        _on_result did, after every target — so an isolation test that only
+        calls run_one directly never exercised that write at all. This one
+        drives the real CLI entry point."""
+        status_path = ROOT / "bundle-catalog" / "build-status.yml"
+        before_status_bytes = status_path.read_bytes()
+        before_git_status = _git_status(ROOT)
+
+        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"), _fake_container_store():
+            code = build_matrix.main(["--only", "web-server-nginx", "--jobs", "1", "--no-smoke", "--output", tmp])
+            self.assertTrue((Path(tmp) / "build-status.yml").is_file(), "the run's own status copy must exist, beside report.json")
+
+        self.assertEqual(0, code)
+        self.assertEqual(before_status_bytes, status_path.read_bytes(),
+                         "a run without --update-catalog-status-file must not modify the tracked status file")
+        self.assertEqual(before_git_status, _git_status(ROOT), "nothing tracked may change after a default run")
+
+    def test_update_catalog_status_file_writes_the_tracked_file_deliberately(self) -> None:
+        import yaml
+        status_path = ROOT / "bundle-catalog" / "build-status.yml"
+        original_bytes = status_path.read_bytes()
+        self.addCleanup(lambda: status_path.write_bytes(original_bytes))
+
+        with tempfile.TemporaryDirectory() as tmp, FakeSynos("success"), _fake_container_store():
+            code = build_matrix.main(["--only", "web-server-nginx", "--jobs", "1", "--no-smoke",
+                                     "--output", tmp, "--update-catalog-status-file"])
+
+        self.assertEqual(0, code)
+        self.assertNotEqual(original_bytes, status_path.read_bytes(), "--update-catalog-status-file must actually write the tracked file")
+        data = yaml.safe_load(status_path.read_text(encoding="utf-8"))
+        self.assertIn("web-server-nginx", data["build_status"])
+        self.assertEqual("success", data["build_status"]["web-server-nginx"]["result"])
+
+
+class BuildStatusDataTests(unittest.TestCase):
+    """build_status_data/write_build_status directly: pure functions, no
+    real build, no file this repository tracks touched by any test here."""
+
+    def test_only_catalog_targets_contribute(self) -> None:
+        targets_by_id = {
+            "web-server-nginx": make_target("web-server-nginx", kind="catalog"),
+            "core-ubuntu-noble": make_target("core-ubuntu-noble", kind="core"),
+        }
+        report = {"targets": {
+            "web-server-nginx": {"status": "success", "engine": "0.2.0", "start": "t0", "end": "t1", "duration_s": 1.0, "iso": None},
+            "core-ubuntu-noble": {"status": "success", "engine": "0.2.0", "start": "t0", "end": "t1", "duration_s": 1.0, "iso": None},
+        }}
+        data = build_matrix.build_status_data(targets_by_id, report)
+        self.assertEqual(["web-server-nginx"], list(data))
+
+    def test_a_target_with_no_record_yet_contributes_nothing(self) -> None:
+        targets_by_id = {"web-server-nginx": make_target("web-server-nginx", kind="catalog")}
+        data = build_matrix.build_status_data(targets_by_id, {"targets": {}})
+        self.assertEqual({}, data)
+
+    def test_a_still_running_target_contributes_nothing(self) -> None:
+        targets_by_id = {"web-server-nginx": make_target("web-server-nginx", kind="catalog")}
+        report = {"targets": {"web-server-nginx": {"status": "running", "engine": "0.2.0", "start": "t0", "end": None, "duration_s": None, "iso": None}}}
+        data = build_matrix.build_status_data(targets_by_id, report)
+        self.assertEqual({}, data)
+
+    def test_iso_sha256_and_smoke_are_included_when_present(self) -> None:
+        targets_by_id = {"web-server-nginx": make_target("web-server-nginx", kind="catalog")}
+        report = {"targets": {"web-server-nginx": {
+            "status": "success", "engine": "0.2.0", "start": "t0", "end": "t1", "duration_s": 5.0,
+            "iso": {"sha256": "abc123"}, "smoke": {"status": "passed"},
+        }}}
+        data = build_matrix.build_status_data(targets_by_id, report)
+        self.assertEqual("abc123", data["web-server-nginx"]["iso_sha256"])
+        self.assertEqual("passed", data["web-server-nginx"]["smoke"])
+
+    def test_write_build_status_without_merge_replaces_the_file_exactly(self) -> None:
+        import yaml
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "build-status.yml"
+            build_matrix.write_build_status(path, {"a": {"result": "success"}}, merge_existing=False)
+            build_matrix.write_build_status(path, {"b": {"result": "success"}}, merge_existing=False)
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        self.assertEqual({"b": {"result": "success"}}, data["build_status"], "without merge_existing, only the latest call's data survives")
+
+    def test_write_build_status_with_merge_preserves_untouched_ids(self) -> None:
+        import yaml
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "build-status.yml"
+            build_matrix.write_build_status(path, {"a": {"result": "success"}}, merge_existing=True)
+            build_matrix.write_build_status(path, {"b": {"result": "success"}}, merge_existing=True)
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        self.assertEqual({"a": {"result": "success"}, "b": {"result": "success"}}, data["build_status"],
+                         "merge_existing must keep an id an --only run did not touch")
+
+    def test_write_build_status_with_merge_overwrites_a_changed_id(self) -> None:
+        import yaml
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "build-status.yml"
+            build_matrix.write_build_status(path, {"a": {"result": "build_failed"}}, merge_existing=True)
+            build_matrix.write_build_status(path, {"a": {"result": "success"}}, merge_existing=True)
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        self.assertEqual("success", data["build_status"]["a"]["result"])
 
 
 class ParallelismTests(unittest.TestCase):

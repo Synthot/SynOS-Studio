@@ -11,7 +11,14 @@ real. `.github/workflows/catalog-matrix.yml` runs both nightly.
 This is what feeds `bundle-catalog/build-status.yml`, the file
 `tools/export_catalog.py` merges into `bundle_catalog[].build_status` so a
 front end can show "last built" honestly instead of only the maintainer's
-`verified: true` claim (docs/BUNDLE.md, "The bundle catalog").
+`verified: true` claim (docs/BUNDLE.md, "The bundle catalog"). That file is
+tracked in this repository, though, and a local proof run must not modify a
+tracked file on its own: by default every run writes its own copy to
+`--output/build-status.yml` (beside `report.json`) and leaves
+`bundle-catalog/build-status.yml` alone entirely; `--update-catalog-status-file`
+opts into also writing the tracked copy, merged so an `--only` run never
+truncates the rest of the catalog's record. Only the scheduled workflow
+passes that flag ("Cheap and expensive CI", below) — never a local run.
 
 `tools/build_matrix.py` proves *this checkout's* `bundle-catalog/` builds.
 `tools/catalog_conformance.py`, covered below ("Proving the published
@@ -38,7 +45,10 @@ one gets), `--timeout MINUTES` (per build, default 90), `--image` or
 the engine building one per base and suite from `bases/<base>/Containerfile`),
 `--pull` (fetch the published builder image instead of building it locally),
 `--no-smoke` (skip `tools/smoke_test.py` even after a successful build),
-`--output DIR` (default `dist/matrix/`).
+`--output DIR` (default `dist/matrix/`), `--update-catalog-status-file`
+(also write the tracked `bundle-catalog/build-status.yml`; off by default —
+a local run's own copy always lands at `--output/build-status.yml` instead,
+never touching a file this repository tracks).
 
 Exit code: 0 when every target this run attempted succeeded, 1 when at
 least one failed or timed out, 2 when the host itself refuses to start
@@ -408,8 +418,10 @@ larger system built on top of the same runner, and honestly still needs:
 - **`matrix`** (self-hosted only, gated by the repository variable
   `SYNOS_SELF_HOSTED=true` on a runner carrying the `synos-builder` label,
   the same gate `.github/workflows/build.yml` uses for its own build job):
-  runs `tools/build_matrix.py --resume` and uploads `report.json`,
-  `summary.txt` and every target's logs as a workflow artifact. It never
+  runs `tools/build_matrix.py --resume --update-catalog-status-file` and
+  uploads `report.json`, `build-status.yml`, `summary.txt` and every
+  target's logs as a workflow artifact. `--update-catalog-status-file` is
+  passed here, deliberately, and nowhere else in this repository — it never
   pushes `bundle-catalog/build-status.yml` directly to a protected branch;
   when that file changed, the job prints the diff for a person to carry
   into a pull request.

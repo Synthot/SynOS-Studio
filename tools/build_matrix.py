@@ -43,6 +43,13 @@ file and skips a target whose last recorded result was "success" for the
 exact same checksum; everything else (never run, failed, timed out, or
 whose catalog entry/base changed since) is retried.
 
+A run's catalog-only "last built" status also lands beside report.json, at
+--output/build-status.yml, every time — never at the tracked
+bundle-catalog/build-status.yml unless --update-catalog-status-file is
+given, since a local run must not modify a file this repository tracks. The
+scheduled workflow passes that flag deliberately and leaves the diff for a
+person to review (.github/workflows/catalog-matrix.yml); nothing else does.
+
 Never builds a shell command from a name read out of a file: every process
 here is started from an argument vector.
 
@@ -418,18 +425,20 @@ def _write_report(path: Path, report: dict) -> None:
             os.unlink(tmp_name)
 
 
-def update_build_status(root: Path, targets_by_id: dict, report: dict) -> None:
-    """bundle-catalog/build-status.yml: the honest "last built" record
-    tools/export_catalog.py merges into bundle_catalog[]. Catalog targets
-    only — a core build proves the base, not a catalogued bundle. An entry
-    that has never been built (or whose last run only failed to start, e.g.
-    a host problem) is never written here in a way that looks like success."""
-    status_path = root / "bundle-catalog" / "build-status.yml"
-    import yaml
+BUILD_STATUS_HEADER = ("# Honest \"last built\" status per catalogued bundle. An id absent from\n"
+                       "# this file has never been built: absent, not false. Merged into\n"
+                       "# bundle_catalog[].build_status by tools/export_catalog.py.\n")
+
+
+def build_status_data(targets_by_id: dict, report: dict) -> dict:
+    """The catalog-only {id: entry} "last built" record derived from this
+    run's own report — nothing here reads or depends on any file on disk;
+    the caller (main()) decides where, and whether, to persist it. Core
+    targets are excluded: a core build proves the base, not a catalogued
+    bundle. A target that has never finished (or whose run only failed to
+    start, e.g. a host problem, before recording anything) contributes
+    nothing here, never a record that looks like success."""
     data = {}
-    if status_path.is_file():
-        loaded = yaml.safe_load(status_path.read_text(encoding="utf-8")) or {}
-        data = loaded.get("build_status", {}) or {}
     for target_id, target in targets_by_id.items():
         if target.kind != "catalog":
             continue
@@ -443,11 +452,24 @@ def update_build_status(root: Path, targets_by_id: dict, report: dict) -> None:
         if record.get("smoke"):
             entry["smoke"] = record["smoke"]["status"]
         data[target_id] = entry
-    header = ("# Honest \"last built\" status per catalogued bundle, written by\n"
-              "# tools/build_matrix.py after a matrix run (never by hand). An id absent\n"
-              "# from this file has never been built: absent, not false. Merged into\n"
-              "# bundle_catalog[].build_status by tools/export_catalog.py.\n")
-    status_path.write_text(header + yaml.safe_dump({"build_status": data}, sort_keys=True), encoding="utf-8")
+    return data
+
+
+def write_build_status(path: Path, data: dict, *, merge_existing: bool) -> None:
+    """Writes {"build_status": {...}} to `path`. With merge_existing, an id
+    this call's `data` does not cover keeps whatever was already recorded
+    for it at `path` (used for bundle-catalog/build-status.yml, the
+    repository-wide record a single --only run must not truncate); without
+    it, `path` becomes exactly `data` (used for a run's own --output copy,
+    which is already exactly this run's report — nothing to preserve)."""
+    import yaml
+    existing = {}
+    if merge_existing and path.is_file():
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        existing = loaded.get("build_status", {}) or {}
+    merged = {**existing, **data}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(BUILD_STATUS_HEADER + yaml.safe_dump({"build_status": merged}, sort_keys=True), encoding="utf-8")
 
 
 def targets_to_run(targets: list["Target"], report: dict, *, resume: bool) -> list["Target"]:
@@ -535,6 +557,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-smoke", action="store_true", help="skip tools/smoke_test.py even when a build succeeds")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="where report.json, logs and ISOs go (default dist/matrix/)")
     parser.add_argument("--resume", action="store_true", help="skip targets whose last recorded result was success at this checksum")
+    parser.add_argument("--update-catalog-status-file", action="store_true",
+                        help="also write bundle-catalog/build-status.yml, a file tracked in this repository — "
+                             "off by default, so a local run never leaves the checkout dirty; this run's status "
+                             "is always written to --output/build-status.yml regardless. The scheduled workflow "
+                             "passes this deliberately and leaves the diff for a person to review.")
     parser.add_argument("--container-root", default=os.environ.get("SYNOS_CONTAINER_ROOT"),
                         help="podman only: where every target's build keeps its images, layers and chroot "
                              "(default: podman's own storage; SYNOS_CONTAINER_ROOT); also where free disk is measured for --jobs auto")
@@ -602,7 +629,14 @@ def main(argv: list[str] | None = None) -> int:
         with _STATE_LOCK:
             report["targets"][target.id] = record
             _write_report(report_path, report)
-            update_build_status(ROOT, targets_by_id, report)
+            # This run's own record always lands beside report.json, never in
+            # the tracked catalog file (a local run must not leave the
+            # checkout dirty); --update-catalog-status-file opts into also
+            # writing the tracked bundle-catalog/build-status.yml.
+            write_build_status(output_dir / "build-status.yml", build_status_data(targets_by_id, report), merge_existing=False)
+            if args.update_catalog_status_file:
+                write_build_status(ROOT / "bundle-catalog" / "build-status.yml",
+                                   build_status_data(targets_by_id, report), merge_existing=True)
         duration = record.get("duration_s")
         suffix = f" ({duration:.0f}s)" if duration is not None else ""
         print(f"{target.id}: {record['status']}{suffix}", file=sys.stderr)
