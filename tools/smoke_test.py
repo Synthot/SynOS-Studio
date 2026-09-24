@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""smoke_test — boot a built ISO headless in QEMU and check that the
-appliance it promised is real.
+"""smoke_test — boot a built ISO in QEMU, headless and graphical, and check
+that the appliance it promised is real.
 
     python3 tools/smoke_test.py IMAGE.iso
     python3 tools/smoke_test.py IMAGE.iso --profile path/to/leaf-profile.yml
@@ -23,7 +23,7 @@ fall back to resolving --profile's own `extends` chain itself, the same way
 tools/build_matrix.py's _resolve_bundle_profile does for a bundle-catalog
 entry. Either way, the result records which source was used.
 
-What it asserts, over a root shell on the serial console:
+What it asserts, over a root shell on the serial console (the headless boot):
   - the live system reaches its default systemd target
   - the ports opened by the shipped first-boot firewall script
     (/usr/libexec/synos-first-boot-services) match the profile's
@@ -31,6 +31,14 @@ What it asserts, over a root shell on the serial console:
   - every software.services entry has a quadlet-generated systemd unit
     that exists and is enabled
   - every software.files entry is present with the mode the profile asked for
+
+...and what it certifies from a second, graphical boot (check_graphical_boot):
+  - the live session comes up on its own real graphical path (no debug
+    shell, no console=ttyS0) and its first screen, captured once it stops
+    changing, reads by OCR as showing both the distribution's own name
+    (from the resolved configuration, the same source as the ports check's
+    expectation) and the word "Installer" — the promise a "certified" badge
+    would stand behind.
 
 The firewall check is honest about its own limit: base_hardening's
 first-boot service carries `ConditionKernelCommandLine=!rd.synos.live`, so
@@ -41,23 +49,32 @@ they are open right now. Nothing that would need a network or credentials
 (an installed system, a signed-in package mirror) is asserted; where the
 matrix cannot check something honestly it is left out, not invented.
 
-Requires qemu-system-x86_64 and xorriso on PATH. Their absence is a clean
-skip, never a failure: run() returns {"status": "skipped", "reason": ...}.
-Nothing here touches the network: the live kernel and initrd are pulled out
-of the ISO with `xorriso -osirrox` and booted directly (-kernel/-initrd),
-bypassing the graphical GRUB menu, with a root debug shell on the serial
-console (console=ttyS0, systemd.debug_shell=ttyS0, serial-getty masked) —
-the same recipe tests/framework/grub.py's debug_kernel_arguments uses for
-the full acceptance suite, applied here without that suite's GRUB-menu and
-screenshot machinery, which this headless smoke test does not need.
+Requires qemu-system-x86_64 and xorriso on PATH (the graphical check also
+needs tesseract and Pillow). Their absence is a clean skip, never a
+failure: run() returns {"status": "skipped", ...} if the headless boot's
+own tools are missing, or check_graphical_boot returns its own
+{"outcome": "skipped", ...} if only the graphical check's extra tools are
+missing — everything else still runs. Nothing here touches the network:
+the live kernel and initrd are pulled out of the ISO with `xorriso
+-osirrox` and booted directly (-kernel/-initrd), bypassing the graphical
+GRUB menu. The headless boot adds a root debug shell on the serial console
+(console=ttyS0, systemd.debug_shell=ttyS0, serial-getty masked) — the same
+recipe tests/framework/grub.py's debug_kernel_arguments uses for the full
+acceptance suite, applied here without that suite's GRUB-menu and
+screenshot machinery. The graphical boot carries none of that: it is the
+plain boot a person would actually see, captured with QEMU's own monitor
+(`-display none` still renders into emulated video RAM; `screendump` reads
+it directly, without a viewer or a window).
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -73,6 +90,26 @@ DEFAULT_BOOT_TIMEOUT = 180        # seconds waiting for the debug shell to answe
 DEFAULT_TARGET_TIMEOUT = 240      # seconds waiting for the default target to become active
 DEFAULT_COMMAND_TIMEOUT = 20      # seconds per command sent over the serial line
 
+# The graphical check renders a real desktop session (GDM + GNOME Shell),
+# not just a text-mode debug shell, so it needs more memory and much more
+# patience than the headless checks above -- especially on a host with no
+# hardware virtualization (accel=tcg), which this must still work on, just
+# slower. 240s is generous for that unaccelerated case; on KVM the session
+# typically settles in well under a minute, so the extra headroom is free.
+DEFAULT_GRAPHICAL_MEMORY_MB = 4096
+DEFAULT_GRAPHICAL_SETTLE_TIMEOUT = 240.0
+GRAPHICAL_POLL_INTERVAL = 2.0      # seconds between screendump samples
+# Measured against a real image: systemd's own unit start-up (still visible
+# under `quiet splash` for a moment before Plymouth takes the framebuffer,
+# and briefly again as it hands off to GDM) can sit still for several
+# seconds between lines while a slow service starts -- 3 consecutive
+# identical samples (4-6s of quiet) was fooled by exactly that pause and
+# called a mid-boot console frame "settled". 8 samples (14-16s of quiet)
+# comfortably outlasts a single inter-service pause without meaningfully
+# slowing down a real settle, which holds indefinitely once the session is
+# actually up.
+GRAPHICAL_STABLE_SAMPLES = 8
+
 
 class SmokeTestUnavailable(Exception):
     """qemu-system-x86_64 or xorriso is not on PATH."""
@@ -87,6 +124,23 @@ def tools_available() -> tuple[bool, str]:
     missing = [name for name in ("qemu-system-x86_64", "xorriso") if not shutil.which(name)]
     if missing:
         return False, f"{', '.join(missing)} not found on PATH; install qemu-system-x86 and xorriso to run the smoke test"
+    return True, ""
+
+
+def graphical_tools_available() -> tuple[bool, str]:
+    """Everything the graphical boot check needs beyond tools_available():
+    tesseract to read the screenshot, and Pillow to turn QEMU's PPM
+    screendump into a PNG. No display server, VNC viewer or X11 of any kind
+    is required -- `-display none` still runs the emulated VGA device, and
+    the monitor's screendump command reads directly off it -- so this never
+    checks for one."""
+    missing = [name for name in ("qemu-system-x86_64", "xorriso", "tesseract") if not shutil.which(name)]
+    if missing:
+        return False, f"{', '.join(missing)} not found on PATH; install them to run the graphical boot check"
+    try:
+        import PIL  # noqa: F401
+    except ImportError:
+        return False, "Pillow (the PIL package) is not installed; install it to run the graphical boot check"
     return True, ""
 
 
@@ -255,6 +309,133 @@ def terminate(proc: subprocess.Popen) -> None:
         pass
 
 
+def spawn_qemu_graphical(iso_path: Path, kernel: Path, initrd: Path, label: str, memory_mb: int,
+                          qmp_sock: Path) -> subprocess.Popen:
+    """Boot the real graphical path: no console=ttyS0, no debug shell, and
+    `quiet splash` (build.sh's own "Try" GRUB entry, LIVE_BOOT_ARGS plus
+    `quiet splash`) so systemd's scrolling status text is replaced by the
+    branded Plymouth splash a person actually sees, not an artifact of
+    this check leaving boot messages on that a real boot hides. `-vga std`
+    keeps a plain, universally supported framebuffer device; `-display
+    none` opens no window (nothing here needs one) but the device still
+    renders into its emulated video RAM, which `-qmp`'s screendump command
+    reads directly -- see QmpSession."""
+    append = (f"root=live:CDLABEL={label} rd.live.dir=LiveOS rd.live.squashimg=rootfs.squashfs "
+              f"rd.overlay rd.synos.live=1 quiet splash")
+    argv = [
+        "qemu-system-x86_64",
+        "-m", str(memory_mb),
+        "-smp", "2",
+        "-kernel", str(kernel),
+        "-initrd", str(initrd),
+        "-append", append,
+        "-cdrom", str(iso_path),
+        "-vga", "std",
+        "-display", "none",
+        "-qmp", f"unix:{qmp_sock},server,nowait",
+        "-no-reboot",
+        "-net", "none",
+        "-machine", "accel=kvm:tcg",
+    ]
+    return subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+class QmpSession:
+    """A minimal client for QEMU's JSON monitor protocol (QMP) over the unix
+    socket spawn_qemu_graphical opens with -qmp. Only what the graphical
+    check needs: connect, do the capabilities handshake, and issue
+    screendump. QMP (not the legacy human-readable monitor) because its
+    replies are structured JSON, not a prompt to screen-scrape."""
+
+    def __init__(self, sock_path: Path, timeout: float = 30):
+        deadline = time.monotonic() + timeout
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.settimeout(timeout)
+        last_exc: Exception | None = None
+        while time.monotonic() < deadline:
+            try:
+                self.sock.connect(str(sock_path))
+                break
+            except (FileNotFoundError, ConnectionRefusedError) as exc:
+                last_exc = exc
+                time.sleep(0.2)
+        else:
+            raise QemuBootTimeout(f"QEMU's QMP socket never appeared at {sock_path}: {last_exc}")
+        self._buf = b""
+        self._read_json()  # the greeting banner
+        self._command({"execute": "qmp_capabilities"})
+
+    def _read_json(self) -> dict:
+        while b"\n" not in self._buf:
+            chunk = self.sock.recv(65536)
+            if not chunk:
+                raise QemuBootTimeout("QEMU's QMP connection closed unexpectedly")
+            self._buf += chunk
+        line, _, self._buf = self._buf.partition(b"\n")
+        return json.loads(line.decode("utf-8"))
+
+    def _command(self, command: dict) -> dict:
+        self.sock.sendall((json.dumps(command) + "\n").encode("utf-8"))
+        while True:
+            response = self._read_json()
+            if "return" in response or "error" in response:
+                return response
+            # else: an asynchronous event line (e.g. RESUME) -- not a reply, keep reading
+
+    def screendump(self, path: Path) -> None:
+        response = self._command({"execute": "screendump", "arguments": {"filename": str(path)}})
+        if "error" in response:
+            raise QemuBootTimeout(f"QMP screendump failed: {response['error']}")
+
+    def close(self) -> None:
+        try:
+            self.sock.close()
+        except OSError:
+            pass
+
+
+def wait_for_settled_screen(qmp: QmpSession, proc: subprocess.Popen, workdir: Path, timeout: float,
+                             poll_interval: float = GRAPHICAL_POLL_INTERVAL,
+                             stable_samples: int = GRAPHICAL_STABLE_SAMPLES) -> tuple[Path, bool, float]:
+    """Poll screendump instead of sleeping a fixed time: hash each capture,
+    and once `stable_samples` consecutive captures hash identically, the
+    screen has stopped changing -- boot messages, a splash animation or a
+    session loading all keep the framebuffer changing, so stability is a
+    real signal that it finished, not a guess at how long that takes.
+
+    A screen that never changes at all is not the same thing: a hang on a
+    black or frozen frame is also "stable" from frame one, and must not be
+    mistaken for a session that settled after loading. settled therefore
+    also requires at least one real change from the very first capture.
+
+    Returns (path to the last PPM captured, whether it actually settled,
+    seconds elapsed) -- never raises for an ordinary timeout, only if QEMU
+    itself dies or the QMP link breaks."""
+    start = time.monotonic()
+    ppm_path = workdir / "screendump.ppm"
+    first_digest: str | None = None
+    changed_since_start = False
+    last_digest: str | None = None
+    stable_count = 0
+    while True:
+        if proc.poll() is not None:
+            raise QemuBootTimeout(f"qemu exited (code {proc.returncode}) before the screen settled")
+        qmp.screendump(ppm_path)
+        digest = hashlib.sha256(ppm_path.read_bytes()).hexdigest()
+        if first_digest is None:
+            first_digest = digest
+        elif digest != first_digest:
+            changed_since_start = True
+        stable_count = stable_count + 1 if digest == last_digest else 1
+        last_digest = digest
+        elapsed = time.monotonic() - start
+        if changed_since_start and stable_count >= stable_samples:
+            return ppm_path, True, elapsed
+        if elapsed >= timeout:
+            return ppm_path, False, elapsed
+        time.sleep(poll_interval)
+
+
 # ------------------------------------------------------------ assertions
 def parse_is_active(output: str) -> str:
     lines = [line.strip() for line in output.strip().splitlines() if line.strip()]
@@ -347,6 +528,127 @@ def check_shipped_file(session: SerialSession, path: str, expected_mode: str) ->
     return {"name": f"file:{path}", "passed": mode_ok, "mode": mode, "expected_mode": expected_mode, "size": int(size)}
 
 
+# --------------------------------------------------------- graphical check
+def ocr_text(image_path: Path) -> str:
+    """Recognized text off a screenshot, via the tesseract CLI directly --
+    that binary, not any particular Python OCR binding, is what is
+    guaranteed to be on this machine. `stdout` as the output base tells
+    tesseract to print the text instead of writing a .txt file."""
+    result = subprocess.run(["tesseract", str(image_path), "stdout"], capture_output=True, text=True, check=False)
+    return result.stdout
+
+
+def normalize_for_match(text: str) -> str:
+    """Case- and whitespace-insensitive: OCR line-wraps and spaces text in
+    ways that do not matter for "is this word on the screen"."""
+    return re.sub(r"\s+", " ", text).strip().lower()
+
+
+def evaluate_graphical_screenshot(ocr_output: str, expected_name: str | None, settled: bool,
+                                   settle_timeout: float) -> dict:
+    """Pure judgement over already-recognized OCR text plus the settle
+    result: no QEMU, no file I/O. Split out of check_graphical_boot so the
+    matching rule (what counts as "certified" vs. each distinct way it can
+    fall short) is testable against fixed screenshots' OCR output directly,
+    without booting anything. Returns outcome/passed/name_found/
+    installer_found/note; check_graphical_boot adds the boot-specific
+    fields (screenshot path and checksum, settle_seconds, ...)."""
+    normalized = normalize_for_match(ocr_output)
+    has_visible_content = bool(normalized)
+    installer_found = "installer" in normalized
+    name_found = (normalize_for_match(expected_name) in normalized) if expected_name else None
+
+    if not settled:
+        outcome = "not-settled"
+        note = (f"the screen never stopped changing within {settle_timeout:.0f}s; the session may still be "
+                "loading (try a longer --graphical-timeout), or the boot is hung -- see the screenshot")
+    elif not has_visible_content:
+        outcome = "blank-or-unreadable-screen"
+        note = "the screen stopped changing but tesseract read no text at all off it; check the screenshot directly"
+    elif expected_name is None:
+        outcome = "no-expected-name"
+        note = ("no distribution name was available (no resolved configuration and no --brand); only checked "
+                "that \"Installer\" is on screen")
+    elif not name_found:
+        outcome = "name-not-found"
+        note = (f"tesseract did not find {expected_name!r} on screen; the session clearly came up (the screen "
+                "settled and text was readable) but this specific claim could not be verified -- could be a "
+                "real branding bug or an OCR miss, check the screenshot")
+    elif not installer_found:
+        outcome = "installer-word-not-found"
+        note = f"{expected_name!r} was found but not the word \"Installer\"; check the screenshot"
+    else:
+        outcome = "certified"
+        note = "the live session came up and OCR read both the distribution's name and \"Installer\" on the first screen"
+
+    return {
+        "passed": outcome == "certified", "outcome": outcome,
+        "name_found": name_found, "installer_found": installer_found, "note": note,
+    }
+
+
+def check_graphical_boot(iso_path: Path, kernel: Path, initrd: Path, label: str, *, output_dir: Path,
+                          expected_name: str | None, memory_mb: int = DEFAULT_GRAPHICAL_MEMORY_MB,
+                          settle_timeout: float = DEFAULT_GRAPHICAL_SETTLE_TIMEOUT,
+                          poll_interval: float = GRAPHICAL_POLL_INTERVAL,
+                          stable_samples: int = GRAPHICAL_STABLE_SAMPLES) -> dict:
+    """Boot the real graphical path, capture the first screen once it stops
+    changing, and certify what a person actually sees: the distribution's
+    own name (expected_name, read from the resolved configuration the same
+    way check_open_ports' expectation is, not hard-coded) and the word
+    "Installer", both recovered by OCR. Never raises: qemu/tooling problems,
+    a hung boot and a genuinely wrong screen all come back as this check's
+    own "outcome", not a partial result or a silent pass.
+
+    "outcome" is the point of this check, more than "passed": a session
+    that clearly came up but whose name OCR could not read is a materially
+    different finding from a boot that never got anywhere, and the report
+    says which one happened rather than collapsing both into one boolean."""
+    available, reason = graphical_tools_available()
+    if not available:
+        return {"name": "graphical-boot", "passed": None, "outcome": "skipped", "note": reason}
+
+    from PIL import Image
+
+    screenshot_path = output_dir / "smoke-screenshot.png"
+    proc: subprocess.Popen | None = None
+    qmp: QmpSession | None = None
+    try:
+        with tempfile.TemporaryDirectory(prefix="synos-smoke-gfx-") as raw_tmp:
+            tmp = Path(raw_tmp)
+            qmp_sock = tmp / "qmp.sock"
+            proc = spawn_qemu_graphical(iso_path, kernel, initrd, label, memory_mb, qmp_sock)
+            qmp = QmpSession(qmp_sock, timeout=30)
+            ppm_path, settled, elapsed = wait_for_settled_screen(
+                qmp, proc, tmp, settle_timeout, poll_interval, stable_samples)
+            Image.open(ppm_path).save(screenshot_path, "PNG")
+    except QemuBootTimeout as exc:
+        return {"name": "graphical-boot", "passed": False, "outcome": "error", "note": str(exc)}
+    except Exception as exc:  # noqa: BLE001 - never let a smoke-test bug fail the whole matrix run
+        return {"name": "graphical-boot", "passed": False, "outcome": "error",
+                "note": f"{type(exc).__name__}: {exc}"}
+    finally:
+        if qmp is not None:
+            qmp.close()
+        if proc is not None:
+            terminate(proc)
+
+    screenshot_sha256 = hashlib.sha256(screenshot_path.read_bytes()).hexdigest()
+    text = ocr_text(screenshot_path)
+    verdict = evaluate_graphical_screenshot(text, expected_name, settled, settle_timeout)
+
+    return {
+        "name": "graphical-boot",
+        **verdict,
+        "settled": settled,
+        "settle_seconds": round(elapsed, 1),
+        "screenshot": str(screenshot_path),
+        "screenshot_sha256": screenshot_sha256,
+        "expected_name": expected_name,
+        "ocr_text": text.strip(),
+    }
+
+
 # ------------------------------------------------------- profile resolution
 def resolved_json_path(iso_path: Path) -> Path:
     """dist/<name>.resolved.json sits next to dist/<name>.iso (build.sh,
@@ -359,6 +661,31 @@ def load_resolved_profile(resolved_path: Path) -> dict:
     already `extends`-merged) out of an engine-written dist/<name>.resolved.json."""
     data = json.loads(resolved_path.read_text(encoding="utf-8"))
     return data.get("profile", {}) or {}
+
+
+def load_resolved_brand_name(resolved_path: Path) -> str | None:
+    """The distribution's display name (branding/<id>/brand.yml's
+    display_name, carried into dist/<name>.resolved.json's "brand" key) --
+    what the live session's first screen is expected to show, e.g.
+    "SynOS NGINX". None if the field is missing or empty."""
+    data = json.loads(resolved_path.read_text(encoding="utf-8"))
+    name = (data.get("brand", {}) or {}).get("display_name")
+    return str(name).strip() or None if name else None
+
+
+def load_brand_display_name(brand_path: Path) -> str | None:
+    """Fallback source for the same name, for when no resolved.json exists:
+    read display_name straight out of a brand.yml file (a bundle's own
+    branding/<id>/brand.yml -- not necessarily under this checkout's own
+    branding/, the same situation resolve_profile_chain handles for a leaf
+    profile). No GRUB-safety validation like render_manifest.resolve_brand
+    does: OCR only needs the text, not a name GRUB can render."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import render_manifest  # noqa: E402
+
+    data = render_manifest.load_yaml(brand_path)
+    name = data.get("display_name")
+    return str(name).strip() or None if name else None
 
 
 def resolve_profile_chain(profile_path: Path) -> tuple[dict, list[str]]:
@@ -383,16 +710,36 @@ def resolve_profile_chain(profile_path: Path) -> tuple[dict, list[str]]:
 
 
 # --------------------------------------------------------------- runner
+def overall_passed(checks: list[dict]) -> bool:
+    """A run's overall pass/fail: every check must not have failed.
+    "passed": None (only the graphical check uses it, when its own extra
+    tools are missing) is a skip, not a failure, and must not drag an
+    otherwise-clean run down to "failed" -- consistent with every other
+    skip in this module never being reported as one."""
+    return bool(checks) and all(check.get("passed") is not False for check in checks)
+
+
 def run(iso_path: Path, resolved_profile: dict, *, output_dir: Path,
         memory_mb: int = DEFAULT_MEMORY_MB, boot_timeout: float = DEFAULT_BOOT_TIMEOUT,
-        target_timeout: float = DEFAULT_TARGET_TIMEOUT, profile_source: str = "unspecified") -> dict:
+        target_timeout: float = DEFAULT_TARGET_TIMEOUT, profile_source: str = "unspecified",
+        graphical: bool = True, expected_distro_name: str | None = None,
+        graphical_memory_mb: int = DEFAULT_GRAPHICAL_MEMORY_MB,
+        graphical_settle_timeout: float = DEFAULT_GRAPHICAL_SETTLE_TIMEOUT,
+        graphical_poll_interval: float = GRAPHICAL_POLL_INTERVAL,
+        graphical_stable_samples: int = GRAPHICAL_STABLE_SAMPLES) -> dict:
     """Boot iso_path headless and check it against resolved_profile (the profile
     dict after tools/render_manifest.py's `extends` merge). profile_source is
     carried through into the result as-is, purely for the report: it says
     nothing about correctness, only where resolved_profile came from. Never
     raises for an ordinary boot or assertion failure: those come back as
     status "failed" with the checks that ran. Only a missing qemu/xorriso is
-    "skipped"."""
+    "skipped".
+
+    When graphical is true (the default), a second, separate boot follows
+    the headless one: see check_graphical_boot. It is scored like any other
+    check (its own "passed"), except a "skipped" graphical check (its own
+    tools missing) never drags the overall run down to "failed" -- a skip
+    is not a failure, here or anywhere else in this module."""
     available, reason = tools_available()
     if not available:
         return {"status": "skipped", "reason": reason, "profile_source": profile_source}
@@ -423,6 +770,22 @@ def run(iso_path: Path, resolved_profile: dict, *, output_dir: Path,
                 checks.append(check_service_unit(session, service["name"]))
             for shipped_file in software.get("files", []) or []:
                 checks.append(check_shipped_file(session, shipped_file["path"], shipped_file.get("mode", "0644")))
+
+            # Done with the headless debug-shell boot. Close it before the
+            # graphical boot starts a second QEMU instance against the same
+            # (read-only) ISO, so only one guest is ever running at a time,
+            # and reuse the kernel/initrd already extracted into tmp.
+            session.close()
+            terminate(proc)
+            session = None
+            proc = None
+
+            if graphical:
+                checks.append(check_graphical_boot(
+                    iso_path, kernel, initrd, label, output_dir=output_dir,
+                    expected_name=expected_distro_name, memory_mb=graphical_memory_mb,
+                    settle_timeout=graphical_settle_timeout, poll_interval=graphical_poll_interval,
+                    stable_samples=graphical_stable_samples))
     except SmokeTestUnavailable as exc:
         return {"status": "skipped", "reason": str(exc), "profile_source": profile_source}
     except QemuBootTimeout as exc:
@@ -437,7 +800,7 @@ def run(iso_path: Path, resolved_profile: dict, *, output_dir: Path,
         if proc is not None:
             terminate(proc)
 
-    passed = bool(checks) and all(check.get("passed") for check in checks)
+    passed = overall_passed(checks)
     return {"status": "passed" if passed else "failed", "checks": checks, "transcript": str(transcript),
             "profile_source": profile_source}
 
@@ -451,18 +814,32 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--resolved", type=Path,
                          help="the engine's resolved configuration JSON (dist/<name>.resolved.json); "
                               "auto-discovered next to the ISO when omitted")
+    parser.add_argument("--brand", type=Path,
+                         help="a bundle's own branding/<id>/brand.yml; used for the graphical check's expected "
+                              "distribution name only when --resolved is not found (the resolved configuration "
+                              "already carries it otherwise)")
     parser.add_argument("--output", type=Path, default=Path("dist/smoke"))
     parser.add_argument("--timeout", type=float, default=DEFAULT_TARGET_TIMEOUT)
+    parser.add_argument("--no-graphical", action="store_true",
+                         help="skip the graphical boot / screenshot / OCR check (still run everything else)")
+    parser.add_argument("--graphical-timeout", type=float, default=DEFAULT_GRAPHICAL_SETTLE_TIMEOUT,
+                         help=f"seconds to wait for the graphical boot's screen to settle "
+                              f"(default {DEFAULT_GRAPHICAL_SETTLE_TIMEOUT:.0f}s -- generous for a host with no "
+                              f"hardware virtualization, which must still work, just slower)")
     args = parser.parse_args(argv)
 
     resolved_profile: dict = {}
+    expected_distro_name: str | None = None
     resolved_from = args.resolved if args.resolved is not None else resolved_json_path(args.iso)
     if resolved_from.is_file():
         resolved_profile = load_resolved_profile(resolved_from)
+        expected_distro_name = load_resolved_brand_name(resolved_from)
         profile_source = f"resolved configuration: {resolved_from}"
     elif args.profile:
         resolved_profile, chain = resolve_profile_chain(args.profile)
         profile_source = f"profile extends chain resolved from {args.profile} (chain: {' -> '.join(chain)})"
+        if args.brand and args.brand.is_file():
+            expected_distro_name = load_brand_display_name(args.brand)
     elif args.resolved is not None:
         profile_source = f"--resolved {args.resolved} does not exist and no --profile was given; no expectations to check"
     else:
@@ -470,7 +847,8 @@ def main(argv: list[str] | None = None) -> int:
 
     args.output.mkdir(parents=True, exist_ok=True)
     result = run(args.iso, resolved_profile, output_dir=args.output, target_timeout=args.timeout,
-                 profile_source=profile_source)
+                 profile_source=profile_source, graphical=not args.no_graphical,
+                 expected_distro_name=expected_distro_name, graphical_settle_timeout=args.graphical_timeout)
     print(json.dumps(result, indent=2))
     return 0 if result["status"] in ("passed", "skipped") else 1
 
