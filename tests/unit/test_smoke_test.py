@@ -1,15 +1,24 @@
 """tools/smoke_test.py's assertions, tested against fixtures (a fake systemd
-listing, a fake firewall dump, a fake `stat` line) rather than by booting
-anything: no test in this file starts qemu-system-x86_64."""
+listing, a fake firewall dump, a fake `stat` line, a fake QEMU monitor, and
+for the graphical check, real screenshots rendered with Pillow and read
+with the real tesseract binary) rather than by booting anything: no test in
+this file starts qemu-system-x86_64."""
 from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+TESSERACT_AVAILABLE = shutil.which("tesseract") is not None
+try:
+    from PIL import Image, ImageDraw, ImageFont
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
 
 
 def load_module(name: str, relative: str):
@@ -284,6 +293,213 @@ class MainProfileSourceTests(unittest.TestCase):
         self.assertEqual({}, captured["resolved_profile"])
         self.assertIn("no --resolved", captured["profile_source"])
         self.assertIn("no --profile", captured["profile_source"])
+
+
+def _render_screenshot(text: str, path: Path, size: tuple[int, int] = (900, 240)) -> None:
+    """A fixed, deterministic stand-in for a QEMU screendump: real pixels
+    with real text, rendered once with Pillow so the OCR tests below run
+    the real tesseract binary against them -- nothing about matching is
+    mocked, only "boot a VM and capture its screen" is out of scope here."""
+    image = Image.new("RGB", size, "white")
+    draw = ImageDraw.Draw(image)
+    font = None
+    for candidate in ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+                       "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"):
+        if Path(candidate).is_file():
+            font = ImageFont.truetype(candidate, 40)
+            break
+    if font is None:
+        font = ImageFont.load_default(size=40)
+    draw.text((30, 80), text, fill="black", font=font)
+    image.save(path, "PNG")
+
+
+@unittest.skipUnless(TESSERACT_AVAILABLE and PIL_AVAILABLE, "tesseract and Pillow are required for OCR fixtures")
+class GraphicalScreenshotMatchingTests(unittest.TestCase):
+    """The matching rule (evaluate_graphical_screenshot), against three
+    fixed screenshots: a good one, one with the wrong name, and one with
+    no readable text at all. tesseract runs for real on each."""
+
+    def test_a_good_screenshot_is_certified(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "good.png"
+            _render_screenshot("SynOS NGINX Installer", path)
+            text = smoke_test.ocr_text(path)
+        result = smoke_test.evaluate_graphical_screenshot(text, "SynOS NGINX", settled=True, settle_timeout=240)
+        self.assertEqual("certified", result["outcome"])
+        self.assertTrue(result["passed"])
+        self.assertTrue(result["name_found"])
+        self.assertTrue(result["installer_found"])
+
+    def test_a_screenshot_with_the_wrong_name_is_not_certified(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "wrong-name.png"
+            _render_screenshot("SynOS Postgres Installer", path)
+            text = smoke_test.ocr_text(path)
+        result = smoke_test.evaluate_graphical_screenshot(text, "SynOS NGINX", settled=True, settle_timeout=240)
+        self.assertEqual("name-not-found", result["outcome"])
+        self.assertFalse(result["passed"])
+        self.assertFalse(result["name_found"])
+        self.assertTrue(result["installer_found"])  # the session clearly came up; only the name claim failed
+
+    def test_an_unreadable_blank_screenshot_is_its_own_outcome(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "blank.png"
+            Image.new("RGB", (900, 240), "white").save(path, "PNG")  # no text at all
+            text = smoke_test.ocr_text(path)
+        result = smoke_test.evaluate_graphical_screenshot(text, "SynOS NGINX", settled=True, settle_timeout=240)
+        self.assertEqual("blank-or-unreadable-screen", result["outcome"])
+        self.assertFalse(result["passed"])
+        # name_found/installer_found are computed honestly either way (there is
+        # genuinely no match in empty text); "outcome" is what says *why* this
+        # failed -- a blank screen, not a legible one with the wrong name on it.
+        self.assertFalse(result["name_found"])
+        self.assertFalse(result["installer_found"])
+
+    def test_matching_is_case_and_whitespace_insensitive(self) -> None:
+        result = smoke_test.evaluate_graphical_screenshot(
+            "  synos\n nginx   INSTALLER  ", "SynOS NGINX", settled=True, settle_timeout=240)
+        self.assertEqual("certified", result["outcome"])
+
+
+class EvaluateGraphicalScreenshotOutcomeTests(unittest.TestCase):
+    """Every distinct way the certification can fall short, without OCR or
+    Pillow -- evaluate_graphical_screenshot is pure, so these pass fixed
+    strings straight in."""
+
+    def test_not_settled_is_its_own_outcome_even_with_good_text(self) -> None:
+        result = smoke_test.evaluate_graphical_screenshot(
+            "SynOS NGINX Installer", "SynOS NGINX", settled=False, settle_timeout=240)
+        self.assertEqual("not-settled", result["outcome"])
+        self.assertFalse(result["passed"])
+
+    def test_no_expected_name_is_its_own_outcome_not_a_pass(self) -> None:
+        result = smoke_test.evaluate_graphical_screenshot(
+            "SynOS NGINX Installer", None, settled=True, settle_timeout=240)
+        self.assertEqual("no-expected-name", result["outcome"])
+        self.assertFalse(result["passed"])
+        self.assertIsNone(result["name_found"])
+        self.assertTrue(result["installer_found"])
+
+    def test_installer_word_missing_is_its_own_outcome(self) -> None:
+        result = smoke_test.evaluate_graphical_screenshot(
+            "SynOS NGINX", "SynOS NGINX", settled=True, settle_timeout=240)
+        self.assertEqual("installer-word-not-found", result["outcome"])
+        self.assertFalse(result["passed"])
+        self.assertTrue(result["name_found"])
+        self.assertFalse(result["installer_found"])
+
+    def test_result_always_carries_the_same_keys(self) -> None:
+        for settled, name in ((True, "X"), (False, "X"), (True, None)):
+            with self.subTest(settled=settled, name=name):
+                result = smoke_test.evaluate_graphical_screenshot("anything", name, settled, 240)
+                self.assertEqual(
+                    {"passed", "outcome", "name_found", "installer_found", "note"}, set(result.keys()))
+
+
+class FakeQmp:
+    """Stands in for QmpSession: screendump() writes the next entry of a
+    scripted byte sequence to the target path each call (the last entry
+    repeats once the script is exhausted), so wait_for_settled_screen's
+    hashing/stability logic is exercised without a real QEMU monitor."""
+
+    def __init__(self, script: list[bytes]):
+        self.script = script
+        self.calls = 0
+
+    def screendump(self, path: Path) -> None:
+        content = self.script[min(self.calls, len(self.script) - 1)]
+        path.write_bytes(content)
+        self.calls += 1
+
+
+class FakeProc:
+    def __init__(self, dies_immediately: bool = False):
+        self.returncode = 1 if dies_immediately else None
+        self._dies = dies_immediately
+
+    def poll(self):
+        return self.returncode
+
+
+class SettleDetectionTests(unittest.TestCase):
+    """wait_for_settled_screen: settles only after the screen both changed
+    at least once (proves capture is really running, not stuck from frame
+    one) and then held stable for GRAPHICAL_STABLE_SAMPLES consecutive
+    samples -- never a fixed sleep."""
+
+    def test_settles_once_the_screen_stops_changing(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            qmp = FakeQmp([b"boot0", b"boot1", b"final", b"final", b"final", b"final"])
+            proc = FakeProc()
+            path, settled, elapsed = smoke_test.wait_for_settled_screen(
+                qmp, proc, Path(d), timeout=5, poll_interval=0, stable_samples=3)
+            self.assertTrue(settled)
+            self.assertEqual(5, qmp.calls)  # 2 changing frames + 3 identical ones to confirm stability
+            self.assertEqual(b"final", path.read_bytes())
+
+    def test_a_screen_frozen_from_the_first_frame_never_counts_as_settled(self) -> None:
+        """The pathological case a naive "N identical samples" rule would
+        get wrong: a hang on a single static frame is indistinguishable
+        from "already settled" unless a real change is also required."""
+        with tempfile.TemporaryDirectory() as d:
+            qmp = FakeQmp([b"same"])
+            proc = FakeProc()
+            _path, settled, _elapsed = smoke_test.wait_for_settled_screen(
+                qmp, proc, Path(d), timeout=0.05, poll_interval=0.01, stable_samples=3)
+        self.assertFalse(settled)
+
+    def test_a_screen_that_keeps_changing_times_out_unsettled(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            qmp = FakeQmp([f"frame{i}".encode() for i in range(1000)])
+            proc = FakeProc()
+            _path, settled, _elapsed = smoke_test.wait_for_settled_screen(
+                qmp, proc, Path(d), timeout=0.05, poll_interval=0.01, stable_samples=3)
+        self.assertFalse(settled)
+
+    def test_qemu_dying_mid_poll_raises_instead_of_hanging(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            qmp = FakeQmp([b"x"])
+            proc = FakeProc(dies_immediately=True)
+            with self.assertRaises(smoke_test.QemuBootTimeout):
+                smoke_test.wait_for_settled_screen(qmp, proc, Path(d), timeout=5, poll_interval=0, stable_samples=3)
+
+
+class GraphicalSkipTests(unittest.TestCase):
+    """No qemu, no xorriso, no tesseract, no Pillow: check_graphical_boot
+    skips with a printed reason and never raises or fails."""
+
+    def test_missing_tool_skips_cleanly(self) -> None:
+        original = smoke_test.graphical_tools_available
+        smoke_test.graphical_tools_available = lambda: (False, "tesseract not found on PATH")
+        try:
+            result = smoke_test.check_graphical_boot(
+                Path("/nonexistent.iso"), Path("/nonexistent-kernel"), Path("/nonexistent-initrd"), "LABEL",
+                output_dir=Path("/tmp"), expected_name="SynOS NGINX")
+        finally:
+            smoke_test.graphical_tools_available = original
+        self.assertEqual("graphical-boot", result["name"])
+        self.assertIsNone(result["passed"])
+        self.assertEqual("skipped", result["outcome"])
+        self.assertIn("tesseract", result["note"])
+
+    def test_a_skipped_graphical_check_does_not_fail_the_overall_run(self) -> None:
+        checks = [
+            {"name": "default-target", "passed": True},
+            {"name": "open-ports", "passed": True},
+            {"name": "graphical-boot", "passed": None, "outcome": "skipped"},
+        ]
+        self.assertTrue(smoke_test.overall_passed(checks))
+
+    def test_a_real_graphical_failure_does_fail_the_overall_run(self) -> None:
+        checks = [
+            {"name": "default-target", "passed": True},
+            {"name": "graphical-boot", "passed": False, "outcome": "name-not-found"},
+        ]
+        self.assertFalse(smoke_test.overall_passed(checks))
+
+    def test_no_checks_at_all_is_not_a_pass(self) -> None:
+        self.assertFalse(smoke_test.overall_passed([]))
 
 
 class AvailabilityTests(unittest.TestCase):
