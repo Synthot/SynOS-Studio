@@ -2,12 +2,26 @@
 """smoke_test — boot a built ISO headless in QEMU and check that the
 appliance it promised is real.
 
-    python3 tools/smoke_test.py IMAGE.iso --profile bundle-catalog/<x>/profiles/<x>.yml
-    python3 tools/smoke_test.py IMAGE.iso --manifest manifests/core-ubuntu-noble.yml
+    python3 tools/smoke_test.py IMAGE.iso
+    python3 tools/smoke_test.py IMAGE.iso --profile path/to/leaf-profile.yml
+    python3 tools/smoke_test.py IMAGE.iso --resolved path/to/name.resolved.json
 
 Called by tools/build_matrix.py after a successful build, with the profile
 already resolved (its `extends` chain merged the way tools/render_manifest.py
-merges it), so this module never re-implements that merge.
+merges it) and passed straight to run(); run() itself never re-implements
+that merge.
+
+The CLI entry point (main()) is a different case: what a bundle's own
+profiles/<id>.yml declares is the *leaf* of an `extends` chain, not the
+resolved configuration the image was actually built from — a bundle profile
+that inherits its ports from the catalog "kind" it extends declares none of
+its own. The honest source of truth for what an image promises is the
+resolved configuration the engine writes next to it, dist/<name>.resolved.json
+(build.sh, "Write the package lock and SBOM"). main() looks for that file
+first (next to the ISO, or at --resolved); only when it is missing does it
+fall back to resolving --profile's own `extends` chain itself, the same way
+tools/build_matrix.py's _resolve_bundle_profile does for a bundle-catalog
+entry. Either way, the result records which source was used.
 
 What it asserts, over a root shell on the serial console:
   - the live system reaches its default systemd target
@@ -303,7 +317,12 @@ def check_service_unit(session: SerialSession, name: str) -> dict:
     out, code = session.run(f"systemctl is-enabled {shlex.quote(name)}.service", DEFAULT_COMMAND_TIMEOUT)
     state = parse_is_enabled(out, code)
     passed = state in ("enabled", "enabled-runtime", "static", "alias", "generated")
-    return {"name": f"service-unit:{name}", "passed": passed, "state": state}
+    return {
+        "name": f"service-unit:{name}", "passed": passed, "state": state,
+        "note": ("checks that the quadlet unit was translated and is enabled (\"generated\" is systemd's own "
+                 "state for a quadlet-produced unit), not that the container image was pulled or the service "
+                 "is actually running: that needs the network, which this session does not have"),
+    }
 
 
 def parse_stat_line(output: str, exit_code: int) -> tuple[str, str] | None:
@@ -328,19 +347,57 @@ def check_shipped_file(session: SerialSession, path: str, expected_mode: str) ->
     return {"name": f"file:{path}", "passed": mode_ok, "mode": mode, "expected_mode": expected_mode, "size": int(size)}
 
 
+# ------------------------------------------------------- profile resolution
+def resolved_json_path(iso_path: Path) -> Path:
+    """dist/<name>.resolved.json sits next to dist/<name>.iso (build.sh,
+    "Write the package lock and SBOM" — both share the same stem)."""
+    return iso_path.with_suffix(".resolved.json")
+
+
+def load_resolved_profile(resolved_path: Path) -> dict:
+    """The resolved profile (security.open_ports, software.services/files,
+    already `extends`-merged) out of an engine-written dist/<name>.resolved.json."""
+    data = json.loads(resolved_path.read_text(encoding="utf-8"))
+    return data.get("profile", {}) or {}
+
+
+def resolve_profile_chain(profile_path: Path) -> tuple[dict, list[str]]:
+    """Resolve a leaf profile's own `extends` chain, for when no
+    resolved.json is available. profile_path is a bundle's own
+    profiles/<id>.yml — not necessarily under this checkout's profiles/ —
+    so only its `extends` parent (a catalog "kind": minimal, server, ...) is
+    looked up there, via render_manifest.resolve_profile, the same way
+    tools/build_matrix.py's _resolve_bundle_profile does for a bundle-catalog
+    entry. Returns (merged profile, chain of profile ids, leaf first... last)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import render_manifest  # noqa: E402
+
+    data = render_manifest.load_yaml(profile_path)
+    own_id = data.get("id") or profile_path.stem
+    body = {k: v for k, v in data.items() if k not in {"id", "extends", "description"}}
+    parent = data.get("extends")
+    if not parent:
+        return body, [own_id]
+    parent_data, parent_chain = render_manifest.resolve_profile(parent)
+    return render_manifest.deep_merge(parent_data, body), parent_chain + [own_id]
+
+
 # --------------------------------------------------------------- runner
 def run(iso_path: Path, resolved_profile: dict, *, output_dir: Path,
         memory_mb: int = DEFAULT_MEMORY_MB, boot_timeout: float = DEFAULT_BOOT_TIMEOUT,
-        target_timeout: float = DEFAULT_TARGET_TIMEOUT) -> dict:
+        target_timeout: float = DEFAULT_TARGET_TIMEOUT, profile_source: str = "unspecified") -> dict:
     """Boot iso_path headless and check it against resolved_profile (the profile
-    dict after tools/render_manifest.py's `extends` merge). Never raises for an
-    ordinary boot or assertion failure: those come back as status "failed"
-    with the checks that ran. Only a missing qemu/xorriso is "skipped"."""
+    dict after tools/render_manifest.py's `extends` merge). profile_source is
+    carried through into the result as-is, purely for the report: it says
+    nothing about correctness, only where resolved_profile came from. Never
+    raises for an ordinary boot or assertion failure: those come back as
+    status "failed" with the checks that ran. Only a missing qemu/xorriso is
+    "skipped"."""
     available, reason = tools_available()
     if not available:
-        return {"status": "skipped", "reason": reason}
+        return {"status": "skipped", "reason": reason, "profile_source": profile_source}
     if not iso_path.is_file():
-        return {"status": "skipped", "reason": f"{iso_path} does not exist"}
+        return {"status": "skipped", "reason": f"{iso_path} does not exist", "profile_source": profile_source}
 
     transcript = output_dir / "smoke-serial.log"
     checks: list[dict] = []
@@ -367,11 +424,13 @@ def run(iso_path: Path, resolved_profile: dict, *, output_dir: Path,
             for shipped_file in software.get("files", []) or []:
                 checks.append(check_shipped_file(session, shipped_file["path"], shipped_file.get("mode", "0644")))
     except SmokeTestUnavailable as exc:
-        return {"status": "skipped", "reason": str(exc)}
+        return {"status": "skipped", "reason": str(exc), "profile_source": profile_source}
     except QemuBootTimeout as exc:
-        return {"status": "failed", "reason": str(exc), "checks": checks, "transcript": str(transcript)}
+        return {"status": "failed", "reason": str(exc), "checks": checks, "transcript": str(transcript),
+                "profile_source": profile_source}
     except Exception as exc:  # noqa: BLE001 - never let a smoke-test bug fail the whole matrix run
-        return {"status": "error", "reason": f"{type(exc).__name__}: {exc}", "checks": checks, "transcript": str(transcript)}
+        return {"status": "error", "reason": f"{type(exc).__name__}: {exc}", "checks": checks,
+                "transcript": str(transcript), "profile_source": profile_source}
     finally:
         if session is not None:
             session.close()
@@ -379,26 +438,39 @@ def run(iso_path: Path, resolved_profile: dict, *, output_dir: Path,
             terminate(proc)
 
     passed = bool(checks) and all(check.get("passed") for check in checks)
-    return {"status": "passed" if passed else "failed", "checks": checks, "transcript": str(transcript)}
+    return {"status": "passed" if passed else "failed", "checks": checks, "transcript": str(transcript),
+            "profile_source": profile_source}
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("iso", type=Path)
-    parser.add_argument("--profile", type=Path, help="resolved profile YAML (software.services/files, security.open_ports)")
+    parser.add_argument("--profile", type=Path,
+                         help="a bundle's own leaf profile YAML; used to resolve the extends chain only when "
+                              "--resolved (or dist/<name>.resolved.json next to the ISO) is not found")
+    parser.add_argument("--resolved", type=Path,
+                         help="the engine's resolved configuration JSON (dist/<name>.resolved.json); "
+                              "auto-discovered next to the ISO when omitted")
     parser.add_argument("--output", type=Path, default=Path("dist/smoke"))
     parser.add_argument("--timeout", type=float, default=DEFAULT_TARGET_TIMEOUT)
     args = parser.parse_args(argv)
 
     resolved_profile: dict = {}
-    if args.profile:
-        sys.path.insert(0, str(ROOT / "tools"))
-        import render_manifest  # noqa: E402
-
-        resolved_profile = render_manifest.load_yaml(args.profile)
+    resolved_from = args.resolved if args.resolved is not None else resolved_json_path(args.iso)
+    if resolved_from.is_file():
+        resolved_profile = load_resolved_profile(resolved_from)
+        profile_source = f"resolved configuration: {resolved_from}"
+    elif args.profile:
+        resolved_profile, chain = resolve_profile_chain(args.profile)
+        profile_source = f"profile extends chain resolved from {args.profile} (chain: {' -> '.join(chain)})"
+    elif args.resolved is not None:
+        profile_source = f"--resolved {args.resolved} does not exist and no --profile was given; no expectations to check"
+    else:
+        profile_source = "no --resolved, no dist/<name>.resolved.json next to the ISO, and no --profile; no expectations to check"
 
     args.output.mkdir(parents=True, exist_ok=True)
-    result = run(args.iso, resolved_profile, output_dir=args.output, target_timeout=args.timeout)
+    result = run(args.iso, resolved_profile, output_dir=args.output, target_timeout=args.timeout,
+                 profile_source=profile_source)
     print(json.dumps(result, indent=2))
     return 0 if result["status"] in ("passed", "skipped") else 1
 

@@ -381,7 +381,9 @@ def run_one(target: Target, *, output_dir: Path, timeout_seconds: int, image: st
                 profile = {}
                 result["smoke"] = {"status": "error", "reason": f"could not resolve profile {target.profile_id!r}: {exc}"}
             if result["smoke"] is None:
-                result["smoke"] = smoke_test.run(Path(result["iso"]["path"]), profile, output_dir=target_dir)
+                source = f"_resolved_profile for target {target.profile_id!r} ({target.kind})"
+                result["smoke"] = smoke_test.run(Path(result["iso"]["path"]), profile, output_dir=target_dir,
+                                                  profile_source=source)
         else:
             result["smoke"] = {"status": "skipped", "reason": "build succeeded but produced no ISO"}
 

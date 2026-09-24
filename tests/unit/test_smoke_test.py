@@ -4,6 +4,8 @@ anything: no test in this file starts qemu-system-x86_64."""
 from __future__ import annotations
 
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -167,6 +169,121 @@ class DefaultTargetTests(unittest.TestCase):
         })
         result = smoke_test.wait_default_target(session, timeout=0.5)
         self.assertFalse(result["passed"])
+
+
+class ProfileResolutionTests(unittest.TestCase):
+    """Bug: the expectation for open-ports came from a bundle's own leaf
+    profile (which declares no ports of its own, inheriting them from the
+    catalog "kind" it extends) instead of the resolved configuration the
+    engine actually built. These test the two sources directly, against
+    this checkout's real profiles/server.yml -> profiles/minimal.yml chain
+    (the same chain synosnginx-server -> server -> minimal the bug report
+    hit), not a fake stand-in for it."""
+
+    def test_resolved_json_path_shares_the_isos_stem(self) -> None:
+        self.assertEqual(
+            Path("dist/SynOS-NGINX-1.0.0-amd64.resolved.json"),
+            smoke_test.resolved_json_path(Path("dist/SynOS-NGINX-1.0.0-amd64.iso")))
+
+    def test_load_resolved_profile_reads_the_profile_key(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "x.resolved.json"
+            path.write_text(json.dumps({
+                "profile_chain": ["minimal", "server", "synosnginx-server"],
+                "profile": {"security": {"open_ports": ["22/tcp", "9090/tcp"]}},
+            }), encoding="utf-8")
+            profile = smoke_test.load_resolved_profile(path)
+        self.assertEqual(["22/tcp", "9090/tcp"], profile["security"]["open_ports"])
+
+    def test_load_resolved_profile_defaults_to_empty_when_the_key_is_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "x.resolved.json"
+            path.write_text(json.dumps({"manifest": {}}), encoding="utf-8")
+            self.assertEqual({}, smoke_test.load_resolved_profile(path))
+
+    def test_resolve_profile_chain_merges_the_leafs_extends_parent(self) -> None:
+        """The exact shape of the bundle's own profiles/synosnginx-server.yml:
+        extends server (-> minimal), declares no open_ports of its own."""
+        with tempfile.TemporaryDirectory() as d:
+            leaf = Path(d) / "synosnginx-server.yml"
+            leaf.write_text(
+                "id: synosnginx-server\n"
+                "extends: server\n"
+                "software:\n"
+                "  services:\n"
+                "    - name: nginx\n"
+                "      image: docker.io/library/nginx:1.31.2\n",
+                encoding="utf-8")
+            profile, chain = smoke_test.resolve_profile_chain(leaf)
+        self.assertEqual(["minimal", "server", "synosnginx-server"], chain)
+        self.assertEqual(["22/tcp", "9090/tcp"], profile["security"]["open_ports"])
+        self.assertEqual("nginx", profile["software"]["services"][0]["name"])
+
+    def test_resolve_profile_chain_with_no_extends_returns_just_the_leaf(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            leaf = Path(d) / "standalone.yml"
+            leaf.write_text("id: standalone\nsecurity:\n  open_ports: [80/tcp]\n", encoding="utf-8")
+            profile, chain = smoke_test.resolve_profile_chain(leaf)
+        self.assertEqual(["standalone"], chain)
+        self.assertEqual(["80/tcp"], profile["security"]["open_ports"])
+
+
+class MainProfileSourceTests(unittest.TestCase):
+    """main()'s CLI-level source selection: resolved.json (auto-discovered
+    next to the ISO, or --resolved) wins over --profile's own extends
+    chain, which wins over nothing at all — and every case records which
+    source was used, instead of a silent guess."""
+
+    def _capture_run(self, argv: list[str]) -> dict:
+        captured: dict = {}
+
+        def fake_run(iso_path, resolved_profile, **kwargs):
+            captured["resolved_profile"] = resolved_profile
+            captured["profile_source"] = kwargs.get("profile_source")
+            return {"status": "skipped", "reason": "test stub"}
+
+        original = smoke_test.run
+        smoke_test.run = fake_run
+        try:
+            smoke_test.main(argv)
+        finally:
+            smoke_test.run = original
+        return captured
+
+    def test_prefers_resolved_json_found_next_to_the_iso(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            work = Path(d)
+            iso = work / "image.iso"
+            iso.touch()
+            (work / "image.resolved.json").write_text(
+                json.dumps({"profile": {"security": {"open_ports": ["9090/tcp"]}}}), encoding="utf-8")
+            with tempfile.TemporaryDirectory() as outd:
+                captured = self._capture_run([str(iso), "--output", outd])
+        self.assertEqual(["9090/tcp"], captured["resolved_profile"]["security"]["open_ports"])
+        self.assertIn("resolved configuration", captured["profile_source"])
+        self.assertIn("image.resolved.json", captured["profile_source"])
+
+    def test_falls_back_to_the_profile_extends_chain_when_no_resolved_json_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            work = Path(d)
+            iso = work / "image.iso"
+            iso.touch()
+            leaf = work / "synosnginx-server.yml"
+            leaf.write_text("id: synosnginx-server\nextends: server\n", encoding="utf-8")
+            with tempfile.TemporaryDirectory() as outd:
+                captured = self._capture_run([str(iso), "--profile", str(leaf), "--output", outd])
+        self.assertEqual(["22/tcp", "9090/tcp"], captured["resolved_profile"]["security"]["open_ports"])
+        self.assertIn("extends chain resolved", captured["profile_source"])
+
+    def test_no_source_at_all_is_reported_honestly_not_silently_guessed(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            iso = Path(d) / "image.iso"
+            iso.touch()
+            with tempfile.TemporaryDirectory() as outd:
+                captured = self._capture_run([str(iso), "--output", outd])
+        self.assertEqual({}, captured["resolved_profile"])
+        self.assertIn("no --resolved", captured["profile_source"])
+        self.assertIn("no --profile", captured["profile_source"])
 
 
 class AvailabilityTests(unittest.TestCase):
