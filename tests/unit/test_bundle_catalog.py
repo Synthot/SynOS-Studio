@@ -403,21 +403,27 @@ class AppliancePolicyTests(unittest.TestCase):
         text = (CATALOG_DIR / "kubernetes-server" / "profiles" / "kubernetes-server.yml").read_text(encoding="utf-8")
         self.assertIn("2026-12-29", text)
 
-    def test_engine_min_reflects_whether_a_bundle_uses_software_files(self) -> None:
+    def test_engine_min_reflects_the_newest_feature_a_bundle_uses(self) -> None:
         """docs/BUNDLE.md: engine.min tracks the oldest engine that understands
-        the bundle. software.files is new in 0.2.0, so any catalogued bundle
-        using it must require at least that; the rest stay honest at 0.1.0."""
+        the bundle. software.files is new in 0.2.0; a service's cap_add and
+        env_file are new in 0.3.0. A bundle claiming an older engine than the
+        feature it uses fails at build time on that engine, so pin each one."""
         for entry in index_entries():
             folder = CATALOG_DIR / entry["folder"]
             bundle = json.loads((folder / "bundle.json").read_text(encoding="utf-8"))
             manifest = render_manifest.load_yaml(folder / bundle["manifest"])
             profile, _ = render_manifest.resolve_profile(manifest["profile"])
-            uses_files = bool((profile.get("software") or {}).get("files"))
-            engine_min = bundle["engine"]["min"]
+            software = profile.get("software") or {}
+            services = software.get("services") or []
+            needed = (0, 0, 0)
+            if software.get("files"):
+                needed = max(needed, (0, 2, 0))
+            if any(s.get("cap_add") or s.get("env_file") for s in services if isinstance(s, dict)):
+                needed = max(needed, (0, 3, 0))
+            engine_min = tuple(int(part) for part in bundle["engine"]["min"].split("."))
             with self.subTest(entry=entry["id"]):
-                if uses_files:
-                    self.assertGreaterEqual(tuple(map(int, engine_min.split("."))), (0, 2, 0),
-                                             f"{entry['id']} uses software.files but engine.min is {engine_min}")
+                self.assertGreaterEqual(engine_min, needed,
+                                        f"{entry['id']} uses a feature newer than engine.min {bundle['engine']['min']}")
 
     def test_every_appliance_profile_re_opens_ssh_when_it_replaces_open_ports(self) -> None:
         """security.open_ports fully replaces the parent's list (it is not a

@@ -3,14 +3,14 @@
   "name": "object-storage",
   "manifest": "manifests/object-storage.yml",
   "engine": {
-    "min": "0.1.0"
+    "min": "0.3.0"
   },
   "generator": {
     "name": "SynOS bundle catalog",
     "version": "0.1.0"
   },
   "created": "2026-09-22T00:00:00Z",
-  "description": "Object Storage \u2014 ubuntu noble amd64, profile object-storage",
+  "description": "Object Storage — ubuntu noble amd64, profile object-storage",
   "files": [
     "manifests/object-storage.yml",
     "profiles/object-storage.yml"
