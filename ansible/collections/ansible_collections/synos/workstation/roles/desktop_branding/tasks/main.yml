@@ -12,6 +12,11 @@
     mode: "0644"
   when: desktop_branding_package.startswith('http')
 
+- name: Ensure the apt cache is ready (the brand kit .deb can pull dependencies from the archive)
+  ansible.builtin.include_role:
+    name: synos.workstation.apt_cache_ready
+  when: desktop_branding_package | length > 0
+
 - name: Install the brand kit
   ansible.builtin.apt:
     deb: "/tmp/{{ desktop_branding_package | basename }}"

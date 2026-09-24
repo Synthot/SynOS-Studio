@@ -118,7 +118,7 @@ class AnsibleHookTests(unittest.TestCase):
         build = (ROOT / "build.sh").read_text(encoding="utf-8")
         self.assertIn("--connection community.general.chroot", build)
         self.assertIn("playbooks/customize_chroot.yml", build)
-        self.assertIn("run_chroot\nrun_ansible_chroot\numount_folders", build)
+        self.assertIn("run_chroot\nrun_ansible_chroot\nrun_cleanup_mod\numount_folders", build)
 
     def test_collection_is_well_formed(self) -> None:
         galaxy = yaml.safe_load((COLLECTION / "galaxy.yml").read_text(encoding="utf-8"))

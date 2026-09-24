@@ -1,0 +1,2 @@
+# No variables: this role only ensures the apt index is present. See
+# files/ensure_apt_cache.sh for what "present" means.

@@ -2,12 +2,40 @@
 # start, so the image build stays small and reproducible (netavark carries the
 # container DNS since 1.15; there is no aardvark-dns package any more); GPU access follows
 # the profile's hardware.gpu choice.
-- name: podman for the container services
-  ansible.builtin.apt:
-    name: [podman, netavark]
-    state: present
-    install_recommends: false
+- name: Ensure the apt cache is ready for the container services packages
+  ansible.builtin.include_role:
+    name: synos.workstation.apt_cache_ready
   when: container_services | length > 0
+
+- name: podman and netavark for the container services
+  when: container_services | length > 0
+  block:
+    - name: podman for the container services
+      ansible.builtin.apt:
+        name: [podman, netavark]
+        state: present
+        install_recommends: false
+  rescue:
+    - name: Read the apt components configured for this build
+      ansible.builtin.command: grep -h '^Components:' /etc/apt/sources.list.d/*.sources
+      register: synos_container_services_apt_components
+      changed_when: false
+      failed_when: false
+
+    - name: Fail naming the package and the component it needs
+      ansible.builtin.fail:
+        msg: >-
+          Could not install the container services packages (podman,
+          netavark) from the archive: {{ ansible_failed_result.msg | default('apt failed') }}.
+          Both live in this base's universe component (see
+          bases/ubuntu/sources.tmpl, COMPONENTS). Components configured for
+          this build: {{ (synos_container_services_apt_components.stdout_lines
+            | default([]) | map('regex_replace', '^Components:\\s*', '') | list | join(' | '))
+            or 'none found (no *.sources file under /etc/apt/sources.list.d)' }}.
+          If universe is missing from that list, enable it; if it is
+          present, the apt cache is stale — apt_cache_ready should have
+          refreshed it, so check that this role still includes it before
+          this task.
 
 - name: Quadlet directory
   ansible.builtin.file:
