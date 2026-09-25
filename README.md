@@ -84,7 +84,7 @@ Honest as of engine 0.3.0 (September 2026):
   brand, boot menu theme, default language and installer language order
   were checked on screen. Debian 13 images build and boot; they have been
   exercised less.
-- 996 unit tests (`PYTHONPATH=tests python3 -m unittest discover -s
+- 1097 unit tests (`PYTHONPATH=tests python3 -m unittest discover -s
   tests/unit -p 'test_*.py'`, the same command CI runs — count it yourself
   rather than trust this line, since it will drift again) run on every push
   and pass on a bare Ubuntu 24.04 machine. They cover the manifest
