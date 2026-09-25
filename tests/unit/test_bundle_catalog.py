@@ -10,11 +10,15 @@ below by name.
 """
 from __future__ import annotations
 
+import gzip
 import importlib.util
+import io
 import json
+import socket
 import subprocess
 import sys
 import unittest
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -270,6 +274,37 @@ class PackageResolutionTests(unittest.TestCase):
                 docs_concrete, docs_unmapped = render_manifest.resolve_packages(self.bundles["yocto-build-docs"], pkg_map, "amd64", ["en"], base_id)
                 self.assertEqual([], docs_unmapped)
                 self.assertIn("texlive-latex-extra", docs_concrete)
+
+    def test_test_engine_group_is_mapped_on_both_bases(self) -> None:
+        """profiles/bundles.yml "test-engine": everything
+        packaging/install-test-engine.sh's REQUIREMENTS list needs, resolved
+        the same way every other group is. Ubuntu is one package short on
+        purpose (browser-headless maps to nothing there — see the comment in
+        bases/ubuntu/packages.map): the group still resolves to a non-empty
+        list, it just does not carry a real headless browser on that base."""
+        self.assertIn("test-engine", self.bundles)
+        expected_everywhere = {
+            "python3", "python3-yaml", "podman", "buildah", "skopeo",
+            "qemu-system-x86", "xorriso", "tesseract-ocr", "python3-pil",
+        }
+        for base_id, pkg_map in self.pkg_maps.items():
+            with self.subTest(base=base_id):
+                concrete, unmapped = render_manifest.resolve_packages(self.bundles["test-engine"], pkg_map, "amd64", ["en"], base_id)
+                self.assertEqual([], unmapped)
+                self.assertTrue(concrete, f"test-engine resolves to nothing on {base_id}")
+                self.assertTrue(expected_everywhere.issubset(concrete), expected_everywhere - set(concrete))
+        debian_concrete, _ = render_manifest.resolve_packages(self.bundles["test-engine"], self.pkg_maps["debian"], "amd64", ["en"], "debian")
+        self.assertIn("chromium", debian_concrete, "Debian's real, native Chromium — see bases/debian/packages.map")
+        ubuntu_concrete, _ = render_manifest.resolve_packages(self.bundles["test-engine"], self.pkg_maps["ubuntu"], "amd64", ["en"], "ubuntu")
+        self.assertNotIn("chromium", ubuntu_concrete)
+        self.assertNotIn("chromium-browser", ubuntu_concrete,
+                          "Ubuntu's own chromium-browser only installs the Chromium snap; this engine ships no snapd")
+
+    def test_test_engine_group_has_a_catalog_description(self) -> None:
+        catalog = render_manifest.load_yaml(ROOT / "profiles" / "catalog.yml")
+        description = catalog["bundles"].get("test-engine", "")
+        self.assertTrue(description, "profiles/catalog.yml carries no description for the test-engine bundle")
+        self.assertIn("Chromium", description)
 
     def test_yocto_manuals_required_set_is_a_subset_of_both_catalogued_machines(self) -> None:
         """Pins the Yocto Project reference manual's own "Ubuntu and Debian"
@@ -1218,6 +1253,108 @@ class PlatformAndNetworkingApplianceTests(unittest.TestCase):
         for entry_id in ids:
             with self.subTest(entry=entry_id):
                 self.assertTrue(by_id[entry_id]["verified"])
+
+
+class TestEngineBundleTests(unittest.TestCase):
+    """The "Test Engine Build Machine" catalogued bundle
+    (bundle-catalog/test-engine/): the Yocto build host plus the
+    "test-engine" package group, pinned to Debian trixie so its headless
+    browser is a real Chromium rather than Ubuntu's snap-only one."""
+
+    def test_entry_is_present_and_verified(self) -> None:
+        entry = next((e for e in index_entries() if e["id"] == "test-engine"), None)
+        self.assertIsNotNone(entry, "bundle-catalog/index.yml has no test-engine entry")
+        self.assertTrue(entry["verified"])
+        self.assertEqual("test-engine", entry["folder"])
+
+    def test_profile_extends_yocto_builder_and_pins_debian_trixie(self) -> None:
+        profile, chain = render_manifest.resolve_profile("test-engine")
+        self.assertIn("yocto-builder", chain)
+        self.assertIn("yocto-build", profile["software"]["bundles"])
+        self.assertIn("test-engine", profile["software"]["bundles"])
+        manifest = render_manifest.load_yaml(CATALOG_DIR / "test-engine" / "manifests" / "test-engine.yml")
+        self.assertEqual("debian", manifest["base"])
+        self.assertEqual("trixie", manifest["suite"])
+
+    def test_first_boot_points_at_the_installer(self) -> None:
+        entry = next(e for e in index_entries() if e["id"] == "test-engine")
+        combined = " ".join(entry["first_boot"])
+        self.assertIn("install-test-engine.sh", combined)
+
+
+class TestEngineArchiveTests(unittest.TestCase):
+    """Slow, online: every concrete package the "test-engine" group resolves
+    to exists in the real archive, on every suite its base supports — the
+    same pattern tests/unit/test_control_dependencies.py's
+    ControlDependencyArchiveTests uses for packages/*/control, applied here
+    to profiles/bundles.yml's "test-engine" group instead. A network failure
+    skips the test instead of failing it."""
+
+    _index_cache: dict[tuple[str, str, str], set[str]] = {}
+
+    @classmethod
+    def _names_for(cls, base_url: str, pocket: str, component: str) -> set[str]:
+        key = (base_url, pocket, component)
+        if key in cls._index_cache:
+            return cls._index_cache[key]
+        names: set[str] = set()
+        url = f"{base_url}/dists/{pocket}/{component}/binary-amd64/Packages.gz"
+        try:
+            with urllib.request.urlopen(url, timeout=20) as response:
+                raw = response.read()
+        except OSError:
+            cls._index_cache[key] = names
+            return names
+        with gzip.open(io.BytesIO(raw), "rt", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                if line.startswith("Package:") or line.startswith("Provides:"):
+                    for token in line.split(":", 1)[1].split(","):
+                        token = token.strip().split(" ")[0]
+                        if token:
+                            names.add(token)
+        cls._index_cache[key] = names
+        return names
+
+    @classmethod
+    def _available_names(cls, base_url: str, suite: str, components: list[str]) -> set[str]:
+        available: set[str] = set()
+        for component in components:
+            available |= cls._names_for(base_url, suite, component)
+        return available
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        try:
+            socket.setdefaulttimeout(8)
+            with urllib.request.urlopen("http://archive.ubuntu.com/ubuntu/dists/jammy/Release", timeout=8) as response:
+                response.read(1)
+        except OSError as exc:
+            raise unittest.SkipTest(f"package archive is not reachable from this host: {exc}")
+
+    def test_every_test_engine_package_resolves_on_every_supported_suite(self) -> None:
+        bundles = render_manifest.load_bundles()
+        failures = []
+        for env_path in sorted((ROOT / "bases").glob("*/base.env")):
+            base_id = env_path.parent.name
+            if base_id.startswith("_"):
+                continue
+            base = render_manifest.load_env(env_path)
+            pkg_map = render_manifest.load_package_map(env_path.parent / "packages.map")
+            base_url = base.get("APT_MIRROR", "").rstrip("/")
+            components = base.get("COMPONENTS", "main").split()
+            concrete, _unmapped = render_manifest.resolve_packages(bundles["test-engine"], pkg_map, "amd64", ["en"], base_id)
+            for suite in base.get("SUPPORTED_SUITES", "").split():
+                try:
+                    available = self._available_names(base_url, suite, components)
+                except OSError as exc:
+                    self.skipTest(f"could not fetch the {base_id}/{suite} package index: {exc}")
+                if not available:
+                    self.skipTest(f"no package index came back for {base_id}/{suite} — treating as unreachable")
+                for package in concrete:
+                    with self.subTest(base=base_id, suite=suite, package=package):
+                        if package not in available:
+                            failures.append(f"{base_id}/{suite}: {package!r} does not exist")
+        self.assertEqual([], failures, "\n" + "\n".join(failures))
 
 
 if __name__ == "__main__":

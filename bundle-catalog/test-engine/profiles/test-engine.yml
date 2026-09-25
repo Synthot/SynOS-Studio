@@ -1,0 +1,17 @@
+id: test-engine
+extends: yocto-builder
+description: >-
+  The Yocto build host (profiles/yocto-builder.yml) plus everything this
+  engine's own catalog-conformance test service needs
+  (packaging/install-test-engine.sh; profiles/bundles.yml, "test-engine"):
+  a container runtime, QEMU, xorriso, Tesseract OCR, Pillow, PyYAML and a
+  headless Chromium, to build a catalogued bundle, boot the resulting
+  image under QEMU and read its boot screen with OCR. Pinned to Debian
+  trixie rather than this engine's usual Ubuntu noble: Debian's own
+  archive ships a real Chromium, where Ubuntu's own "chromium" only
+  installs the Chromium snap, which this engine's images never carry.
+  Still needs an en_US.UTF-8 locale and the Yocto build host's disk space
+  (at least 140 GB), more here for the container images and ISOs a
+  conformance run keeps around.
+software:
+  bundles: [test-engine]

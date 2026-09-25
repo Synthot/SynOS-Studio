@@ -808,6 +808,14 @@ a credential in it), installs the four units with a dedicated user, and
 then runs the cheap checks below for real. `--dry-run` prints every step
 without doing any of it; `--help` lists every option.
 
+Building a machine to run this, rather than adding it to one that already
+exists? `profiles/bundles.yml`'s `test-engine` group installs the same
+list (minus the distribution-detection step, since a profile already pins
+its base) into the SynOS image itself, so it comes up with everything but
+this script; the bundle catalog's "Test Engine Build Machine" entry
+(`bundle-catalog/test-engine/`) pairs it with the Yocto build host, the
+combination this section assumes.
+
 By hand:
 
 1. Clone this repository somewhere stable, e.g. `/opt/synos-engine`

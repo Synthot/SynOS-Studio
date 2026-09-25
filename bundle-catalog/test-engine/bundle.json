@@ -1,0 +1,18 @@
+{
+  "format": 1,
+  "name": "test-engine",
+  "manifest": "manifests/test-engine.yml",
+  "engine": {
+    "min": "0.1.0"
+  },
+  "generator": {
+    "name": "SynOS bundle catalog",
+    "version": "0.1.0"
+  },
+  "created": "2026-09-25T00:00:00Z",
+  "description": "Test Engine Build Machine — debian trixie amd64, profile test-engine",
+  "files": [
+    "manifests/test-engine.yml",
+    "profiles/test-engine.yml"
+  ]
+}
