@@ -1,8 +1,8 @@
 """tools/build_status.py: the small, versioned file a browser fetches on
-every page load to show a bundle's badge - queued/testing (both "not yet
-tested" to a viewer), succeeded, or failed since a date - plus a bounded
-history and a sanitized error summary. Pure functions and file I/O only -
-no network, no browser, no launcher."""
+every page load to show a bundle's badge, per base - queued/testing (both
+"not yet tested" to a viewer), succeeded, or failed since a date - plus a
+bounded history and a sanitized error summary. Pure functions and file
+I/O only - no network, no browser, no launcher."""
 from __future__ import annotations
 
 import json
@@ -17,9 +17,9 @@ sys.path.insert(0, str(ROOT / "tools"))
 import build_status as bs  # noqa: E402
 
 
-def success_result(entry_id: str, *, size: int = 1000, checksum: str = "abc123",
+def success_result(entry_id: str, *, base: str = "ubuntu", size: int = 1000, checksum: str = "abc123",
                    smoke_status: str = "passed", engine: str = "0.2.0",
-                   base: str = "ubuntu", suite: str = "noble", duration_s: float = 100.0,
+                   suite: str = "noble", duration_s: float = 100.0,
                    end: str = "2026-09-24T16:00:00+00:00") -> dict:
     return {"id": entry_id, "status": "success", "engine": engine, "base": base, "suite": suite,
             "end": end, "start": "2026-09-24T15:50:00+00:00", "duration_s": duration_s, "stage": None,
@@ -27,18 +27,19 @@ def success_result(entry_id: str, *, size: int = 1000, checksum: str = "abc123",
             "smoke": {"status": smoke_status}, "log_tail": []}
 
 
-def failed_result(entry_id: str, *, stage: str = "engine", end: str = "2026-09-24T16:05:00+00:00",
-                  log_tail: list | None = None, duration_s: float = 50.0) -> dict:
+def failed_result(entry_id: str, *, base: str = "ubuntu", stage: str = "engine",
+                  end: str = "2026-09-24T16:05:00+00:00", log_tail: list | None = None,
+                  duration_s: float = 50.0) -> dict:
     return {"id": entry_id, "status": "build_failed", "stage": stage, "engine": "0.2.0",
-            "base": "ubuntu", "suite": "noble", "end": end, "start": "2026-09-24T15:55:00+00:00",
+            "base": base, "suite": "noble", "end": end, "start": "2026-09-24T15:55:00+00:00",
             "duration_s": duration_s, "iso": None, "smoke": None,
             "log_tail": log_tail if log_tail is not None else ["error: build step 7 failed"]}
 
 
-def skipped_result(entry_id: str, *, end: str = "2026-09-24T16:01:00+00:00",
+def skipped_result(entry_id: str, *, base: str = "ubuntu", end: str = "2026-09-24T16:01:00+00:00",
                    log_tail: list | None = None) -> dict:
     return {"id": entry_id, "status": "skipped", "stage": "page", "engine": "0.2.0",
-            "base": None, "suite": None, "end": end, "start": "2026-09-24T16:00:50+00:00",
+            "base": base, "suite": None, "end": end, "start": "2026-09-24T16:00:50+00:00",
             "duration_s": 0.1, "iso": None, "smoke": None,
             "log_tail": log_tail if log_tail is not None else ["no browser available"]}
 
@@ -51,7 +52,8 @@ class MapStateTests(unittest.TestCase):
         self.assertEqual("skipped", bs.map_state("skipped"))
 
     def test_every_other_finer_status_folds_to_failed(self) -> None:
-        for status in ("failed", "error", "timeout", "invalid", "host", "build_failed", "running", None, "anything-else"):
+        for status in ("failed", "error", "timeout", "invalid", "host", "build_failed", "smoke_failed",
+                      "running", None, "anything-else"):
             self.assertEqual("failed", bs.map_state(status), status)
 
 
@@ -140,47 +142,141 @@ class ErrorSummaryTests(unittest.TestCase):
 
 
 class EntryRecordViaApplyResultTests(unittest.TestCase):
-    def test_success_record_carries_iso_size_checksum_and_smoke(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "web-server-nginx",
+    def test_success_record_carries_iso_size_checksum_and_boot_passed(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "web-server-nginx", "ubuntu",
                                     success_result("web-server-nginx", size=42, checksum="deadbeef"))
-        record = status["entries"]["web-server-nginx"]
+        record = status["entries"]["web-server-nginx"]["bases"]["ubuntu"]
         self.assertEqual("success", record["state"])
         self.assertEqual("2026-09-24T16:00:00+00:00", record["date"])
         self.assertEqual("0.2.0", record["engine"])
-        self.assertEqual("ubuntu", record["base"])
         self.assertEqual("noble", record["suite"])
         self.assertEqual(42, record["size"])
         self.assertEqual("deadbeef", record["checksum"])
-        self.assertIs(True, record["smoke_passed"])
+        self.assertIs(True, record["boot_passed"])
         self.assertIsNone(record["error"])
 
     def test_failed_record_has_null_size_checksum_and_an_error(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", failed_result("x"))
-        record = status["entries"]["x"]
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", failed_result("x"))
+        record = status["entries"]["x"]["bases"]["ubuntu"]
         self.assertEqual("failed", record["state"])
         self.assertIsNone(record["size"])
         self.assertIsNone(record["checksum"])
-        self.assertIsNone(record["smoke_passed"])
+        self.assertIsNone(record["boot_passed"])
         self.assertIsNotNone(record["error"])
 
     def test_smoke_failed_is_recorded_as_false_not_null(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", success_result("x", smoke_status="failed"))
-        self.assertIs(False, status["entries"]["x"]["smoke_passed"])
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", success_result("x", smoke_status="failed"))
+        self.assertIs(False, status["entries"]["x"]["bases"]["ubuntu"]["boot_passed"])
 
     def test_smoke_skipped_is_null_not_false(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", success_result("x", smoke_status="skipped"))
-        self.assertIsNone(status["entries"]["x"]["smoke_passed"])
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", success_result("x", smoke_status="skipped"))
+        self.assertIsNone(status["entries"]["x"]["bases"]["ubuntu"]["boot_passed"])
 
     def test_malformed_result_never_raises(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", {})
-        self.assertEqual("failed", status["entries"]["x"]["state"])
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", {})
+        self.assertEqual("failed", status["entries"]["x"]["bases"]["ubuntu"]["state"])
 
     def test_own_paths_and_hostname_reach_the_recorded_error(self) -> None:
         result = failed_result("x", log_tail=["failed on host build-01 at /srv/synos/work/x"])
-        status, _ = bs.apply_result(bs.empty_status(), "x", result, own_paths=["/srv/synos"], hostname="build-01")
-        error = status["entries"]["x"]["error"]
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", result,
+                                    own_paths=["/srv/synos"], hostname="build-01")
+        error = status["entries"]["x"]["bases"]["ubuntu"]["error"]
         self.assertNotIn("/srv/synos", error)
         self.assertNotIn("build-01", error)
+
+
+class PerBaseIndependenceTests(unittest.TestCase):
+    """Item 111: an entry carries a result per base; each base's record is
+    entirely its own, and an entry with no result for a base says nothing
+    for that base."""
+
+    def test_two_bases_for_the_same_entry_are_independent(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", success_result("x", base="ubuntu"))
+        status, _ = bs.apply_result(status, "x", "debian", failed_result("x", base="debian"))
+        self.assertEqual("success", status["entries"]["x"]["bases"]["ubuntu"]["state"])
+        self.assertEqual("failed", status["entries"]["x"]["bases"]["debian"]["state"])
+
+    def test_a_base_with_no_result_is_simply_absent(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", success_result("x", base="ubuntu"))
+        self.assertNotIn("debian", status["entries"]["x"]["bases"])
+
+    def test_updating_one_base_does_not_disturb_the_others_history_or_since(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu",
+                                    success_result("x", base="ubuntu", end="2026-01-01T00:00:00+00:00"))
+        status, _ = bs.apply_result(status, "x", "debian",
+                                    success_result("x", base="debian", end="2026-01-02T00:00:00+00:00"))
+        debian_since_before = status["entries"]["x"]["bases"]["debian"]["since"]
+        status, _ = bs.apply_result(status, "x", "ubuntu",
+                                    failed_result("x", base="ubuntu", end="2026-01-03T00:00:00+00:00"))
+        self.assertEqual("failed", status["entries"]["x"]["bases"]["ubuntu"]["state"])
+        self.assertEqual("success", status["entries"]["x"]["bases"]["debian"]["state"])
+        self.assertEqual(debian_since_before, status["entries"]["x"]["bases"]["debian"]["since"])
+
+
+class MigrationV1ToV2Tests(unittest.TestCase):
+    """Item 111/113: schema_version 1's single per-entry result becomes
+    that entry's result for its own base under schema_version 2."""
+
+    def _v1_entry(self, *, state="success", base="ubuntu", smoke_passed=True) -> dict:
+        return {"state": state, "date": "2026-01-01T00:00:00+00:00", "since": "2025-12-01T00:00:00+00:00",
+               "engine": "0.2.0", "base": base, "suite": "noble", "size": 123, "checksum": "abc",
+               "smoke_passed": smoke_passed, "error": None,
+               "history": [{"date": "2026-01-01T00:00:00+00:00", "state": state, "engine": "0.2.0",
+                            "base": base, "suite": "noble", "duration_s": 10.0, "stage": None, "error": None}]}
+
+    def test_migrates_a_v1_entry_to_its_own_base(self) -> None:
+        v1 = {"schema_version": 1, "generated_at": "2026-01-01T00:00:00+00:00",
+             "entries": {"web-server-nginx": self._v1_entry(base="ubuntu")}}
+        v2 = bs.migrate_v1_to_v2(v1)
+        self.assertEqual(bs.SCHEMA_VERSION, v2["schema_version"])
+        record = v2["entries"]["web-server-nginx"]["bases"]["ubuntu"]
+        self.assertEqual("success", record["state"])
+        self.assertEqual(123, record["size"])
+        self.assertIs(True, record["boot_passed"])
+        self.assertNotIn("base", record, "base is now the dict key, not repeated inside the record")
+
+    def test_migrated_history_entries_drop_the_redundant_base_field(self) -> None:
+        v1 = {"schema_version": 1, "entries": {"x": self._v1_entry(base="debian")}}
+        v2 = bs.migrate_v1_to_v2(v1)
+        history_entry = v2["entries"]["x"]["bases"]["debian"]["history"][0]
+        self.assertNotIn("base", history_entry)
+        self.assertEqual("noble", history_entry["suite"])  # everything else survives
+
+    def test_an_entry_with_no_base_yet_is_dropped_not_carried_forward_broken(self) -> None:
+        v1_entry = self._v1_entry()
+        v1_entry["state"] = "queued"
+        v1_entry["base"] = None
+        v1 = {"schema_version": 1, "entries": {"stuck": v1_entry}}
+        v2 = bs.migrate_v1_to_v2(v1)
+        self.assertNotIn("stuck", v2["entries"])
+
+    def test_load_status_migrates_a_v1_file_on_disk_transparently(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "build-status.json"
+            v1 = {"schema_version": 1, "generated_at": "2026-01-01T00:00:00+00:00",
+                 "entries": {"web-server-nginx": self._v1_entry(base="ubuntu")}}
+            path.write_text(json.dumps(v1), encoding="utf-8")
+            loaded = bs.load_status(path)
+        self.assertEqual(bs.SCHEMA_VERSION, loaded["schema_version"])
+        self.assertEqual("success", loaded["entries"]["web-server-nginx"]["bases"]["ubuntu"]["state"])
+
+    def test_load_status_then_write_then_reload_round_trips_the_migrated_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "build-status.json"
+            v1 = {"schema_version": 1, "entries": {"x": self._v1_entry(base="ubuntu")}}
+            path.write_text(json.dumps(v1), encoding="utf-8")
+            migrated = bs.load_status(path)
+            bs.write_status_atomic(path, migrated)
+            reloaded = bs.load_status(path)
+        self.assertEqual(bs.SCHEMA_VERSION, reloaded["schema_version"])
+        self.assertEqual("success", reloaded["entries"]["x"]["bases"]["ubuntu"]["state"])
+
+    def test_an_unknown_future_schema_version_starts_fresh_rather_than_guessing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "build-status.json"
+            path.write_text(json.dumps({"schema_version": 999, "entries": {"x": {}}}), encoding="utf-8")
+            loaded = bs.load_status(path)
+        self.assertEqual({}, loaded["entries"])
 
 
 class LoadWriteStatusTests(unittest.TestCase):
@@ -197,20 +293,14 @@ class LoadWriteStatusTests(unittest.TestCase):
             status = bs.load_status(path)
         self.assertEqual({}, status["entries"])
 
-    def test_wrong_schema_version_loads_as_empty(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "build-status.json"
-            path.write_text(json.dumps({"schema_version": 999, "entries": {}}), encoding="utf-8")
-            status = bs.load_status(path)
-        self.assertEqual(bs.SCHEMA_VERSION, status["schema_version"])
-
     def test_write_then_load_round_trips(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "sub" / "build-status.json"  # parent does not exist yet
-            status, _ = bs.apply_result(bs.empty_status(), "web-server-nginx", success_result("web-server-nginx"))
+            status, _ = bs.apply_result(bs.empty_status(), "web-server-nginx", "ubuntu",
+                                        success_result("web-server-nginx"))
             bs.write_status_atomic(path, status)
             reloaded = bs.load_status(path)
-        self.assertEqual("success", reloaded["entries"]["web-server-nginx"]["state"])
+        self.assertEqual("success", reloaded["entries"]["web-server-nginx"]["bases"]["ubuntu"]["state"])
 
     def test_write_leaves_no_temp_file_behind(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -223,88 +313,102 @@ class LoadWriteStatusTests(unittest.TestCase):
 class StateMachineTests(unittest.TestCase):
     """Item 93: queued -> testing -> a real outcome, written live at each
     step, plus resolving a "testing" an interrupted previous run left
-    behind."""
+    behind - now scoped per (entry, base)."""
 
     def test_queue_creates_a_fresh_record_in_state_queued(self) -> None:
-        status, changed = bs.mark_queued(bs.empty_status(), "x")
+        status, changed = bs.mark_queued(bs.empty_status(), "x", "ubuntu")
         self.assertTrue(changed)
-        self.assertEqual("queued", status["entries"]["x"]["state"])
-        self.assertEqual([], status["entries"]["x"]["history"])
+        self.assertEqual("queued", status["entries"]["x"]["bases"]["ubuntu"]["state"])
+        self.assertEqual([], status["entries"]["x"]["bases"]["ubuntu"]["history"])
 
     def test_start_moves_queued_to_testing(self) -> None:
-        status, _ = bs.mark_queued(bs.empty_status(), "x")
-        status, changed = bs.mark_testing(status, "x")
+        status, _ = bs.mark_queued(bs.empty_status(), "x", "ubuntu")
+        status, changed = bs.mark_testing(status, "x", "ubuntu")
         self.assertTrue(changed)
-        self.assertEqual("testing", status["entries"]["x"]["state"])
+        self.assertEqual("testing", status["entries"]["x"]["bases"]["ubuntu"]["state"])
 
     def test_start_without_a_prior_queue_still_works(self) -> None:
-        status, changed = bs.mark_testing(bs.empty_status(), "x")
+        status, changed = bs.mark_testing(bs.empty_status(), "x", "ubuntu")
         self.assertTrue(changed)
-        self.assertEqual("testing", status["entries"]["x"]["state"])
+        self.assertEqual("testing", status["entries"]["x"]["bases"]["ubuntu"]["state"])
+
+    def test_queuing_one_base_does_not_touch_another_bases_record(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "x", "debian", success_result("x", base="debian"))
+        status, _ = bs.mark_queued(status, "x", "ubuntu")
+        self.assertEqual("queued", status["entries"]["x"]["bases"]["ubuntu"]["state"])
+        self.assertEqual("success", status["entries"]["x"]["bases"]["debian"]["state"])
 
     def test_queue_after_a_real_outcome_keeps_since_and_history(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", success_result("x"))
-        since_before = status["entries"]["x"]["since"]
-        history_before = status["entries"]["x"]["history"]
-        status, changed = bs.mark_queued(status, "x")
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", success_result("x"))
+        since_before = status["entries"]["x"]["bases"]["ubuntu"]["since"]
+        history_before = status["entries"]["x"]["bases"]["ubuntu"]["history"]
+        status, changed = bs.mark_queued(status, "x", "ubuntu")
         self.assertTrue(changed)
-        self.assertEqual("queued", status["entries"]["x"]["state"])
-        self.assertEqual(since_before, status["entries"]["x"]["since"])
-        self.assertEqual(history_before, status["entries"]["x"]["history"])
+        self.assertEqual("queued", status["entries"]["x"]["bases"]["ubuntu"]["state"])
+        self.assertEqual(since_before, status["entries"]["x"]["bases"]["ubuntu"]["since"])
+        self.assertEqual(history_before, status["entries"]["x"]["bases"]["ubuntu"]["history"])
 
     def test_re_queuing_an_already_queued_entry_is_not_a_change(self) -> None:
-        status, _ = bs.mark_queued(bs.empty_status(), "x")
-        _, changed = bs.mark_queued(status, "x")
+        status, _ = bs.mark_queued(bs.empty_status(), "x", "ubuntu")
+        _, changed = bs.mark_queued(status, "x", "ubuntu")
         self.assertFalse(changed)
 
     def test_full_lifecycle_queued_testing_success(self) -> None:
-        status, c1 = bs.mark_queued(bs.empty_status(), "x")
-        status, c2 = bs.mark_testing(status, "x")
-        status, c3 = bs.apply_result(status, "x", success_result("x"))
+        status, c1 = bs.mark_queued(bs.empty_status(), "x", "ubuntu")
+        status, c2 = bs.mark_testing(status, "x", "ubuntu")
+        status, c3 = bs.apply_result(status, "x", "ubuntu", success_result("x"))
         self.assertTrue(c1 and c2 and c3)
-        self.assertEqual("success", status["entries"]["x"]["state"])
-        self.assertEqual(1, len(status["entries"]["x"]["history"]))
+        self.assertEqual("success", status["entries"]["x"]["bases"]["ubuntu"]["state"])
+        self.assertEqual(1, len(status["entries"]["x"]["bases"]["ubuntu"]["history"]))
 
     def test_resolve_stuck_testing_turns_it_into_failed_with_an_explanation(self) -> None:
-        status, _ = bs.mark_testing(bs.empty_status(), "x")
+        status, _ = bs.mark_testing(bs.empty_status(), "x", "ubuntu")
         status, touched = bs.resolve_stuck_testing(status)
-        self.assertEqual(["x"], touched)
-        record = status["entries"]["x"]
+        self.assertEqual([("x", "ubuntu")], touched)
+        record = status["entries"]["x"]["bases"]["ubuntu"]
         self.assertEqual("failed", record["state"])
         self.assertEqual(bs.INTERRUPTED_ERROR, record["error"])
         self.assertEqual(1, len(record["history"]))
         self.assertEqual("failed", record["history"][-1]["state"])
 
+    def test_resolve_stuck_testing_only_touches_the_stuck_base_not_a_sibling(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", success_result("x", base="ubuntu"))
+        status, _ = bs.mark_testing(status, "x", "debian")
+        status, touched = bs.resolve_stuck_testing(status)
+        self.assertEqual([("x", "debian")], touched)
+        self.assertEqual("success", status["entries"]["x"]["bases"]["ubuntu"]["state"])
+        self.assertEqual("failed", status["entries"]["x"]["bases"]["debian"]["state"])
+
     def test_resolve_stuck_testing_leaves_non_testing_entries_untouched(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "a", success_result("a"))
-        status, _ = bs.mark_queued(status, "b")
+        status, _ = bs.apply_result(bs.empty_status(), "a", "ubuntu", success_result("a"))
+        status, _ = bs.mark_queued(status, "b", "ubuntu")
         status, touched = bs.resolve_stuck_testing(status)
         self.assertEqual([], touched)
-        self.assertEqual("success", status["entries"]["a"]["state"])
-        self.assertEqual("queued", status["entries"]["b"]["state"])
+        self.assertEqual("success", status["entries"]["a"]["bases"]["ubuntu"]["state"])
+        self.assertEqual("queued", status["entries"]["b"]["bases"]["ubuntu"]["state"])
 
-    def test_resolve_stuck_testing_with_nothing_stuck_is_a_no_op_reporting_no_ids(self) -> None:
+    def test_resolve_stuck_testing_with_nothing_stuck_is_a_no_op_reporting_no_pairs(self) -> None:
         status = bs.empty_status()
         new_status, touched = bs.resolve_stuck_testing(status)
         self.assertEqual([], touched)
 
     def test_a_run_interrupted_while_testing_is_resolved_by_the_next_run_before_it_proceeds(self) -> None:
-        """End-to-end simulation: run 1 queues and starts "x" then dies
-        (never calls apply_result). Run 2 starts by resolving it, then
+        """End-to-end simulation: run 1 queues and starts "x" on ubuntu then
+        dies (never calls apply_result). Run 2 starts by resolving it, then
         proceeds normally - "x" must never be left "testing" forever, and
         must never silently become "success"."""
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "build-status.json"
-            status, _ = bs.mark_queued(bs.load_status(path), "x")
-            status, _ = bs.mark_testing(status, "x")
+            status, _ = bs.mark_queued(bs.load_status(path), "x", "ubuntu")
+            status, _ = bs.mark_testing(status, "x", "ubuntu")
             bs.write_status_atomic(path, status)  # run 1 "dies" here
 
             status = bs.load_status(path)
             status, touched = bs.resolve_stuck_testing(status)
             bs.write_status_atomic(path, status)
             reloaded = bs.load_status(path)
-        self.assertEqual(["x"], touched)
-        self.assertEqual("failed", reloaded["entries"]["x"]["state"])
+        self.assertEqual([("x", "ubuntu")], touched)
+        self.assertEqual("failed", reloaded["entries"]["x"]["bases"]["ubuntu"]["state"])
 
 
 class SinceStreakTests(unittest.TestCase):
@@ -312,91 +416,101 @@ class SinceStreakTests(unittest.TestCase):
     not merely the most recent attempt's date."""
 
     def test_first_ever_result_since_equals_its_own_date(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", success_result("x", end="2026-01-01T00:00:00+00:00"))
-        self.assertEqual("2026-01-01T00:00:00+00:00", status["entries"]["x"]["since"])
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu",
+                                    success_result("x", end="2026-01-01T00:00:00+00:00"))
+        self.assertEqual("2026-01-01T00:00:00+00:00", status["entries"]["x"]["bases"]["ubuntu"]["since"])
 
     def test_repeated_success_keeps_the_original_since_date(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", success_result("x", end="2026-01-01T00:00:00+00:00"))
-        status, _ = bs.apply_result(status, "x", success_result("x", end="2026-01-05T00:00:00+00:00"))
-        status, _ = bs.apply_result(status, "x", success_result("x", end="2026-01-10T00:00:00+00:00"))
-        self.assertEqual("2026-01-01T00:00:00+00:00", status["entries"]["x"]["since"])
-        self.assertEqual("2026-01-10T00:00:00+00:00", status["entries"]["x"]["date"])
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu",
+                                    success_result("x", end="2026-01-01T00:00:00+00:00"))
+        status, _ = bs.apply_result(status, "x", "ubuntu", success_result("x", end="2026-01-05T00:00:00+00:00"))
+        status, _ = bs.apply_result(status, "x", "ubuntu", success_result("x", end="2026-01-10T00:00:00+00:00"))
+        self.assertEqual("2026-01-01T00:00:00+00:00", status["entries"]["x"]["bases"]["ubuntu"]["since"])
+        self.assertEqual("2026-01-10T00:00:00+00:00", status["entries"]["x"]["bases"]["ubuntu"]["date"])
 
     def test_a_failing_streak_records_when_it_began_not_the_latest_attempt(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", success_result("x", end="2026-01-01T00:00:00+00:00"))
-        status, _ = bs.apply_result(status, "x", failed_result("x", end="2026-01-05T00:00:00+00:00"))
-        status, _ = bs.apply_result(status, "x", failed_result("x", end="2026-01-06T00:00:00+00:00"))
-        status, _ = bs.apply_result(status, "x", failed_result("x", end="2026-01-07T00:00:00+00:00"))
-        self.assertEqual("2026-01-05T00:00:00+00:00", status["entries"]["x"]["since"])
-        self.assertEqual("2026-01-07T00:00:00+00:00", status["entries"]["x"]["date"])
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu",
+                                    success_result("x", end="2026-01-01T00:00:00+00:00"))
+        status, _ = bs.apply_result(status, "x", "ubuntu", failed_result("x", end="2026-01-05T00:00:00+00:00"))
+        status, _ = bs.apply_result(status, "x", "ubuntu", failed_result("x", end="2026-01-06T00:00:00+00:00"))
+        status, _ = bs.apply_result(status, "x", "ubuntu", failed_result("x", end="2026-01-07T00:00:00+00:00"))
+        self.assertEqual("2026-01-05T00:00:00+00:00", status["entries"]["x"]["bases"]["ubuntu"]["since"])
+        self.assertEqual("2026-01-07T00:00:00+00:00", status["entries"]["x"]["bases"]["ubuntu"]["date"])
 
     def test_recovering_from_failure_resets_since_to_the_recovery_date(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", failed_result("x", end="2026-01-01T00:00:00+00:00"))
-        status, _ = bs.apply_result(status, "x", success_result("x", end="2026-01-08T00:00:00+00:00"))
-        self.assertEqual("2026-01-08T00:00:00+00:00", status["entries"]["x"]["since"])
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu",
+                                    failed_result("x", end="2026-01-01T00:00:00+00:00"))
+        status, _ = bs.apply_result(status, "x", "ubuntu", success_result("x", end="2026-01-08T00:00:00+00:00"))
+        self.assertEqual("2026-01-08T00:00:00+00:00", status["entries"]["x"]["bases"]["ubuntu"]["since"])
 
     def test_a_queued_testing_round_trip_between_two_successes_does_not_disturb_since(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", success_result("x", end="2026-01-01T00:00:00+00:00"))
-        status, _ = bs.mark_queued(status, "x")
-        status, _ = bs.mark_testing(status, "x")
-        status, _ = bs.apply_result(status, "x", success_result("x", end="2026-01-15T00:00:00+00:00"))
-        self.assertEqual("2026-01-01T00:00:00+00:00", status["entries"]["x"]["since"])
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu",
+                                    success_result("x", end="2026-01-01T00:00:00+00:00"))
+        status, _ = bs.mark_queued(status, "x", "ubuntu")
+        status, _ = bs.mark_testing(status, "x", "ubuntu")
+        status, _ = bs.apply_result(status, "x", "ubuntu", success_result("x", end="2026-01-15T00:00:00+00:00"))
+        self.assertEqual("2026-01-01T00:00:00+00:00", status["entries"]["x"]["bases"]["ubuntu"]["since"])
 
 
 class HistoryBoundAndOrderTests(unittest.TestCase):
     """Item 95: bounded, ordered, and each entry carries date/state/
-    engine/base/suite/duration and, for a failure, stage and error."""
+    engine/suite/duration and, for a failure, stage and error."""
 
     def test_history_grows_with_each_real_outcome(self) -> None:
         status = bs.empty_status()
         for i in range(3):
-            status, _ = bs.apply_result(status, "x", success_result("x", end=f"2026-01-0{i+1}T00:00:00+00:00"))
-        self.assertEqual(3, len(status["entries"]["x"]["history"]))
+            status, _ = bs.apply_result(status, "x", "ubuntu",
+                                        success_result("x", end=f"2026-01-0{i+1}T00:00:00+00:00"))
+        self.assertEqual(3, len(status["entries"]["x"]["bases"]["ubuntu"]["history"]))
 
     def test_history_is_bounded_to_the_limit(self) -> None:
         status = bs.empty_status()
         for i in range(bs.HISTORY_LIMIT + 5):
-            status, _ = bs.apply_result(status, "x", success_result("x", end=f"2026-01-01T00:{i:02d}:00+00:00"))
-        self.assertEqual(bs.HISTORY_LIMIT, len(status["entries"]["x"]["history"]))
+            status, _ = bs.apply_result(status, "x", "ubuntu",
+                                        success_result("x", end=f"2026-01-01T00:{i:02d}:00+00:00"))
+        self.assertEqual(bs.HISTORY_LIMIT, len(status["entries"]["x"]["bases"]["ubuntu"]["history"]))
 
     def test_history_keeps_the_most_recent_entries_oldest_first(self) -> None:
         status = bs.empty_status()
         for i in range(bs.HISTORY_LIMIT + 3):
-            status, _ = bs.apply_result(status, "x", success_result("x", end=f"2026-01-01T00:{i:02d}:00+00:00"))
-        history = status["entries"]["x"]["history"]
+            status, _ = bs.apply_result(status, "x", "ubuntu",
+                                        success_result("x", end=f"2026-01-01T00:{i:02d}:00+00:00"))
+        history = status["entries"]["x"]["bases"]["ubuntu"]["history"]
         self.assertEqual("2026-01-01T00:03:00+00:00", history[0]["date"])
         self.assertEqual(f"2026-01-01T00:{bs.HISTORY_LIMIT + 2:02d}:00+00:00", history[-1]["date"])
 
     def test_queued_and_testing_transitions_never_add_a_history_entry(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", success_result("x"))
-        status, _ = bs.mark_queued(status, "x")
-        status, _ = bs.mark_testing(status, "x")
-        self.assertEqual(1, len(status["entries"]["x"]["history"]))
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", success_result("x"))
+        status, _ = bs.mark_queued(status, "x", "ubuntu")
+        status, _ = bs.mark_testing(status, "x", "ubuntu")
+        self.assertEqual(1, len(status["entries"]["x"]["bases"]["ubuntu"]["history"]))
 
     def test_a_failure_history_entry_carries_stage_and_error(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", failed_result("x", stage="launcher"))
-        entry = status["entries"]["x"]["history"][-1]
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", failed_result("x", stage="launcher"))
+        entry = status["entries"]["x"]["bases"]["ubuntu"]["history"][-1]
         self.assertEqual("launcher", entry["stage"])
         self.assertIsNotNone(entry["error"])
         self.assertEqual("failed", entry["state"])
         self.assertIn("engine", entry)
-        self.assertIn("base", entry)
         self.assertIn("suite", entry)
         self.assertIn("duration_s", entry)
+        self.assertNotIn("base", entry)
 
     def test_a_success_history_entry_has_a_null_stage_and_error(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "x", success_result("x"))
-        entry = status["entries"]["x"]["history"][-1]
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", success_result("x"))
+        entry = status["entries"]["x"]["bases"]["ubuntu"]["history"][-1]
         self.assertIsNone(entry["stage"])
         self.assertIsNone(entry["error"])
 
-    def test_fifty_entries_each_with_a_full_history_stays_a_valid_and_reasonably_small_file(self) -> None:
+    def test_fifty_entries_each_with_two_bases_and_a_full_history_stays_reasonably_small(self) -> None:
         status = bs.empty_status()
         for n in range(50):
             entry_id = f"entry-{n}"
-            for i in range(bs.HISTORY_LIMIT + 2):
-                status, _ = bs.apply_result(status, entry_id,
-                                            success_result(entry_id, end=f"2026-01-01T00:{i:02d}:00+00:00"))
+            for base in ("ubuntu", "debian"):
+                for i in range(bs.HISTORY_LIMIT + 2):
+                    status, _ = bs.apply_result(status, entry_id, base,
+                                                success_result(entry_id, base=base,
+                                                               end=f"2026-01-01T00:{i:02d}:00+00:00"))
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "build-status.json"
             bs.write_status_atomic(path, status)
@@ -404,12 +518,13 @@ class HistoryBoundAndOrderTests(unittest.TestCase):
             reloaded = bs.load_status(path)
         self.assertEqual(50, len(reloaded["entries"]))
         for record in reloaded["entries"].values():
-            self.assertEqual(bs.HISTORY_LIMIT, len(record["history"]))
+            self.assertEqual({"ubuntu", "debian"}, set(record["bases"]))
+            for base_record in record["bases"].values():
+                self.assertEqual(bs.HISTORY_LIMIT, len(base_record["history"]))
         # Not a strict contract, just a sanity check that history bounding
         # actually keeps this well under a size nobody would want to fetch
-        # on every page load (a few KB per entry at most, not fifty
-        # unbounded histories).
-        self.assertLess(size, 200_000)
+        # on every page load, even doubled up for two bases per entry.
+        self.assertLess(size, 400_000)
 
 
 class ApplyResultAccumulationTests(unittest.TestCase):
@@ -418,24 +533,24 @@ class ApplyResultAccumulationTests(unittest.TestCase):
 
     def test_second_entry_does_not_erase_the_first(self) -> None:
         status = bs.empty_status()
-        status, _ = bs.apply_result(status, "a", success_result("a"))
-        status, _ = bs.apply_result(status, "b", success_result("b"))
+        status, _ = bs.apply_result(status, "a", "ubuntu", success_result("a"))
+        status, _ = bs.apply_result(status, "b", "ubuntu", success_result("b"))
         self.assertEqual({"a", "b"}, set(status["entries"]))
 
-    def test_re_applying_the_same_id_replaces_only_that_one(self) -> None:
+    def test_re_applying_the_same_id_and_base_replaces_only_that_one(self) -> None:
         status = bs.empty_status()
-        status, _ = bs.apply_result(status, "a", success_result("a"))
-        status, _ = bs.apply_result(status, "b", success_result("b"))
-        status, _ = bs.apply_result(status, "a", failed_result("a"))
-        self.assertEqual("failed", status["entries"]["a"]["state"])
-        self.assertEqual("success", status["entries"]["b"]["state"])
+        status, _ = bs.apply_result(status, "a", "ubuntu", success_result("a"))
+        status, _ = bs.apply_result(status, "b", "ubuntu", success_result("b"))
+        status, _ = bs.apply_result(status, "a", "ubuntu", failed_result("a"))
+        self.assertEqual("failed", status["entries"]["a"]["bases"]["ubuntu"]["state"])
+        self.assertEqual("success", status["entries"]["b"]["bases"]["ubuntu"]["state"])
 
     def test_an_interrupted_run_leaves_a_valid_file_with_only_the_finished_entries(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "build-status.json"
             status = bs.load_status(path)
             for entry_id in ("a", "b"):  # "c" never runs - the simulated interruption
-                status, _ = bs.apply_result(status, entry_id, success_result(entry_id))
+                status, _ = bs.apply_result(status, entry_id, "ubuntu", success_result(entry_id))
                 bs.write_status_atomic(path, status)
             reloaded = bs.load_status(path)
         self.assertEqual({"a", "b"}, set(reloaded["entries"]))
@@ -446,37 +561,38 @@ class ApplyResultAccumulationTests(unittest.TestCase):
             path = Path(tmp) / "build-status.json"
             status = bs.empty_status()
             for entry_id in ("a", "b", "c"):
-                status, _ = bs.apply_result(status, entry_id, success_result(entry_id))
+                status, _ = bs.apply_result(status, entry_id, "ubuntu", success_result(entry_id))
             bs.write_status_atomic(path, status)
 
             status = bs.load_status(path)
-            status, _ = bs.apply_result(status, "b", failed_result("b"))
+            status, _ = bs.apply_result(status, "b", "ubuntu", failed_result("b"))
             bs.write_status_atomic(path, status)
 
             reloaded = bs.load_status(path)
-        self.assertEqual("success", reloaded["entries"]["a"]["state"])
-        self.assertEqual("failed", reloaded["entries"]["b"]["state"])
-        self.assertEqual("success", reloaded["entries"]["c"]["state"])
+        self.assertEqual("success", reloaded["entries"]["a"]["bases"]["ubuntu"]["state"])
+        self.assertEqual("failed", reloaded["entries"]["b"]["bases"]["ubuntu"]["state"])
+        self.assertEqual("success", reloaded["entries"]["c"]["bases"]["ubuntu"]["state"])
 
 
 class StateChangeDetectionTests(unittest.TestCase):
     def test_a_brand_new_id_counts_as_changed(self) -> None:
-        _, changed = bs.apply_result(bs.empty_status(), "a", success_result("a"))
+        _, changed = bs.apply_result(bs.empty_status(), "a", "ubuntu", success_result("a"))
         self.assertTrue(changed)
 
     def test_the_same_state_again_is_not_a_change(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "a", success_result("a", end="2026-09-24T16:00:00+00:00"))
-        _, changed = bs.apply_result(status, "a", success_result("a", end="2026-09-24T17:00:00+00:00"))
+        status, _ = bs.apply_result(bs.empty_status(), "a", "ubuntu",
+                                    success_result("a", end="2026-09-24T16:00:00+00:00"))
+        _, changed = bs.apply_result(status, "a", "ubuntu", success_result("a", end="2026-09-24T17:00:00+00:00"))
         self.assertFalse(changed, "a re-build that stays success is not a state change, even with a newer date")
 
     def test_success_to_failed_is_a_change(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "a", success_result("a"))
-        _, changed = bs.apply_result(status, "a", failed_result("a"))
+        status, _ = bs.apply_result(bs.empty_status(), "a", "ubuntu", success_result("a"))
+        _, changed = bs.apply_result(status, "a", "ubuntu", failed_result("a"))
         self.assertTrue(changed)
 
     def test_failed_to_skipped_is_a_change(self) -> None:
-        status, _ = bs.apply_result(bs.empty_status(), "a", failed_result("a"))
-        _, changed = bs.apply_result(status, "a", skipped_result("a"))
+        status, _ = bs.apply_result(bs.empty_status(), "a", "ubuntu", failed_result("a"))
+        _, changed = bs.apply_result(status, "a", "ubuntu", skipped_result("a"))
         self.assertTrue(changed)
 
 
@@ -485,8 +601,8 @@ class StatusUpdaterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "build-status.json"
             updater = bs.StatusUpdater(path)
-            changed_first = updater.record("a", success_result("a"))
-            changed_second = updater.record("a", success_result("a"))
+            changed_first = updater.record("a", "ubuntu", success_result("a"))
+            changed_second = updater.record("a", "ubuntu", success_result("a"))
             self.assertTrue(path.is_file())
         self.assertTrue(changed_first)
         self.assertFalse(changed_second)
@@ -496,9 +612,9 @@ class StatusUpdaterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "build-status.json"
             updater = bs.StatusUpdater(path, on_change=lambda p: calls.append(p))
-            updater.queue("a")
-            updater.start("a")
-            updater.record("a", success_result("a"))
+            updater.queue("a", "ubuntu")
+            updater.start("a", "ubuntu")
+            updater.record("a", "ubuntu", success_result("a"))
         self.assertEqual(3, len(calls))
 
     def test_on_change_is_called_only_when_the_state_changed(self) -> None:
@@ -506,21 +622,31 @@ class StatusUpdaterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "build-status.json"
             updater = bs.StatusUpdater(path, on_change=lambda p: calls.append(p))
-            updater.record("a", success_result("a"))       # new -> changed
-            updater.record("a", success_result("a"))       # same state -> not changed
-            updater.record("a", failed_result("a"))         # changed
+            updater.record("a", "ubuntu", success_result("a"))       # new -> changed
+            updater.record("a", "ubuntu", success_result("a"))       # same state -> not changed
+            updater.record("a", "ubuntu", failed_result("a"))         # changed
         self.assertEqual(2, len(calls))
         self.assertTrue(all(c == path for c in calls))
 
-    def test_resolve_interrupted_returns_touched_ids_and_notifies_on_change(self) -> None:
+    def test_two_bases_of_the_same_entry_are_tracked_independently_by_the_updater(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "build-status.json"
+            updater = bs.StatusUpdater(path)
+            updater.record("x", "ubuntu", success_result("x", base="ubuntu"))
+            updater.record("x", "debian", failed_result("x", base="debian"))
+            status = bs.load_status(path)
+        self.assertEqual("success", status["entries"]["x"]["bases"]["ubuntu"]["state"])
+        self.assertEqual("failed", status["entries"]["x"]["bases"]["debian"]["state"])
+
+    def test_resolve_interrupted_returns_touched_pairs_and_notifies_on_change(self) -> None:
         calls = []
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "build-status.json"
             updater = bs.StatusUpdater(path, on_change=lambda p: calls.append(p))
-            updater.start("stuck")
+            updater.start("stuck", "ubuntu")
             calls.clear()
             touched = updater.resolve_interrupted()
-        self.assertEqual(["stuck"], touched)
+        self.assertEqual([("stuck", "ubuntu")], touched)
         self.assertEqual(1, len(calls))
 
     def test_resolve_interrupted_with_nothing_stuck_notifies_nobody(self) -> None:
@@ -537,9 +663,9 @@ class StatusUpdaterTests(unittest.TestCase):
             path = Path(tmp) / "build-status.json"
             updater = bs.StatusUpdater(path, own_paths=["/opt/synos-conformance"], hostname="runner-9")
             result = failed_result("x", log_tail=["boom on runner-9 under /opt/synos-conformance/work"])
-            updater.record("x", result)
+            updater.record("x", "ubuntu", result)
             status = bs.load_status(path)
-        error = status["entries"]["x"]["error"]
+        error = status["entries"]["x"]["bases"]["ubuntu"]["error"]
         self.assertNotIn("runner-9", error)
         self.assertNotIn("/opt/synos-conformance", error)
 
@@ -550,7 +676,7 @@ class StatusUpdaterTests(unittest.TestCase):
             ids = [f"entry-{i}" for i in range(20)]
 
             def worker(entry_id: str) -> None:
-                updater.record(entry_id, success_result(entry_id))
+                updater.record(entry_id, "ubuntu", success_result(entry_id))
 
             threads = [threading.Thread(target=worker, args=(i,)) for i in ids]
             for t in threads:

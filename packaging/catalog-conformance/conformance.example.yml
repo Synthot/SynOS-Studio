@@ -104,3 +104,13 @@ report_url: null
 # to false (or pass --no-cleanup on the command line for one run) to keep
 # every entry's full working directory, e.g. for a debugging run.
 cleanup: true
+
+# `build` only, optional: attempt every selected entry once per base named
+# here (exactly "ubuntu" and/or "debian" — the two this checkout has
+# adapters for) instead of once, on whatever base its own manifest pins.
+# Leave null (the default) to build only each entry's own base, unchanged.
+# docs/BUILD_MATRIX.md's "Covering more than one base". --cover-bases on
+# the command line replaces this for a single run.
+#
+# cover_bases: [ubuntu, debian]
+cover_bases: null

@@ -377,8 +377,18 @@ problems with three different owners:
 - `"smoke"` — the build succeeded but `tools/smoke_test.py` did not pass.
 
 `status` keeps its existing meaning (`success`, `build_failed`, `host`,
-`invalid`, `timeout`, `error`, `skipped`) independent of `stage`; `stage`
-is `null` on a genuine success. An engine-stage failure, real:
+`invalid`, `timeout`, `error`, `skipped`) independent of `stage`, with one
+addition: **a build that succeeded but whose boot check did not is its
+own status, `"smoke_failed"`** — never left as plain `"success"` (item
+110). A person reading `build-status.json` or a run's own summary needs
+one name for "the image built but is not certified safe", used
+consistently everywhere something decides what counts as ok
+(`OK_STATUSES`, shared by `diff_reports()`, the run's own exit code, and
+`tools/build_status.py`'s `map_state()`, which folds it into the public
+file's plain `"failed"` — the finer distinction, and `boot_passed` on
+whichever earlier attempt still had one, are what `build-report.json` and
+`error`/`history` are for). `stage` is `null` on a genuine success. An
+engine-stage failure, real:
 
 ```json
 {
@@ -390,6 +400,79 @@ is `null` on a genuine success. An engine-stage failure, real:
   "smoke": null
 }
 ```
+
+### The boot check certifies the image's name
+
+`tools/smoke_test.py`'s own boot check (docs/BUNDLE.md, "the smoke test")
+also certifies the booted image's `/etc/os-release` `NAME` against what
+the resolved configuration actually promised — `brand.display_name`
+inside `dist/<name>.resolved.json`, the engine writes next to the ISO,
+exactly what `tools/render_brand.py` baked into the image. Item 108's own
+bug: the first real end-to-end run showed `expected_name: null,
+name_found: null` and a false `smoke_passed`, because the resolved
+configuration was never being handed to the smoke test at all — nothing
+gave the name check anything to certify against, so it had nothing to
+say, and its own honest "skip" (see below) was not yet wired in either.
+Fixed both ways: `build_one()` now copies `dist/<name>.resolved.json` out
+unconditionally (see the next section) and reads its `brand.display_name`
+straight into `tools/smoke_test.py`'s `expected_name`; and the check
+itself — like `tools/smoke_test.py`'s other checks, "where the matrix
+cannot check something honestly it is left out, not invented" — is
+honestly `"skipped"`, never counted against the overall result, when
+nothing at all (no resolved configuration and no `--brand`, for the
+standalone CLI) supplied a name to certify.
+
+### Item 109: keep the evidence for whatever actually failed
+
+`dist/<name>.resolved.json` is copied out unconditionally now — success
+or failure, `smoke: true` or `false` — alongside the build log and (once
+the smoke test runs) its own serial transcript, the same three pieces of
+evidence a person would want regardless of outcome. And cleanup (item
+87-92, "Freeing disk as it goes" below) only ever runs for a plain
+`"success"`: a build that succeeded but whose boot check did not
+(`"smoke_failed"`) now keeps its *entire* working directory — the ISO
+included — exactly like a launcher or engine failure already did. Before
+this fix, `status` stayed `"success"` through a smoke failure, so cleanup
+ran anyway and deleted the ISO for the one entry whose evidence actually
+mattered.
+
+### Covering more than one base
+
+By default an entry builds once, on whatever base its own manifest pins
+— unchanged, and this is the common case (fifty-odd entries, one base
+each, no configuration needed). `cover_bases` in `conformance.yml` (or
+`--cover-bases ubuntu,debian` on the command line, which replaces
+whatever the config says for that one run) names every base to attempt
+each *selected* entry against instead — base names are exactly `ubuntu`
+and `debian`, the two this checkout has adapters for
+(`bases/<name>/base.env`); an unknown name is refused before anything
+runs, by `Config.load()` or, for the command line, by `_run()` itself.
+
+Each (entry, base) pair becomes its own attempt, its own working
+directory, and — only once more than one base is in play — its own key in
+`build-report.json`'s `targets` and `build-status.json`'s own per-entry
+`bases`: `"web-server-nginx@debian"` alongside `"web-server-nginx@ubuntu"`,
+never colliding with the plain, single-base case's `"web-server-nginx"`.
+Covering a base an entry does not itself pin **changes only the manifest's
+own `base:`/`suite:` lines** — the suite to that base's own default
+release (`bases/<base>/base.env`'s `DEFAULT_SUITE`) — leaving the profile,
+the packages, the services, everything else the bundle carries, exactly
+as the page generated it. This is a plain text substitution, never a YAML
+round-trip, so nothing else in the manifest can be reformatted by
+accident.
+
+**What actually happens covering the other base is never suppressed or
+worked around.** An entry pinned to Debian, asked to also cover Ubuntu
+(or vice versa), is handed to the real launcher with nothing but its base
+and suite changed — the same packages, the same container images, the
+same profile. If those exist on the other base too, the build genuinely
+succeeds there; if a package the bundle names is Debian-only (or
+Ubuntu-only), the build genuinely fails, ordinarily at the `"engine"`
+stage (apt cannot find it) rather than anywhere earlier — the exact, real
+answer to "does this bundle actually work on the other base", which is
+the entire point of asking; no name-remapping or compatibility shim is
+attempted, because a bundle that only means one base should fail loudly
+when asked to be something else, not quietly pretend to work.
 
 ### Running one entry by hand
 
@@ -460,42 +543,65 @@ for a person reviewing a pull request; this one is JSON, lives only under
 a conformance run's own `workdir`, and records whether the *published*
 catalog builds, for a browser).
 
-Shape (`tools/build_status.py`)::
+Shape (`tools/build_status.py`, schema_version 2)::
 
     {
-      "schema_version": 1,
+      "schema_version": 2,
       "generated_at": "2026-09-24T16:40:00+00:00",
       "entries": {
         "web-server-nginx": {
-          "state": "success",
-          "date": "2026-09-24T16:28:52+00:00",
-          "since": "2026-09-20T09:00:00+00:00",
-          "engine": "0.2.0",
-          "base": "ubuntu",
-          "suite": "noble",
-          "size": 1234567890,
-          "checksum": "b1946ac92492d2347c6235b4d2611184...",
-          "smoke_passed": true,
-          "error": null,
-          "history": [
-            {"date": "2026-09-20T09:00:00+00:00", "state": "success", "engine": "0.2.0",
-             "base": "ubuntu", "suite": "noble", "duration_s": 2412.3, "stage": null, "error": null}
-          ]
+          "bases": {
+            "ubuntu": {
+              "state": "success",
+              "date": "2026-09-24T16:28:52+00:00",
+              "since": "2026-09-20T09:00:00+00:00",
+              "engine": "0.2.0",
+              "suite": "noble",
+              "size": 1234567890,
+              "checksum": "b1946ac92492d2347c6235b4d2611184...",
+              "boot_passed": true,
+              "error": null,
+              "history": [
+                {"date": "2026-09-20T09:00:00+00:00", "state": "success", "engine": "0.2.0",
+                 "suite": "noble", "duration_s": 2412.3, "stage": null, "error": null}
+              ]
+            }
+          }
         }
       }
     }
 
+**Per base, not per entry (schema_version 2, item 111).** The Studio page
+lets a person change an appliance's base *after* choosing it from the
+catalog, so a badge that only ever covered the base the entry happens to
+pin is a claim about something the person may not build. Every result
+lives under `entries.<id>.bases.<base>` instead of directly under
+`entries.<id>`; base names stay exactly `"ubuntu"` and `"debian"`, the
+same two names the engine already uses (the page renders one small icon
+per base with a tooltip). **An entry with no result for a base says
+nothing for that base** — `bases` simply has no key for it, the same
+"absence means never tested" rule applied one level deeper. A
+schema_version 1 file (the shape this replaced) is migrated automatically
+on load (`migrate_v1_to_v2()`): each entry's one result becomes that
+entry's result for whichever base it was actually built against; an entry
+that was only ever `queued`/`testing` (no real outcome, so no base was
+ever confirmed) has nothing to migrate and is dropped, indistinguishable
+from an entry that was never tested at all.
+
 `state` is one of `"queued"`, `"testing"`, `"success"`, `"failed"` or
 `"skipped"` (every finer distinction `build-report.json` records — which
-stage, a timeout, an invalid launcher exit — folds into `"failed"` here; a
-badge only needs to say not yet / safe / not safe). The sixth state the
-owner listed, **"never tested"**, is never written as a value: an entry id
-the catalog has but this file's `entries` does not is "never tested" by
-its absence. The page side was told to render three things at a glance:
-not yet tested (covers absent, `"queued"` and `"testing"` alike — none of
-those is a claim about safety either way), succeeded, or failed since a
-date; the finer `queued`/`testing` split exists so the file itself is
-never stale mid-run, even though the badge collapses them.
+stage, a timeout, an invalid launcher exit, or a build that succeeded but
+whose boot check did not (`"smoke_failed"`, below) — folds into
+`"failed"` here; a badge only needs to say not yet / safe / not safe, and
+`boot_passed` on a `"success"` record still says whether the check itself
+ran clean). The sixth state the owner listed, **"never tested"**, is
+never written as a value: a (entry, base) pair the catalog could produce
+but this file's `bases` has no key for is "never tested" by its absence.
+The page side was told to render three things at a glance: not yet tested
+(covers absent, `"queued"` and `"testing"` alike — none of those is a
+claim about safety either way), succeeded, or failed since a date; the
+finer `queued`/`testing` split exists so the file itself is never stale
+mid-run, even though the badge collapses them.
 
 `date` is when the current `state` was last (re-)confirmed; `since` is
 when the *current* `state` began as an unbroken streak — a bundle failing
@@ -516,8 +622,13 @@ a history entry — passing through `queued`/`testing` on the way there does
 not.
 
 `size`/`checksum` are the built ISO's, not the downloaded bundle
-archive's, and are `null` whenever there is none. `schema_version` lets
-the page refuse a shape it does not understand instead of guessing.
+archive's, and are `null` whenever there is none. `boot_passed` (item
+111's "boot result") is `null` when the smoke test did not run at all,
+`true`/`false` once it actually did — and can be `false` even while
+`state` is `"success"`, since a build succeeding and its boot check
+certifying it are two different things (see "The boot check certifies the
+image's name" below). `schema_version` lets the page refuse a shape it
+does not understand instead of guessing.
 
 ### Live, not only final
 

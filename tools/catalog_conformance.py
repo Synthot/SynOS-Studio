@@ -83,6 +83,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -104,6 +105,14 @@ LOG_TAIL_LINES = 60
 HTTP_TIMEOUT = 30
 
 STAGE_PAGE, STAGE_LAUNCHER, STAGE_ENGINE, STAGE_SMOKE = "page", "launcher", "engine", "smoke"
+
+# Item 110: the one, single definition of "counts as ok" — diff_reports(),
+# _run()'s own exit code, and this module's own summary all read this
+# instead of each keeping its own copy, so a status decided once (like
+# "smoke_failed" for a build that succeeded but whose boot check did not,
+# build_one()'s own STAGE_SMOKE branch) is treated the same way by all
+# three. "ok" is check mode's own clean result; "success" is build mode's.
+OK_STATUSES = {"success", "ok"}
 
 
 def _load(name: str, path: Path):
@@ -158,6 +167,9 @@ class Config:
     upload: dict | None = None             # build only, optional: see tools/status_uploader.py; never committed
     cleanup: bool = True                   # build only: free a successful entry's heavy directories as it finishes
                                              # (tools/entry_cleanup.py); set false (or --no-cleanup) to keep everything
+    cover_bases: list[str] | None = None    # build only, optional: attempt every selected entry once per base
+                                             # named here (e.g. [ubuntu, debian]) instead of once, on whatever base
+                                             # its own manifest pins (item 112; docs/BUILD_MATRIX.md)
 
     @classmethod
     def load(cls, path: Path) -> "Config":
@@ -175,6 +187,15 @@ class Config:
         data["workdir"] = Path(data["workdir"]).expanduser()
         if "jobs" in data:
             data["jobs"] = str(data["jobs"])  # YAML "jobs: 2" parses as an int; "auto" stays a string either way
+        if data.get("cover_bases") is not None:
+            cover_bases = data["cover_bases"]
+            if isinstance(cover_bases, str):
+                cover_bases = [b.strip() for b in cover_bases.split(",") if b.strip()]
+            unknown_bases = set(cover_bases) - _known_bases()
+            if unknown_bases:
+                raise ConformanceError(f"{path}: cover_bases names unknown base(s): {', '.join(sorted(unknown_bases))} "
+                                       f"(known: {', '.join(sorted(_known_bases()))})")
+            data["cover_bases"] = cover_bases
         return cls(**data)
 
 
@@ -240,6 +261,50 @@ def read_bundle_manifest(bundle_dir: Path) -> tuple[str, dict]:
     except Exception as exc:  # noqa: BLE001 - yaml errors
         raise ArchiveError(f"{manifest_rel} is not valid YAML: {exc}") from exc
     return manifest_rel, manifest
+
+
+def _known_bases() -> set[str]:
+    """Exactly the base adapters this checkout actually has — bases/ubuntu
+    and bases/debian today (docs/BUILD_MATRIX.md's own "keep base names
+    exactly ubuntu and debian" — this derives the set from bases/ itself
+    rather than hardcoding it, so it never silently drifts from what the
+    engine can actually build)."""
+    bases_dir = ROOT / "bases"
+    if not bases_dir.is_dir():
+        return set()
+    return {p.name for p in bases_dir.iterdir() if p.is_dir() and (p / "base.env").is_file()}
+
+
+def default_suite_for_base(base: str) -> str | None:
+    """The base adapter's own DEFAULT_SUITE (bases/<base>/base.env) — what
+    item 112 means by "its default release" when covering a base an entry
+    does not itself pin. None when `base` is not one this checkout has an
+    adapter for at all."""
+    base_env_path = ROOT / "bases" / base / "base.env"
+    if not base_env_path.is_file():
+        return None
+    env = render_manifest.load_env(base_env_path)
+    return env.get("DEFAULT_SUITE") or None
+
+
+def override_manifest_base_and_suite(manifest_path: Path, *, base: str, suite: str) -> None:
+    """Item 112: "change only the base and its default release, leave
+    everything else the bundle carries alone" — a pure text substitution
+    of the manifest's own top-level `base:`/`suite:` lines (the exact two
+    fields, alongside `arch:`, tools/bundle_launcher.sh's own shell
+    `field()` parser reads directly off the file), never a YAML round-trip
+    that could reformat anything else the bundle carries. Raises
+    ArchiveError if the manifest has no such line to replace at all — a
+    bundle whose manifest does not declare its own base is not something
+    this can honestly override."""
+    text = manifest_path.read_text(encoding="utf-8")
+    new_text, base_subs = re.subn(r"(?m)^base:.*$", f"base: {base}", text, count=1)
+    if not base_subs:
+        raise ArchiveError(f"{manifest_path.name} has no top-level base: line to override")
+    new_text, suite_subs = re.subn(r"(?m)^suite:.*$", f"suite: {suite}", new_text, count=1)
+    if not suite_subs:
+        raise ArchiveError(f"{manifest_path.name} has no top-level suite: line to override")
+    manifest_path.write_text(new_text, encoding="utf-8")
 
 
 def _eprint(message: str) -> None:
@@ -348,6 +413,28 @@ def collect_iso(bundle_dir: Path, target_dir: Path) -> dict | None:
     return {"path": str(dest), "size": dest.stat().st_size, "sha256": _sha256_file(dest)}
 
 
+def collect_resolved_config(bundle_dir: Path, target_dir: Path) -> Path | None:
+    """The engine-written dist/<name>.resolved.json build.sh leaves next to
+    the ISO — the source of truth for what the image promises (its brand,
+    its profile, its base/suite; tools/smoke_test.py's own module
+    docstring) — copied to target_dir unconditionally, whether the build
+    went on to succeed or not (item 109: kept alongside the log and the
+    serial transcript in every case, since a failed entry keeps its whole
+    bundle_dir anyway but a *successful* one has it removed by cleanup_
+    one(), and this is what lets tools/smoke_test.py certify the image's
+    name — item 108). None when the launcher never got far enough to
+    write one (a launcher-stage failure, before the container starts)."""
+    dist_dir = bundle_dir / "dist"
+    candidates = sorted(dist_dir.glob("*.resolved.json"), key=lambda p: p.stat().st_mtime) if dist_dir.is_dir() else []
+    if not candidates:
+        return None
+    src = candidates[-1]
+    target_dir.mkdir(parents=True, exist_ok=True)
+    dest = target_dir / src.name
+    shutil.copy2(src, dest)
+    return dest
+
+
 def cleanup_one(result: dict, *, work_dir: Path) -> dict:
     """Items 87-89: called only for a `result["status"] == "success"` entry
     (a failed or skipped one keeps everything — that is exactly what
@@ -406,23 +493,40 @@ def cleanup_one(result: dict, *, work_dir: Path) -> dict:
         if evidence and Path(evidence).exists():
             kept.append(str(evidence))
 
+    if result.get("resolved_config_path") and Path(result["resolved_config_path"]).exists():
+        kept.append(result["resolved_config_path"])
+
     if target_dir.exists():
         kept.append(str(target_dir))
 
     return {"performed": True, "removed": removed, "kept": kept}
 
 
-def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=None) -> dict:
+def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=None,
+              base_override: str | None = None) -> dict:
     """Downloads entry["id"] through the real Studio page, unpacks it, and
     runs its own launcher — see the module docstring for the full flow.
     `browser_factory()` must return a context manager whose `__enter__`
     gives something with a `download_bundle(entry_id) -> (bytes, filename)`
     method (devtools_browser.StudioSession by default; tests substitute a
-    fake). Never raises: every failure mode is recorded with a `stage`."""
+    fake). Never raises: every failure mode is recorded with a `stage`.
+
+    `base_override` (item 112) asks this entry to be built against a base
+    other than whatever its own manifest pins: once the manifest is read,
+    if `base_override` differs from what it already says, the manifest's
+    own `base:`/`suite:` lines are rewritten in place — the suite to that
+    base's own default release, nothing else touched — before the
+    launcher ever runs, so the containerized build genuinely happens
+    against the requested base rather than a reconstruction of it. A
+    bundle whose packages, images, or profile do not exist on the other
+    base fails for real, at whichever stage that actually is (most likely
+    "engine", inside the container) — never suppressed or worked around,
+    since the honest answer to "does this cover Debian too" is exactly
+    what did or did not happen when it was actually tried."""
     result = {"id": entry["id"], "kind": "catalog", "base": None, "suite": None, "checksum": None,
               "engine": synos_engine.engine_version(), "start": _now(), "end": None, "duration_s": None,
               "exit_code": None, "status": "running", "stage": None, "iso": None, "log_path": None,
-              "log_tail": [], "smoke": None, "download": None}
+              "log_tail": [], "smoke": None, "download": None, "resolved_config_path": None}
     start = time.monotonic()
 
     def _finish(status: str, stage: str | None, log_tail: list[str]) -> dict:
@@ -457,6 +561,13 @@ def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=No
     try:
         extract_bundle_archive(raw, bundle_dir)
         manifest_rel, manifest = read_bundle_manifest(bundle_dir)
+        if base_override and base_override != manifest.get("base"):
+            override_suite = default_suite_for_base(base_override)
+            if override_suite is None:
+                return _finish("failed", STAGE_PAGE,
+                               [f"cannot cover base {base_override!r}: no bases/{base_override}/base.env in this checkout"])
+            override_manifest_base_and_suite(bundle_dir / manifest_rel, base=base_override, suite=override_suite)
+            manifest["base"], manifest["suite"] = base_override, override_suite
         result["base"], result["suite"] = manifest.get("base"), manifest.get("suite")
     except ArchiveError as exc:
         return _finish("failed", STAGE_PAGE, [str(exc)])
@@ -487,6 +598,14 @@ def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=No
     result["end"] = _now()
     result["duration_s"] = round(time.monotonic() - start, 1)
 
+    # Item 109: the resolved configuration is copied out unconditionally —
+    # whether the build went on to succeed or not — the same way the log
+    # and (once the smoke test runs) the serial transcript are kept in
+    # every case; it is also item 108's own source for the name the smoke
+    # test can certify against.
+    resolved_config_path = collect_resolved_config(bundle_dir, target_dir)
+    result["resolved_config_path"] = str(resolved_config_path) if resolved_config_path else None
+
     if result["status"] == "success":
         result["iso"] = collect_iso(bundle_dir, target_dir)
 
@@ -500,15 +619,44 @@ def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=No
                 resolved_profile = resolve_published_profile(manifest["profile"], profile_text)
             except Exception as exc:  # noqa: BLE001
                 result["smoke"] = {"status": "error", "reason": f"could not resolve profile: {exc}"}
+            # Item 108: the resolved configuration's own brand.display_name
+            # (what tools/render_brand.py wrote into the image's own
+            # /etc/os-release, and what the graphical boot's own OCR check
+            # certifies against — tools/smoke_test.py's own
+            # load_resolved_brand_name()/check_graphical_boot()); None (an
+            # honest, non-failing "no-expected-name" outcome, never a
+            # failure) when the launcher never wrote one at all.
+            expected_distro_name = None
+            if resolved_config_path is not None:
+                try:
+                    expected_distro_name = smoke_test.load_resolved_brand_name(resolved_config_path)
+                except Exception:  # noqa: BLE001 - a malformed resolved.json must not abort the smoke test
+                    expected_distro_name = None
             if result["smoke"] is None:
-                result["smoke"] = smoke_test.run(Path(result["iso"]["path"]), resolved_profile, output_dir=target_dir)
+                result["smoke"] = smoke_test.run(Path(result["iso"]["path"]), resolved_profile,
+                                                 output_dir=target_dir, expected_distro_name=expected_distro_name)
         else:
             result["smoke"] = {"status": "skipped", "reason": "build succeeded but produced no ISO"}
+        # Item 110: a build that succeeded but whose boot check did not is
+        # its own named outcome, "smoke_failed" — never left as "success"
+        # (which is what let cleanup wrongly delete the very evidence for
+        # the only thing that failed, item 109) and never silently folded
+        # into the launcher/engine's own failure statuses. Decided once,
+        # here, and read everywhere else that cares (build_status.map_state's
+        # catch-all, OK_STATUSES below, cleanup_one()'s own success-only
+        # gate) instead of each place guessing its own name for it.
         if result["smoke"] and result["smoke"]["status"] not in ("passed", "skipped"):
             result["stage"] = STAGE_SMOKE
+            result["status"] = "smoke_failed"
+            failing = [c.get("name") for c in (result["smoke"].get("checks") or []) if c.get("passed") is False]
+            result["log_tail"] = ([result["smoke"]["reason"]] if result["smoke"].get("reason") else
+                                  [f"boot check failed: {', '.join(failing)}" if failing else "boot check failed"])
 
-    # ---- items 87-89: free the heavy things this one entry created, as
-    # soon as it is done, keeping the evidence a person would need later ----
+    # ---- items 87-89, 109: free the heavy things this one entry created,
+    # as soon as it is done, but only once the boot check (if any ran) has
+    # also certified it — a failed boot check keeps everything exactly
+    # like a failed build does, because that is exactly what somebody will
+    # want to read to see why it failed.
     if result["status"] == "success" and config.cleanup:
         try:
             result["cleanup"] = cleanup_one(result, work_dir=work_dir)
@@ -540,14 +688,28 @@ def resolve_published_profile(profile_id: str, own_text: str | None) -> dict:
     return render_manifest.deep_merge(parent_data, body)
 
 
+def target_key(entry_id: str, base_override: str | None) -> str:
+    """report["targets"] and each attempt's own work_dir are keyed by
+    plain entry_id when there is no base variant in play (item 111/112's
+    whole point is additive: the common, single-base case must read
+    exactly as it always did, in build-report.json as much as in
+    build-status.json) — `"<entry_id>@<base>"` only once a run is
+    covering more than one base for the same entry, so two attempts at
+    the same entry never collide."""
+    return entry_id if base_override is None else f"{entry_id}@{base_override}"
+
+
 class _EntryRef:
     """job_queue.run_parallel only needs `.id` off whatever it schedules;
-    entries are plain dicts, so this is the thinnest wrapper that carries
-    both the id and the entry itself to the worker callback."""
+    this carries the target_key() (for job_queue's own bookkeeping and
+    build-report.json's key), the entry dict, and which base (if any) this
+    particular attempt is covering, to the worker callback."""
 
-    def __init__(self, entry: dict):
-        self.id = entry["id"]
+    def __init__(self, entry: dict, base_override: str | None = None):
         self.entry = entry
+        self.entry_id = entry["id"]
+        self.base_override = base_override
+        self.id = target_key(entry["id"], base_override)
 
 
 def _remove_cache_volume(engine: str, volume: str) -> tuple[bool, str]:
@@ -634,20 +796,29 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
     report = {"mode": "build", "generated": _now(), "engine": synos_engine.engine_version(),
               "catalog_url": config.catalog_url, "site_url": config.site_url, "targets": {}}
 
-    for entry in selected:
-        work_dir = config.workdir / "work" / entry["id"]
+    # Item 112: covering more than one base multiplies each selected entry
+    # into one attempt per named base (never fewer than the plain, single-
+    # attempt case default-behaves as: cover_bases unset means exactly one
+    # attempt per entry, on whatever base its own manifest pins — nothing
+    # here changes for that, the common, majority case, including every
+    # target_key() staying the plain entry_id).
+    base_variants = config.cover_bases or [None]
+    plan = [_EntryRef(entry, base) for entry in selected for base in base_variants]
+
+    for ref in plan:
+        work_dir = config.workdir / "work" / ref.id
         if work_dir.exists():
             shutil.rmtree(work_dir)
 
     # Item 71-73, 93: a small build-status.json, updated live as each
-    # entry moves queued -> testing -> a real outcome (not only at the
-    # end — a run interrupted partway through fifty-odd entries must
+    # (entry, base) moves queued -> testing -> a real outcome (not only at
+    # the end — a run interrupted partway through fifty-odd entries must
     # still leave a valid file behind, and a file fetched mid-run must
     # say "testing", never yesterday's result) and uploaded, best-effort,
-    # whenever an entry's live state changes plus once more,
-    # unconditionally, when the whole run finishes. The uploader is
-    # entirely optional: no `upload:` section in the config means
-    # `changer.enabled` is False and `maybe_upload` is a no-op.
+    # whenever a live state changes plus once more, unconditionally, when
+    # the whole run finishes. The uploader is entirely optional: no
+    # `upload:` section in the config means `changer.enabled` is False and
+    # `maybe_upload` is a no-op.
     status_path = config.workdir / "build-status.json"
     changer = status_uploader.ChangeUploader(upload_config, dry_run=dry_run_upload,
                                              transport=upload_transport, sleeper=upload_sleeper)
@@ -655,23 +826,39 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
         status_path, on_change=(changer.maybe_upload if changer.enabled else None),
         own_paths=[str(config.workdir), str(Path.home())], hostname=socket.gethostname())
 
-    # Item 93: an entry a previous run left "testing" (killed before it
-    # finished) is resolved to "failed" before anything new is queued —
-    # never guessed as "success". Said plainly in the report and the
-    # run's own summary, never left silent.
+    # Item 93: an (entry, base) a previous run left "testing" (killed
+    # before it finished) is resolved to "failed" before anything new is
+    # queued — never guessed as "success". Said plainly in the report and
+    # the run's own summary, never left silent.
     interrupted = status_updater.resolve_interrupted()
     if interrupted:
-        report["resolved_interrupted"] = interrupted
-    for entry in selected:
-        status_updater.queue(entry["id"])
+        report["resolved_interrupted"] = [f"{entry_id}@{base}" for entry_id, base in interrupted]
+
+    catalog_default_base = (catalog.get("defaults") or {}).get("base")
+
+    def intended_base(ref: "_EntryRef") -> str:
+        # Individual bundle-catalog entries carry no base of their own
+        # (tools/export_catalog.py's bundle_catalog() — it is inside each
+        # entry's own files, not a top-level field); an explicit override
+        # is always known up front, and otherwise the exported catalog's
+        # own engine-wide default base (tools/export_catalog.py's
+        # "defaults") is the honest best guess before anything has
+        # downloaded far enough to read the entry's *own* manifest — which
+        # is what status_updater.record() below actually uses once it is
+        # known, this is only ever the live "queued"/"testing" bucket.
+        return ref.base_override or catalog_default_base or "unknown"
+
+    for ref in plan:
+        status_updater.queue(ref.entry_id, intended_base(ref))
 
     if jobs <= 1:
-        for entry in selected:
-            work_dir = config.workdir / "work" / entry["id"]
-            status_updater.start(entry["id"])
-            result = build_one(entry, config=config, work_dir=work_dir, browser_factory=browser_factory)
-            report["targets"][entry["id"]] = result
-            status_updater.record(entry["id"], result)
+        for ref in plan:
+            work_dir = config.workdir / "work" / ref.id
+            status_updater.start(ref.entry_id, intended_base(ref))
+            result = build_one(ref.entry, config=config, work_dir=work_dir, browser_factory=browser_factory,
+                               base_override=ref.base_override)
+            report["targets"][ref.id] = result
+            status_updater.record(ref.entry_id, result.get("base") or intended_base(ref), result)
     else:
         def build_one_for_worker(ref: "_EntryRef", worker_id: int) -> dict:
             work_dir = config.workdir / "work" / ref.id
@@ -685,12 +872,14 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
                 worker_root = config.workdir / "podman-storage" / f"worker-{worker_id}"
                 worker_root.mkdir(parents=True, exist_ok=True)
                 worker_config = dataclasses.replace(config, container_root=str(worker_root))
-            status_updater.start(ref.id)
-            return build_one(ref.entry, config=worker_config, work_dir=work_dir, browser_factory=browser_factory)
+            status_updater.start(ref.entry_id, intended_base(ref))
+            return build_one(ref.entry, config=worker_config, work_dir=work_dir, browser_factory=browser_factory,
+                             base_override=ref.base_override)
 
         results = job_queue.run_parallel(
-            [_EntryRef(entry) for entry in selected], jobs, build_one_for_worker,
-            on_result=lambda ref, result: status_updater.record(ref.id, result))
+            plan, jobs, build_one_for_worker,
+            on_result=lambda ref, result: status_updater.record(
+                ref.entry_id, result.get("base") or intended_base(ref), result))
         report["targets"] = results
 
     # Item 91: reclaim the container storage this run itself owns, once,
@@ -816,14 +1005,22 @@ def run_check(config: Config, *, catalog: dict, fetcher=_http_get, inspector=_sk
 
 # ------------------------------------------------------------ reporting
 def diff_reports(previous: dict | None, current: dict) -> dict:
-    """What a person acts on: not the whole report again, just what changed."""
-    if not previous:
-        return {"newly_failed": list(current["targets"]), "recovered": [], "still_failing": [], "unchanged": []}
-    ok_statuses = {"success", "ok"}
+    """What a person acts on: not the whole report again, just what changed.
+
+    Item 110's own bug: a first-ever run (no previous report on disk at
+    all) used to mark *every* entry "newly_failed" unconditionally,
+    regardless of whether it actually succeeded — the exact contradiction
+    the owner's first real run hit ("1 success" printed right next to
+    "newly failing: web-server-nginx" for that same entry). No previous
+    report is now treated exactly like a previous report with zero
+    entries in it: the per-entry logic below already handles "not seen
+    before" correctly (newly_failed only if it is not ok now, unchanged
+    otherwise) — there is no longer a separate, wrong, unconditional path."""
+    previous = previous or {"targets": {}}
     newly_failed, recovered, still_failing, unchanged = [], [], [], []
     for target_id, record in current["targets"].items():
-        was_ok = previous.get("targets", {}).get(target_id, {}).get("status") in ok_statuses
-        is_ok = record.get("status") in ok_statuses
+        was_ok = previous.get("targets", {}).get(target_id, {}).get("status") in OK_STATUSES
+        is_ok = record.get("status") in OK_STATUSES
         if target_id not in previous.get("targets", {}):
             (newly_failed if not is_ok else unchanged).append(target_id)
         elif was_ok and not is_ok:
@@ -873,6 +1070,13 @@ def summary_text(report: dict, diff: dict) -> str:
         if record.get("status") == "skipped":
             reason = (record.get("log_tail") or ["no reason recorded"])[0]
             lines.append(f"skipped {target_id}: {reason}")
+        # Item 110: a build that succeeded but whose boot check did not is
+        # its own line too, worded so it never reads like a plain success
+        # — the exact contradiction ("1 success" / "newly failing: same
+        # entry") this status exists to stop.
+        elif record.get("status") == "smoke_failed":
+            reason = (record.get("log_tail") or ["boot check failed"])[0]
+            lines.append(f"built but failed its boot check, {target_id}: {reason}")
     # Items 87-89: say exactly which directories were freed and which were
     # kept, and why — never leave that only in build-report.json.
     cleanups = {tid: r["cleanup"] for tid, r in report["targets"].items() if r.get("cleanup")}
@@ -899,7 +1103,8 @@ def summary_text(report: dict, diff: dict) -> str:
 
 # ---------------------------------------------------------------- CLI
 def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list[str] | None = None,
-        dry_run_upload: bool = False, no_cleanup: bool = False) -> int:
+        dry_run_upload: bool = False, no_cleanup: bool = False,
+        cover_bases: list[str] | None = None) -> int:
     catalog = fetch_catalog(config.catalog_url)
     config.workdir.mkdir(parents=True, exist_ok=True)
     report_path = config.workdir / f"{mode}-report.json"
@@ -914,6 +1119,17 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
         # config file itself already says.
         if no_cleanup:
             config = dataclasses.replace(config, cleanup=False)
+        # Item 112: --cover-bases on the command line replaces whatever
+        # conformance.yml's own cover_bases says, for this one run —
+        # the same "an explicit flag overrides the config file" pattern
+        # --only/--max already use, not an addition to it.
+        if cover_bases is not None:
+            unknown_bases = set(cover_bases) - _known_bases()
+            if unknown_bases:
+                _eprint(f"error: --cover-bases names unknown base(s): {', '.join(sorted(unknown_bases))} "
+                       f"(known: {', '.join(sorted(_known_bases()))})")
+                return 2
+            config = dataclasses.replace(config, cover_bases=cover_bases)
         jobs, problems = resolve_jobs(config)
         if problems:
             for problem in problems:
@@ -948,8 +1164,7 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
     if config.report_url:
         post_report({"report": report, "diff": diff}, config.report_url)
 
-    ok_statuses = {"success", "ok"}
-    failed = [tid for tid, record in report["targets"].items() if record.get("status") not in ok_statuses]
+    failed = [tid for tid, record in report["targets"].items() if record.get("status") not in OK_STATUSES]
     return 0 if not failed else 1
 
 
@@ -971,6 +1186,10 @@ def main(argv: list[str] | None = None) -> int:
                                "even on success, instead of the default of freeing it as soon as that entry "
                                "finishes - for a debugging run; only ever keeps more than conformance.yml's own "
                                "cleanup: setting, never less")
+            p.add_argument("--cover-bases",
+                          help="comma-separated base names (ubuntu, debian) to attempt every selected entry "
+                               "against, instead of once on whatever base its own manifest pins - replaces "
+                               "conformance.yml's own cover_bases for this run")
     args = parser.parse_args(argv)
 
     try:
@@ -998,10 +1217,13 @@ def main(argv: list[str] | None = None) -> int:
              + (f", site {config.site_url}" if args.mode == "build" and config.site_url else ""))
         return 0
 
+    cover_bases = args.cover_bases.split(",") if getattr(args, "cover_bases", None) else None
+    if cover_bases:
+        cover_bases = [b.strip() for b in cover_bases if b.strip()]
     try:
         return _run(args.mode, config, max_builds=getattr(args, "max", None), only=only,
                    dry_run_upload=getattr(args, "dry_run_upload", False),
-                   no_cleanup=getattr(args, "no_cleanup", False))
+                   no_cleanup=getattr(args, "no_cleanup", False), cover_bases=cover_bases)
     except ConformanceError as exc:
         _eprint(f"error: {exc}")
         return 2
