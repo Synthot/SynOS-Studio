@@ -916,6 +916,17 @@ explain_storage_mismatch() {  # runtime-stderr-text storage-path
 # stopped here rather than silently degrading to an empty value and a
 # skipped check further down, which would otherwise look like this script
 # just could not tell either way.
+# Where this build's storage is, in words, for a message. A function rather
+# than "$(storage_description)" at each call site: an
+# apostrophe inside a ${var:-default} expansion is a syntax error in bash,
+# which is /bin/sh on some distributions, even though dash accepts it - so
+# `sh -n` passed while every bash user got "unexpected EOF". tools/run_checks.py
+# runs bash -n over this file for exactly that reason.
+storage_description() {
+    if [ -n "$container_root" ]; then printf '%s\n' "$container_root"
+    else printf "%s's own storage\n" "$runtime"
+    fi
+}
 runtime_info_field() {  # format storage-path-for-the-message
     mkdir -p .build 2>/dev/null || true
     # Reused, not removed: this is a lookup that can run during `check`
@@ -1032,8 +1043,8 @@ fi
 if [ -n "$container_root" ] && is_podman; then
     store=$container_root
 else
-    store=$(runtime_info_field '{{.DockerRootDir}}' "${container_root:-$runtime's own storage}")
-    case "$store" in ""|*"{{"*|"<no value>") store=$(runtime_info_field '{{.Store.GraphRoot}}' "${container_root:-$runtime's own storage}") ;; esac
+    store=$(runtime_info_field '{{.DockerRootDir}}' "$(storage_description)")
+    case "$store" in ""|*"{{"*|"<no value>") store=$(runtime_info_field '{{.Store.GraphRoot}}' "$(storage_description)") ;; esac
 fi
 if [ -n "$store" ] && [ -d "$store" ]; then
     store_kb=$(df -Pk "$store" | awk 'NR==2 {print $4}')
@@ -1275,7 +1286,7 @@ build_engine_image() {  # build_engine_image [forced] - forced skips reusing a s
     status=$(cat "$status_file" 2>/dev/null || echo 1)
     rm -f "$status_file"
     if [ "$status" -ne 0 ]; then
-        explain_storage_mismatch "$(grep -m 1 'database configuration mismatch' dist/image-build.log 2>/dev/null || true)" "${container_root:-$runtime's own storage}"
+        explain_storage_mismatch "$(grep -m 1 'database configuration mismatch' dist/image-build.log 2>/dev/null || true)" "$(storage_description)"
         fail "building the engine image failed (exit $status); see dist/image-build.log" 2
     fi
     say "engine image built in $(( ($(date +%s) - started) / 60 )) min"
@@ -1439,7 +1450,7 @@ if [ "$status" -ne 0 ]; then
     run_err=$(cat "$run_err_file" 2>/dev/null || true)
     [ -z "$run_err" ] || printf '%s\n' "$run_err" >&2
     rm -f "$run_err_file"
-    explain_storage_mismatch "$run_err" "${container_root:-$runtime's own storage}"
+    explain_storage_mismatch "$run_err" "$(storage_description)"
     say ""
     say "the build did not finish (exit code $status). The first errors in dist/build.log:"
     grep -n -m 6 -E 'No space left on device|dpkg: error|dpkg-query: error|^E: |cannot allocate memory|Killed process|FAILED|package error|skipped .*prebuild|Traceback|error:' dist/build.log 2>/dev/null | grep -v 'locale' | cut -c1-200 | sed 's/^/  /'
