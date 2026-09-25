@@ -22,7 +22,9 @@ Levels:
 Nothing that builds an image, boots QEMU, pulls a container image or needs
 the network ever runs at any --level. The one stage here that drives a real
 browser (studio-e2e) is never selected by --level at all; it exists only
-for --only, with its cost stated in its own description.
+for --only, with its cost stated in its own description. It does report a
+real verdict, so --only studio-e2e can be trusted as a gate; it is simply
+not something to pay for on every run.
 
 A stage whose tool is genuinely absent (no node, no google-chrome, the
 separate front end not configured) is reported "skipped" with the reason
@@ -253,19 +255,20 @@ STAGES: list[Stage] = [
          "(tools/synos check) — informational; a missing container engine here never fails this run",
          "fast", _run_host_check),
     Stage("unit-suite",
-         "the full unit test suite, ~6 minutes, 1097 tests today "
+         "the full unit test suite, about 6 minutes; the count is whatever the suite reports, "
+         "not a number kept here to drift "
          "(PYTHONPATH=tests python3 -m unittest discover -s tests/unit -p 'test_*.py')",
          "unit", _run_unit_suite),
     Stage("studio-unit",
-         "the separate front end's own unit suite, 38 tests, ~10s; needs node and "
+         "the separate front end's own unit suite, about 10s; needs node and "
          "--studio-repo/SYNOS_STUDIO_REPO (python3 -m unittest tests.test_configurator)",
          "all", _run_studio_unit, _studio_base_precheck),
     Stage("studio-e2e",
-         "the separate front end's real-browser end-to-end script, ~90s, drives headless "
-         "google-chrome; needs --studio-repo/SYNOS_STUDIO_REPO, node and google-chrome. Its own exit "
-         "code is always 0 (it is written to be read by a person, not asserted on) — read the log "
-         "rather than trust this stage's status. Never selected by --level; reach it with "
-         "--only studio-e2e.",
+         "the separate front end's real-browser end-to-end script, about 90s, drives headless "
+         "google-chrome and generates real bundles at the page's own upload limits; needs "
+         "--studio-repo/SYNOS_STUDIO_REPO, node and google-chrome. It exits non-zero when any of "
+         "its own checks fails, so this stage's status can be trusted; kept out of --level "
+         "because of the browser and the minute and a half. Reach it with --only studio-e2e.",
          None, _run_studio_e2e, _studio_e2e_precheck),
 ]
 
