@@ -300,6 +300,36 @@ always wins over the remembered value for that run, and also becomes the
 new remembered value; deleting `.build/container-root` forgets the choice
 and asks again next time.
 
+**A storage location carrying state from a different configuration than
+the one now being asked of it** — moved by hand, or reused after a change
+of `--storage` — fails with podman's own line shown first (never
+swallowed), then explained:
+
+    Error: database static dir "" does not match our static dir "<path>/libpod": database configuration mismatch
+    error: <path> carries state from a different configuration than this run is asking for (podman's own message, above, names exactly what disagrees); remove it with ./build.sh reset-storage, or point --storage at a different, empty location
+
+`./build.sh reset-storage` is the fix in one command: it removes this
+bundle's own container storage — wherever it is remembered to be
+(`.build/container-root`'s value, however it was set), the default
+`.build/container-storage`, an extracted engine source under
+`.build/engine-src/`, and the podman-storage debris an older launcher could
+leave at the bundle's own root (`overlay`, `overlay-containers`,
+`overlay-images`, `overlay-layers`, `libpod`, `db.sql`,
+`defaultNetworkBackend`, `storage.lock`, `userns.lock`) — and forgets the
+remembered location, so the next build starts with fresh storage. It never
+touches a bundle file (`bundle.json`, `manifests/`, `profiles/`,
+`branding/`, `keys/`, the launchers, `README.md`) or `dist/` (the build log
+and the evidence next to the ISO are not storage). It prints exactly what
+it will remove, with sizes, and asks once before doing it (`--yes`/
+`SYNOS_YES` skips the question; with no terminal and no `--yes`, it asks
+and gets no for an answer, removing nothing); removal goes through the same
+`sudo` path the runtime itself already uses for root-owned files, and says
+plainly what it could not remove. A `--storage <path>` given to
+`reset-storage` is only accepted when it is either the already-remembered
+location or somewhere under the bundle itself — anything else is refused,
+naming the path, rather than removing a location this script cannot verify
+is actually this bundle's own.
+
 - **docker**'s storage is one setting for the whole daemon: there is no
   per-build override, and it is unaffected by any of the above — never asked
   the question, never given a default location, its storage exactly where

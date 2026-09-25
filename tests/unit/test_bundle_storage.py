@@ -15,12 +15,10 @@ from pathlib import Path
 from test_bundle import MANIFEST, ROOT, run_under_pty, write_bundle, write_executable
 
 
-class ContainerStorageTests(unittest.TestCase):
-    """SYNOS_CONTAINER_ROOT/SYNOS_CONTAINER_RUNROOT (and --container-root=/--container-runroot=):
-    podman takes a per-build storage location with no root; docker's is
-    daemon-wide and is refused plainly instead of silently ignored or built
-    into a failure. Every runtime here is a fake that logs its argv and exits
-    0; no real build is ever started."""
+class _StorageHelpers:
+    """Fixtures shared by ContainerStorageTests and ResetStorageTests - a
+    plain mixin, not a TestCase, so its methods are never collected and run
+    twice under both class names."""
 
     TOOLS = ("sh", "sed", "head", "awk", "df", "id", "uname", "grep", "ls", "cat", "tr",
              "dirname", "printf", "stat", "mkdir")
@@ -106,6 +104,14 @@ class ContainerStorageTests(unittest.TestCase):
                               {"manifests/x.yml": MANIFEST})
         shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
         return bundle
+
+
+class ContainerStorageTests(_StorageHelpers, unittest.TestCase):
+    """SYNOS_CONTAINER_ROOT/SYNOS_CONTAINER_RUNROOT (and --container-root=/--container-runroot=):
+    podman takes a per-build storage location with no root; docker's is
+    daemon-wide and is refused plainly instead of silently ignored or built
+    into a failure. Every runtime here is a fake that logs its argv and exits
+    0; no real build is ever started."""
 
     def test_a_bundle_cannot_name_an_engine_minimum_that_is_a_path(self) -> None:
         """bundle.json is data, and its engine.min is read straight out of it into a
@@ -922,5 +928,321 @@ class ContainerStorageTests(unittest.TestCase):
                                     capture_output=True, text=True, stdin=subprocess.DEVNULL)
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             self.assertTrue(any(f"--root {expected}" in c for c in log.read_text(encoding="utf-8").splitlines()))
+
+
+DEBRIS_NAMES = ("overlay", "overlay-containers", "overlay-images", "overlay-layers",
+                "libpod", "db.sql", "defaultNetworkBackend", "storage.lock", "userns.lock")
+
+
+class ResetStorageTests(_StorageHelpers, unittest.TestCase):
+    """./build.sh reset-storage (item 181): the fix a storage-state mismatch
+    (item 180) tells a person to run, in one command instead of a block of
+    sudo rm -rf pasted from a chat."""
+
+    def make_full_bundle(self, tmp: Path) -> Path:
+        """A bundle with real content beside bundle.json/manifests/, the
+        same shape reset-storage must never touch: profiles/, branding/,
+        keys/ and README.md, none of them named like any storage debris."""
+        bundle = self.make_bundle(tmp)
+        (bundle / "profiles").mkdir()
+        (bundle / "profiles" / "example.yml").write_text("id: example\n", encoding="utf-8")
+        (bundle / "branding").mkdir()
+        (bundle / "branding" / "logo.svg").write_text("<svg/>", encoding="utf-8")
+        (bundle / "keys").mkdir()
+        (bundle / "keys" / "signing.pub").write_text("KEY", encoding="utf-8")
+        (bundle / "README.md").write_text("this bundle\n", encoding="utf-8")
+        return bundle
+
+    def write_debris(self, bundle: Path) -> None:
+        for name in DEBRIS_NAMES:
+            path = bundle / name
+            if name in ("db.sql", "defaultNetworkBackend", "storage.lock", "userns.lock"):
+                path.write_bytes(b"debris")
+            else:
+                path.mkdir()
+                (path / "inside").write_bytes(b"debris")
+
+    def test_a_storage_path_with_a_space_is_one_path_and_its_neighbour_survives(self) -> None:
+        """The removal list is handed to rm -rf, so a space in a storage location must
+        not split it in two. With the list kept as a space-separated string,
+        "<bundle>/My Storage" became "<bundle>/My" plus "Storage": it deleted a
+        neighbouring directory that was nobody's storage and left the real one behind.
+        The decoy here is exactly that neighbour."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            spaced = bundle / "My Storage"
+            (spaced / "overlay").mkdir(parents=True)
+            decoy = bundle / "My"
+            decoy.mkdir()
+            (decoy / "precious").write_text("not storage, not yours to delete\n", encoding="utf-8")
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-root").write_text(str(spaced) + "\n", encoding="utf-8")
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn(str(spaced), result.stdout, "the path is listed whole, not in pieces")
+            self.assertFalse(spaced.exists(), "the storage location with a space in it is what gets removed")
+            self.assertTrue((decoy / "precious").is_file(), "its neighbour is untouched")
+
+    def test_a_storage_root_under_any_other_name_is_found_by_its_markers(self) -> None:
+        """In the field the damage landed in a directory called "storage", because that
+        is what --storage storage resolved to -- a name no debris list would carry. A
+        directory in the bundle that is itself a container storage root is removed
+        whatever it is called, and the bundle root is never a candidate however many
+        markers sit directly in it."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            oddly_named = bundle / "storage"
+            (oddly_named / "libpod").mkdir(parents=True)
+            (oddly_named / "overlay").mkdir()
+            self.write_debris(bundle)          # markers directly at the bundle root too
+            plain = bundle / "notes"
+            plain.mkdir()
+            (plain / "keep.txt").write_text("mine\n", encoding="utf-8")
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertFalse(oddly_named.exists(), "a storage root is a storage root whatever its name")
+            self.assertTrue((plain / "keep.txt").is_file(), "an ordinary directory is not touched")
+            self.assertTrue((bundle / "bundle.json").is_file())
+            self.assertNotIn(f"  {bundle}\n", result.stdout, "the bundle root itself is never on the removal list")
+            self.assertNotIn(f"  {bundle} (", result.stdout)
+
+    def test_reset_storage_needs_no_container_runtime_at_all(self) -> None:
+        """A wedged build is exactly when podman may refuse to run -- that is what a
+        storage-state mismatch is -- so cleaning up after one must not require a working
+        runtime, or a sudo password for one. No podman, no docker, no sudo on PATH."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)   # no runtime written into it
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-storage" / "overlay").mkdir(parents=True)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertFalse((bundle / ".build" / "container-storage").exists())
+            self.assertNotIn("podman", result.stderr.lower(), "it never asked for a runtime")
+            self.assertNotIn("install", result.stdout.lower(), "and never offered to install one")
+
+    def test_removes_exactly_the_owned_paths_and_leaves_bundle_files_alone(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+
+            remembered = tmp / "remembered-storage"
+            remembered.mkdir()
+            (remembered / "file").write_bytes(b"x")
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-root").write_text(str(remembered) + "\n", encoding="utf-8")
+            (bundle / ".build" / "container-storage").mkdir()
+            (bundle / ".build" / "container-storage" / "file").write_bytes(b"x")
+            (bundle / ".build" / "engine-src").mkdir()
+            (bundle / ".build" / "engine-src" / "somehash").mkdir()
+            self.write_debris(bundle)
+
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+            self.assertFalse(remembered.exists(), "the remembered location is removed")
+            self.assertFalse((bundle / ".build" / "container-root").exists(), "the remembered location is forgotten")
+            self.assertFalse((bundle / ".build" / "container-storage").exists())
+            self.assertFalse((bundle / ".build" / "engine-src").exists())
+            for name in DEBRIS_NAMES:
+                self.assertFalse((bundle / name).exists(), name)
+
+            self.assertTrue((bundle / "bundle.json").is_file())
+            self.assertTrue((bundle / "manifests" / "x.yml").is_file())
+            self.assertTrue((bundle / "profiles" / "example.yml").is_file())
+            self.assertTrue((bundle / "branding" / "logo.svg").is_file())
+            self.assertTrue((bundle / "keys" / "signing.pub").is_file())
+            self.assertTrue((bundle / "README.md").is_file())
+            self.assertTrue((bundle / "build.sh").is_file())
+
+    def test_nothing_to_remove_when_the_bundle_has_no_storage_of_its_own(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("nothing to remove", result.stdout)
+
+    def test_prompt_is_asked_without_yes_and_skipped_with_it(self) -> None:
+        try:
+            import pty  # noqa: F401
+        except ImportError:
+            self.skipTest("the pty module is not available on this platform")
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-storage").mkdir()
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
+            output = run_under_pty(bundle, env, ["sh", "build.sh", "reset-storage"], send_when_seen="[y/N]", send=b"\n")
+            self.assertIn("Remove this now? [y/N]", output)
+            # bare Enter on a y/N prompt is "no": nothing removed
+            self.assertTrue((bundle / ".build" / "container-storage").exists())
+
+            env_yes = dict(env, SYNOS_YES="1")
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env_yes,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertNotIn("[y/N]", result.stdout)
+            self.assertFalse((bundle / ".build" / "container-storage").exists())
+
+    def test_declining_the_prompt_removes_nothing(self) -> None:
+        try:
+            import pty  # noqa: F401
+        except ImportError:
+            self.skipTest("the pty module is not available on this platform")
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-storage").mkdir()
+            self.write_debris(bundle)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
+            output = run_under_pty(bundle, env, ["sh", "build.sh", "reset-storage"], send_when_seen="[y/N]", send=b"n\n")
+            self.assertIn("nothing removed", output)
+            self.assertTrue((bundle / ".build" / "container-storage").exists())
+            for name in DEBRIS_NAMES:
+                self.assertTrue((bundle / name).exists(), name)
+
+    def test_no_terminal_and_no_yes_removes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-storage").mkdir()
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("nothing removed", result.stdout)
+            self.assertTrue((bundle / ".build" / "container-storage").exists())
+
+    def test_an_out_of_bundle_storage_flag_is_refused_and_named(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            outside = tmp / "somewhere-else"
+            outside.mkdir()
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage", "--storage", str(outside)], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn(str(outside), result.stderr)
+            self.assertIn("not this bundle's own storage", result.stderr)
+            self.assertTrue(outside.exists(), "a refused path is never touched")
+
+    def test_a_storage_flag_matching_the_remembered_value_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            remembered = tmp / "remembered-storage"
+            remembered.mkdir()
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-root").write_text(str(remembered) + "\n", encoding="utf-8")
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage", "--storage", str(remembered)], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertFalse(remembered.exists())
+
+    def test_storage_mismatch_is_recognised_and_translated_with_podmans_text_shown(self) -> None:
+        """Item 180: reproduced directly against a real podman (moving a
+        --root out from under an existing storage) - "database static dir
+        ... does not match our static dir ...: database configuration
+        mismatch" - shown verbatim, then explained, wherever it surfaces."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_df(fake, "never-matched", 1)
+            mismatch_line = ('Error: database static dir "" does not match our static dir '
+                              '"/wherever/libpod": database configuration mismatch')
+            write_executable(fake / "podman", (
+                "#!/bin/sh\n"
+                "case \"$*\" in\n"
+                "  *' pull '*) exit 1 ;;\n"
+                "  *' image '*) exit 1 ;;\n"
+                f"  *' build '*) printf '%s\\n' '{mismatch_line}' >&2; exit 125 ;;\n"
+                "  *) exit 0 ;;\n"
+                "esac\n"
+            ))
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_ENGINE_SOURCE": str(ROOT)}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn(mismatch_line, result.stderr, "podman's own text is shown, never swallowed")
+            self.assertIn("carries state from a different configuration", result.stderr)
+            self.assertIn("./build.sh reset-storage", result.stderr)
+
+    def test_storage_mismatch_on_the_final_run_is_also_recognised(self) -> None:
+        """Same class of failure, the other place it can surface: the
+        container that runs `synos build` itself never starts, so
+        dist/build.log (written from inside it) cannot show this - only
+        this run's own stderr can, which is why it is captured here too."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_df(fake, "never-matched", 1)
+            mismatch_line = ('Error: database run root "/old" does not match our run root '
+                              '"/new": database configuration mismatch')
+            write_executable(fake / "podman", (
+                "#!/bin/sh\n"
+                "case \"$*\" in\n"
+                "  *' cat /opt/synos/tools/bundle_launcher.sh'*) exit 0 ;;\n"
+                "  *' --privileged '*) "
+                f"printf '%s\\n' '{mismatch_line}' >&2; exit 125 ;;\n"
+                "  *) exit 0 ;;\n"
+                "esac\n"
+            ))
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_BUILDER_IMAGE": "my-registry/synos-builder:test"}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn(mismatch_line, result.stderr, "podman's own text is shown, never swallowed")
+            self.assertIn("carries state from a different configuration", result.stderr)
+            self.assertIn("./build.sh reset-storage", result.stderr)
 
 
