@@ -704,9 +704,12 @@ verify_storage_location() {  # runtime storage
     [ "$actual" = "$2" ]
 }
 
+# Exit 2: no candidate binary on PATH at all (distinguished from a binary
+# that exists but fails to launch headless, exit 1, so the caller can print
+# a precise reason for the first case instead of a generic FAIL).
 verify_browser() {
     local bin
-    bin=$(command -v chromium || command -v chromium-browser || command -v google-chrome || command -v google-chrome-stable) || return 1
+    bin=$(command -v chromium || command -v chromium-browser || command -v google-chrome || command -v google-chrome-stable) || return 2
     timeout 20 "$bin" --headless=new --no-sandbox --disable-gpu --dump-dom about:blank >/dev/null 2>&1
 }
 
@@ -749,7 +752,26 @@ verify_installation() {  # runtime storage engine_root config python_bin min_sto
     if is_podman "$runtime"; then
         run_check "podman storage is at $storage"            verify_storage_location "$runtime" "$storage"  || failed=1
     fi
-    run_check "headless browser starts"                       verify_browser                                 || failed=1
+    local browser_status
+    verify_browser; browser_status=$?
+    if [ "$browser_status" -eq 0 ]; then
+        say "  PASS  headless browser starts"
+    else
+        say "  FAIL  headless browser starts"
+        failed=1
+        if [ "$browser_status" -eq 2 ]; then
+            say "        no chromium, chromium-browser, google-chrome or google-chrome-stable on PATH."
+            say "        A plain distribution archive's own chromium/chromium-browser is often a"
+            say "        transitional package that installs a *snap* rather than a real binary (true"
+            say "        of every currently supported Ubuntu release). Install google-chrome-stable"
+            say "        from Google's own apt repository (https://dl.google.com/linux/chrome/deb/)"
+            say "        yourself and rerun with --skip-packages, or use a distribution whose archive"
+            say "        ships a real chromium, such as Debian's. On a SynOS-built machine, the"
+            say "        \"test-engine\" bundle (profiles/bundles.yml) already installs a working"
+            say "        browser per base (bases/*/packages.map); if it is still missing here, the"
+            say "        build most likely skipped it — check for it in the build log."
+        fi
+    fi
     run_check "qemu-system-x86_64 runs"                       verify_qemu                                    || failed=1
     run_check "tesseract reads a generated test image"        verify_ocr                                     || failed=1
     run_check "free space at $storage is at least ${min_store_gb} GB" verify_free_space "$storage" "$min_store_gb" || failed=1

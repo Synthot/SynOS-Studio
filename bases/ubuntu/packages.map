@@ -63,17 +63,24 @@ tesseract          = tesseract-ocr
 pillow             = python3-pil
 # Headless-capable Chromium/Chrome, the way tools/devtools_browser.py drives
 # it (google-chrome, google-chrome-stable, chromium-browser or chromium).
-# Left empty on purpose: Ubuntu's own "chromium"/"chromium-browser" is only a
-# transitional package (Pre-Depends: debconf, snapd) that installs the
-# Chromium *snap* — this base ships no snapd at all (test_package_policy.py,
-# FORBIDDEN_IMAGE_PACKAGES), so apt-get installing it would either drag
-# snapd onto the image or fail outright. The bundle-catalog's "Test Engine
-# Build Machine" entry (bundle-catalog/test-engine/) gets a real one by
-# targeting Debian trixie instead, whose own archive ships a native
-# Chromium (see bases/debian/packages.map). Until an upstream-forked
-# Chromium ships the way mod 05 plans to for "browser" above, a plain
-# Ubuntu build of this bundle is one package short.
-browser-headless   =
+# Not Ubuntu's own "chromium"/"chromium-browser": checked directly against
+# archive.ubuntu.com's Packages indexes for jammy, noble and resolute, it is
+# a transitional package everywhere (Pre-Depends: debconf, snapd) whose only
+# job is installing the Chromium *snap* — this base ships no snapd at all
+# (test_package_policy.py, FORBIDDEN_IMAGE_PACKAGES), so apt-get installing
+# it would either drag snapd onto the image or fail outright. Real fixes
+# checked against the archives, not from memory, before landing on this one:
+# no supported Ubuntu release packages a non-snap Chromium under any name;
+# Firefox's own "stock-package-is-forbidden" fix (an upstream-forked build,
+# mod 05) has no Chromium equivalent shipping yet. What does exist, and is
+# used here: Google's own apt repository (dl.google.com/linux/chrome/deb,
+# verified reachable, dated, real .deb, ordinary Depends — no snapd) forked
+# the same way packages/firefox-synos forks Firefox from Mozilla's own repo.
+# packages/google-chrome-synos/fork.json fetches it and drops the upstream
+# maintainer scripts and its cron auto-updater (which would otherwise
+# re-register Google's apt source on every image), keeping only the real
+# google-chrome-stable binary. amd64 and arm64 both exist upstream.
+browser-headless   = google-chrome-synos
 # Bundle-catalog workstation appliances (docs/BUNDLE.md, "The bundle
 # catalog"): each catalogued bundle pins one base and one suite in its own
 # manifest, so a package below only has to exist on that entry's suite,

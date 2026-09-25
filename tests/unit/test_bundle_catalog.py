@@ -278,10 +278,11 @@ class PackageResolutionTests(unittest.TestCase):
     def test_test_engine_group_is_mapped_on_both_bases(self) -> None:
         """profiles/bundles.yml "test-engine": everything
         packaging/install-test-engine.sh's REQUIREMENTS list needs, resolved
-        the same way every other group is. Ubuntu is one package short on
-        purpose (browser-headless maps to nothing there — see the comment in
-        bases/ubuntu/packages.map): the group still resolves to a non-empty
-        list, it just does not carry a real headless browser on that base."""
+        the same way every other group is, including a real headless browser
+        on both bases — Debian's own native chromium, Ubuntu's forked
+        packages/google-chrome-synos (bases/ubuntu/packages.map: Ubuntu's own
+        "chromium"/"chromium-browser" only installs the Chromium snap, which
+        this engine ships no snapd for)."""
         self.assertIn("test-engine", self.bundles)
         expected_everywhere = {
             "python3", "python3-yaml", "podman", "buildah", "skopeo",
@@ -296,9 +297,32 @@ class PackageResolutionTests(unittest.TestCase):
         debian_concrete, _ = render_manifest.resolve_packages(self.bundles["test-engine"], self.pkg_maps["debian"], "amd64", ["en"], "debian")
         self.assertIn("chromium", debian_concrete, "Debian's real, native Chromium — see bases/debian/packages.map")
         ubuntu_concrete, _ = render_manifest.resolve_packages(self.bundles["test-engine"], self.pkg_maps["ubuntu"], "amd64", ["en"], "ubuntu")
+        self.assertIn("google-chrome-synos", ubuntu_concrete,
+                       "Ubuntu gets the fork (packages/google-chrome-synos), never the archive's own snap-only chromium")
         self.assertNotIn("chromium", ubuntu_concrete)
         self.assertNotIn("chromium-browser", ubuntu_concrete,
                           "Ubuntu's own chromium-browser only installs the Chromium snap; this engine ships no snapd")
+
+    def test_google_chrome_fork_recipe_is_real(self) -> None:
+        """packages/google-chrome-synos: fetched from Google's own apt
+        repository (the same shape as packages/firefox-synos forking Firefox
+        from Mozilla's), with the upstream maintainer scripts suppressed and
+        its cron auto-updater stripped by prebuild.sh so it never registers
+        its own apt source on a built image."""
+        recipe = ROOT / "packages" / "google-chrome-synos"
+        self.assertEqual(["ubuntu"], recipe.joinpath("bases.txt").read_text(encoding="utf-8").split())
+        spec = json.loads(recipe.joinpath("fork.json").read_text(encoding="utf-8"))
+        self.assertEqual("google-chrome-stable", spec["package"])
+        self.assertEqual("https://dl.google.com/linux/chrome/deb", spec["url"])
+        self.assertTrue(spec["suppress_scripts"])
+        control = recipe.joinpath("control").read_text(encoding="utf-8")
+        self.assertIn("Package: google-chrome-synos\n", control)
+        self.assertIn("Conflicts: google-chrome-stable\n", control)
+        prebuild = recipe.joinpath("prebuild.sh").read_text(encoding="utf-8")
+        self.assertIn('cd "$(dirname "$0")/upstream"', prebuild)
+        self.assertIn("rm -rf", prebuild)
+        self.assertIn("etc", prebuild, "must strip the shipped /etc/cron.daily/google-chrome auto-updater symlink")
+        self.assertTrue(recipe.joinpath("lib").is_symlink())
 
     def test_test_engine_group_has_a_catalog_description(self) -> None:
         catalog = render_manifest.load_yaml(ROOT / "profiles" / "catalog.yml")
@@ -1258,8 +1282,10 @@ class PlatformAndNetworkingApplianceTests(unittest.TestCase):
 class TestEngineBundleTests(unittest.TestCase):
     """The "Test Engine Build Machine" catalogued bundle
     (bundle-catalog/test-engine/): the Yocto build host plus the
-    "test-engine" package group, pinned to Debian trixie so its headless
-    browser is a real Chromium rather than Ubuntu's snap-only one."""
+    "test-engine" package group. Stays on this engine's usual ubuntu/noble
+    (unlike cad-3d-printing-workstation, it needs no base switch): the
+    google-chrome-synos fork (packages/google-chrome-synos) gives it a real
+    headless browser there instead of Ubuntu's snap-only chromium."""
 
     def test_entry_is_present_and_verified(self) -> None:
         entry = next((e for e in index_entries() if e["id"] == "test-engine"), None)
@@ -1267,14 +1293,14 @@ class TestEngineBundleTests(unittest.TestCase):
         self.assertTrue(entry["verified"])
         self.assertEqual("test-engine", entry["folder"])
 
-    def test_profile_extends_yocto_builder_and_pins_debian_trixie(self) -> None:
+    def test_profile_extends_yocto_builder_and_pins_ubuntu_noble(self) -> None:
         profile, chain = render_manifest.resolve_profile("test-engine")
         self.assertIn("yocto-builder", chain)
         self.assertIn("yocto-build", profile["software"]["bundles"])
         self.assertIn("test-engine", profile["software"]["bundles"])
         manifest = render_manifest.load_yaml(CATALOG_DIR / "test-engine" / "manifests" / "test-engine.yml")
-        self.assertEqual("debian", manifest["base"])
-        self.assertEqual("trixie", manifest["suite"])
+        self.assertEqual("ubuntu", manifest["base"])
+        self.assertEqual("noble", manifest["suite"])
 
     def test_first_boot_points_at_the_installer(self) -> None:
         entry = next(e for e in index_entries() if e["id"] == "test-engine")
@@ -1332,6 +1358,14 @@ class TestEngineArchiveTests(unittest.TestCase):
             raise unittest.SkipTest(f"package archive is not reachable from this host: {exc}")
 
     def test_every_test_engine_package_resolves_on_every_supported_suite(self) -> None:
+        # A package built locally by this engine (packages/<name>/, checked
+        # by folder name the same way test_control_dependencies.py's
+        # LOCAL_PACKAGES does) is never in anyone's archive by design —
+        # packages/google-chrome-synos is exactly that, a fork of Google's
+        # own real .deb (see PackageResolutionTests.test_google_chrome_fork_recipe_is_real
+        # for what it actually is, rather than skipping it here unchecked).
+        local_packages = {p.name for p in (ROOT / "packages").iterdir() if p.is_dir() and not p.name.startswith("_")}
+        self.assertIn("google-chrome-synos", local_packages)
         bundles = render_manifest.load_bundles()
         failures = []
         for env_path in sorted((ROOT / "bases").glob("*/base.env")):
@@ -1343,6 +1377,7 @@ class TestEngineArchiveTests(unittest.TestCase):
             base_url = base.get("APT_MIRROR", "").rstrip("/")
             components = base.get("COMPONENTS", "main").split()
             concrete, _unmapped = render_manifest.resolve_packages(bundles["test-engine"], pkg_map, "amd64", ["en"], base_id)
+            concrete = [p for p in concrete if p not in local_packages]
             for suite in base.get("SUPPORTED_SUITES", "").split():
                 try:
                     available = self._available_names(base_url, suite, components)

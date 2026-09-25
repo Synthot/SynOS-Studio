@@ -1,0 +1,11 @@
+{
+  "package": "google-chrome-stable",
+  "distro": "google",
+  "url": "https://dl.google.com/linux/chrome/deb",
+  "suite": "stable",
+  "suite_mapping": "",
+  "component": "main",
+  "arch": "$(Arch)",
+  "signed_by": "assets/google-chrome-keyring.asc",
+  "suppress_scripts": true
+}

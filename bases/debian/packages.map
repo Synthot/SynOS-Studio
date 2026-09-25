@@ -60,10 +60,9 @@ tesseract          = tesseract-ocr
 pillow             = python3-pil
 # Headless-capable Chromium/Chrome, the way tools/devtools_browser.py drives
 # it (google-chrome, google-chrome-stable, chromium-browser or chromium).
-# Debian's own archive ships a real, native Chromium (unlike Ubuntu's — see
-# bases/ubuntu/packages.map — whose "chromium" only installs the Chromium
-# snap), which is also why the bundle-catalog's "Test Engine Build Machine"
-# entry (bundle-catalog/test-engine/) targets this base.
+# Debian's own archive ships a real, native Chromium — no fork needed here,
+# unlike Ubuntu (bases/ubuntu/packages.map), whose "chromium" only installs
+# the Chromium snap and instead gets one built from packages/google-chrome-synos.
 browser-headless   = chromium
 # Bundle-catalog workstation appliances (docs/BUNDLE.md, "The bundle
 # catalog"): each catalogued bundle pins one base and one suite in its own

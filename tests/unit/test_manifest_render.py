@@ -333,7 +333,7 @@ class PortedStackTests(unittest.TestCase):
                         self.assertTrue(ignored, f"{source.name}/upstream/{artefact} must be git-ignored")
             if (source / "fork.json").is_file():
                 spec = json.loads((source / "fork.json").read_text(encoding="utf-8"))
-                self.assertIn(spec["distro"], ("ubuntu", "debian", "mozilla"))
+                self.assertIn(spec["distro"], ("ubuntu", "debian", "mozilla", "google"))
                 self.assertTrue(spec["package"])
         self.assertTrue((ROOT / "packages/_lib/build-guards.sh").is_file())
 
