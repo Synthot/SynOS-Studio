@@ -125,6 +125,19 @@ class PlannerTests(unittest.TestCase):
         self.assertTrue(all(t.kind == "core" for t in targets))
         self.assertTrue(all(t.source.is_file() for t in targets))
 
+    def test_core_targets_never_include_a_suite_that_cannot_back_a_live_image(self) -> None:
+        """"core" builds the engine's own default profile on every suite a
+        base supports, once each — the exact shape that hit the jammy bug: a
+        suite in SUPPORTED_SUITES this engine cannot actually build. _bases()
+        must already exclude it (bases/ubuntu/live.map), never build_matrix
+        deciding this on its own."""
+        ubuntu_suites = dict(build_matrix._bases(ROOT))["ubuntu"]
+        self.assertNotIn("jammy", ubuntu_suites)
+        self.assertIn("noble", ubuntu_suites)
+        self.assertIn("resolute", ubuntu_suites)
+        targets = build_matrix.plan_core_targets(ROOT)
+        self.assertNotIn("core-ubuntu-jammy", {t.id for t in targets})
+
     def test_full_plan_is_catalog_plus_core_with_unique_ids(self) -> None:
         targets = build_matrix.plan_targets(ROOT)
         ids = [t.id for t in targets]

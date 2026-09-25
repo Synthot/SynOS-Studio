@@ -243,7 +243,9 @@ class Unavailable(NamedTuple):
     the case this exists for). resolve_packages() refuses a profile that
     reaches this name on this base, with the reason, rather than silently
     dropping it the way an empty mapping does for a role that is genuinely
-    optional."""
+    optional. The same marker, keyed by suite instead of abstract package
+    name, is what bases/*/live.map uses (load_live_suite_map) for a suite
+    whose archive cannot back a Live image."""
     reason: str
 
 
@@ -262,6 +264,74 @@ def load_package_map(path: Path) -> dict[str, list[str] | Unavailable]:
         else:
             mapping[key.strip()] = value.split()
     return mapping
+
+
+def load_live_suite_map(path: Path) -> dict[str, Unavailable]:
+    """suite = unavailable: <reason> (bases/*/live.map, optional — one line per
+    suite that base.env's SUPPORTED_SUITES accepts but whose own archive
+    cannot back a Live image: no package on it provides the dracut modules
+    mods/stack.sh's ensure_dracut_live_modules() requires (LIVE_DRACUT_MODULES
+    there). Same marker syntax as packages.map's `unavailable:` (see
+    Unavailable), keyed by suite instead of abstract package name.
+
+    A suite absent from this file, or a base with no live.map at all (every
+    one of its SUPPORTED_SUITES can back a Live image), is not refused here —
+    this file only ever lists exceptions, so it can never drift from
+    SUPPORTED_SUITES by omission the way a second, independently maintained
+    list of "the suites that are fine" could.
+
+    This is render/--check time's early refusal, from what this repository
+    already knows about a suite's archive, before a chroot ever runs.
+    mods/stack.sh's own ensure_dracut_live_modules() stays in place unchanged
+    as the backstop for a suite whose archive changes under us after this
+    file was written — this is not a replacement for that check, only an
+    earlier, cheaper one for a gap already known."""
+    if not path.is_file():
+        return {}
+    mapping: dict[str, Unavailable] = {}
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip()
+        if not value.startswith("unavailable:"):
+            raise ManifestError(f"{path}: suite {key!r} must be `unavailable: <reason>` "
+                                 f"(a suite that can back a Live image needs no entry in live.map at all)")
+        mapping[key] = Unavailable(value[len("unavailable:"):].strip())
+    return mapping
+
+
+def check_live_map_agrees_with_supported_suites(base_id: str, base: dict[str, str], live_map: dict[str, Unavailable]) -> None:
+    """bases/<base_id>/live.map must never silently disagree with base.env's
+    SUPPORTED_SUITES: a suite it names that SUPPORTED_SUITES does not list is
+    a repository bug (a typo, a suite renamed on one side and not the
+    other), refused here rather than ignored; likewise a base's own
+    DEFAULT_SUITE can never be one live.map marks unavailable — a base that
+    cannot even build its own default Live image is not something any
+    manifest should be trusted to silently work around."""
+    supported = set(base.get("SUPPORTED_SUITES", "").split())
+    drift = set(live_map) - supported
+    if drift:
+        raise ManifestError(f"bases/{base_id}/live.map names suite(s) {sorted(drift)} that "
+                             f"base.env's SUPPORTED_SUITES does not — fix whichever one is wrong")
+    default_suite = base.get("DEFAULT_SUITE")
+    if default_suite in live_map:
+        raise ManifestError(f"bases/{base_id}/base.env's DEFAULT_SUITE {default_suite!r} cannot back a Live "
+                             f"image: {live_map[default_suite].reason}")
+
+
+def live_capable_suites(base_dir: Path, env: dict[str, str]) -> list[str]:
+    """base.env's SUPPORTED_SUITES minus whatever bases/<base>/live.map marks
+    unavailable for a Live image. The one place this exclusion is computed;
+    every consumer that lists or builds "the suites this base supports" for
+    real (export_catalog's Studio suite choices, build_matrix's core targets)
+    calls this instead of reading SUPPORTED_SUITES directly, so a suite the
+    engine refuses at render time is never offered or attempted in the first
+    place, and no tool hardcodes a suite name to get there."""
+    live_map = load_live_suite_map(base_dir / "live.map")
+    return [s for s in env.get("SUPPORTED_SUITES", "").split() if s not in live_map]
 
 
 def load_bundles() -> dict[str, list[str]]:
@@ -483,11 +553,18 @@ def q(value: object) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`") + '"'
 
 
-def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions: list[dict], brand: dict, manifest_path: Path, pkg_map: dict[str, list[str] | Unavailable], bundles: dict[str, list[str]]) -> tuple[str, dict]:
+def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions: list[dict], brand: dict, manifest_path: Path, pkg_map: dict[str, list[str] | Unavailable], bundles: dict[str, list[str]], live_map: dict[str, Unavailable] | None = None) -> tuple[str, dict]:
     suite = manifest["suite"]
     arch = manifest["arch"]
     if suite not in base.get("SUPPORTED_SUITES", suite).split():
         raise ManifestError(f"suite {suite!r} is not supported by base {manifest['base']!r} ({base.get('SUPPORTED_SUITES')})")
+    live_unavailable = (live_map or {}).get(suite)
+    if live_unavailable is not None:
+        # Every image this engine builds is a live-boot installer ISO
+        # (mods/stack.sh's ensure_dracut_live_modules); a suite that cannot
+        # back one cannot build at all. Refuse here, at render/--check time,
+        # instead of inside the chroot 30+ minutes into a download.
+        raise ManifestError(f"suite {suite!r} of base {manifest['base']!r} cannot back a Live image: {live_unavailable.reason}")
     mirrors = manifest.get("mirrors", {}) or {}
     apt_source = mirrors.get("apt") or base["APT_MIRROR"]
     security_source = mirrors.get("security") or base.get("SECURITY_MIRROR", apt_source)
@@ -714,7 +791,9 @@ def main(argv: list[str] | None = None) -> int:
         brand = resolve_brand(manifest["brand"])
         pkg_map = load_package_map(base_dir / "packages.map")
         bundles = load_bundles()
-        text, resolved = render(manifest, base, profile, chain, regions, brand, manifest_path, pkg_map, bundles)
+        live_map = load_live_suite_map(base_dir / "live.map")
+        check_live_map_agrees_with_supported_suites(manifest["base"], base, live_map)
+        text, resolved = render(manifest, base, profile, chain, regions, brand, manifest_path, pkg_map, bundles, live_map)
     except ManifestError as exc:
         print(f"manifest error: {exc}", file=sys.stderr)
         return 1

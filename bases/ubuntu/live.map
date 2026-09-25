@@ -1,0 +1,34 @@
+# suite = unavailable: <reason>
+#
+# A suite base.env's SUPPORTED_SUITES accepts (the engine knows how to
+# bootstrap and package for it) but whose own archive cannot back a Live
+# image at all: no package on it provides the dracut modules mods/stack.sh's
+# ensure_dracut_live_modules() requires (LIVE_DRACUT_MODULES there —
+# dmsquash-live, dmsquash-live-autooverlay, overlayfs, synos-live-layers).
+# Every image this engine produces is a live-boot installer ISO, so a suite
+# listed here cannot build at all, and tools/render_manifest.py refuses it
+# at render/--check time, before a chroot ever runs, naming the reason below.
+#
+# A suite absent from this file is not known to have the limitation — this
+# file only ever lists exceptions, checked against the real archive (not
+# assumed), so it can never quietly drift out of step with SUPPORTED_SUITES
+# the way a second "these suites are fine" list could.
+#
+# This is the early refusal only. mods/stack.sh's own
+# ensure_dracut_live_modules() check inside the chroot is unchanged and
+# stays in place as the backstop for a suite whose archive changes under us
+# after this file was written (a package split, a module renamed) — this
+# file is not a replacement for that check, only a cheaper, earlier one for
+# a gap already known.
+#
+# jammy (22.04): checked against archive.ubuntu.com's real indexes and the
+# actual .deb contents, 2026-09-25. jammy's dracut is 051-1, from universe
+# (dracut-core/dracut-live are not in main here, unlike resolute); its
+# dracut-live package ships the dmsquash-live module but not
+# dmsquash-live-autooverlay, which was not added upstream until a later
+# dracut release, and no package on jammy ships an overlayfs dracut module
+# either — dracut-core there only carries the older, unrelated
+# "overlay-root" module. Nothing on jammy fills the gap; noble's dracut
+# (060+5-1ubuntu3, also universe) and resolute's (110-11, in main, via
+# dracut-core) both carry every module LIVE_DRACUT_MODULES needs.
+jammy = unavailable: dracut on jammy (051-1, from universe) ships dmsquash-live but neither dmsquash-live-autooverlay nor overlayfs, and no other jammy package supplies them, so mods/stack.sh's ensure_dracut_live_modules() can never succeed there. Use noble or resolute instead.

@@ -132,10 +132,14 @@ def collect(channel: str = "stable") -> dict:
     for base_dir in sorted(p for p in (ROOT / "bases").iterdir() if p.is_dir() and not p.name.startswith("_")):
         env = render_manifest.load_env(base_dir / "base.env")
         pkg_map = render_manifest.load_package_map(base_dir / "packages.map")
+        # Only suites that can actually back a Live image (every image this
+        # engine builds is one): a suite bases/<base>/live.map marks
+        # unavailable is one tools/render_manifest.py refuses at render time,
+        # so Studio must never offer it as a choice in the first place.
         bases.append({
             "id": env["BASE_ID"],
             "description": env.get("DESCRIPTION", ""),
-            "suites": env.get("SUPPORTED_SUITES", env.get("DEFAULT_SUITE", "")).split(),
+            "suites": render_manifest.live_capable_suites(base_dir, env),
             "default_suite": env.get("DEFAULT_SUITE", ""),
             "mirror": env.get("APT_MIRROR", ""),
             "components": env.get("COMPONENTS", ""),

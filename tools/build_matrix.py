@@ -138,11 +138,18 @@ def _sha256_tree(folder: Path) -> str:
 
 
 def _bases(root: Path) -> list[tuple[str, list[str]]]:
-    """(base_id, [suite, ...]) for every real base adapter (bases/_template excluded)."""
+    """(base_id, [suite, ...]) for every real base adapter (bases/_template
+    excluded), restricted to suites that can actually back a Live image
+    (render_manifest.live_capable_suites — SUPPORTED_SUITES minus whatever
+    bases/<base>/live.map marks unavailable). "core" targets build the
+    engine's own default profile on every suite a base supports; a suite
+    this engine already knows cannot produce a Live image must never be one
+    of them, the same refusal tools/render_manifest.py gives a manifest that
+    names it directly."""
     out = []
     for base_dir in sorted(p for p in (root / "bases").iterdir() if p.is_dir() and not p.name.startswith("_")):
         env = render_manifest.load_env(base_dir / "base.env")
-        suites = env.get("SUPPORTED_SUITES", env.get("DEFAULT_SUITE", "")).split() or [env.get("DEFAULT_SUITE", "")]
+        suites = render_manifest.live_capable_suites(base_dir, env) or [env.get("DEFAULT_SUITE", "")]
         out.append((env["BASE_ID"], suites))
     return out
 

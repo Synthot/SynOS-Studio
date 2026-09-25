@@ -12,6 +12,16 @@
 The engine never names a distribution. Mods call `pkg_install <abstract-name>`
 and the base's `packages.map` resolves it.
 
+Every image this engine builds is a live-boot installer ISO. A base's
+`base.env` lists every suite it can bootstrap and package for
+(`SUPPORTED_SUITES`); its optional `live.map` names whichever of those
+suites cannot back a Live image at all (no package on that suite's archive
+provides the dracut modules `mods/stack.sh`'s `ensure_dracut_live_modules()`
+needs) and why. `tools/render_manifest.py` refuses such a suite at
+render/`--check` time, naming the reason and what to choose instead, rather
+than letting the build reach the same, more expensive refusal inside the
+chroot after a long download.
+
 ## Migration steps
 
 1. **Done.** Manifest and schema. `tools/render_manifest.py` renders

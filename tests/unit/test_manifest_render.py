@@ -213,6 +213,121 @@ class UnavailablePackageTests(unittest.TestCase):
             self.assertIn("unavailable", result.stderr)
 
 
+class LiveSuiteTests(unittest.TestCase):
+    """bases/*/live.map: a suite base.env's SUPPORTED_SUITES accepts but whose
+    own archive cannot back a Live image (mods/stack.sh's
+    ensure_dracut_live_modules) must refuse at render/--check time, before a
+    chroot ever runs — the same `unavailable: <reason>` idiom packages.map
+    uses, keyed by suite (render_manifest.load_live_suite_map)."""
+
+    def test_load_live_suite_map_parses_the_unavailable_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "live.map"
+            path.write_text("stale = unavailable: no live module on this suite\n# a comment\n\n", encoding="utf-8")
+            live_map = render_manifest.load_live_suite_map(path)
+            self.assertIsInstance(live_map["stale"], render_manifest.Unavailable)
+            self.assertEqual("no live module on this suite", live_map["stale"].reason)
+
+    def test_a_missing_live_map_is_no_limitation_at_all(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual({}, render_manifest.load_live_suite_map(Path(directory) / "does-not-exist.map"))
+
+    def test_an_entry_that_is_not_the_unavailable_marker_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "live.map"
+            path.write_text("stale = noble\n", encoding="utf-8")
+            with self.assertRaises(render_manifest.ManifestError):
+                render_manifest.load_live_suite_map(path)
+
+    def test_live_capable_suites_excludes_what_live_map_marks_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            base_dir = Path(directory)
+            (base_dir / "live.map").write_text("stale = unavailable: no live module\n", encoding="utf-8")
+            suites = render_manifest.live_capable_suites(base_dir, {"SUPPORTED_SUITES": "stale fresh"})
+            self.assertEqual(["fresh"], suites)
+
+    def test_live_capable_suites_with_no_live_map_keeps_every_supported_suite(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            suites = render_manifest.live_capable_suites(Path(directory), {"SUPPORTED_SUITES": "a b c"})
+            self.assertEqual(["a", "b", "c"], suites)
+
+    def test_the_real_ubuntu_jammy_gap_refuses_a_render_naming_base_suite_and_alternative(self) -> None:
+        """The concrete case bases/ubuntu/live.map exists for: jammy's own
+        dracut cannot back a Live image (packages/README.md, checked against
+        the real archive), and a manifest naming it must refuse before a
+        chroot ever runs, not 30+ minutes into one."""
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "m.yml"
+            manifest.write_text(json.dumps({
+                "schema_version": 1, "name": "m", "version": "1.0.0", "base": "ubuntu", "suite": "jammy",
+                "arch": "amd64", "profile": "minimal", "regions": ["fr"], "brand": "synos",
+            }), encoding="utf-8")
+            result = _run("--manifest", str(manifest), "--check")
+            self.assertEqual(1, result.returncode, result.stdout)
+            message = result.stderr
+            self.assertIn("manifest error", message)
+            self.assertIn("jammy", message)
+            self.assertIn("ubuntu", message)
+            self.assertIn("Live image", message)
+            self.assertIn("dmsquash-live-autooverlay", message)
+            self.assertIn("overlayfs", message)
+            self.assertIn("noble", message)
+
+    def test_every_other_supported_ubuntu_and_debian_suite_still_renders(self) -> None:
+        """Only the known gap is refused; every other suite in SUPPORTED_SUITES
+        (base.env) renders exactly as before this file existed."""
+        for base, suite in (("ubuntu", "noble"), ("ubuntu", "resolute"), ("debian", "trixie")):
+            with tempfile.TemporaryDirectory() as directory:
+                manifest = Path(directory) / "m.yml"
+                manifest.write_text(json.dumps({
+                    "schema_version": 1, "name": "m", "version": "1.0.0", "base": base, "suite": suite,
+                    "arch": "amd64", "profile": "minimal", "regions": ["fr"], "brand": "synos",
+                }), encoding="utf-8")
+                result = _run("--manifest", str(manifest), "--check")
+                self.assertEqual(0, result.returncode, msg=(base, suite, result.stderr))
+
+    def test_a_live_map_entry_absent_from_supported_suites_is_rejected_as_drift(self) -> None:
+        """live.map must never silently disagree with SUPPORTED_SUITES: a live.map
+        naming a suite base.env does not list is a repository bug, refused
+        rather than ignored."""
+        base = {"SUPPORTED_SUITES": "fresh", "DEFAULT_SUITE": "fresh"}
+        live_map = {"stale": render_manifest.Unavailable("not in SUPPORTED_SUITES at all")}
+        with self.assertRaises(render_manifest.ManifestError) as raised:
+            render_manifest.check_live_map_agrees_with_supported_suites("acme", base, live_map)
+        message = str(raised.exception)
+        self.assertIn("stale", message)
+        self.assertIn("SUPPORTED_SUITES", message)
+
+    def test_a_default_suite_live_map_marks_unavailable_is_rejected(self) -> None:
+        """A base's own DEFAULT_SUITE can never be one live.map marks
+        unavailable — that would mean the base's default cannot even build."""
+        base = {"SUPPORTED_SUITES": "fresh", "DEFAULT_SUITE": "fresh"}
+        live_map = {"fresh": render_manifest.Unavailable("no live module on this suite")}
+        with self.assertRaises(render_manifest.ManifestError) as raised:
+            render_manifest.check_live_map_agrees_with_supported_suites("acme", base, live_map)
+        message = str(raised.exception)
+        self.assertIn("DEFAULT_SUITE", message)
+        self.assertIn("no live module on this suite", message)
+
+    def test_agreeing_live_map_raises_nothing(self) -> None:
+        base = {"SUPPORTED_SUITES": "fresh stale", "DEFAULT_SUITE": "fresh"}
+        live_map = {"stale": render_manifest.Unavailable("no live module on this suite")}
+        render_manifest.check_live_map_agrees_with_supported_suites("acme", base, live_map)  # must not raise
+
+    def test_every_real_base_live_map_agrees_with_supported_suites(self) -> None:
+        """Static, offline guard for the same invariant: every suite key a real
+        base's live.map names must be one of that base's own SUPPORTED_SUITES,
+        so the two can never drift apart in this checkout."""
+        for base_dir in sorted(p for p in (ROOT / "bases").iterdir() if p.is_dir() and not p.name.startswith("_")):
+            with self.subTest(base=base_dir.name):
+                env = render_manifest.load_env(base_dir / "base.env")
+                live_map = render_manifest.load_live_suite_map(base_dir / "live.map")
+                supported = set(env.get("SUPPORTED_SUITES", "").split())
+                self.assertTrue(set(live_map) <= supported, set(live_map) - supported)
+                self.assertNotIn(env.get("DEFAULT_SUITE"), live_map,
+                                  f"{base_dir.name}'s own DEFAULT_SUITE cannot back a Live image")
+
+
 class StackTests(unittest.TestCase):
     """Every role of the stack is filled by a SynOS package or a base archive package."""
 

@@ -1,0 +1,21 @@
+# suite = unavailable: <reason>
+#
+# Optional. Only needed when one of this base's own SUPPORTED_SUITES
+# (base.env) cannot back a Live image: when no package on that suite's
+# archive provides the dracut modules mods/stack.sh's
+# ensure_dracut_live_modules() requires (LIVE_DRACUT_MODULES there). Check
+# the real archive index before writing an entry (see bases/ubuntu/live.map
+# for the worked example: jammy, checked against archive.ubuntu.com) — do
+# not guess. A suite genuinely fine for a Live image needs no line here, and
+# a base with no such limitation at all needs no live.map file at all; this
+# file only ever lists exceptions, so it never has to be kept in sync with
+# SUPPORTED_SUITES by hand (tools/render_manifest.py refuses a render whose
+# live.map names a suite SUPPORTED_SUITES doesn't).
+#
+# tools/render_manifest.py refuses, at render/--check time, a manifest that
+# names a suite listed here — before a chroot ever runs. mods/stack.sh's own
+# in-chroot check stays in place regardless: this file only catches a gap
+# already known; that check is the backstop for one that opens up later.
+#
+# example (delete before use):
+# jammy = unavailable: no package on jammy provides the dmsquash-live-autooverlay or overlayfs dracut module; use a newer suite instead
