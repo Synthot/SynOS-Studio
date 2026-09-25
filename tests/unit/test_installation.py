@@ -1151,7 +1151,7 @@ class BootContractTests(unittest.TestCase):
             live_entries_for_regions(default, (("de_DE.UTF-8", "Deutschland", "Europe/Berlin", "de"),))
 
     def test_live_boot_regions_are_one_four_field_policy(self):
-        args = (ROOT.parent / "args.sh").read_text(encoding="utf-8")
+        args = rendered_args_sh()
         match = re.search(
             r'export SUPPORTED_LIVE_REGIONS="\n(?P<rows>.*?)\n"',
             args,

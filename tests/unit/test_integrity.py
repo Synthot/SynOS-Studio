@@ -23,7 +23,7 @@ class AcceptanceWiringTests(unittest.TestCase):
             ["synos-btrfs-snapshots-manager"],
             [item["package"] for item in group["packages"]],
         )
-        args = Path("args.sh").read_text(encoding="utf-8")
+        args = rendered_args_sh()
         self.assertIn('export STACK_SNAPSHOTS_PACKAGES="synos-btrfs-snapshots-manager"', args)
         self.assertIn('export STACK_SNAPSHOTS_RECOMMENDS="false"', args)
 

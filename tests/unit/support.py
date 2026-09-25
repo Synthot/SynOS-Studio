@@ -223,6 +223,33 @@ from framework.wifi import (
 ROOT = Path(__file__).parents[1]
 
 
+_RENDERED_ARGS_SH: list[str] = []
+
+
+def rendered_args_sh() -> str:
+    """The text of args.sh, rendered here from this checkout's own manifest.yml.
+
+    args.sh is generated and .gitignore'd, so reading the repository root's copy
+    means a test that passes in a checkout somebody has already built in and
+    errors in every fresh one - a worktree, a CI clone, a colleague's machine -
+    for a reason that has nothing to do with what it is checking. Rendering it
+    (once per test process) makes the assertion about the renderer's output,
+    which is what these tests are actually about.
+    """
+
+    if not _RENDERED_ARGS_SH:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "args.sh"
+            result = subprocess.run(
+                (sys.executable, str(ROOT.parent / "tools" / "render_manifest.py"),
+                 "--output", str(output), "--resolved", str(Path(directory) / "resolved.json")),
+                cwd=ROOT.parent, text=True, capture_output=True, check=False,
+            )
+            assert result.returncode == 0, f"rendering args.sh failed: {result.stderr}"
+            _RENDERED_ARGS_SH.append(output.read_text(encoding="utf-8"))
+    return _RENDERED_ARGS_SH[0]
+
+
 def _source_tree(path: Path) -> str:
     """Read one module or a package as one searchable implementation view."""
 
