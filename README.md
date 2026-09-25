@@ -52,14 +52,14 @@ machine. The first build takes about 40 minutes; later ones reuse a cache.
 `./build.sh check` only verifies your machine. The complete output is kept
 in `dist/build.log`.
 
-Where you run the launcher and where the build's bytes land are two
-different disks: the container runtime keeps images, layers and the chroot
-in its own storage, usually on the system disk. If that disk is small,
-podman can be told to use another one instead — `SYNOS_CONTAINER_ROOT=/big/disk/synos-storage ./build.sh`
-— with no root and no daemon restart; docker's storage is one setting for
-the whole daemon and has no per-build override, so the launcher says how to
-move it instead of guessing (`docs/BUNDLE.md`, "Where the build's bytes
-land").
+Where the build's bytes land needs nothing from you: on podman, the
+launcher keeps images, layers and the chroot beside the bundle, on the disk
+you already unpacked it to, instead of the container runtime's own default
+(usually the system disk). `--storage /another/disk` (or `--storage=/path`)
+points it elsewhere instead, no root, no daemon restart; `SYNOS_CONTAINER_ROOT`
+does the same for unattended use. Docker's storage is one setting for the
+whole daemon and has no per-build override, so the launcher says how to move
+it instead of guessing (`docs/BUNDLE.md`, "Where the build's bytes land").
 
 **From this checkout** (developers, Ansible, CI):
 

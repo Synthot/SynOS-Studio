@@ -10,26 +10,30 @@
 # Nothing else is installed: the SynOS build engine runs inside a container
 # image published for the exact engine version this bundle was made for.
 #
-# Where the build's bytes land has nothing to do with where you run this
-# script: the container runtime keeps its own storage (images, layers, the
-# chroot), normally on the system drive. With Podman Desktop, -ContainerRoot
-# (or SYNOS_CONTAINER_ROOT) asks Podman to use another path, the same as
-# --container-root on Linux/macOS; -ContainerRunroot/SYNOS_CONTAINER_RUNROOT
-# does the same for its small state directory (Podman's own default is used
-# otherwise). This is passed straight to Podman the way build.sh does, but
-# has not been exercised on Windows by the project: Podman Desktop on
-# Windows commonly talks to a WSL 2 machine, whose own virtual disk (not a
-# Windows path) may be what actually needs to grow instead (Podman's machine
-# set --disk-size, or move the WSL distribution with wsl --manage <name> --move).
-# Docker Desktop's storage is one setting for the whole engine; there is no
+# Where the build's bytes land needs nothing from you on Podman: this script
+# works out on its own that the disk to use is the one this bundle was
+# unpacked to, and keeps images, layers and the chroot in .build\ right next
+# to it. It says so once, the run that creates that directory. -Storage
+# X:\path (or SYNOS_CONTAINER_ROOT) puts it somewhere else instead - a
+# person passes -Storage; a service sets the variable for unattended use.
+# -ContainerRoot still works, an older spelling of the same flag. This is
+# passed straight to Podman the way build.sh does, but has not been
+# exercised on Windows by the project: Podman Desktop on Windows commonly
+# talks to a WSL 2 machine, whose own virtual disk (not a Windows path) may
+# be what actually needs to grow instead (Podman's machine set --disk-size,
+# or move the WSL distribution with wsl --manage <name> --move).
+# -ContainerRunroot/SYNOS_CONTAINER_RUNROOT does the same for Podman's small
+# state directory, which otherwise stays at its own default. Docker
+# Desktop's storage is one setting for the whole engine; there is no
 # per-build override, and this script says so instead of guessing.
 #
-# With Podman, when no location was given and its own storage looks tight,
-# this script asks once (a terminal, no -Yes) whether to use a directory
-# beside the bundle instead, and remembers the answer in
+# With Podman, a real choice remains only when the bundle's own disk cannot
+# back a container's overlay at all (FAT32/exFAT, common on a removable
+# drive): then, and only then (a terminal, no -Yes), this script asks once
+# whether to use Podman's own storage instead, and remembers the answer in
 # .build\container-root so the next run is never asked again ("forget" it:
-# del .build\container-root). -ContainerRoot always wins, and updates what
-# is remembered.
+# del .build\container-root). -Storage/SYNOS_CONTAINER_ROOT/-ContainerRoot
+# always win over the remembered value, and update it.
 #
 # Channels: a bundle is generated for one of two engine pipelines, recorded
 # in its own bundle.json as "channel" ("stable" when the key is absent, so
@@ -47,13 +51,15 @@
 #   SYNOS_LAUNCHER_URL (source for `update`, default the engine's tools/ on GitHub),
 #   SYNOS_CHANNEL=stable|development (override the bundle's own channel; see above),
 #   SYNOS_NO_UPDATE_CHECK=1 (skip the launcher update check at the start of
-#   check/build), SYNOS_YES=1, SYNOS_CONTAINER_ROOT and SYNOS_CONTAINER_RUNROOT
-#   (Podman only; see above).
+#   check/build), SYNOS_YES=1, SYNOS_CONTAINER_ROOT (Podman only, same as
+#   -Storage; prefer -Storage by hand, the variable for a service) and
+#   SYNOS_CONTAINER_RUNROOT (Podman only; see above).
 [CmdletBinding()]
-param([string]$Command = "", [switch]$Yes, [string]$ContainerRoot = "", [string]$ContainerRunroot = "", [string]$Channel = "")
+param([string]$Command = "", [switch]$Yes, [string]$Storage = "", [string]$ContainerRoot = "", [string]$ContainerRunroot = "", [string]$Channel = "")
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
 if ($env:SYNOS_YES) { $Yes = $true }
+if ($Storage) { $ContainerRoot = $Storage }
 if (-not $ContainerRoot -and $env:SYNOS_CONTAINER_ROOT) { $ContainerRoot = $env:SYNOS_CONTAINER_ROOT }
 if (-not $ContainerRunroot -and $env:SYNOS_CONTAINER_RUNROOT) { $ContainerRunroot = $env:SYNOS_CONTAINER_RUNROOT }
 
@@ -374,7 +380,7 @@ function Get-DockerStorageHelp {
 @"
 docker's storage is one setting for the whole engine; there is no per-build location.
   Docker Desktop: Settings > Resources > Advanced > Disk image location (move it), or enlarge the WSL virtual disk it already uses.
-  or: install Podman Desktop, which takes a location per build (-ContainerRoot, or SYNOS_CONTAINER_ROOT)
+  or: install Podman Desktop, which takes a location per build (-Storage)
   or: build on a machine that already has room where Docker Desktop keeps its images
 "@
 }
@@ -390,11 +396,21 @@ $freeGb = [math]::Floor($drive.Free / 1GB)
 if ($freeGb -lt 40) { Fail "at least 40 GB free is needed on drive $($drive.Name): $freeGb GB available" 2 }
 
 $minStoreGb = 30
-$comfortableStoreGb = $minStoreGb * 2   # no point even asking when there is clearly room
 $rememberedRootFile = Join-Path $PSScriptRoot ".build\container-root"
 function Remember-ContainerRoot([string]$Value) {
     New-Item -ItemType Directory -Force -Path (Join-Path $PSScriptRoot ".build") | Out-Null
     Set-Content -Path $rememberedRootFile -Value $Value -Encoding utf8
+}
+# FAT32/exFAT (common on a removable drive) cannot back a container's
+# overlay; anything Get-Volume cannot classify is assumed usable rather than
+# guessed at (mirrors build.sh's graceful fallback when `stat` disagrees).
+function Test-BundleDiskUnusable {
+    try {
+        $fsType = (Get-Volume -FilePath $PSScriptRoot -ErrorAction Stop).FileSystemType
+        return $fsType -in @("FAT32", "FAT", "exFAT")
+    } catch {
+        return $false
+    }
 }
 
 # A location already chosen for this bundle (by hand, or by answering the
@@ -405,34 +421,45 @@ if ((Test-IsPodman) -and (-not $ContainerRoot) -and (Test-Path $rememberedRootFi
     if ($remembered) { $remembered = $remembered.Trim() }
     if ($remembered -eq "default") {
         $storageAsked = $true
+        Write-Host "using Podman's own storage for this build, not this bundle's disk (change: -Storage <path>; forget: del .build\container-root)"
     } elseif ($remembered) {
         $ContainerRoot = $remembered
         $storageAsked = $true
-        Write-Host "using the remembered build storage: $ContainerRoot (change: -ContainerRoot <path>; forget: del .build\container-root)"
+        Write-Host "using the remembered build storage: $ContainerRoot (change: -Storage <path>; forget: del .build\container-root)"
     }
 }
 
-# Proposed once, up front, instead of only refused after the fact - but only
-# when it can actually be answered in two seconds (a terminal, no -Yes, no
-# answer already known, not just a check) and only when there is a real
-# question to ask: the default storage is not clearly fine, and the
-# bundle's own disk - right here, already measured above - actually has
-# more room to offer. Skipped for a runtime reporting a Linux path (a WSL
-# machine's own disk, not a Windows one Test-Path can weigh).
-if ((Test-IsPodman) -and (-not $ContainerRoot) -and (-not $storageAsked) -and ($Command -ne "check") `
-        -and (-not $Yes) -and (-not [Console]::IsInputRedirected)) {
-    $defaultStore = (& $runtime info --format '{{.Store.GraphRoot}}' 2>$null)
-    if ($defaultStore -and ($defaultStore -notmatch '\{\{') -and ($defaultStore -notmatch '^/') -and (Test-Path $defaultStore)) {
-        $defaultStoreDrive = (Get-Item -Path $defaultStore).PSDrive
-        $defaultStoreGb = [math]::Floor($defaultStoreDrive.Free / 1GB)
-        if (($defaultStoreGb -lt $comfortableStoreGb) -and ($freeGb -gt $defaultStoreGb)) {
-            $altDir = Join-Path $PSScriptRoot ".build\container-storage"
-            Write-Host "podman would keep this build under $defaultStore ($defaultStoreGb GB free); it needs $minStoreGb GB."
-            if (AskYes "Use $altDir next to this bundle instead ($freeGb GB free there)?") {
-                $ContainerRoot = $altDir
+# The bundle's own disk is the default, needing nothing from you: this
+# script already knows where to build from where the bundle was unpacked,
+# and that is where its storage goes too - no variable to learn, no
+# question to answer. A real choice remains only when that disk cannot back
+# a container's overlay at all; only then, and only when it can actually be
+# answered in two seconds (a terminal, no -Yes, not just a check), is
+# Podman's own storage offered instead.
+$containerRootAuto = $false
+if ((Test-IsPodman) -and (-not $ContainerRoot) -and (-not $storageAsked)) {
+    $bundleStore = Join-Path $PSScriptRoot ".build\container-storage"
+    if ((Test-BundleDiskUnusable) -and ($Command -ne "check") -and (-not $Yes) -and (-not [Console]::IsInputRedirected)) {
+        $defaultStore = (& $runtime info --format '{{.Store.GraphRoot}}' 2>$null)
+        if ($defaultStore -and ($defaultStore -notmatch '\{\{') -and ($defaultStore -notmatch '^/') -and (Test-Path $defaultStore)) {
+            $defaultStoreDrive = (Get-Item -Path $defaultStore).PSDrive
+            $defaultStoreGb = [math]::Floor($defaultStoreDrive.Free / 1GB)
+            Write-Host "this bundle's own disk cannot back a container's overlay filesystem; Podman's own storage at $defaultStore ($defaultStoreGb GB free) can."
+            if (AskYes "Use Podman's own storage there instead?") {
+                $ContainerRoot = ""
+            } else {
+                $ContainerRoot = $bundleStore
             }
+            $storageAsked = $true
             $valueToRemember = if ($ContainerRoot) { $ContainerRoot } else { "default" }
             Remember-ContainerRoot $valueToRemember
+        }
+    }
+    if (-not $storageAsked) {
+        $ContainerRoot = $bundleStore
+        $containerRootAuto = $true
+        if (-not (Test-Path $ContainerRoot)) {
+            Write-Host "this build keeps its storage under $ContainerRoot; use -Storage <path> (or SYNOS_CONTAINER_ROOT) to put it somewhere else."
         }
     }
 }
@@ -442,7 +469,7 @@ if ((Test-IsPodman) -and ($ContainerRoot -or $ContainerRunroot)) {
     if ($ContainerRoot) {
         New-Item -ItemType Directory -Force -Path $ContainerRoot | Out-Null
         $runtimeRootArgs += @("--root", $ContainerRoot)
-        Remember-ContainerRoot $ContainerRoot
+        if (-not $containerRootAuto) { Remember-ContainerRoot $ContainerRoot }
     }
     if ($ContainerRunroot) {
         New-Item -ItemType Directory -Force -Path $ContainerRunroot | Out-Null
@@ -472,14 +499,14 @@ if ($store -and ($store -notmatch '^/') -and (Test-Path $store)) {
         if (Test-IsPodman) {
             Fail @"
 this build needs 30 GB free; only $storeFreeGb GB is free at $store, where podman keeps the build.
-  no root needed: -ContainerRoot X:\path\with\room  (or SYNOS_CONTAINER_ROOT)
+  no root needed: -Storage X:\path\with\room  (or SYNOS_CONTAINER_ROOT)
   or: free space at $store
   or: move podman's own default storage (root): graphroot in storage.conf, or podman machine set --disk-size for a WSL machine
 "@ 2
         } else {
             Fail @"
 this build needs 30 GB free; only $storeFreeGb GB is free at $store, where docker keeps the build.
-  free space at $store, or install Podman Desktop (moves its storage with -ContainerRoot, no daemon setting), or:
+  free space at $store, or install Podman Desktop (moves its storage with -Storage, no daemon setting), or:
 $(Get-DockerStorageHelp)
 "@ 2
         }
