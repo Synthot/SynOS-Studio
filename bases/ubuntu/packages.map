@@ -63,17 +63,21 @@ tesseract          = tesseract-ocr
 pillow             = python3-pil
 # Headless-capable Chromium/Chrome, the way tools/devtools_browser.py drives
 # it (google-chrome, google-chrome-stable, chromium-browser or chromium).
-# Left empty on purpose: Ubuntu's own "chromium"/"chromium-browser" is only a
-# transitional package (Pre-Depends: debconf, snapd) that installs the
-# Chromium *snap* — this base ships no snapd at all (test_package_policy.py,
+# Genuinely unavailable on this base, checked against the archives, not
+# assumed: archive.ubuntu.com's Packages indexes for jammy, noble and
+# resolute all show "chromium"/"chromium-browser" as a transitional package
+# (Pre-Depends: debconf, snapd) whose only job is installing the Chromium
+# *snap* — this base ships no snapd at all (test_package_policy.py,
 # FORBIDDEN_IMAGE_PACKAGES), so apt-get installing it would either drag
-# snapd onto the image or fail outright. The bundle-catalog's "Test Engine
-# Build Machine" entry (bundle-catalog/test-engine/) gets a real one by
-# targeting Debian trixie instead, whose own archive ships a native
-# Chromium (see bases/debian/packages.map). Until an upstream-forked
-# Chromium ships the way mod 05 plans to for "browser" above, a plain
-# Ubuntu build of this bundle is one package short.
-browser-headless   =
+# snapd onto the image or fail outright. Unlike Firefox (packages/firefox-synos,
+# forked from Mozilla's own repository — MPL-licensed, meant to be
+# redistributed), Google Chrome is proprietary: its terms do not allow a
+# third party to repackage and redistribute it the way a fork.json recipe
+# would (test_package_policy.py's ForkSourceAllowListTests enforces this).
+# So: no substitute, marked unavailable rather than silently dropped —
+# resolve_packages() refuses a profile that reaches this name on this base
+# instead of quietly shipping one package short (tools/render_manifest.py).
+browser-headless   = unavailable: Ubuntu packages no non-snap, freely redistributable Chromium (every "chromium"/"chromium-browser" is transitional, Pre-Depends snapd, and this engine ships no snapd); build the "test-engine" bundle on debian instead, whose own archive ships a real, native, BSD-licensed Chromium
 # Bundle-catalog workstation appliances (docs/BUNDLE.md, "The bundle
 # catalog"): each catalogued bundle pins one base and one suite in its own
 # manifest, so a package below only has to exist on that entry's suite,

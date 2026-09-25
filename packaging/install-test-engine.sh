@@ -704,9 +704,12 @@ verify_storage_location() {  # runtime storage
     [ "$actual" = "$2" ]
 }
 
+# Exit 2: no candidate binary on PATH at all (distinguished from a binary
+# that exists but fails to launch headless, exit 1, so the caller can print
+# a precise reason for the first case instead of a generic FAIL).
 verify_browser() {
     local bin
-    bin=$(command -v chromium || command -v chromium-browser || command -v google-chrome || command -v google-chrome-stable) || return 1
+    bin=$(command -v chromium || command -v chromium-browser || command -v google-chrome || command -v google-chrome-stable) || return 2
     timeout 20 "$bin" --headless=new --no-sandbox --disable-gpu --dump-dom about:blank >/dev/null 2>&1
 }
 
@@ -749,7 +752,27 @@ verify_installation() {  # runtime storage engine_root config python_bin min_sto
     if is_podman "$runtime"; then
         run_check "podman storage is at $storage"            verify_storage_location "$runtime" "$storage"  || failed=1
     fi
-    run_check "headless browser starts"                       verify_browser                                 || failed=1
+    local browser_status
+    verify_browser; browser_status=$?
+    if [ "$browser_status" -eq 0 ]; then
+        say "  PASS  headless browser starts"
+    else
+        say "  FAIL  headless browser starts"
+        failed=1
+        if [ "$browser_status" -eq 2 ]; then
+            say "        no chromium, chromium-browser, google-chrome or google-chrome-stable on PATH."
+            say "        This installer ships neither browser itself — install one yourself and rerun"
+            say "        with --skip-packages. chromium is the first thing to try: a real package on"
+            say "        Debian, but on Ubuntu \"chromium\"/\"chromium-browser\" only installs the"
+            say "        Chromium *snap* (Pre-Depends: snapd), so it will not help there. On Ubuntu,"
+            say "        install Google Chrome yourself instead, from Google's own apt repository"
+            say "        (https://dl.google.com/linux/chrome/deb/) under Google's own terms — this"
+            say "        project does not redistribute it. On a SynOS-built machine, the \"test-engine\""
+            say "        bundle (profiles/bundles.yml) already ships a real chromium on Debian; on"
+            say "        Ubuntu it refuses to render at all rather than build one short"
+            say "        (tools/render_manifest.py, bases/ubuntu/packages.map)."
+        fi
+    fi
     run_check "qemu-system-x86_64 runs"                       verify_qemu                                    || failed=1
     run_check "tesseract reads a generated test image"        verify_ocr                                     || failed=1
     run_check "free space at $storage is at least ${min_store_gb} GB" verify_free_space "$storage" "$min_store_gb" || failed=1

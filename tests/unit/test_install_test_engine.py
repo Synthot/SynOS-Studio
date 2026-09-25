@@ -779,5 +779,79 @@ class ExplicitStorageDryRunTests(unittest.TestCase):
             self.assertTrue(target.is_dir())
 
 
+class BrowserVerificationTests(unittest.TestCase):
+    """verify_browser distinguishes "nothing on PATH at all" (exit 2) from "a
+    binary exists but will not launch headless" (exit 1), so
+    verify_installation can name the first case precisely instead of a
+    generic FAIL — the class of gap a plain Ubuntu chromium/chromium-browser
+    (a transitional package onto the Chromium snap) would otherwise hit
+    silently."""
+
+    def _empty_bindir(self, tmp: str) -> Path:
+        """A PATH directory carrying only bash itself — this sandbox host
+        happens to have a real chromium (via snap) and google-chrome already
+        installed, so an isolated PATH (not the real one) is what actually
+        exercises "no browser found"."""
+        bindir = Path(tmp) / "bin"
+        bindir.mkdir()
+        real_bash = shutil.which("bash")
+        assert real_bash, "bash must be on PATH to run these tests at all"
+        (bindir / "bash").symlink_to(real_bash)
+        return bindir
+
+    def test_returns_2_when_no_candidate_binary_is_on_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = self._empty_bindir(tmp)
+            env = {"PATH": str(bindir)}  # deliberately excludes the real PATH
+            result = run_snippet("verify_browser; echo $?", env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("2", result.stdout.strip())
+
+    def test_returns_1_when_a_binary_exists_but_will_not_launch_headless(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = self._empty_bindir(tmp)
+            _write_executable(bindir / "chromium", "exit 1\n")
+            _write_executable(bindir / "timeout", 'shift\n"$@"\n')
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}"}
+            result = run_snippet("verify_browser; echo $?", env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("1", result.stdout.strip())
+
+    def _stub_other_checks(self) -> str:
+        """Every verify_* function verify_installation calls besides
+        verify_browser, redefined as a trivial pass — isolates the browser
+        message this test actually cares about from the rest of
+        verify_installation's real, environment-dependent checks."""
+        return "\n".join(
+            f"{name}() {{ return 0; }}"
+            for name in ("verify_runtime", "verify_storage_location", "verify_qemu",
+                         "verify_ocr", "verify_free_space", "verify_service_dry_run")
+        )
+
+    def test_missing_browser_gets_specific_actionable_guidance(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = self._empty_bindir(tmp)
+            env = {"PATH": str(bindir)}
+            body = self._stub_other_checks() + '\nverify_installation "podman" "/tmp" "/tmp" "/tmp/c.yml" "python3" 1'
+            result = run_snippet(body, env=env)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("FAIL  headless browser starts", result.stdout)
+            self.assertIn("chromium, chromium-browser, google-chrome or google-chrome-stable", result.stdout)
+            self.assertIn("test-engine", result.stdout)
+            self.assertIn("snap", result.stdout)
+
+    def test_a_present_but_broken_browser_gets_the_plain_fail_not_the_missing_guidance(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = self._empty_bindir(tmp)
+            _write_executable(bindir / "chromium", "exit 1\n")
+            _write_executable(bindir / "timeout", 'shift\n"$@"\n')
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}"}
+            body = self._stub_other_checks() + '\nverify_installation "podman" "/tmp" "/tmp" "/tmp/c.yml" "python3" 1'
+            result = run_snippet(body, env=env)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("FAIL  headless browser starts", result.stdout)
+            self.assertNotIn("chromium, chromium-browser, google-chrome or google-chrome-stable", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -278,10 +278,18 @@ class PackageResolutionTests(unittest.TestCase):
     def test_test_engine_group_is_mapped_on_both_bases(self) -> None:
         """profiles/bundles.yml "test-engine": everything
         packaging/install-test-engine.sh's REQUIREMENTS list needs, resolved
-        the same way every other group is. Ubuntu is one package short on
-        purpose (browser-headless maps to nothing there — see the comment in
-        bases/ubuntu/packages.map): the group still resolves to a non-empty
-        list, it just does not carry a real headless browser on that base."""
+        the same way every other group is. Debian gets a real headless
+        browser too (its own native, BSD-licensed chromium); Ubuntu's own
+        "chromium"/"chromium-browser" only installs the Chromium snap
+        (which this engine ships no snapd for) and there is no free-software
+        substitute this engine is allowed to redistribute in its place
+        (Google Chrome is proprietary — test_package_policy.py's
+        ForkSourceAllowListTests is what actually keeps that true), so
+        browser-headless is marked unavailable there rather than silently
+        dropped: reaching it is covered by
+        test_manifest_render.py's UnavailablePackageTests, and by
+        TestEngineBundleTests.test_reaching_the_group_on_ubuntu_refuses_to_render
+        below for this exact bundle."""
         self.assertIn("test-engine", self.bundles)
         expected_everywhere = {
             "python3", "python3-yaml", "podman", "buildah", "skopeo",
@@ -289,22 +297,26 @@ class PackageResolutionTests(unittest.TestCase):
         }
         for base_id, pkg_map in self.pkg_maps.items():
             with self.subTest(base=base_id):
-                concrete, unmapped = render_manifest.resolve_packages(self.bundles["test-engine"], pkg_map, "amd64", ["en"], base_id)
+                # browser-headless is Unavailable on ubuntu (by design, see
+                # above) — resolve everything else the group carries, which
+                # must still be real on every base regardless.
+                abstract = [item for item in self.bundles["test-engine"] if not isinstance(pkg_map.get(item), render_manifest.Unavailable)]
+                concrete, unmapped = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_id)
                 self.assertEqual([], unmapped)
                 self.assertTrue(concrete, f"test-engine resolves to nothing on {base_id}")
                 self.assertTrue(expected_everywhere.issubset(concrete), expected_everywhere - set(concrete))
         debian_concrete, _ = render_manifest.resolve_packages(self.bundles["test-engine"], self.pkg_maps["debian"], "amd64", ["en"], "debian")
         self.assertIn("chromium", debian_concrete, "Debian's real, native Chromium — see bases/debian/packages.map")
-        ubuntu_concrete, _ = render_manifest.resolve_packages(self.bundles["test-engine"], self.pkg_maps["ubuntu"], "amd64", ["en"], "ubuntu")
-        self.assertNotIn("chromium", ubuntu_concrete)
-        self.assertNotIn("chromium-browser", ubuntu_concrete,
-                          "Ubuntu's own chromium-browser only installs the Chromium snap; this engine ships no snapd")
+        ubuntu_entry = self.pkg_maps["ubuntu"]["browser-headless"]
+        self.assertIsInstance(ubuntu_entry, render_manifest.Unavailable)
+        self.assertIn("snap", ubuntu_entry.reason.lower())
 
     def test_test_engine_group_has_a_catalog_description(self) -> None:
         catalog = render_manifest.load_yaml(ROOT / "profiles" / "catalog.yml")
         description = catalog["bundles"].get("test-engine", "")
         self.assertTrue(description, "profiles/catalog.yml carries no description for the test-engine bundle")
         self.assertIn("Chromium", description)
+        self.assertIn("refuses", description, "the Ubuntu gap must be named in the description, not left silent")
 
     def test_yocto_manuals_required_set_is_a_subset_of_both_catalogued_machines(self) -> None:
         """Pins the Yocto Project reference manual's own "Ubuntu and Debian"
@@ -1258,8 +1270,10 @@ class PlatformAndNetworkingApplianceTests(unittest.TestCase):
 class TestEngineBundleTests(unittest.TestCase):
     """The "Test Engine Build Machine" catalogued bundle
     (bundle-catalog/test-engine/): the Yocto build host plus the
-    "test-engine" package group, pinned to Debian trixie so its headless
-    browser is a real Chromium rather than Ubuntu's snap-only one."""
+    "test-engine" package group, pinned to Debian trixie — the base whose
+    own archive actually has a real, redistributable Chromium — rather than
+    this engine's usual Ubuntu noble (like cad-3d-printing-workstation, a
+    deliberate exception, not the default)."""
 
     def test_entry_is_present_and_verified(self) -> None:
         entry = next((e for e in index_entries() if e["id"] == "test-engine"), None)
@@ -1268,6 +1282,10 @@ class TestEngineBundleTests(unittest.TestCase):
         self.assertEqual("test-engine", entry["folder"])
 
     def test_profile_extends_yocto_builder_and_pins_debian_trixie(self) -> None:
+        """The base pin matters here beyond style: pinning ubuntu/noble
+        instead would make this very entry fail to render at all (browser-
+        headless is Unavailable there) — see
+        test_reaching_the_group_on_ubuntu_refuses_to_render below."""
         profile, chain = render_manifest.resolve_profile("test-engine")
         self.assertIn("yocto-builder", chain)
         self.assertIn("yocto-build", profile["software"]["bundles"])
@@ -1280,6 +1298,23 @@ class TestEngineBundleTests(unittest.TestCase):
         entry = next(e for e in index_entries() if e["id"] == "test-engine")
         combined = " ".join(entry["first_boot"])
         self.assertIn("install-test-engine.sh", combined)
+
+    def test_reaching_the_group_on_ubuntu_refuses_to_render(self) -> None:
+        """The concrete, real-world case UnavailablePackageTests
+        (tests/unit/test_manifest_render.py) proves generically: the same
+        profile this entry ships, rendered against ubuntu/noble instead of
+        its pinned debian/trixie, refuses rather than silently building one
+        package short."""
+        pkg_map = render_manifest.load_package_map(ROOT / "bases" / "ubuntu" / "packages.map")
+        bundles = render_manifest.load_bundles()
+        profile, _ = render_manifest.resolve_profile("test-engine")
+        abstract = [pkg for bundle_id in profile["software"]["bundles"] for pkg in bundles[bundle_id]]
+        with self.assertRaises(render_manifest.ManifestError) as raised:
+            render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], "ubuntu", "test-engine")
+        message = str(raised.exception)
+        self.assertIn("test-engine", message)
+        self.assertIn("browser-headless", message)
+        self.assertIn("unavailable", message)
 
 
 class TestEngineArchiveTests(unittest.TestCase):
@@ -1342,7 +1377,13 @@ class TestEngineArchiveTests(unittest.TestCase):
             pkg_map = render_manifest.load_package_map(env_path.parent / "packages.map")
             base_url = base.get("APT_MIRROR", "").rstrip("/")
             components = base.get("COMPONENTS", "main").split()
-            concrete, _unmapped = render_manifest.resolve_packages(bundles["test-engine"], pkg_map, "amd64", ["en"], base_id)
+            # An abstract name marked Unavailable on this base (bases/ubuntu/
+            # packages.map's browser-headless) never resolves to a concrete
+            # package here — that is the point of it — so it is excluded
+            # rather than checked against an archive it was never going to
+            # be in.
+            abstract = [item for item in bundles["test-engine"] if not isinstance(pkg_map.get(item), render_manifest.Unavailable)]
+            concrete, _unmapped = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_id)
             for suite in base.get("SUPPORTED_SUITES", "").split():
                 try:
                     available = self._available_names(base_url, suite, components)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -220,6 +221,59 @@ class ImagePackagePolicyTests(unittest.TestCase):
             "SSH host identity remains after cleanup",
         ):
             self.assertNotIn(test_logic, cleanup)
+
+
+class ForkSourceAllowListTests(unittest.TestCase):
+    """Every packages/*/fork.json (tools/build_packages.py) fetches someone
+    else's real .deb and puts it, re-signed, into this engine's own local
+    repository — every image built with it then hands that .deb to whoever
+    installs the image. That is only ever legitimate when the *source*
+    package is free software we are allowed to redistribute; an explicit
+    allow-list, not a domain blocklist, so a new recipe against a source
+    this list has never seen fails here instead of shipping quietly (the
+    mistake packages/google-chrome-synos was: forking Google Chrome, a
+    proprietary binary whose terms do not permit that, the same way
+    packages/firefox-synos forks the MPL-licensed Firefox from Mozilla's
+    own repository)."""
+
+    # distro (fork.json's own field) -> (the one url a non-base distro must
+    # use, or None when tools/build_packages.py's fetch_fork() overrides the
+    # url with the base's own configured archive mirror regardless of what
+    # fork.json says — "ubuntu"/"debian" only ever reach that branch), reason
+    # this source's contents are ours to redistribute.
+    ALLOWED_FORK_SOURCES: dict[str, tuple[str | None, str]] = {
+        "ubuntu": (None, "the base's own configured archive mirror (bases/ubuntu/base.env APT_MIRROR); "
+                         "free-software Ubuntu archive contents, already vetted the way any archive package is"),
+        "debian": (None, "the base's own configured archive mirror (bases/debian/base.env APT_MIRROR); "
+                         "free-software Debian archive contents, already vetted the way any archive package is"),
+        "mozilla": ("https://packages.mozilla.org/apt",
+                    "Mozilla's own official apt repository; MPL-licensed Firefox, explicitly meant to be redistributed"),
+    }
+
+    def test_every_fork_recipe_names_an_allowed_redistribution_source(self) -> None:
+        root = ROOT.parent
+        recipes = sorted((root / "packages").glob("*/fork.json"))
+        self.assertTrue(recipes, "no fork.json recipes found — check ROOT")
+        for path in recipes:
+            name = path.parent.name
+            with self.subTest(recipe=name):
+                spec = json.loads(path.read_text(encoding="utf-8"))
+                distro = spec.get("distro")
+                self.assertIn(
+                    distro, self.ALLOWED_FORK_SOURCES,
+                    f"{name}: fork.json's distro {distro!r} is not on the redistribution allow-list "
+                    f"(ForkSourceAllowListTests.ALLOWED_FORK_SOURCES) — add it there, with why this "
+                    f"source's contents are ours to redistribute, before adding a recipe against it",
+                )
+                expected_url, _reason = self.ALLOWED_FORK_SOURCES[distro]
+                if expected_url is not None:
+                    self.assertEqual(expected_url, spec.get("url"),
+                                      f"{name}: url does not match the vetted source for distro {distro!r}")
+
+    def test_the_allow_list_itself_documents_a_reason_for_every_entry(self) -> None:
+        for distro, (_url, reason) in self.ALLOWED_FORK_SOURCES.items():
+            with self.subTest(distro=distro):
+                self.assertTrue(reason.strip())
 
 
 if __name__ == "__main__":
