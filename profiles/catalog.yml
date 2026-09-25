@@ -20,6 +20,7 @@ bundles:
   ai-dev: PyTorch, Python tooling and llama.cpp for local model work
   yocto-build: Host tools required to build embedded images with the Yocto Project / OpenEmbedded (BitBake and friends), plus practical extras (rsync, ccache, QEMU for runqemu, and the like)
   yocto-build-docs: Packages to build the Yocto Project's own documentation, including PDFs (large — LaTeX and a full font set)
+  test-engine: Everything this engine's own catalog-conformance test service needs to build a bundle, boot it under QEMU and read its boot screen with OCR (Podman, QEMU, xorriso, Tesseract, Pillow, PyYAML and a headless Chromium) — turns this machine into a place that can run packaging/install-test-engine.sh's checks itself
   audio-production: Ardour and a PipeWire studio setup (JACK compatibility, patchbay, MIDI bridge, plugins, a drum machine)
   video-editing: Kdenlive, ffmpeg and VA-API/VDPAU hardware video acceleration
   photography: RAW processing (darktable, RawTherapee), colour management and display calibration (ArgyllCMS, DisplayCAL) and tethered shooting

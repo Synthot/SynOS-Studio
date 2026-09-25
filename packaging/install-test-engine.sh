@@ -7,6 +7,14 @@
 # of handing over a template to edit, installs the systemd units with a
 # dedicated user, and then proves the result actually works.
 #
+# The REQUIREMENTS list below (podman, QEMU, xorriso, tesseract, Pillow,
+# PyYAML and a headless browser) is also what profiles/bundles.yml's
+# "test-engine" group ships into a SynOS image itself, for building a
+# machine that runs this service instead of installing it onto one that
+# already exists (docs/BUILD_MATRIX.md, "Installing it as a service"; the
+# bundle-catalog's "Test Engine Build Machine" entry pairs it with the
+# Yocto build host).
+#
 # Usage:
 #   packaging/install-test-engine.sh [options]
 #

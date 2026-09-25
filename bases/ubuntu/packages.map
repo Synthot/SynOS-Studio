@@ -46,6 +46,34 @@ yocto-practical-tools = rsync bc bison flex libssl-dev git-lfs bmap-tools pigz c
 # Building the Yocto Project documentation, including PDFs (texlive is large:
 # this is its own bundle so a person opts in rather than always paying for it).
 yocto-doc-tools    = make librsvg2-bin python3-saneyaml python3-venv fonts-freefont-otf latexmk tex-gyre texlive-fonts-extra texlive-fonts-recommended texlive-lang-all texlive-latex-extra texlive-latex-recommended texlive-xetex
+# The "test-engine" bundle (profiles/bundles.yml): everything
+# packaging/install-test-engine.sh's REQUIREMENTS list installs by hand on a
+# spare machine, checked here so a profile can ship the same tooling inside
+# the image itself — the container runtime tools/bundle_launcher.sh builds
+# in, QEMU and xorriso for the ISO boot smoke test, Tesseract and Pillow for
+# its OCR check, and PyYAML for tools/catalog_conformance.py itself
+# (docs/BUILD_MATRIX.md, "Installing it as a service"). python3 is listed
+# explicitly because this bundle must also work on a profile with no
+# desktop, where nothing else already pulls it in.
+python3            = python3
+pyyaml             = python3-yaml
+qemu               = qemu-system-x86
+xorriso            = xorriso
+tesseract          = tesseract-ocr
+pillow             = python3-pil
+# Headless-capable Chromium/Chrome, the way tools/devtools_browser.py drives
+# it (google-chrome, google-chrome-stable, chromium-browser or chromium).
+# Left empty on purpose: Ubuntu's own "chromium"/"chromium-browser" is only a
+# transitional package (Pre-Depends: debconf, snapd) that installs the
+# Chromium *snap* — this base ships no snapd at all (test_package_policy.py,
+# FORBIDDEN_IMAGE_PACKAGES), so apt-get installing it would either drag
+# snapd onto the image or fail outright. The bundle-catalog's "Test Engine
+# Build Machine" entry (bundle-catalog/test-engine/) gets a real one by
+# targeting Debian trixie instead, whose own archive ships a native
+# Chromium (see bases/debian/packages.map). Until an upstream-forked
+# Chromium ships the way mod 05 plans to for "browser" above, a plain
+# Ubuntu build of this bundle is one package short.
+browser-headless   =
 # Bundle-catalog workstation appliances (docs/BUNDLE.md, "The bundle
 # catalog"): each catalogued bundle pins one base and one suite in its own
 # manifest, so a package below only has to exist on that entry's suite,

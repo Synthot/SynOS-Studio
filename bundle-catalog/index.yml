@@ -29,6 +29,17 @@ bundle_catalog:
     services: []
     ports: []
     verified: true
+  - id: test-engine
+    name: Test Engine Build Machine
+    summary: "The Yocto build host plus everything this engine's own catalog-conformance test service needs to build a catalogued bundle, boot it under QEMU and read its boot screen with OCR: a container runtime, QEMU, xorriso, Tesseract, Pillow, PyYAML and a headless Chromium."
+    first_boot:
+      - "Run 'sudo packaging/install-test-engine.sh --site-url=<your Studio URL>' from a checkout of this engine on this machine: it verifies every dependency, points podman's storage at a disk with room for a build, writes /etc/synos/conformance.yml and installs the systemd units."
+      - "Its timers are installed but not enabled: 'sudo systemctl enable --now synos-conformance-check.timer synos-conformance-build.timer' once that first run looks right."
+    tags: [yocto, testing, conformance, qemu, ocr, build-host]
+    folder: test-engine
+    services: []
+    ports: []
+    verified: true
   - id: ai-workstation
     name: AI Workstation
     summary: "A developer workstation with PyTorch and llama.cpp for local model work; the GPU compute stack and inference services (Ollama, Open WebUI, vLLM) are chosen when this bundle is opened."
