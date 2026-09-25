@@ -3,6 +3,7 @@ whatever the brand kit left empty."""
 from __future__ import annotations
 
 import importlib.util
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -48,6 +49,49 @@ class ControlFieldTests(unittest.TestCase):
             self.assertNotIn("<>", out, control)
             self.assertTrue(all(not l.endswith(":") for l in out.splitlines()), control)
             self.assertTrue(out.endswith("\n"), control)
+
+
+class RustToolchainPinCheckTests(unittest.TestCase):
+    """build_package() refuses a package whose vendored rust-toolchain.toml
+    disagrees with bases/rust-toolchain.txt, instead of silently letting
+    rustup fetch whatever "stable" happens to resolve to that day. Exercised
+    here against a temporary package directory, never a real one."""
+
+    def _package(self, directory: str, channel: str | None) -> Path:
+        package = Path(directory) / "some-package"
+        upstream = package / "upstream"
+        upstream.mkdir(parents=True)
+        if channel is not None:
+            (upstream / "rust-toolchain.toml").write_text(
+                f'[toolchain]\nchannel = "{channel}"\ntargets = ["aarch64-unknown-linux-gnu"]\nprofile = "minimal"\n',
+                encoding="utf-8")
+        return package
+
+    def test_a_package_with_no_rust_toolchain_file_is_left_alone(self) -> None:
+        builder = load_builder()
+        with tempfile.TemporaryDirectory() as directory:
+            package = self._package(directory, channel=None)
+            builder.check_rust_toolchain_pin(package)   # must not raise
+
+    def test_a_package_pinned_to_the_shared_version_passes(self) -> None:
+        builder = load_builder()
+        pinned = (ROOT / "bases" / "rust-toolchain.txt").read_text(encoding="utf-8").strip()
+        with tempfile.TemporaryDirectory() as directory:
+            package = self._package(directory, channel=pinned)
+            builder.check_rust_toolchain_pin(package)   # must not raise
+
+    def test_a_floating_channel_is_refused_naming_the_file_its_value_and_the_required_pin(self) -> None:
+        builder = load_builder()
+        pinned = (ROOT / "bases" / "rust-toolchain.txt").read_text(encoding="utf-8").strip()
+        with tempfile.TemporaryDirectory() as directory:
+            package = self._package(directory, channel="stable")
+            toolchain_file = package / "upstream" / "rust-toolchain.toml"
+            with self.assertRaises(builder.PackageError) as ctx:
+                builder.check_rust_toolchain_pin(package)
+            message = str(ctx.exception)
+            self.assertIn(str(toolchain_file), message)
+            self.assertIn('"stable"', message)
+            self.assertIn(f'"{pinned}"', message)
 
 
 if __name__ == "__main__":

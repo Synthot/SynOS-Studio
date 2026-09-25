@@ -272,6 +272,39 @@ def apply_base_fields(control: str, base: str) -> str:
     return "\n".join(out)
 
 
+RUST_TOOLCHAIN_VERSION_FILE = ROOT / "bases" / "rust-toolchain.txt"
+RUST_TOOLCHAIN_CHANNEL_RE = re.compile(r'^\s*channel\s*=\s*"([^"]*)"\s*$', re.MULTILINE)
+
+
+def _relpath(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
+def check_rust_toolchain_pin(source: Path) -> None:
+    """A vendored packages/<name>/upstream/rust-toolchain.toml must name the
+    exact version bases/rust-toolchain.txt pins, never a floating channel like
+    "stable": that channel is resolved by rustup on whatever day the build
+    happens to run, needs a network fetch inside the package build, and can
+    break the image without a single line of this repository changing (see
+    bases/rust-toolchain.txt)."""
+    toolchain_file = source / "upstream" / "rust-toolchain.toml"
+    if not toolchain_file.is_file():
+        return
+    pinned = RUST_TOOLCHAIN_VERSION_FILE.read_text(encoding="utf-8").strip()
+    text = toolchain_file.read_text(encoding="utf-8")
+    match = RUST_TOOLCHAIN_CHANNEL_RE.search(text)
+    channel = match.group(1) if match else "(no channel key)"
+    if channel != pinned:
+        raise PackageError(
+            f"{_relpath(toolchain_file)} pins channel \"{channel}\", but "
+            f"{_relpath(RUST_TOOLCHAIN_VERSION_FILE)} pins \"{pinned}\"; set "
+            f"channel = \"{pinned}\" in {_relpath(toolchain_file)}"
+        )
+
+
 def copy_tree(source: Path, destination: Path) -> None:
     for path in source.rglob("*"):
         target = destination / path.relative_to(source)
@@ -533,6 +566,7 @@ def build_package(source: Path, work: Path, subs: dict[str, str]) -> Path:
     arch = next((line.split(":", 1)[1].strip() for line in control.splitlines() if line.startswith("Architecture:")), "all")
     if not version:
         raise PackageError(f"packages/{name}/control has no Version")
+    check_rust_toolchain_pin(source)
 
     pkg = work / name
     rmtree_tolerant(pkg)
