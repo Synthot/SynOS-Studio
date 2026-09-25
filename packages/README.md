@@ -110,6 +110,22 @@ exact missing module and suite named if it would not — never guessing from
 the suite name, which is what stack.yml's `optional:` still does as a
 best-effort first pass.
 
+On Ubuntu jammy that failure is not hypothetical: jammy's `dracut-live`
+(051-1, from universe — `dracut-core`/`dracut-live` are not in `main` there
+at all, unlike resolute) ships the `dmsquash-live` module but not
+`dmsquash-live-autooverlay`, added upstream only in a later dracut release,
+and no package on jammy ships an `overlayfs` dracut module either —
+`dracut-core` there only carries the older, unrelated `overlay-root`
+module. Nothing installable on jammy fills the gap, so
+`ensure_dracut_live_modules` can never pass there, no matter what gets
+installed first. Rather than let a person discover this the expensive way —
+a long download, then a chroot failure — `bases/ubuntu/live.map` declares
+it, and `tools/render_manifest.py` refuses a manifest naming jammy at
+render/`--check` time, before a chroot ever runs. This is an early refusal
+of a gap already known, not a replacement for `ensure_dracut_live_modules`:
+that check stays exactly as it is, the backstop for a suite whose archive
+changes under us later.
+
 The repository is signed. The first `make packages` on a machine generates a
 development key under `keys/private/` (git-ignored) and writes its public
 half to `keys/public/`, which `synos-archive-keyring` ships. Releases inject

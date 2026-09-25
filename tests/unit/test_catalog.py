@@ -67,6 +67,35 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class ExportedSuiteTests(unittest.TestCase):
+    """export_catalog.py's `bases[].suites` is the Studio page's own suite
+    choice list (tools/export_catalog.py's module docstring); a suite
+    tools/render_manifest.py refuses at render time (bases/*/live.map) must
+    never be offered there, or the page sends a person into the same wall."""
+
+    def test_a_suite_that_cannot_back_a_live_image_is_not_offered(self) -> None:
+        data = json.loads(subprocess.run([sys.executable, str(ROOT / "tools" / "export_catalog.py")],
+                                         capture_output=True, text=True, check=True).stdout)
+        by_id = {b["id"]: b for b in data["bases"]}
+        self.assertNotIn("jammy", by_id["ubuntu"]["suites"], "jammy cannot back a Live image; see bases/ubuntu/live.map")
+        self.assertIn("noble", by_id["ubuntu"]["suites"])
+        self.assertIn("resolute", by_id["ubuntu"]["suites"])
+
+    def test_every_offered_suite_agrees_with_live_capable_suites(self) -> None:
+        """Not just the known jammy case: every base's exported suite list must
+        exactly match render_manifest.live_capable_suites — the one function
+        every consumer that offers or builds suites is required to call."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        import render_manifest as rm  # noqa: E402
+        data = json.loads(subprocess.run([sys.executable, str(ROOT / "tools" / "export_catalog.py")],
+                                         capture_output=True, text=True, check=True).stdout)
+        for entry in data["bases"]:
+            base_dir = ROOT / "bases" / entry["id"]
+            env = rm.load_env(base_dir / "base.env")
+            with self.subTest(base=entry["id"]):
+                self.assertEqual(rm.live_capable_suites(base_dir, env), entry["suites"])
+
+
 class DerivedProfileTests(unittest.TestCase):
     def test_derived_profiles_are_marked_and_archetypes_are_not(self) -> None:
         import json, subprocess, sys
