@@ -36,7 +36,12 @@
 # works out on its own that the disk to use is the one this bundle was
 # unpacked to, and keeps images, layers and the chroot in .build/ right next
 # to it - the same disk you already chose, whatever its size. It says so
-# once, the run that creates that directory. --storage /path (or
+# once, the run that creates that directory, and always as an absolute path
+# even when a relative one was given (--storage storage becomes, and is
+# reported as, /path/to/bundle/storage - the container runtime, possibly
+# run through sudo, does not necessarily share this script's own working
+# directory, so a relative path handed to it would be interpreted by
+# whatever directory it starts in instead). --storage /path (or
 # --storage=/path) puts it somewhere else instead, with no root and no
 # daemon restart needed; SYNOS_CONTAINER_ROOT does the same for unattended
 # use, where a flag is awkward (a person passes --storage; a service sets
@@ -48,12 +53,12 @@
 # says so, with the steps to move it, instead of guessing.
 #
 # With podman, a real choice remains only when the bundle's own disk cannot
-# meet the minimum itself: then, and only then (a terminal, no --yes), this
-# script asks once whether to use podman's own storage instead, and
-# remembers the answer in .build/container-root so the next run is never
-# asked again ("forget" it: rm .build/container-root). --storage/
-# SYNOS_CONTAINER_ROOT/--container-root always win over the remembered
-# value, and update it.
+# back a container's overlay at all: then, and only then (a terminal, no
+# --yes), this script asks once whether to use podman's own storage
+# instead, and remembers the answer in .build/container-root (also an
+# absolute path) so the next run is never asked again ("forget" it: rm
+# .build/container-root). --storage/SYNOS_CONTAINER_ROOT/--container-root
+# always win over the remembered value, and update it.
 #
 # Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
 #   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
@@ -70,6 +75,39 @@
 #   script still has them.
 set -eu
 cd "$(dirname "$0")"
+
+# Resolves a path to an absolute one, from this bundle's own directory (cd'd
+# into, just above): a relative storage location or engine checkout is used
+# again later - sometimes after this script itself changes directory,
+# sometimes by the container runtime, run through sudo, where a relative
+# path is interpreted by whatever directory that process ends up with,
+# which this script does not control. Made absolute once, here, so it is
+# unambiguous everywhere after: the runtime arguments, the free-space and
+# overlay checks, the remembered value and every line that reports it back.
+abs_path() {  # path
+    case "$1" in
+        /*) printf '%s\n' "$1" ;;
+        *) printf '%s/%s\n' "$PWD" "$1" ;;
+    esac
+}
+
+# Refuses a storage location inside a directory this script is about to
+# archive, copy or hash whole: "COPY . /opt/synos" in the engine's own
+# Containerfile walks everything under the engine source, storage included,
+# and a build mid-write there fails deep in the build with a pipe or
+# permission error instead of a clear refusal up front; the evidence files
+# next to the ISO (the SBOM, the checksums) are generated from dist/ the
+# same way. Not relied on: an ignore file (.containerignore) excludes
+# things for its own reasons, not as a guarantee this depends on.
+refuse_storage_inside() {  # context-dir context-description
+    [ -n "$container_root" ] || return 0
+    context=$(abs_path "$1")
+    case "$container_root" in
+        "$context"|"$context"/*)
+            fail "the build's storage ($container_root) is inside $2 ($context), which this build copies, archives or hashes whole; point --storage at a location outside it" 2 ;;
+    esac
+}
+[ -z "${SYNOS_ENGINE_SOURCE:-}" ] || SYNOS_ENGINE_SOURCE=$(abs_path "$SYNOS_ENGINE_SOURCE")
 
 yes_to_all=${SYNOS_YES:-}
 command_word=""
@@ -97,11 +135,19 @@ for arg in "$@"; do
         --container-runroot=*) container_runroot=${arg#--container-runroot=} ;;
         --channel=*) channel_flag=${arg#--channel=} ;;
         check|build|update) command_word=$arg ;;
-        -h|--help) sed -n '2,70p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,75p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) printf 'unknown argument: %s\n' "$arg" >&2; exit 1 ;;
     esac
 done
 [ -z "$storage_wants_value" ] || { printf 'unknown argument: --storage needs a path\n' >&2; exit 1; }
+# A relative --storage/--container-root or SYNOS_CONTAINER_ROOT/RUNROOT must
+# still work; it simply stops being relative the moment it is accepted (see
+# abs_path above) - podman receives this as a bare argument, not something
+# this script itself cd's into first, so it is the one place a relative
+# value would otherwise be at the mercy of whatever directory the elevated
+# runtime process happens to start in.
+[ -z "$container_root" ] || container_root=$(abs_path "$container_root")
+[ -z "$container_runroot" ] || container_runroot=$(abs_path "$container_runroot")
 
 say() { printf '%s\n' "$*"; }
 fail() { printf 'error: %s\n' "$1" >&2; exit "${2:-1}"; }
@@ -526,7 +572,6 @@ fi
 # Decided before the storage question below, which also needs to run a
 # command through the runtime (podman info) to see what is free.
 run_as=""
-runtime_root_args=""
 if [ -n "$macos" ]; then
     case "$runtime" in
         *podman)
@@ -556,23 +601,40 @@ else
     fi
 fi
 
-# Runs the container runtime, elevated through sudo when this script decided
-# it needs to be (above). sudo's own environment reset would otherwise drop
-# this script's SYNOS_* variables even though this (non-root) shell still has
-# them: `sudo VAR=value cmd` (variables named directly on sudo's own command
-# line, not merely inherited) is what actually reaches the child process, so
-# the values are read here, from this script's own environment, and handed
-# to sudo explicitly rather than trusted to survive on their own.
+# Runs the container runtime with --root/--runroot prepended when a storage
+# location is in effect (podman only; see below - neither is ever set for
+# docker). A string built once and word-split back apart (the earlier shape
+# of this) breaks the moment either path contains a space; branching on real
+# quoted arguments instead means a path survives intact regardless of what
+# it contains.
 run_runtime() {
+    if [ -n "$container_root" ] && [ -n "$container_runroot" ]; then
+        run_runtime_exec --root "$container_root" --runroot "$container_runroot" "$@"
+    elif [ -n "$container_root" ]; then
+        run_runtime_exec --root "$container_root" "$@"
+    elif [ -n "$container_runroot" ]; then
+        run_runtime_exec --runroot "$container_runroot" "$@"
+    else
+        run_runtime_exec "$@"
+    fi
+}
+# Elevated through sudo when this script decided it needs to be (above).
+# sudo's own environment reset would otherwise drop this script's SYNOS_*
+# variables even though this (non-root) shell still has them: `sudo
+# VAR=value cmd` (variables named directly on sudo's own command line, not
+# merely inherited) is what actually reaches the child process, so the
+# values are read here, from this script's own environment, and handed to
+# sudo explicitly rather than trusted to survive on their own.
+run_runtime_exec() {
     if [ -n "$run_as" ]; then
         sudo \
             SYNOS_ENGINE_SOURCE="${SYNOS_ENGINE_SOURCE:-}" SYNOS_ENGINE_URL="${SYNOS_ENGINE_URL:-}" \
             SYNOS_BUILDER_IMAGE="${SYNOS_BUILDER_IMAGE:-}" SYNOS_CONTAINER_ROOT="${SYNOS_CONTAINER_ROOT:-}" \
             SYNOS_CHANNEL="$channel" SYNOS_YES="${yes_to_all:-}" \
             SYNOS_SIGNING_KEY="${SYNOS_SIGNING_KEY:-}" SYNOS_SIGNING_KEY_FILE="${SYNOS_SIGNING_KEY_FILE:-}" \
-            -- "$runtime" $runtime_root_args "$@"
+            -- "$runtime" "$@"
     else
-        "$runtime" $runtime_root_args "$@"
+        "$runtime" "$@"
     fi
 }
 
@@ -590,7 +652,7 @@ if is_podman && [ -z "$container_root" ] && [ -z "$macos" ] && [ -f "$remembered
         "") ;;
         default) storage_asked=1
                  say "using podman's own storage for this build, not this bundle's disk (change: --storage=<path>; forget: rm $remembered_root_file)" ;;
-        *) container_root=$remembered; storage_asked=1
+        *) container_root=$(abs_path "$remembered"); storage_asked=1
            say "using the remembered build storage: $container_root (change: --storage=<path>; forget: rm $remembered_root_file)" ;;
     esac
 fi
@@ -637,21 +699,27 @@ if is_podman && [ -z "$container_root" ] && [ -z "$macos" ] && [ -z "$storage_as
     fi
 fi
 
-runtime_root_args=""
 if is_podman && { [ -n "$container_root" ] || [ -n "$container_runroot" ]; }; then
     if [ -n "$macos" ]; then
         say "note: --storage/SYNOS_CONTAINER_ROOT and --container-runroot/SYNOS_CONTAINER_RUNROOT have no effect here: podman on macOS runs in its own virtual machine with its own disk (set its size once with podman machine init --disk-size)."
         container_root=""; container_runroot=""
     else
         if [ -n "$container_root" ]; then
+            refuse_storage_inside "$PWD/dist" "the build's output directory (dist/)"
+            # The engine source a build downloads for itself lands under this
+            # fixed directory, so the collision that actually happened in the
+            # field (--storage storage, from a bundle, ending up inside the
+            # unpacked engine checkout the image is then built from) is caught
+            # here, before the directory is created and before the location is
+            # remembered for later runs - not only later, in build_engine_image().
+            refuse_storage_inside "$PWD/.build/engine-src" "the engine source a build unpacks for itself (.build/engine-src/)"
+            [ -z "${SYNOS_ENGINE_SOURCE:-}" ] || refuse_storage_inside "$SYNOS_ENGINE_SOURCE" "the engine source this image would be built from"
             mkdir -p "$container_root" 2>/dev/null || fail "could not create $container_root (--storage)" 2
             check_overlay_fs "$container_root"
-            runtime_root_args="--root $container_root"
             [ -n "$container_root_auto" ] || remember_container_root "$container_root"
         fi
         if [ -n "$container_runroot" ]; then
             mkdir -p "$container_runroot" 2>/dev/null || fail "could not create $container_runroot (SYNOS_CONTAINER_RUNROOT)" 2
-            runtime_root_args="$runtime_root_args --runroot $container_runroot"
         fi
     fi
 fi
@@ -782,6 +850,8 @@ build_engine_image() {  # build_engine_image [forced] - forced skips reusing a s
     else
         source_id="local"
     fi
+    src=$(abs_path "$src")
+    refuse_storage_inside "$src" "the engine source this image is built from"
     [ -f "$src/bases/$base/Containerfile" ] || fail "$src has no bases/$base/Containerfile: not an engine checkout" 2
     if [ "$channel" = development ]; then
         local_tag="synos-builder:$base-$suite-dev-$source_id"
@@ -886,7 +956,10 @@ verify_engine_version() {
 }
 
 if [ "$command_word" = check ]; then
-    say "ready: $run_as $runtime${runtime_root_args:+ $runtime_root_args}, $((free_kb / 1048576)) GB free here${store:+, $((store_kb / 1048576)) GB free in $store}, engine image $image"
+    root_args_display=""
+    [ -z "$container_root" ] || root_args_display="--root $container_root"
+    [ -z "$container_runroot" ] || root_args_display="$root_args_display --runroot $container_runroot"
+    say "ready: $run_as $runtime${root_args_display:+ $root_args_display}, $((free_kb / 1048576)) GB free here${store:+, $((store_kb / 1048576)) GB free in $store}, engine image $image"
     exit 0
 fi
 
