@@ -962,6 +962,80 @@ class ResetStorageTests(_StorageHelpers, unittest.TestCase):
                 path.mkdir()
                 (path / "inside").write_bytes(b"debris")
 
+    def test_a_storage_path_with_a_space_is_one_path_and_its_neighbour_survives(self) -> None:
+        """The removal list is handed to rm -rf, so a space in a storage location must
+        not split it in two. With the list kept as a space-separated string,
+        "<bundle>/My Storage" became "<bundle>/My" plus "Storage": it deleted a
+        neighbouring directory that was nobody's storage and left the real one behind.
+        The decoy here is exactly that neighbour."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            spaced = bundle / "My Storage"
+            (spaced / "overlay").mkdir(parents=True)
+            decoy = bundle / "My"
+            decoy.mkdir()
+            (decoy / "precious").write_text("not storage, not yours to delete\n", encoding="utf-8")
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-root").write_text(str(spaced) + "\n", encoding="utf-8")
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn(str(spaced), result.stdout, "the path is listed whole, not in pieces")
+            self.assertFalse(spaced.exists(), "the storage location with a space in it is what gets removed")
+            self.assertTrue((decoy / "precious").is_file(), "its neighbour is untouched")
+
+    def test_a_storage_root_under_any_other_name_is_found_by_its_markers(self) -> None:
+        """In the field the damage landed in a directory called "storage", because that
+        is what --storage storage resolved to -- a name no debris list would carry. A
+        directory in the bundle that is itself a container storage root is removed
+        whatever it is called, and the bundle root is never a candidate however many
+        markers sit directly in it."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_logging_runtime(fake, "podman", tmp / "runtime.log")
+            oddly_named = bundle / "storage"
+            (oddly_named / "libpod").mkdir(parents=True)
+            (oddly_named / "overlay").mkdir()
+            self.write_debris(bundle)          # markers directly at the bundle root too
+            plain = bundle / "notes"
+            plain.mkdir()
+            (plain / "keep.txt").write_text("mine\n", encoding="utf-8")
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertFalse(oddly_named.exists(), "a storage root is a storage root whatever its name")
+            self.assertTrue((plain / "keep.txt").is_file(), "an ordinary directory is not touched")
+            self.assertTrue((bundle / "bundle.json").is_file())
+            self.assertNotIn(f"  {bundle}\n", result.stdout, "the bundle root itself is never on the removal list")
+            self.assertNotIn(f"  {bundle} (", result.stdout)
+
+    def test_reset_storage_needs_no_container_runtime_at_all(self) -> None:
+        """A wedged build is exactly when podman may refuse to run -- that is what a
+        storage-state mismatch is -- so cleaning up after one must not require a working
+        runtime, or a sudo password for one. No podman, no docker, no sudo on PATH."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_full_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)   # no runtime written into it
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-storage" / "overlay").mkdir(parents=True)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "reset-storage"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertFalse((bundle / ".build" / "container-storage").exists())
+            self.assertNotIn("podman", result.stderr.lower(), "it never asked for a runtime")
+            self.assertNotIn("install", result.stdout.lower(), "and never offered to install one")
+
     def test_removes_exactly_the_owned_paths_and_leaves_bundle_files_alone(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)

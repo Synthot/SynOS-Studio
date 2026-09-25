@@ -231,6 +231,8 @@ done
 [ -z "$container_root" ] || container_root=$(abs_path "$container_root")
 [ -z "$container_runroot" ] || container_runroot=$(abs_path "$container_runroot")
 
+NEWLINE='
+'
 say() { printf '%s\n' "$*"; }
 fail() { printf 'error: %s\n' "$1" >&2; exit "${2:-1}"; }
 ask() {  # ask "question" -> returns 0 for yes
@@ -657,11 +659,44 @@ target_size() {  # path
 # directory, an extracted engine source, the debris list above, all three
 # relative to this bundle only, and a --storage/SYNOS_CONTAINER_ROOT given
 # on this same command line (checked below before it is trusted).
+# One path per line, never a space-separated string: a storage location with
+# a space in it (--storage "/media/My Disk/synos") would otherwise split into
+# two paths, and this list is handed to rm -rf. Every loop over it sets IFS to
+# a newline for exactly that reason. A path containing a newline is refused
+# rather than guessed at.
 reset_targets=""
 add_reset_target() {  # path
     [ -e "$1" ] || return 0
-    for existing in $reset_targets; do [ "$existing" = "$1" ] && return 0; done
-    reset_targets="$reset_targets $1"
+    case "$1" in
+        *"$NEWLINE"*) fail "refusing to remove a path whose name contains a newline: $1" 2 ;;
+    esac
+    oldifs=$IFS; IFS=$NEWLINE
+    for existing in $reset_targets; do
+        if [ "$existing" = "$1" ]; then IFS=$oldifs; return 0; fi
+    done
+    IFS=$oldifs
+    reset_targets="$reset_targets$1$NEWLINE"
+}
+
+# Every immediate subdirectory of this bundle that is itself a container
+# storage root, whatever it happens to be called. The debris list above
+# covers the names a pre-fix launcher used at the bundle root; this covers
+# the same damage under any other name (in the field it landed in a directory
+# called "storage", because that is what --storage storage resolved to). The
+# bundle root itself is never a candidate, however many markers sit directly
+# in it: that would put the person's whole bundle on the removal list.
+storage_roots_under_bundle() {
+    for candidate in ./*/; do
+        candidate=${candidate%/}
+        [ -d "$candidate" ] || continue
+        case "$candidate" in ./dist|./manifests|./profiles|./branding|./keys|./answers) continue ;; esac
+        for marker in overlay overlay-images overlay-layers libpod db.sql; do
+            if [ -e "$candidate/$marker" ]; then
+                printf '%s\n' "$PWD/${candidate#./}"
+                break
+            fi
+        done
+    done
 }
 
 # ./build.sh reset-storage: the storage this bundle itself created, removed
@@ -699,27 +734,55 @@ reset_storage() {
     for name in $BUNDLE_ROOT_STORAGE_DEBRIS; do
         add_reset_target "$PWD/$name"
     done
+    oldifs=$IFS; IFS=$NEWLINE
+    for found in $(storage_roots_under_bundle); do
+        IFS=$oldifs
+        add_reset_target "$found"
+        IFS=$NEWLINE
+    done
+    IFS=$oldifs
     if [ -z "$reset_targets" ]; then
         say "nothing to remove: this bundle has no storage of its own yet."
         return 0
     fi
     say "this will remove:"
+    oldifs=$IFS; IFS=$NEWLINE
     for t in $reset_targets; do
+        IFS=$oldifs
         say "  $t ($(target_size "$t"))"
+        IFS=$NEWLINE
     done
+    IFS=$oldifs
     say "dist/ (the build log and the evidence next to the ISO) is left alone - it is not storage."
     ask "Remove this now?" || { say "nothing removed."; return 0; }
     reset_failed=""
+    oldifs=$IFS; IFS=$NEWLINE
     for t in $reset_targets; do
-        rm -rf "$t" 2>/dev/null && continue
-        if [ -n "${run_as:-}" ] && $run_as rm -rf "$t" 2>/dev/null; then continue; fi
-        reset_failed="$reset_failed $t"
+        IFS=$oldifs
+        if rm -rf "$t" 2>/dev/null; then IFS=$NEWLINE; continue; fi
+        # Root-owned files from an earlier build: the same elevation the
+        # runtime itself gets, and nothing more. reset-storage runs before
+        # the runtime is chosen (a wedged build is exactly when podman may
+        # not be usable), so `sudo` is reached for directly here when it is
+        # installed, rather than requiring the runtime's own decision first.
+        if command -v sudo >/dev/null 2>&1 && sudo rm -rf "$t" 2>/dev/null; then IFS=$NEWLINE; continue; fi
+        reset_failed="$reset_failed  $t$NEWLINE"
+        IFS=$NEWLINE
     done
+    IFS=$oldifs
     if [ -n "$reset_failed" ]; then
-        fail "could not remove:$reset_failed - remove them by hand (sudo rm -rf <path>) and run reset-storage again" 2
+        fail "could not remove:$NEWLINE$reset_failed  remove them by hand (sudo rm -rf <path>) and run reset-storage again" 2
     fi
     say "removed. The next build starts with fresh storage."
 }
+
+# Before the runtime is chosen, and before the storage checks that need it:
+# a wedged build is exactly the moment podman itself may refuse to run (that
+# is what a storage-state mismatch is), and requiring a working runtime, or a
+# sudo password for it, to clean up after one would be a poor joke. This
+# command needs rm, and sudo only when an earlier build left root-owned files
+# behind.
+[ "$command_word" = reset-storage ] && { reset_storage; exit 0; }
 
 # Already running as root through sudo (rather than this script deciding to
 # elevate a single command itself, below): sudo's default environment reset
@@ -788,7 +851,6 @@ else
     fi
 fi
 
-[ "$command_word" = reset-storage ] && { reset_storage; exit 0; }
 
 # Runs the container runtime with --root/--runroot prepended when a storage
 # location is in effect (podman only; see below - neither is ever set for
