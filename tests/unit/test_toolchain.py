@@ -4,6 +4,7 @@ compiles anything; make packages inside a built image is the real proof
 (see docs/BUNDLE.md and the package recipes under packages/*/prebuild.sh)."""
 from __future__ import annotations
 
+import importlib.util
 import os
 import re
 import subprocess
@@ -15,6 +16,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 BASES = ("ubuntu", "debian", "_template")
 VERSION_FILE = ROOT / "bases" / "rust-toolchain.txt"
+
+
+def _load_build_packages():
+    spec = importlib.util.spec_from_file_location("build_packages", ROOT / "tools" / "build_packages.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 class RustToolchainPinTests(unittest.TestCase):
@@ -64,6 +73,48 @@ class RustToolchainPinTests(unittest.TestCase):
         template = (ROOT / "bases" / "_template" / "Containerfile").read_text(encoding="utf-8")
         self.assertNotIn("rustup toolchain install stable", debian)
         self.assertNotIn("rustup toolchain install stable", template)
+
+
+class VendoredPackageToolchainPinTests(unittest.TestCase):
+    """Every packages/*/upstream/rust-toolchain.toml overrides the image's
+    rustup default for that one crate directory, so it must name the exact
+    version bases/rust-toolchain.txt pins. A floating channel ("stable",
+    "beta", "nightly", a dated nightly, or an unpatched "1.90") makes cargo
+    ask rustup for whatever that channel resolves to on the day the build
+    runs: a network fetch inside the package build, and an image that can
+    break without a single line of this repository changing (globbed, not
+    hardcoded, so a fifth vendored package is covered automatically)."""
+
+    def test_every_vendored_toolchain_file_pins_the_exact_version(self) -> None:
+        build_packages = _load_build_packages()
+        toolchain_files = sorted(ROOT.glob("packages/*/upstream/rust-toolchain.toml"))
+        self.assertTrue(toolchain_files, "no packages/*/upstream/rust-toolchain.toml found")
+        for toolchain_file in toolchain_files:
+            source = toolchain_file.parent.parent   # packages/<name>
+            try:
+                build_packages.check_rust_toolchain_pin(source)
+            except build_packages.PackageError as exc:
+                self.fail(str(exc))
+
+    def test_a_floating_channel_fails_naming_the_file_its_value_and_the_required_pin(self) -> None:
+        build_packages = _load_build_packages()
+        pinned = VERSION_FILE.read_text(encoding="utf-8").strip()
+        floating_channels = ("stable", "beta", "nightly", "nightly-2026-09-01", pinned.rsplit(".", 1)[0])
+        for floating in floating_channels:
+            with tempfile.TemporaryDirectory() as directory:
+                package = Path(directory) / "some-package"
+                upstream = package / "upstream"
+                upstream.mkdir(parents=True)
+                toolchain_file = upstream / "rust-toolchain.toml"
+                toolchain_file.write_text(
+                    f'[toolchain]\nchannel = "{floating}"\ntargets = ["aarch64-unknown-linux-gnu"]\n',
+                    encoding="utf-8")
+                with self.assertRaises(build_packages.PackageError, msg=floating) as ctx:
+                    build_packages.check_rust_toolchain_pin(package)
+                message = str(ctx.exception)
+                self.assertIn(str(toolchain_file), message, floating)          # which file
+                self.assertIn(f'"{floating}"', message, floating)              # what it says
+                self.assertIn(f'"{pinned}"', message, floating)                # what it must say
 
 
 class WhisperWorkerToolchainTests(unittest.TestCase):
