@@ -674,6 +674,185 @@ class ContainerStorageTests(unittest.TestCase):
             expected = bundle / ".build" / "container-storage"
             self.assertTrue(any(f"--root {expected}" in c for c in log.read_text(encoding="utf-8").splitlines()))
 
+    def test_a_context_already_containing_podman_storage_is_refused_naming_path_and_removal(self) -> None:
+        """Item 171: debris an earlier run already left behind - podman's
+        own storage shape, confirmed against a real corrupted bundle:
+        overlay/, overlay-containers/, overlay-images/, overlay-layers/,
+        libpod/, db.sql, defaultNetworkBackend - is refused wherever it
+        sits, naming both the debris and the path to remove."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            self.write_df(fake, "never-matched", 1)
+            engine_checkout = tmp / "engine-checkout"
+            engine_checkout.mkdir()
+            (engine_checkout / "bases").mkdir()
+            (engine_checkout / "overlay").mkdir()
+            (engine_checkout / "libpod").mkdir()
+            (engine_checkout / "db.sql").write_bytes(b"")
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_ENGINE_SOURCE": str(engine_checkout)}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn(str(engine_checkout), result.stderr)
+            self.assertIn("already contains podman's own storage", result.stderr)
+            self.assertIn(f"rm -rf {engine_checkout}", result.stderr)
+            self.assertFalse(log.exists() and log.read_text(encoding="utf-8").strip(), "no podman call before the refusal")
+
+    def test_podman_storage_debris_one_level_inside_the_context_is_also_caught(self) -> None:
+        """The field case: a previous --storage landed the debris in a
+        subdirectory of the context (a name nothing here controls), not
+        at the context's own root."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            self.write_df(fake, "never-matched", 1)
+            engine_checkout = tmp / "engine-checkout"
+            engine_checkout.mkdir()
+            (engine_checkout / "bases").mkdir()
+            debris = engine_checkout / "storage"
+            debris.mkdir()
+            (debris / "overlay-layers").mkdir()
+            (debris / "defaultNetworkBackend").write_bytes(b"")
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_ENGINE_SOURCE": str(engine_checkout)}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn(str(debris), result.stderr)
+            self.assertIn("already contains podman's own storage", result.stderr)
+            self.assertIn(f"rm -rf {debris}", result.stderr)
+
+    def test_a_clean_engine_source_is_not_refused_by_the_storage_scan(self) -> None:
+        """Negative control: an ordinary checkout, with no podman storage
+        markers anywhere in it, must never trip this refusal."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            self.write_df(fake, "never-matched", 1)
+            engine_checkout = tmp / "engine-checkout"
+            (engine_checkout / "bases" / "ubuntu").mkdir(parents=True)
+            (engine_checkout / "bases" / "ubuntu" / "Containerfile").write_text("FROM scratch\n", encoding="utf-8")
+            (engine_checkout / "storage-notes.txt").write_text("not podman storage\n", encoding="utf-8")
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_ENGINE_SOURCE": str(engine_checkout)}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertNotIn("already contains podman's own storage", result.stdout + result.stderr)
+
+    def test_dirty_extracted_engine_source_directory_is_cleaned_before_reextraction(self) -> None:
+        """Item 170: a content-addressed extraction directory left dirty by
+        an earlier, pre-fix launcher (no completion marker, and poisoned
+        with podman storage debris inside it, some of it root-owned) is
+        never reused - it is removed (escalating through the same sudo
+        path the runtime itself already uses) and extracted again from
+        scratch, rather than the build silently walking into it."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS + ("gzip", "sha256sum", "tail", "cut"))
+            self.write_root_id(fake)
+            log = tmp / "runtime.log"
+            # Both "pull" (no published image) and "image inspect" (nothing
+            # built here yet) must fail, so the run actually reaches the
+            # extraction logic instead of returning early on a cache hit.
+            # --root/--runroot (podman's default storage location) are
+            # prepended before the real subcommand, so this matches "$*"
+            # rather than a fixed positional argument.
+            write_executable(fake / "podman", (
+                "#!/bin/sh\n"
+                f"printf '%s\\n' \"$*\" >> '{log}'\n"
+                "case \"$*\" in\n"
+                "  *' pull '*) exit 1 ;;\n"
+                "  *' image '*) exit 1 ;;\n"
+                "  *) exit 0 ;;\n"
+                "esac\n"
+            ))
+            self.write_df(fake, "never-matched", 1)
+
+            import hashlib
+            import io
+            import tarfile
+            data = b"FROM scratch\n"
+            buf = io.BytesIO()
+            with tarfile.open(fileobj=buf, mode="w:gz") as tf:
+                info = tarfile.TarInfo(name="x/bases/ubuntu/Containerfile")
+                info.size = len(data)
+                tf.addfile(info, io.BytesIO(data))
+            archive_bytes = buf.getvalue()
+            source_id = hashlib.sha256(archive_bytes).hexdigest()[:12]
+
+            engine_src_dir = tmp / "engine-src"
+            engine_src_dir.mkdir()
+            archive_file = engine_src_dir / "engine-src.tar.gz"
+            archive_file.write_bytes(archive_bytes)
+            curl_script = (
+                "#!/bin/sh\n"
+                "out=\"\"; prev=\"\"\n"
+                "for a in \"$@\"; do\n"
+                "    if [ \"$prev\" = \"-o\" ]; then out=$a; fi\n"
+                "    prev=$a\n"
+                "done\n"
+                f"[ -n \"$out\" ] && cp '{archive_file}' \"$out\"\n"
+                "printf '200'\n"
+            )
+            write_executable(fake / "curl", curl_script)
+
+            # a dirty leftover from an earlier run: no .ok marker, and
+            # podman's own storage debris sitting inside it
+            dirty = bundle / ".build" / "engine-src" / source_id
+            dirty.mkdir(parents=True)
+            (dirty / "overlay").mkdir()
+            (dirty / "libpod").mkdir()
+            (dirty / "leftover-file").write_text("stale\n", encoding="utf-8")
+
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_CHANNEL": "development"}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertFalse((dirty / "overlay").exists(), "the dirty tree's debris must not survive re-extraction")
+            self.assertFalse((dirty / "leftover-file").exists())
+            self.assertTrue((dirty / "bases" / "ubuntu" / "Containerfile").exists(), "a real extraction ran")
+            self.assertTrue((dirty.parent / f"{source_id}.ok").exists(), "a completion marker is written this time")
+
+    def test_poisoned_relative_remembered_value_resolves_bundle_relative_and_is_rewritten_absolute(self) -> None:
+        """Item 173: `.build/container-root` holding a bare relative name
+        (written by a launcher older than the absolute-path fix) is not
+        discarded - the person chose that name on purpose, and discarding
+        it would silently move their storage to a location they never
+        chose, exactly when this script is trying hardest not to do that.
+        It is resolved against the bundle, used for this run, and the file
+        itself is rewritten absolute so it is never ambiguous again."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-root").write_text("storage\n", encoding="utf-8")
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            expected = bundle / "storage"
+            self.write_df(fake, str(expected), 100 * 1024 * 1024)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            calls = log.read_text(encoding="utf-8").splitlines()
+            self.assertTrue(any(f"--root {expected}" in c for c in calls), calls)
+            self.assertEqual(str(expected), (bundle / ".build" / "container-root").read_text(encoding="utf-8").strip(),
+                             "the remembered file is rewritten absolute the first time it is read")
+
     def test_storage_under_the_bundle_but_outside_the_copied_context_still_works(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
