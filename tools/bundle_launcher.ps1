@@ -505,6 +505,10 @@ $runtimeRootArgs = @()
 if ((Test-IsPodman) -and ($ContainerRoot -or $ContainerRunroot)) {
     if ($ContainerRoot) {
         Test-StorageInside (Join-Path $PSScriptRoot "dist") "the build's output directory (dist\)"
+        # Same reason as the shell launcher: the engine source a build downloads
+        # for itself always lands under this fixed directory, so a storage
+        # location inside it is refused before the directory is created.
+        Test-StorageInside (Join-Path $PSScriptRoot ".build\engine-src") "the engine source a build unpacks for itself (.build\engine-src\)"
         if ($env:SYNOS_ENGINE_SOURCE) { Test-StorageInside $env:SYNOS_ENGINE_SOURCE "the engine source this image would be built from" }
         New-Item -ItemType Directory -Force -Path $ContainerRoot | Out-Null
         $runtimeRootArgs += @("--root", $ContainerRoot)

@@ -629,6 +629,33 @@ class ContainerStorageTests(unittest.TestCase):
             self.assertIn(str(bundle / "dist"), result.stderr)
             self.assertIn("copies, archives or hashes whole", result.stderr)
 
+    def test_storage_inside_the_downloaded_engine_source_is_refused_before_anything_is_created(self) -> None:
+        """The collision that actually destroyed a real build: `--storage storage`
+        run from a bundle, resolving inside .build/engine-src/<checkout>/, which
+        the builder image then COPYs whole -- the build copied its own live
+        storage into itself and died with "broken pipe" and "operation not
+        permitted" deep inside the image build. .build/engine-src/ is a fixed
+        path, so it is refused up front: before the directory is created, and
+        before the location is remembered for the next run."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            self.write_df(fake, "never-matched", 1)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            requested = ".build/engine-src/SynOS-Studio-main/storage"
+            result = subprocess.run(["sh", "build.sh", "check", "--storage", requested], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+            self.assertIn(str(bundle / requested), result.stderr, "the refusal names the storage path it resolved")
+            self.assertIn(str(bundle / ".build" / "engine-src"), result.stderr, "and the copied context it sits inside")
+            self.assertIn("copies, archives or hashes whole", result.stderr)
+            self.assertFalse((bundle / requested).exists(), "refused before the directory is created")
+            self.assertFalse((bundle / ".build" / "container-root").exists(), "and before anything is remembered for the next run")
+
     def test_default_storage_is_still_accepted_and_is_not_refused(self) -> None:
         """The automatic default (.build/container-storage) must not trip
         the new refusal: it is a sibling of dist/ and of any engine source,

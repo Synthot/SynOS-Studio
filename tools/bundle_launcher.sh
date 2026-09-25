@@ -706,6 +706,13 @@ if is_podman && { [ -n "$container_root" ] || [ -n "$container_runroot" ]; }; th
     else
         if [ -n "$container_root" ]; then
             refuse_storage_inside "$PWD/dist" "the build's output directory (dist/)"
+            # The engine source a build downloads for itself lands under this
+            # fixed directory, so the collision that actually happened in the
+            # field (--storage storage, from a bundle, ending up inside the
+            # unpacked engine checkout the image is then built from) is caught
+            # here, before the directory is created and before the location is
+            # remembered for later runs - not only later, in build_engine_image().
+            refuse_storage_inside "$PWD/.build/engine-src" "the engine source a build unpacks for itself (.build/engine-src/)"
             [ -z "${SYNOS_ENGINE_SOURCE:-}" ] || refuse_storage_inside "$SYNOS_ENGINE_SOURCE" "the engine source this image would be built from"
             mkdir -p "$container_root" 2>/dev/null || fail "could not create $container_root (--storage)" 2
             check_overlay_fs "$container_root"
