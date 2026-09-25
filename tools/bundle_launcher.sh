@@ -1434,6 +1434,15 @@ set +e
 # build" ever gets to write anything to dist/build.log itself, so that log
 # alone cannot show it - this is the one place that failure can actually be
 # seen and translated.
+# --force on the apply inside the container: the engine at /opt/synos there is
+# a throwaway copy that exists for the length of this one build, so a bundle's
+# own files are simply the authority for the paths they cover. Without it a
+# bundle whose brand kit sits where the engine ships one of its own -
+# branding/synos/ is the front end's default brand id, so most bundles - could
+# never build at all, refused by a rule meant to stop a bundle quietly
+# rewriting files in *a person's own checkout*. That rule stays exactly as it
+# is for `tools/synos build` on a checkout, where there is something to
+# protect; this is the one place where there is not.
 run_err_file=".build/build-run-stderr.$$"
 run_runtime run --rm --privileged --platform "linux/$arch" \
     -v "$PWD:/bundle:z" \
@@ -1443,7 +1452,7 @@ run_runtime run --rm --privileged --platform "linux/$arch" \
     -e "SYNOS_UID=$(id -u)" -e "SYNOS_GID=$(id -g)" \
     -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE \
     -e SYNOS_CHANNEL="$channel" \
-    "$image" synos build /bundle --output /bundle/dist --log /bundle/dist/build.log 2>"$run_err_file"
+    "$image" synos build /bundle --force --output /bundle/dist --log /bundle/dist/build.log 2>"$run_err_file"
 status=$?
 set -e
 if [ "$status" -ne 0 ]; then

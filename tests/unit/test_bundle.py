@@ -419,13 +419,13 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual({"build.sh", "build.ps1", "build.cmd", "build.command"}, set(catalog["launchers"]))
         self.assertIn("exec sh ./build.sh", catalog["launchers"]["build.command"])
         self.assertEqual((ROOT / "tools" / "bundle_launcher.sh").read_text(encoding="utf-8"), catalog["launchers"]["build.sh"])
-        self.assertIn("synos build /bundle --output /bundle/dist", catalog["launchers"]["build.sh"])
+        self.assertIn("synos build /bundle --force --output /bundle/dist", catalog["launchers"]["build.sh"])
         # build.cmd is CRLF in the repo; the export must keep it byte for byte
         # (read_text would translate CRLF to LF, making every downloaded
         # bundle.cmd look permanently stale to the update check).
         self.assertIn("\r\n", catalog["launchers"]["build.cmd"])
         self.assertEqual((ROOT / "tools" / "bundle_launcher.cmd").read_bytes().decode("utf-8"), catalog["launchers"]["build.cmd"])
-        self.assertIn("synos build /bundle --output /bundle/dist", catalog["launchers"]["build.ps1"])
+        self.assertIn("synos build /bundle --force --output /bundle/dist", catalog["launchers"]["build.ps1"])
         self.assertIn("build.ps1", catalog["launchers"]["build.cmd"])
         with tempfile.TemporaryDirectory() as tmp:
             bundle = write_bundle(Path(tmp), {"format": 1, "manifest": "manifests/x.yml"},
@@ -513,6 +513,15 @@ class LauncherTests(unittest.TestCase):
             calls = log.read_text(encoding="utf-8").splitlines()
             self.assertTrue(any(c.startswith("build --platform linux/amd64 --build-arg SUITE=resolute -t synos-builder:ubuntu-resolute-local -f bases/ubuntu/Containerfile .") for c in calls), calls)
             self.assertTrue(any(c.startswith("run ") and "synos-builder:ubuntu-resolute-local synos build /bundle" in c for c in calls), calls)
+            # --force on the apply inside the container. /opt/synos there is a copy of
+            # the engine that lives for one build, so the bundle's own files are simply
+            # the authority for the paths they cover; without this, a bundle whose brand
+            # kit sits where the engine ships one of its own - branding/synos/, the front
+            # end's default brand id, so most bundles - is refused by a rule written to
+            # protect *a person's own checkout* (tested separately, above: `bundle apply`
+            # on a checkout still refuses a changed file and still needs --force).
+            self.assertTrue(any("synos build /bundle --force " in c for c in calls),
+                            "the in-container apply must force; see the same reasoning in bundle_launcher.sh")
             self.assertIn("built here instead", build.stdout)
             self.assertTrue((bundle / "dist" / "image-build.log").is_file())
             # A stale launcher (a bundle downloaded before a fix) is replaced by the

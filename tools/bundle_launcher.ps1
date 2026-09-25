@@ -843,7 +843,11 @@ Write-Host "the full output is kept in dist\build.log"
     -e SYNOS_KEYS_DIR=.build/keys `
     -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE `
     -e SYNOS_CHANNEL="$resolvedChannel" `
-    $image synos build /bundle --output /bundle/dist --log /bundle/dist/build.log
+    # --force: /opt/synos in the container is a throwaway copy of the engine, so
+    # the bundle's own files are the authority for the paths they cover. See the
+    # same call in bundle_launcher.sh for why this is not what `synos build` on a
+    # real checkout does.
+    $image synos build /bundle --force --output /bundle/dist --log /bundle/dist/build.log
 $status = $LASTEXITCODE
 Remove-Item -Force "dist\build.pid" -ErrorAction SilentlyContinue
 if ($status -ne 0) {
