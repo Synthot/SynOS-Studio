@@ -314,10 +314,29 @@ overlay_capable() {  # fstype
     esac
 }
 
+# A non-empty string of only digits. Every free-space number this script
+# compares with -lt/-gt/-ge is checked against this first: df or stat
+# failing, a field split going wrong, or (item 131/133) an invalid flag
+# combination df itself refuses must be skipped with a printed reason, and
+# must never reach a numeric test — `[ x -lt y ]` on a non-numeric operand
+# is a shell diagnostic, not something a person can act on.
+is_number() {
+    case "$1" in
+        ''|*[!0-9]*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
 # "mountpoint avail_kb fstype", one per real (non-pseudo, non-network)
-# filesystem df knows about.
+# filesystem df knows about. `-k --output=target,avail,fstype`, deliberately
+# without `-P`: GNU coreutils df refuses `-P` together with `--output`
+# ("options -P and --output are mutually exclusive") — `-P` exists only to
+# force df's traditional one-line-per-entry layout, which `--output`
+# already guarantees by naming exactly the fields wanted, so it adds
+# nothing here and is never combined with it. `-k` alone still fixes the
+# unit (1024-byte blocks) regardless.
 list_candidate_filesystems() {
-    df -Pk --output=target,avail,fstype 2>/dev/null | tail -n +2 | while read -r target avail fstype; do
+    df -k --output=target,avail,fstype 2>/dev/null | tail -n +2 | while read -r target avail fstype; do
         case "$fstype" in
             tmpfs|devtmpfs|proc|sysfs|cgroup|cgroup2|overlay|squashfs|autofs|binfmt_misc|none| \
             nfs|nfs4|cifs|smb2|efivarfs|pstore|tracefs|debugfs|mqueue|hugetlbfs|fuse.*|rpc_pipefs) continue ;;
@@ -330,22 +349,39 @@ list_candidate_filesystems() {
 # one, the largest suitable filesystem with enough room. Diagnostic numbers
 # go to stderr as they are found (item 2's "showing the numbers it used");
 # the winning "path avail_kb" goes to stdout, alone, on success.
-select_storage_path() {  # min_gb [explicit_path]
-    local min_gb=$1 explicit=${2:-} min_kb
+select_storage_path() {  # min_gb [explicit_path] [create: 1 (default) or 0]
+    local min_gb=$1 explicit=${2:-} create=${3:-1} min_kb
     min_kb=$((min_gb * 1024 * 1024))
     if [ -n "$explicit" ]; then
-        if [ ! -d "$explicit" ] && ! mkdir -p "$explicit" 2>/dev/null; then
-            printf 'could not create %s\n' "$explicit" >&2
-            return 1
+        local check_path=$explicit
+        if [ ! -d "$explicit" ]; then
+            if [ "$create" = "1" ]; then
+                mkdir -p "$explicit" 2>/dev/null || { printf 'could not create %s\n' "$explicit" >&2; return 1; }
+            else
+                # create=0 (this installer's own --dry-run): mkdir -p would
+                # perform a real action, which --dry-run promises never to
+                # do. Measure the nearest existing ancestor instead — still
+                # honest about the numbers, never a mutation.
+                while [ ! -d "$check_path" ] && [ "$check_path" != "/" ] && [ -n "$check_path" ]; do
+                    check_path=$(dirname "$check_path")
+                done
+                [ -d "$check_path" ] || { printf 'could not find any existing ancestor of %s to check\n' "$explicit" >&2; return 1; }
+                printf 'note: %s does not exist yet; would be created (checked its nearest existing ancestor, %s, instead)\n' \
+                    "$explicit" "$check_path" >&2
+            fi
         fi
         local fstype avail
-        fstype=$(filesystem_type "$explicit")
+        fstype=$(filesystem_type "$check_path")
         if ! overlay_capable "$fstype"; then
             printf '%s is %s, which cannot back a container overlay filesystem; choose a disk formatted ext4, xfs, btrfs or similar\n' \
-                "$explicit" "$fstype" >&2
+                "$check_path" "$fstype" >&2
             return 1
         fi
-        avail=$(df -Pk "$explicit" | awk 'NR==2 {print $4}')
+        avail=$(df -Pk "$check_path" 2>/dev/null | awk 'NR==2 {print $4}')
+        if ! is_number "$avail"; then
+            printf 'could not read free space at %s (df gave %s, not a number)\n' "$check_path" "${avail:-nothing}" >&2
+            return 1
+        fi
         printf 'chosen: %s (%d GB free, %s)\n' "$explicit" "$((avail / 1048576))" "$fstype" >&2
         if [ "$avail" -lt "$min_kb" ]; then
             printf 'note: %s has only %d GB free; a build needs about %d GB.\n' "$explicit" "$((avail / 1048576))" "$min_gb" >&2
@@ -354,20 +390,36 @@ select_storage_path() {  # min_gb [explicit_path]
         return 0
     fi
 
-    local best_target='' best_avail=0 considered=0 target avail fstype
+    local best_target='' best_avail=0 considered=0 skipped=0 target avail fstype
+    # Process substitution, not a heredoc around a command substitution:
+    # when list_candidate_filesystems prints nothing at all, a heredoc
+    # built from `$(...)` still feeds the loop exactly one blank line (the
+    # newline around the now-empty substitution survives), so `read`
+    # succeeds once with every field empty — which is what actually
+    # crashed this function (item 131/133: "considered:  (0 GB free, )"
+    # then `[ : -lt ... ]`) once df's own error above left it with zero
+    # real candidates. Process substitution has no such surrounding text:
+    # zero lines of output is zero iterations of this loop.
     while read -r target avail fstype; do
+        if [ -z "$target" ] && [ -z "$avail" ] && [ -z "$fstype" ]; then
+            continue  # a stray blank line, never a real filesystem
+        fi
+        if ! is_number "$avail"; then
+            skipped=$((skipped + 1))
+            printf 'skipping %s: could not read its free space (df gave %s, not a number)\n' "${target:-?}" "${avail:-nothing}" >&2
+            continue
+        fi
         considered=$((considered + 1))
         printf 'considered: %s (%d GB free, %s)\n' "$target" "$((avail / 1048576))" "$fstype" >&2
         overlay_capable "$fstype" || continue
         [ "$avail" -gt "$best_avail" ] || continue
         best_target=$target
         best_avail=$avail
-    done <<CANDIDATES
-$(list_candidate_filesystems)
-CANDIDATES
+    done < <(list_candidate_filesystems)
 
     if [ -z "$best_target" ]; then
-        printf 'no filesystem capable of backing a container overlay was found among %d candidate(s)\n' "$considered" >&2
+        printf 'no filesystem capable of backing a container overlay was found among %d candidate(s) (%d skipped, unreadable)\n' \
+            "$considered" "$skipped" >&2
         return 1
     fi
     printf 'chosen: %s (%d GB free, the largest of %d candidate(s) considered)\n' "$best_target" "$((best_avail / 1048576))" "$considered" >&2
@@ -376,6 +428,19 @@ CANDIDATES
             "$best_target" "$((best_avail / 1048576))" "$min_gb" >&2
     fi
     printf '%s %s\n' "$best_target" "$best_avail"
+}
+
+# Free space at PATH, or its nearest existing ancestor when PATH does not
+# exist yet (a --dry-run preview described a location without creating it;
+# select_storage_path's own dry-run note above explains why). "" when even
+# the ancestor walk finds nothing readable.
+free_kb_at() {  # path
+    local path=$1
+    while [ ! -d "$path" ] && [ "$path" != "/" ] && [ -n "$path" ]; do
+        path=$(dirname "$path")
+    done
+    [ -d "$path" ] || return 1
+    df -Pk "$path" 2>/dev/null | awk 'NR==2 {print $4}'
 }
 
 # Idempotent write of podman's rootless storage.conf graphroot: unchanged
@@ -442,10 +507,18 @@ CPUS_PER_JOB=${SYNOS_CPUS_PER_JOB:-2}
 derive_jobs() {  # checkout_root store_path
     local checkout=$1 store=$2
     local free_checkout_kb free_store_kb mem_kb cpu_count
-    free_checkout_kb=$(df -Pk "$checkout" | awk 'NR==2{print $4}')
-    free_store_kb=$(df -Pk "$store" | awk 'NR==2{print $4}')
+    free_checkout_kb=$(free_kb_at "$checkout")
+    free_store_kb=$(free_kb_at "$store")
     mem_kb=$(awk '/^MemTotal:/{print $2}' "${SYNOS_MEMINFO_FILE:-/proc/meminfo}" 2>/dev/null)
     cpu_count=$(nproc 2>/dev/null || printf '1\n')
+    # Every one of these feeds an arithmetic/-lt comparison below; a df or
+    # nproc that failed or returned garbage must count as "unknown", never
+    # crash the comparison (item 133 applied here too, not only in the
+    # storage scan).
+    is_number "$free_checkout_kb" || { warn "could not read free space at $checkout; treating it as 0"; free_checkout_kb=0; }
+    is_number "$free_store_kb" || { warn "could not read free space at $store; treating it as 0"; free_store_kb=0; }
+    is_number "$mem_kb" || mem_kb=""
+    is_number "$cpu_count" || cpu_count=1
 
     local disk_checkout_jobs disk_store_jobs disk_jobs memory_jobs cpu_jobs safe
     disk_checkout_jobs=$((free_checkout_kb / (MIN_BUILD_GB * 1048576)))
@@ -543,7 +616,7 @@ create_service_user() {  # home runtime
         ask_yes "Create system user $SERVICE_USER (home $home)?" \
             || fail "a dedicated system user is required; create $SERVICE_USER yourself, then rerun this installer" 5
         maybe "create system user $SERVICE_USER (home $home)" \
-            sudo useradd --system --home "$home" --create-home --shell /usr/sbin/nologin "$SERVICE_USER" \
+            sudo useradd --system --home-dir "$home" --create-home --shell /usr/sbin/nologin "$SERVICE_USER" \
             || fail "could not create user $SERVICE_USER" 5
     fi
     local group
@@ -652,7 +725,7 @@ PY
 verify_free_space() {  # path min_gb
     local avail_kb min_kb
     avail_kb=$(df -Pk "$1" 2>/dev/null | awk 'NR==2{print $4}')
-    [ -n "$avail_kb" ] || return 1
+    is_number "$avail_kb" || return 1
     min_kb=$(($2 * 1048576))
     [ "$avail_kb" -ge "$min_kb" ]
 }
@@ -747,13 +820,22 @@ main() {
     fi
     maybe "create /etc/synos" sudo install -d /etc/synos
 
+    # select_storage_path's own mkdir -p, for an explicit path that does not
+    # exist yet, is a real filesystem write — under --dry-run that must not
+    # happen (item 131/"prints every action without performing it"), so a
+    # dry run measures the nearest existing ancestor instead (create=0)
+    # rather than actually creating anything.
+    local create_storage=1
+    [ "$DRY_RUN" = "1" ] && create_storage=0
+
     if is_podman "$runtime"; then
         if [ -z "$storage_path" ]; then
             local picked
-            picked=$(select_storage_path "$MIN_BUILD_GB" "") || fail "could not find anywhere to put podman's storage" 5
+            picked=$(select_storage_path "$MIN_BUILD_GB" "" "$create_storage") || fail "could not find anywhere to put podman's storage" 5
             storage_path=${picked% *}
         else
-            select_storage_path "$MIN_BUILD_GB" "$storage_path" >/dev/null || fail "$storage_path is not usable for podman's storage" 5
+            select_storage_path "$MIN_BUILD_GB" "$storage_path" "$create_storage" >/dev/null \
+                || fail "$storage_path is not usable for podman's storage" 5
         fi
         if [ "$DRY_RUN" = "1" ]; then
             say "[dry-run] would configure podman's rootless storage.conf (graphroot) at $storage_path, owned by $SERVICE_USER"
@@ -762,11 +844,26 @@ main() {
         fi
     else
         docker_storage_note
+        # Unlike podman's own storage (above), this pick is only ever used
+        # to place the *working directory* on the biggest disk available —
+        # docker's own image storage is untouched either way (docker_storage_note
+        # already said so). So a person on docker still ends up with a
+        # working, if imperfectly placed, configuration even when nothing
+        # qualifies: a warning and a fallback to the service user's home,
+        # never a refusal (item 135) — a podman install still fails outright
+        # on the same case, above, because there storage_path is essential,
+        # not merely a placement preference.
         if [ -z "$storage_path" ]; then
             local picked_for_workdir
-            picked_for_workdir=$(select_storage_path "$MIN_BUILD_GB" "") \
-                || fail "could not find a disk with enough room for the working directory" 5
-            storage_path=${picked_for_workdir% *}
+            if picked_for_workdir=$(select_storage_path "$MIN_BUILD_GB" "" "$create_storage"); then
+                storage_path=${picked_for_workdir% *}
+            else
+                warn "could not find a disk with enough room for the working directory; using $service_home instead (pass --workdir to choose one yourself)"
+                storage_path=$service_home
+            fi
+        else
+            select_storage_path "$MIN_BUILD_GB" "$storage_path" "$create_storage" >/dev/null \
+                || warn "could not validate $storage_path; using it anyway (only the working directory's placement depends on it under docker)"
         fi
     fi
 

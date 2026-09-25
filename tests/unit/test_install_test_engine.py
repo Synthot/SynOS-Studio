@@ -45,25 +45,57 @@ def run_snippet(body: str, env: dict | None = None) -> subprocess.CompletedProce
     return subprocess.run(["bash", "-c", script], text=True, capture_output=True, env=full_env, cwd=str(ROOT))
 
 
-def fake_df_stat(bindir: Path, filesystems: list[tuple[str, int, str]]) -> None:
-    """filesystems: (mountpoint, avail_kb, fstype) tuples. Installs a fake
-    `df` answering both `df -Pk --output=target,avail,fstype` (the "list
-    every real filesystem" call) and `df -Pk <path>` (the "how much room
-    at this one path" call, matched by prefix so a path under a mountpoint
-    still resolves to it), and a fake `stat -f -c %T <path>` answering the
-    same way."""
+def fake_df_stat(bindir: Path, filesystems: list[tuple[str, int, str]], argv_log: Path | None = None) -> None:
+    """filesystems: (mountpoint, avail_kb, fstype) tuples, longest mountpoint
+    first if a path could match more than one. Installs a fake `df` that
+    mirrors the *real* GNU coreutils df this project actually runs against
+    (verified directly against `df (GNU coreutils) 9.4` — see
+    RealDfInvocationTests below), not a permissive stand-in:
+
+    - `df ... --output=...` together with `-P` is refused exactly like the
+      real one ("options -P and --output are mutually exclusive", exit
+      nonzero, nothing on stdout) — item 132: a fake that accepts what the
+      real tool rejects is worse than no fake.
+    - `df -k --output=target,avail,fstype` (no `-P`) lists every configured
+      filesystem — the real "list every real filesystem" invocation this
+      script actually makes.
+    - anything else is read as "df ... <path>" (`-Pk PATH`, or a bare path):
+      the configured filesystem whose mountpoint is the longest prefix of
+      PATH, POSIX-style single-line output.
+
+    When `argv_log` is given, every invocation's exact argument list is
+    appended to it (one line each), so a test can assert precisely what
+    this script sent df — not just that *something* worked."""
+    log_line = f'printf "%s\\n" "$*" >> "{argv_log}"' if argv_log else ""
+    lines = [log_line,
+             'args="$*"',
+             'case "$args" in',
+             '    *"--output="*"-P"*|*"-P"*"--output="*)',
+             '        echo "df: options -P and --output are mutually exclusive" >&2',
+             '        echo "Try '"'"'df --help'"'"' for more information." >&2',
+             '        exit 1 ;;',
+             'esac']
     listing = "\\n".join(f"{m}\\t{a}\\t{t}" for m, a, t in filesystems)
-    df_lines = ["if [[ \"$*\" == *\"--output=target,avail,fstype\"* ]]; then",
-                f"    printf 'Filesystem\\tAvail\\tType\\n{listing}\\n'", "    exit 0", "fi",
-                'path="${@: -1}"', "case \"$path\" in"]
+    lines += [
+        'if [[ "$args" == *"--output=target,avail,fstype"* ]]; then',
+        f'    printf "Filesystem\\tAvail\\tType\\n{listing}\\n"',
+        "    exit 0",
+        "fi",
+        'path="${@: -1}"',
+        "best=''; best_avail=0; best_fstype=ext4",
+    ]
+    for mount, avail, fstype in sorted(filesystems, key=lambda f: len(f[0])):
+        lines.append(f'case "$path" in "{mount}"*) best="{mount}"; best_avail={avail}; best_fstype="{fstype}" ;; esac')
+    lines += [
+        'echo "Filesystem     1024-blocks       Used  Available Capacity Mounted on"',
+        'printf "fake %10d %10d %10d %3s%% %s\\n" 0 0 "$best_avail" "1" "${best:-$path}"',
+    ]
+    _write_executable(bindir / "df", "\n".join(lines) + "\n")
+
     stat_lines = ['path="${@: -1}"', "case \"$path\" in"]
-    for mount, avail, fstype in filesystems:
-        df_lines.append(f'    "{mount}"*) echo "Filesystem 1024-blocks Used Available Capacity Mounted"; '
-                         f'echo "fake 0 0 {avail} 1% {mount}" ;;')
+    for mount, avail, fstype in sorted(filesystems, key=lambda f: -len(f[0])):
         stat_lines.append(f'    "{mount}"*) echo "{fstype}" ;;')
-    df_lines += ["    *) echo \"Filesystem 1024-blocks Used Available Capacity Mounted\"; echo \"fake 0 0 0 1% ?\" ;;", "esac"]
     stat_lines += ["    *) echo ext4 ;;", "esac"]
-    _write_executable(bindir / "df", "\n".join(df_lines) + "\n")
     _write_executable(bindir / "stat", "\n".join(stat_lines) + "\n")
 
 
@@ -344,11 +376,13 @@ class NoCredentialIsEverWrittenTests(unittest.TestCase):
 
 
 class DryRunTests(unittest.TestCase):
-    def _fake_environment(self, tmp: str) -> tuple[Path, Path]:
+    def _fake_environment(self, tmp: str, runtime: str = "podman") -> tuple[Path, Path]:
         bindir = Path(tmp) / "bin"
         bindir.mkdir(exist_ok=True)
-        for name in ("podman", "qemu-system-x86_64", "xorriso", "tesseract", "chromium",
-                     "sudo", "systemctl", "useradd", "usermod", "getent"):
+        names = ["qemu-system-x86_64", "xorriso", "tesseract", "chromium",
+                 "sudo", "systemctl", "useradd", "usermod", "getent"]
+        names.append(runtime)  # "podman" or "docker" — never both, as detect_runtime prefers podman first
+        for name in names:
             _write_executable(bindir / name, "exit 0\n")
         _write_executable(bindir / "nproc", "echo 4\n")
         fake_df_stat(bindir, [("/mnt/big", 5000 * 1048576, "ext4")])
@@ -356,8 +390,8 @@ class DryRunTests(unittest.TestCase):
         osr.write_text("ID=debian\n", encoding="utf-8")
         return bindir, osr
 
-    def _run(self, tmp: str, extra_args: list[str] | None = None) -> tuple[subprocess.CompletedProcess, Path]:
-        bindir, osr = self._fake_environment(tmp)
+    def _run(self, tmp: str, extra_args: list[str] | None = None, runtime: str = "podman") -> tuple[subprocess.CompletedProcess, Path]:
+        bindir, osr = self._fake_environment(tmp, runtime=runtime)
         config_path = Path(tmp) / "conformance.yml"
         env = dict(os.environ)
         env["PATH"] = f"{bindir}:{env['PATH']}"
@@ -407,6 +441,207 @@ class DryRunTests(unittest.TestCase):
             self.assertEqual(3, result.returncode)
             self.assertIn("not recognized", result.stderr)
             self.assertFalse(config_path.exists())
+
+    def test_docker_still_gets_a_working_configuration_with_storage_advice_printed_once(self) -> None:
+        # item 135: this machine's real runtime is docker, not podman —
+        # docker_storage_note must print exactly once, and the run must
+        # still complete and write a usable config, not refuse.
+        with tempfile.TemporaryDirectory() as tmp:
+            result, _ = self._run(tmp, runtime="docker")
+            self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+            self.assertEqual(1, result.stdout.count("is one setting for the whole"), result.stdout)
+            self.assertIn("container_root: null", result.stdout)  # never set for docker
+            self.assertIn("jobs:", result.stdout)
+
+    def test_docker_with_an_explicit_storage_path_that_does_not_exist_yet_still_works(self) -> None:
+        # the bug this installer shipped with: the docker branch never even
+        # looked at an explicit --storage-path, so free space for it was
+        # read from a directory that was never created, silently degrading
+        # to "cannot read free space" and jobs "1".
+        with tempfile.TemporaryDirectory() as tmp:
+            target = f"{tmp}/not-created-yet/storage"
+            result, _ = self._run(tmp, extra_args=[f"--storage-path={target}"], runtime="docker")
+            self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+            self.assertFalse(Path(target).exists())  # --dry-run still creates nothing
+            self.assertNotIn("could not read free space", result.stdout + result.stderr)
+            self.assertIn(f'workdir: "{target}/synos-conformance"', result.stdout)
+
+    def test_docker_falls_back_to_the_service_home_when_no_disk_qualifies_at_all(self) -> None:
+        # item 135: a failed storage pick must not be fatal under docker —
+        # only podman's own storage depends on it being real.
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir, osr = self._fake_environment(tmp, runtime="docker")
+            fake_df_stat(bindir, [("/boot/efi", 500 * 1048576, "vfat")])  # nothing overlay-capable at all
+            config_path = Path(tmp) / "conformance.yml"
+            env = dict(os.environ)
+            env["PATH"] = f"{bindir}:{env['PATH']}"
+            env["SYNOS_OS_RELEASE_FILE"] = str(osr)
+            result = subprocess.run(
+                ["bash", str(SCRIPT), "--dry-run", "--yes", f"--engine-root={ROOT}",
+                 "--site-url=https://studio.example", f"--config={config_path}", f"--unit-dir={tmp}/units"],
+                capture_output=True, text=True, env=env, cwd=str(ROOT), check=False,
+            )
+            self.assertEqual(0, result.returncode, result.stderr + result.stdout)  # not a refusal
+            self.assertIn("using /var/lib/synos-conformance instead", result.stdout + result.stderr)
+
+
+class RealDfInvocationTests(unittest.TestCase):
+    """The bug a permissive fake hid (item 131/132): GNU coreutils df
+    refuses `-P` together with `--output` ("options -P and --output are
+    mutually exclusive"). Confirmed directly against the real binary this
+    project runs against:
+
+        $ df --version | head -1
+        df (GNU coreutils) 9.4
+        $ df -Pk --output=target,avail,fstype
+        df: options -P and --output are mutually exclusive
+
+    fake_df_stat's df reproduces exactly this refusal (and nothing more
+    permissive), so these tests fail if list_candidate_filesystems or
+    select_storage_path ever again sends `-P` alongside `--output` — the
+    same way the real df would refuse them on the machine this was written
+    for."""
+
+    def test_the_filesystem_listing_never_combines_dash_P_with_dash_dash_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            bindir.mkdir()
+            argv_log = Path(tmp) / "df-argv.log"
+            fake_df_stat(bindir, [("/mnt/big", 5000 * 1048576, "ext4")], argv_log=argv_log)
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}"}
+            result = run_snippet("select_storage_path 40", env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            for line in argv_log.read_text(encoding="utf-8").splitlines():
+                self.assertFalse("-P" in line.split() and "--output=target,avail,fstype" in line,
+                                 f"df was invoked with both -P and --output: {line!r}")
+            # and the exact invocation used for the listing call is spelled
+            # out, not merely "doesn't contain -P"
+            self.assertIn("-k --output=target,avail,fstype", argv_log.read_text(encoding="utf-8"))
+
+    def test_a_fake_that_matches_real_df_would_have_caught_the_original_bug(self) -> None:
+        # Regression guard, run against the *original* invocation
+        # (`df -Pk --output=...`) to prove fake_df_stat would have failed
+        # this suite before the fix, not just that it passes after.
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            bindir.mkdir()
+            fake_df_stat(bindir, [("/mnt/big", 5000 * 1048576, "ext4")])
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}"}
+            broken = run_snippet('df -Pk --output=target,avail,fstype', env=env)
+            self.assertNotEqual(0, broken.returncode)
+            self.assertIn("mutually exclusive", broken.stderr)
+            fixed = run_snippet('df -k --output=target,avail,fstype', env=env)
+            self.assertEqual(0, fixed.returncode, fixed.stderr)
+
+
+class NumericGuardTests(unittest.TestCase):
+    """item 133: an empty or non-numeric free-space field must be skipped
+    with a printed reason, never reach a `[ ... -lt ... ]` comparison."""
+
+    def test_zero_real_filesystems_never_produces_a_phantom_candidate(self) -> None:
+        # The original crash: a heredoc built around a command substitution
+        # still feeds `while read` exactly one blank line when the command
+        # produces no output at all, so "0 candidates" silently became a
+        # single iteration with every field empty, which then hit
+        # `[ "" -gt 0 ]` — "integer expression expected". Fixed by reading
+        # from process substitution instead (which yields zero iterations
+        # for zero lines), proven here directly: an entirely empty listing.
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            bindir.mkdir()
+            fake_df_stat(bindir, [])  # no filesystems at all
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}"}
+            result = run_snippet("select_storage_path 40", env=env)
+            self.assertNotEqual(0, result.returncode)
+            self.assertNotIn("integer expression expected", result.stderr)
+            self.assertNotIn("considered:  (", result.stderr)  # no blank/phantom row
+            self.assertIn("among 0 candidate(s)", result.stderr)
+
+    def test_a_row_with_an_unreadable_free_space_field_is_skipped_with_a_reason(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            bindir.mkdir()
+            # df -k --output=... emitting a malformed/blank Avail field for
+            # one mount (real df has been seen to do this for some
+            # network/special filesystems) alongside one good one.
+            _write_executable(bindir / "df", textwrap.dedent('''
+                if [[ "$*" == *"--output=target,avail,fstype"* ]]; then
+                    printf "Filesystem\\tAvail\\tType\\n/weird\\t\\text4\\n/mnt/big\\t5242880000\\text4\\n"
+                    exit 0
+                fi
+                echo "Filesystem 1024-blocks Used Available Capacity Mounted"
+                echo "fake 0 0 5242880000 1% /mnt/big"
+            '''))
+            _write_executable(bindir / "stat", 'echo ext4\n')
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}"}
+            result = run_snippet("select_storage_path 40", env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("/mnt/big", result.stdout.split()[0])  # the good candidate still wins
+            self.assertIn("skipping /weird: could not read its free space", result.stderr)
+            self.assertNotIn("integer expression expected", result.stderr)
+
+
+class ServiceUserInvocationTests(unittest.TestCase):
+    """item 134: useradd's actual long option is `--home-dir` (`-d`); this
+    script called `--home`, which GNU shadow-utils useradd does not
+    recognize at all (confirmed directly: `useradd --home /tmp/x ...`
+    prints its usage/option list and exits 2 on this machine). Verified
+    here by asserting the exact argument list a fake useradd receives."""
+
+    def _harness(self, tmp: str) -> tuple[Path, Path]:
+        bindir = Path(tmp) / "bin"
+        bindir.mkdir()
+        argv_log = Path(tmp) / "useradd-argv.log"
+        _write_executable(bindir / "sudo", 'exec "$@"\n')  # drop "sudo" itself, run the real argv
+        _write_executable(bindir / "useradd", f'printf "%s\\n" "$*" >> "{argv_log}"\nexit 0\n')
+        _write_executable(bindir / "id", 'exit 1\n')  # "no such user" -> creation path is taken
+        _write_executable(bindir / "getent", 'exit 1\n')  # no matching group -> usermod is skipped
+        return bindir, argv_log
+
+    def test_useradd_is_called_with_home_dir_not_home(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir, argv_log = self._harness(tmp)
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}", "ASSUME_YES": "1"}
+            result = run_snippet('create_service_user "/var/lib/synos-conformance" "/usr/bin/podman"', env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            argv = argv_log.read_text(encoding="utf-8").strip()
+            self.assertIn("--home-dir /var/lib/synos-conformance", argv)
+            self.assertNotIn("--home /var/lib/synos-conformance", argv)
+            # and not the bare long option either, which useradd also rejects
+            self.assertNotRegex(argv, r"--home(?!-dir)\b")
+
+
+class ExplicitStorageDryRunTests(unittest.TestCase):
+    """select_storage_path's create=0 mode (this installer's own
+    --dry-run): an explicit path that does not exist yet must be described,
+    never created."""
+
+    def test_a_nonexistent_explicit_path_is_never_created_and_its_existing_ancestor_is_measured(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            bindir.mkdir()
+            ancestor = Path(tmp) / "mnt-big"
+            ancestor.mkdir()
+            fake_df_stat(bindir, [(str(ancestor), 5000 * 1048576, "ext4")])
+            target = ancestor / "not-created-yet" / "storage"
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}"}
+            result = run_snippet(f'select_storage_path 40 "{target}" 0', env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertFalse(target.exists())
+            self.assertIn("does not exist yet; would be created", result.stderr)
+            self.assertIn(str(ancestor), result.stderr)
+            self.assertEqual(str(target), result.stdout.split()[0])
+
+    def test_create_1_the_default_still_creates_it_for_a_real_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            bindir.mkdir()
+            target = Path(tmp) / "really-create-me"
+            fake_df_stat(bindir, [(str(target), 5000 * 1048576, "ext4")])
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}"}
+            result = run_snippet(f'select_storage_path 40 "{target}"', env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertTrue(target.is_dir())
 
 
 if __name__ == "__main__":
