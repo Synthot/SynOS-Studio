@@ -431,20 +431,29 @@ class BuildOneStageTests(unittest.TestCase):
         self.assertEqual(3, record["exit_code"])
         self.assertIn("debootstrap failed inside the container", record["log_tail"])
 
-    def test_a_smoke_test_failure_is_recorded_as_the_smoke_stage_without_changing_status(self) -> None:
+    def test_a_smoke_test_failure_is_recorded_as_its_own_smoke_failed_status(self) -> None:
+        """Item 110: a build that succeeded but whose boot check did not is
+        its own named outcome, "smoke_failed" - never left as "success"
+        (which is what let cleanup wrongly delete the only evidence for
+        the thing that actually failed, item 109)."""
         raw = make_bundle_archive(entry_id="web-server-nginx")
         session = FakeSession(default_archive=raw)
         with tempfile.TemporaryDirectory() as tmp:
             config = self._config(tmp, smoke=True)
             old_smoke_run = cc.smoke_test.run
-            cc.smoke_test.run = lambda *a, **k: {"status": "failed", "checks": []}
+            cc.smoke_test.run = lambda *a, **k: {"status": "failed", "checks": [{"name": "open-ports", "passed": False}]}
             try:
                 record = cc.build_one({"id": "web-server-nginx"}, config=config, work_dir=Path(tmp) / "work" / "t",
                                       browser_factory=session)
             finally:
                 cc.smoke_test.run = old_smoke_run
-        self.assertEqual("success", record["status"], "a smoke failure must not change the build's own status")
+        self.assertEqual("smoke_failed", record["status"])
         self.assertEqual(cc.STAGE_SMOKE, record["stage"])
+        self.assertNotIn(record["status"], cc.OK_STATUSES)
+        self.assertIn("open-ports", record["log_tail"][0])
+        # item 109: cleanup never ran for this - the whole bundle directory
+        # (evidence for the only thing that failed) survives
+        self.assertFalse(record["cleanup"]["performed"])
 
     def test_a_missing_iso_after_success_skips_smoke_honestly(self) -> None:
         build_sh_no_iso = "#!/bin/bash\nmkdir -p dist\necho log > dist/build.log\nexit 0\n"
@@ -527,6 +536,216 @@ class RunBuildTests(unittest.TestCase):
             config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
             with self.assertRaises(cc.ConformanceError):
                 cc.run_build(config, catalog=catalog, only=["does-not-exist"], browser_factory=FakeSession())
+
+
+class BaseVariantTests(unittest.TestCase):
+    """Item 112: covering an entry on more than the base its manifest
+    pins - a config key/flag naming which bases, defaulting to the
+    entry's own (no override at all, today's behavior, unchanged)."""
+
+    def test_cover_bases_unset_behaves_exactly_like_before_plain_entry_id_key(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id, base="ubuntu", suite="noble"))
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
+        self.assertEqual([entry_id], list(report["targets"]))
+        self.assertEqual("ubuntu", report["targets"][entry_id]["base"])
+
+    def test_cover_bases_builds_the_entry_once_per_named_base(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id, base="ubuntu", suite="noble"))
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False,
+                               cover_bases=["ubuntu", "debian"])
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
+        self.assertEqual({f"{entry_id}@ubuntu", f"{entry_id}@debian"}, set(report["targets"]))
+        self.assertEqual("ubuntu", report["targets"][f"{entry_id}@ubuntu"]["base"])
+        self.assertEqual("noble", report["targets"][f"{entry_id}@ubuntu"]["suite"])
+        self.assertEqual("debian", report["targets"][f"{entry_id}@debian"]["base"])
+        self.assertEqual("trixie", report["targets"][f"{entry_id}@debian"]["suite"])
+        self.assertEqual("success", report["targets"][f"{entry_id}@ubuntu"]["status"])
+        self.assertEqual("success", report["targets"][f"{entry_id}@debian"]["status"])
+
+    def test_cover_bases_records_two_separate_bases_in_build_status_json(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id, base="ubuntu", suite="noble"))
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False,
+                               cover_bases=["ubuntu", "debian"])
+            cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
+            status = json.loads((Path(tmp) / "work" / "build-status.json").read_text(encoding="utf-8"))
+        bases = status["entries"][entry_id]["bases"]
+        self.assertEqual({"ubuntu", "debian"}, set(bases))
+        self.assertEqual("success", bases["ubuntu"]["state"])
+        self.assertEqual("noble", bases["ubuntu"]["suite"])
+        self.assertEqual("success", bases["debian"]["state"])
+        self.assertEqual("trixie", bases["debian"]["suite"])
+
+    def test_leaves_everything_but_base_and_suite_alone(self) -> None:
+        """Item 112: "change only the base and its default release, leave
+        everything else the bundle carries alone" - the profile/name/arch
+        the manifest also carries survive an override untouched."""
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id, base="ubuntu", suite="noble"))
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake",
+                               smoke=False, cleanup=False, cover_bases=["debian"])
+            cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
+            manifest_path = Path(tmp) / "work" / "work" / f"{entry_id}@debian" / "bundle" / "manifests" / f"{entry_id}.yml"
+            text = manifest_path.read_text(encoding="utf-8")
+        self.assertIn("base: debian", text)
+        self.assertIn("suite: trixie", text)
+        self.assertIn(f"name: {entry_id}", text)  # untouched
+        self.assertIn("profile: web-server-nginx", text)  # untouched (make_bundle_archive's own default)
+
+    def test_covering_an_unknown_base_is_refused_by_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "c.yml"
+            path.write_text(f"catalog_url: http://x\nworkdir: {tmp}/work\ncover_bases: [ubuntu, arch]\n",
+                            encoding="utf-8")
+            with self.assertRaises(cc.ConformanceError):
+                cc.Config.load(path)
+
+    def test_covering_an_unknown_base_is_refused_when_the_base_has_no_adapter_at_build_time(self) -> None:
+        """Belt and suspenders under run_build() itself, in case a caller
+        builds a Config directly (bypassing Config.load()'s own check)."""
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id, base="ubuntu", suite="noble"))
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake",
+                               smoke=False, cover_bases=["not-a-real-base"])
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
+        result = report["targets"][f"{entry_id}@not-a-real-base"]
+        self.assertNotEqual("success", result["status"])
+        self.assertIn("not-a-real-base", result["log_tail"][0])
+
+    def test_the_cli_cover_bases_flag_overrides_the_config_files_own_setting(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        entry = entry_by_id(catalog, entry_id)
+        fake_catalog = {"bundle_catalog": [entry], "defaults": catalog.get("defaults", {})}
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id, base="ubuntu", suite="noble"))
+
+        original_fetch = cc.fetch_catalog
+        cc.fetch_catalog = lambda url, **kwargs: fake_catalog
+        original_container_store = cc.host_resources.container_store
+        cc.host_resources.container_store = lambda engine, container_root=None: None
+        original_studio_session = cc.devtools_browser.StudioSession
+        cc.devtools_browser.StudioSession = lambda *a, **k: session
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                work = Path(tmp) / "work"
+                config_path = Path(tmp) / "c.yml"
+                config_path.write_text(f"catalog_url: http://x\nworkdir: {work}\nsite_url: http://fake\nsmoke: false\n",
+                                       encoding="utf-8")
+                code = cc.main(["build", "--config", str(config_path), "--only", entry_id,
+                               "--cover-bases", "ubuntu,debian"])
+                report = json.loads((work / "build-report.json").read_text(encoding="utf-8"))
+        finally:
+            cc.fetch_catalog = original_fetch
+            cc.host_resources.container_store = original_container_store
+            cc.devtools_browser.StudioSession = original_studio_session
+        self.assertEqual(0, code)
+        self.assertEqual({f"{entry_id}@ubuntu", f"{entry_id}@debian"}, set(report["targets"]))
+
+    def test_an_unknown_base_on_the_cli_is_refused_cleanly(self) -> None:
+        original = cc.fetch_catalog
+        cc.fetch_catalog = lambda url, **kwargs: {"bundle_catalog": []}
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                config_path = Path(tmp) / "c.yml"
+                config_path.write_text(f"catalog_url: http://x\nworkdir: {tmp}/work\nsite_url: http://fake\n",
+                                       encoding="utf-8")
+                code = cc.main(["build", "--config", str(config_path), "--cover-bases", "arch"])
+        finally:
+            cc.fetch_catalog = original
+        self.assertEqual(2, code)
+
+
+class ResolvedConfigurationReachesSmokeTestTests(unittest.TestCase):
+    """Item 108: the launcher's own dist/<name>.resolved.json (or a lack of
+    one) reaches tools/smoke_test.py as expected_distro_name, so the
+    graphical boot check can certify the name it promised instead of
+    having nothing to check against."""
+
+    FAKE_BUILD_SH_WITH_RESOLVED_CONFIG = """#!/bin/bash
+mkdir -p dist
+echo "log" > dist/build.log
+echo "FAKE-ISO-BYTES" > dist/fake.iso
+cat > dist/fake.resolved.json <<'EOF'
+{"brand": {"id": "synosnginx", "display_name": "SynOS Nginx"}}
+EOF
+exit 0
+"""
+
+    def _capture_smoke_run(self):
+        captured = {}
+
+        def fake_run(iso_path, resolved_profile, **kwargs):
+            captured["expected_distro_name"] = kwargs.get("expected_distro_name")
+            captured["output_dir"] = kwargs.get("output_dir")
+            return {"status": "passed", "checks": [{"name": "default-target", "passed": True}]}
+
+        return captured, fake_run
+
+    def test_a_resolved_configs_brand_reaches_smoke_test_as_expected_distro_name(self) -> None:
+        entry_id = "web-server-nginx"
+        raw = make_bundle_archive(entry_id=entry_id, build_sh=self.FAKE_BUILD_SH_WITH_RESOLVED_CONFIG)
+        session = FakeSession(default_archive=raw)
+        captured, fake_run = self._capture_smoke_run()
+        original = cc.smoke_test.run
+        cc.smoke_test.run = fake_run
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake",
+                                   smoke=True, cleanup=False)
+                result = cc.build_one({"id": entry_id}, config=config, work_dir=Path(tmp) / "work" / "t",
+                                      browser_factory=session)
+                self.assertIsNotNone(result["resolved_config_path"])
+                self.assertTrue(Path(result["resolved_config_path"]).exists())
+        finally:
+            cc.smoke_test.run = original
+        self.assertEqual("SynOS Nginx", captured["expected_distro_name"])
+
+    def test_no_resolved_config_means_expected_distro_name_is_none_not_invented(self) -> None:
+        entry_id = "web-server-nginx"
+        raw = make_bundle_archive(entry_id=entry_id, build_sh=FAKE_BUILD_SH_SUCCESS)
+        session = FakeSession(default_archive=raw)
+        captured, fake_run = self._capture_smoke_run()
+        original = cc.smoke_test.run
+        cc.smoke_test.run = fake_run
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake",
+                                   smoke=True, cleanup=False)
+                result = cc.build_one({"id": entry_id}, config=config, work_dir=Path(tmp) / "work" / "t",
+                                      browser_factory=session)
+        finally:
+            cc.smoke_test.run = original
+        self.assertIsNone(captured["expected_distro_name"])
+        self.assertIsNone(result["resolved_config_path"])
+
+    def test_the_resolved_config_is_kept_even_when_the_build_fails(self) -> None:
+        """Item 109: kept alongside the log and the serial transcript in
+        every case, not only on success."""
+        entry_id = "web-server-nginx"
+        fail_and_write_resolved = self.FAKE_BUILD_SH_WITH_RESOLVED_CONFIG.replace("exit 0", "exit 3")
+        raw = make_bundle_archive(entry_id=entry_id, build_sh=fail_and_write_resolved)
+        session = FakeSession(default_archive=raw)
+        with tempfile.TemporaryDirectory() as tmp:
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake",
+                               smoke=False, cleanup=True)
+            result = cc.build_one({"id": entry_id}, config=config, work_dir=Path(tmp) / "work" / "t",
+                                  browser_factory=session)
+            self.assertNotEqual("success", result["status"])
+            self.assertIsNotNone(result["resolved_config_path"])
+            self.assertTrue(Path(result["resolved_config_path"]).exists())
 
 
 class ParallelismTests(unittest.TestCase):
@@ -671,8 +890,25 @@ class TrackedFileIsolationTests(unittest.TestCase):
 
 
 class DiffReportsTests(unittest.TestCase):
-    def test_no_previous_report_marks_everything_new(self) -> None:
+    def test_no_previous_report_and_a_successful_entry_is_not_newly_failed(self) -> None:
+        """Item 110's own bug: a first-ever run (no previous report on
+        disk at all) used to mark *every* entry "newly_failed"
+        unconditionally, regardless of status - "1 success" printed right
+        next to "newly failing: <that same entry>". A first-ever success
+        is "unchanged" (nothing to compare against, and it is fine), not
+        a failure that just started."""
         current = {"targets": {"a": {"status": "success"}}}
+        diff = cc.diff_reports(None, current)
+        self.assertEqual([], diff["newly_failed"])
+        self.assertEqual(["a"], diff["unchanged"])
+
+    def test_no_previous_report_and_a_failed_entry_is_newly_failed(self) -> None:
+        current = {"targets": {"a": {"status": "build_failed"}}}
+        diff = cc.diff_reports(None, current)
+        self.assertEqual(["a"], diff["newly_failed"])
+
+    def test_no_previous_report_treats_smoke_failed_the_same_as_any_other_failure(self) -> None:
+        current = {"targets": {"a": {"status": "smoke_failed"}}}
         diff = cc.diff_reports(None, current)
         self.assertEqual(["a"], diff["newly_failed"])
 
@@ -778,8 +1014,9 @@ class BuildStatusWiringTests(unittest.TestCase):
             status = json.loads(status_path.read_text(encoding="utf-8"))
         self.assertEqual(cc.build_status.SCHEMA_VERSION, status["schema_version"])
         self.assertEqual({"web-server-nginx", "git-server"}, set(status["entries"]))
-        self.assertEqual("success", status["entries"]["web-server-nginx"]["state"])
-        self.assertIsNotNone(status["entries"]["web-server-nginx"]["checksum"])
+        nginx_ubuntu = status["entries"]["web-server-nginx"]["bases"]["ubuntu"]
+        self.assertEqual("success", nginx_ubuntu["state"])
+        self.assertIsNotNone(nginx_ubuntu["checksum"])
 
     def test_a_failed_entry_is_recorded_with_state_failed(self) -> None:
         catalog = real_catalog()
@@ -790,7 +1027,7 @@ class BuildStatusWiringTests(unittest.TestCase):
             config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
             cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
             status = json.loads((Path(tmp) / "work" / "build-status.json").read_text(encoding="utf-8"))
-        self.assertEqual("failed", status["entries"][entry_id]["state"])
+        self.assertEqual("failed", status["entries"][entry_id]["bases"]["ubuntu"]["state"])
 
     def test_upload_is_called_for_every_live_transition_plus_once_at_the_end(self) -> None:
         """Item 93: each entry moves queued -> testing -> a real outcome,
@@ -828,7 +1065,7 @@ class BuildStatusWiringTests(unittest.TestCase):
             work = Path(tmp) / "work"
             work.mkdir(parents=True)
             pre = cc.build_status.empty_status()
-            pre, _ = cc.build_status.apply_result(pre, entry_id, {
+            pre, _ = cc.build_status.apply_result(pre, entry_id, "ubuntu", {
                 "id": entry_id, "status": "success", "engine": "0.2.0", "base": "ubuntu", "suite": "noble",
                 "end": "2020-01-01T00:00:00+00:00", "duration_s": 1.0, "stage": None,
                 "iso": {"size": 1, "sha256": "x"}, "smoke": {"status": "passed"}, "log_tail": []})
@@ -904,15 +1141,16 @@ class BuildStatusWiringTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             work = Path(tmp) / "work"
             work.mkdir(parents=True)
-            stuck, _ = cc.build_status.mark_testing(cc.build_status.empty_status(), "some-other-entry")
+            stuck, _ = cc.build_status.mark_testing(cc.build_status.empty_status(), "some-other-entry", "ubuntu")
             cc.build_status.write_status_atomic(work / "build-status.json", stuck)
 
             config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False)
             report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session)
             status = json.loads((work / "build-status.json").read_text(encoding="utf-8"))
-        self.assertEqual(["some-other-entry"], report.get("resolved_interrupted"))
-        self.assertEqual("failed", status["entries"]["some-other-entry"]["state"])
-        self.assertEqual(cc.build_status.INTERRUPTED_ERROR, status["entries"]["some-other-entry"]["error"])
+        self.assertEqual(["some-other-entry@ubuntu"], report.get("resolved_interrupted"))
+        stuck_record = status["entries"]["some-other-entry"]["bases"]["ubuntu"]
+        self.assertEqual("failed", stuck_record["state"])
+        self.assertEqual(cc.build_status.INTERRUPTED_ERROR, stuck_record["error"])
 
     def test_ftp_without_allow_insecure_is_refused_by_the_cli(self) -> None:
         original = cc.fetch_catalog

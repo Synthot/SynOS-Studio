@@ -711,12 +711,19 @@ def resolve_profile_chain(profile_path: Path) -> tuple[dict, list[str]]:
 
 # --------------------------------------------------------------- runner
 def overall_passed(checks: list[dict]) -> bool:
-    """A run's overall pass/fail: every check must not have failed.
+    """A run's overall pass/fail: every check must not have failed, and at
+    least one check must have actually run and confirmed something.
     "passed": None (only the graphical check uses it, when its own extra
     tools are missing) is a skip, not a failure, and must not drag an
     otherwise-clean run down to "failed" -- consistent with every other
-    skip in this module never being reported as one."""
-    return bool(checks) and all(check.get("passed") is not False for check in checks)
+    skip in this module never being reported as one. The second half (at
+    least one *non*-skipped check) closes the one gap that leaves open on
+    its own: wait_default_target always runs and is never itself
+    skippable, so in practice this never changes today's behavior -- it
+    only stops a run whose every check happened to skip from reading as a
+    vacuous "passed" if that ever became reachable."""
+    relevant = [check for check in checks if check.get("passed") is not None]
+    return bool(relevant) and all(check.get("passed") is not False for check in checks)
 
 
 def run(iso_path: Path, resolved_profile: dict, *, output_dir: Path,

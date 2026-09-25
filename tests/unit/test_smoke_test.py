@@ -249,6 +249,7 @@ class MainProfileSourceTests(unittest.TestCase):
         def fake_run(iso_path, resolved_profile, **kwargs):
             captured["resolved_profile"] = resolved_profile
             captured["profile_source"] = kwargs.get("profile_source")
+            captured["expected_distro_name"] = kwargs.get("expected_distro_name")
             return {"status": "skipped", "reason": "test stub"}
 
         original = smoke_test.run
@@ -293,6 +294,45 @@ class MainProfileSourceTests(unittest.TestCase):
         self.assertEqual({}, captured["resolved_profile"])
         self.assertIn("no --resolved", captured["profile_source"])
         self.assertIn("no --profile", captured["profile_source"])
+        self.assertIsNone(captured["expected_distro_name"])
+
+    def test_resolved_json_supplies_the_expected_distro_name_from_its_own_brand(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            work = Path(d)
+            iso = work / "image.iso"
+            iso.touch()
+            (work / "image.resolved.json").write_text(
+                json.dumps({"profile": {}, "brand": {"display_name": "SynOS Nginx"}}), encoding="utf-8")
+            with tempfile.TemporaryDirectory() as outd:
+                captured = self._capture_run([str(iso), "--output", outd])
+        self.assertEqual("SynOS Nginx", captured["expected_distro_name"])
+
+    def test_brand_flag_supplies_the_expected_distro_name_when_no_resolved_json_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            work = Path(d)
+            iso = work / "image.iso"
+            iso.touch()
+            leaf = work / "synosnginx-server.yml"
+            leaf.write_text("id: synosnginx-server\nextends: server\n", encoding="utf-8")
+            brand_path = work / "brand.yml"
+            brand_path.write_text("id: synosnginx\ndisplay_name: SynOS Nginx\n", encoding="utf-8")
+            with tempfile.TemporaryDirectory() as outd:
+                captured = self._capture_run([str(iso), "--profile", str(leaf), "--brand", str(brand_path),
+                                             "--output", outd])
+        self.assertEqual("SynOS Nginx", captured["expected_distro_name"])
+
+    def test_brand_flag_is_ignored_when_a_resolved_configuration_was_found(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            work = Path(d)
+            iso = work / "image.iso"
+            iso.touch()
+            (work / "image.resolved.json").write_text(
+                json.dumps({"profile": {}, "brand": {"display_name": "SynOS Nginx"}}), encoding="utf-8")
+            brand_path = work / "brand.yml"
+            brand_path.write_text("id: other\ndisplay_name: Something Else\n", encoding="utf-8")
+            with tempfile.TemporaryDirectory() as outd:
+                captured = self._capture_run([str(iso), "--brand", str(brand_path), "--output", outd])
+        self.assertEqual("SynOS Nginx", captured["expected_distro_name"])
 
 
 def _render_screenshot(text: str, path: Path, size: tuple[int, int] = (900, 240)) -> None:
@@ -500,6 +540,13 @@ class GraphicalSkipTests(unittest.TestCase):
 
     def test_no_checks_at_all_is_not_a_pass(self) -> None:
         self.assertFalse(smoke_test.overall_passed([]))
+
+    def test_every_check_skipped_is_not_a_pass(self) -> None:
+        """Never actually reachable in practice (wait_default_target always
+        runs and is never itself skippable), but overall_passed() must not
+        vacuously call an all-skipped run "passed" if it ever were."""
+        checks = [{"name": "graphical-boot", "passed": None, "outcome": "skipped"}]
+        self.assertFalse(smoke_test.overall_passed(checks))
 
 
 class AvailabilityTests(unittest.TestCase):
