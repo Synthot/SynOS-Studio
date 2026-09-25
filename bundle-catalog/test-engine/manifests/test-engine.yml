@@ -2,8 +2,8 @@ schema_version: 1
 name: test-engine
 version: 1.0.0
 
-base: ubuntu
-suite: noble
+base: debian
+suite: trixie
 arch: amd64
 
 profile: test-engine

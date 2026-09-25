@@ -21,6 +21,7 @@ import shlex
 import shutil
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 try:
     import yaml
@@ -235,15 +236,31 @@ def resolve_brand(brand_id: str) -> dict:
 
 
 # ------------------------------------------------------------ package map
-def load_package_map(path: Path) -> dict[str, list[str]]:
-    """abstract-name = concrete packages (may be empty: provided elsewhere on this base)."""
-    mapping: dict[str, list[str]] = {}
+class Unavailable(NamedTuple):
+    """abstract-name = unavailable: <reason> (bases/*/packages.map): this base's
+    archive has nothing that fills the role at all — not merely a different
+    name, an actual gap (see bases/ubuntu/packages.map's browser-headless for
+    the case this exists for). resolve_packages() refuses a profile that
+    reaches this name on this base, with the reason, rather than silently
+    dropping it the way an empty mapping does for a role that is genuinely
+    optional."""
+    reason: str
+
+
+def load_package_map(path: Path) -> dict[str, list[str] | Unavailable]:
+    """abstract-name = concrete packages (may be empty: provided elsewhere on this
+    base) or `unavailable: <reason>` (see Unavailable)."""
+    mapping: dict[str, list[str] | Unavailable] = {}
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.split("#", 1)[0].strip()
         if not line or "=" not in line:
             continue
         key, _, value = line.partition("=")
-        mapping[key.strip()] = value.split()
+        value = value.strip()
+        if value.startswith("unavailable:"):
+            mapping[key.strip()] = Unavailable(value[len("unavailable:"):].strip())
+        else:
+            mapping[key.strip()] = value.split()
     return mapping
 
 
@@ -256,9 +273,16 @@ def load_bundles() -> dict[str, list[str]]:
 
 
 def resolve_packages(
-    abstract: list[str], pkg_map: dict[str, list[str]], arch: str, lang_codes: list[str], base_id: str
+    abstract: list[str], pkg_map: dict[str, list[str] | Unavailable], arch: str, lang_codes: list[str], base_id: str,
+    profile_id: str = "", refuse_unavailable: bool = True,
 ) -> tuple[list[str], list[str]]:
-    """Expand abstract names to concrete packages. Unknown names pass through as concrete."""
+    """Expand abstract names to concrete packages. Unknown names pass through as
+    concrete. A name mapped `unavailable: <reason>` (Unavailable) on this base
+    fails loudly instead of being dropped — the profile actually reached it
+    (it is not merely absent from the map), so silently shipping one package
+    short is exactly the bug this refuses. refuse_unavailable=False is for
+    resolving a *removal* list, where a role this base never had is simply
+    nothing to remove, not a reason to refuse the build."""
     concrete: list[str] = []
     unmapped: list[str] = []
 
@@ -276,7 +300,13 @@ def resolve_packages(
             unmapped.append(item)
             add(item)
             continue
-        for template in pkg_map[item]:
+        entry = pkg_map[item]
+        if isinstance(entry, Unavailable):
+            if not refuse_unavailable:
+                continue
+            where = f"profile {profile_id!r} " if profile_id else ""
+            raise ManifestError(f"{where}needs {item!r}, which is unavailable on base {base_id!r}: {entry.reason}")
+        for template in entry:
             if "${LANG}" in template:
                 for code in lang_codes:
                     add(template.replace("${LANG}", code).replace("${ARCH}", arch))
@@ -453,7 +483,7 @@ def q(value: object) -> str:
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`") + '"'
 
 
-def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions: list[dict], brand: dict, manifest_path: Path, pkg_map: dict[str, list[str]], bundles: dict[str, list[str]]) -> tuple[str, dict]:
+def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions: list[dict], brand: dict, manifest_path: Path, pkg_map: dict[str, list[str] | Unavailable], bundles: dict[str, list[str]]) -> tuple[str, dict]:
     suite = manifest["suite"]
     arch = manifest["arch"]
     if suite not in base.get("SUPPORTED_SUITES", suite).split():
@@ -504,8 +534,9 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
     gpu = (profile.get("hardware", {}) or {}).get("gpu", "none")
     if gpu != "none":
         abstract.append(f"gpu-{gpu}")            # the compute stack, per base (bases/*/packages.map)
-    install_packages, unmapped = resolve_packages(abstract, pkg_map, arch, lang_codes, base["BASE_ID"])
-    remove_packages, _ = resolve_packages(remove, pkg_map, arch, lang_codes, base["BASE_ID"])
+    install_packages, unmapped = resolve_packages(abstract, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"])
+    remove_packages, _ = resolve_packages(remove, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"],
+                                          refuse_unavailable=False)
     install_packages = [p for p in install_packages if p not in remove_packages]
     installer = profile.get("installer", {}) or {}
     ansible_cfg = profile.get("ansible", {}) or {}

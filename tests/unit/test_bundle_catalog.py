@@ -278,11 +278,18 @@ class PackageResolutionTests(unittest.TestCase):
     def test_test_engine_group_is_mapped_on_both_bases(self) -> None:
         """profiles/bundles.yml "test-engine": everything
         packaging/install-test-engine.sh's REQUIREMENTS list needs, resolved
-        the same way every other group is, including a real headless browser
-        on both bases — Debian's own native chromium, Ubuntu's forked
-        packages/google-chrome-synos (bases/ubuntu/packages.map: Ubuntu's own
-        "chromium"/"chromium-browser" only installs the Chromium snap, which
-        this engine ships no snapd for)."""
+        the same way every other group is. Debian gets a real headless
+        browser too (its own native, BSD-licensed chromium); Ubuntu's own
+        "chromium"/"chromium-browser" only installs the Chromium snap
+        (which this engine ships no snapd for) and there is no free-software
+        substitute this engine is allowed to redistribute in its place
+        (Google Chrome is proprietary — test_package_policy.py's
+        ForkSourceAllowListTests is what actually keeps that true), so
+        browser-headless is marked unavailable there rather than silently
+        dropped: reaching it is covered by
+        test_manifest_render.py's UnavailablePackageTests, and by
+        TestEngineBundleTests.test_reaching_the_group_on_ubuntu_refuses_to_render
+        below for this exact bundle."""
         self.assertIn("test-engine", self.bundles)
         expected_everywhere = {
             "python3", "python3-yaml", "podman", "buildah", "skopeo",
@@ -290,45 +297,26 @@ class PackageResolutionTests(unittest.TestCase):
         }
         for base_id, pkg_map in self.pkg_maps.items():
             with self.subTest(base=base_id):
-                concrete, unmapped = render_manifest.resolve_packages(self.bundles["test-engine"], pkg_map, "amd64", ["en"], base_id)
+                # browser-headless is Unavailable on ubuntu (by design, see
+                # above) — resolve everything else the group carries, which
+                # must still be real on every base regardless.
+                abstract = [item for item in self.bundles["test-engine"] if not isinstance(pkg_map.get(item), render_manifest.Unavailable)]
+                concrete, unmapped = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_id)
                 self.assertEqual([], unmapped)
                 self.assertTrue(concrete, f"test-engine resolves to nothing on {base_id}")
                 self.assertTrue(expected_everywhere.issubset(concrete), expected_everywhere - set(concrete))
         debian_concrete, _ = render_manifest.resolve_packages(self.bundles["test-engine"], self.pkg_maps["debian"], "amd64", ["en"], "debian")
         self.assertIn("chromium", debian_concrete, "Debian's real, native Chromium — see bases/debian/packages.map")
-        ubuntu_concrete, _ = render_manifest.resolve_packages(self.bundles["test-engine"], self.pkg_maps["ubuntu"], "amd64", ["en"], "ubuntu")
-        self.assertIn("google-chrome-synos", ubuntu_concrete,
-                       "Ubuntu gets the fork (packages/google-chrome-synos), never the archive's own snap-only chromium")
-        self.assertNotIn("chromium", ubuntu_concrete)
-        self.assertNotIn("chromium-browser", ubuntu_concrete,
-                          "Ubuntu's own chromium-browser only installs the Chromium snap; this engine ships no snapd")
-
-    def test_google_chrome_fork_recipe_is_real(self) -> None:
-        """packages/google-chrome-synos: fetched from Google's own apt
-        repository (the same shape as packages/firefox-synos forking Firefox
-        from Mozilla's), with the upstream maintainer scripts suppressed and
-        its cron auto-updater stripped by prebuild.sh so it never registers
-        its own apt source on a built image."""
-        recipe = ROOT / "packages" / "google-chrome-synos"
-        self.assertEqual(["ubuntu"], recipe.joinpath("bases.txt").read_text(encoding="utf-8").split())
-        spec = json.loads(recipe.joinpath("fork.json").read_text(encoding="utf-8"))
-        self.assertEqual("google-chrome-stable", spec["package"])
-        self.assertEqual("https://dl.google.com/linux/chrome/deb", spec["url"])
-        self.assertTrue(spec["suppress_scripts"])
-        control = recipe.joinpath("control").read_text(encoding="utf-8")
-        self.assertIn("Package: google-chrome-synos\n", control)
-        self.assertIn("Conflicts: google-chrome-stable\n", control)
-        prebuild = recipe.joinpath("prebuild.sh").read_text(encoding="utf-8")
-        self.assertIn('cd "$(dirname "$0")/upstream"', prebuild)
-        self.assertIn("rm -rf", prebuild)
-        self.assertIn("etc", prebuild, "must strip the shipped /etc/cron.daily/google-chrome auto-updater symlink")
-        self.assertTrue(recipe.joinpath("lib").is_symlink())
+        ubuntu_entry = self.pkg_maps["ubuntu"]["browser-headless"]
+        self.assertIsInstance(ubuntu_entry, render_manifest.Unavailable)
+        self.assertIn("snap", ubuntu_entry.reason.lower())
 
     def test_test_engine_group_has_a_catalog_description(self) -> None:
         catalog = render_manifest.load_yaml(ROOT / "profiles" / "catalog.yml")
         description = catalog["bundles"].get("test-engine", "")
         self.assertTrue(description, "profiles/catalog.yml carries no description for the test-engine bundle")
         self.assertIn("Chromium", description)
+        self.assertIn("refuses", description, "the Ubuntu gap must be named in the description, not left silent")
 
     def test_yocto_manuals_required_set_is_a_subset_of_both_catalogued_machines(self) -> None:
         """Pins the Yocto Project reference manual's own "Ubuntu and Debian"
@@ -1282,10 +1270,10 @@ class PlatformAndNetworkingApplianceTests(unittest.TestCase):
 class TestEngineBundleTests(unittest.TestCase):
     """The "Test Engine Build Machine" catalogued bundle
     (bundle-catalog/test-engine/): the Yocto build host plus the
-    "test-engine" package group. Stays on this engine's usual ubuntu/noble
-    (unlike cad-3d-printing-workstation, it needs no base switch): the
-    google-chrome-synos fork (packages/google-chrome-synos) gives it a real
-    headless browser there instead of Ubuntu's snap-only chromium."""
+    "test-engine" package group, pinned to Debian trixie — the base whose
+    own archive actually has a real, redistributable Chromium — rather than
+    this engine's usual Ubuntu noble (like cad-3d-printing-workstation, a
+    deliberate exception, not the default)."""
 
     def test_entry_is_present_and_verified(self) -> None:
         entry = next((e for e in index_entries() if e["id"] == "test-engine"), None)
@@ -1293,19 +1281,40 @@ class TestEngineBundleTests(unittest.TestCase):
         self.assertTrue(entry["verified"])
         self.assertEqual("test-engine", entry["folder"])
 
-    def test_profile_extends_yocto_builder_and_pins_ubuntu_noble(self) -> None:
+    def test_profile_extends_yocto_builder_and_pins_debian_trixie(self) -> None:
+        """The base pin matters here beyond style: pinning ubuntu/noble
+        instead would make this very entry fail to render at all (browser-
+        headless is Unavailable there) — see
+        test_reaching_the_group_on_ubuntu_refuses_to_render below."""
         profile, chain = render_manifest.resolve_profile("test-engine")
         self.assertIn("yocto-builder", chain)
         self.assertIn("yocto-build", profile["software"]["bundles"])
         self.assertIn("test-engine", profile["software"]["bundles"])
         manifest = render_manifest.load_yaml(CATALOG_DIR / "test-engine" / "manifests" / "test-engine.yml")
-        self.assertEqual("ubuntu", manifest["base"])
-        self.assertEqual("noble", manifest["suite"])
+        self.assertEqual("debian", manifest["base"])
+        self.assertEqual("trixie", manifest["suite"])
 
     def test_first_boot_points_at_the_installer(self) -> None:
         entry = next(e for e in index_entries() if e["id"] == "test-engine")
         combined = " ".join(entry["first_boot"])
         self.assertIn("install-test-engine.sh", combined)
+
+    def test_reaching_the_group_on_ubuntu_refuses_to_render(self) -> None:
+        """The concrete, real-world case UnavailablePackageTests
+        (tests/unit/test_manifest_render.py) proves generically: the same
+        profile this entry ships, rendered against ubuntu/noble instead of
+        its pinned debian/trixie, refuses rather than silently building one
+        package short."""
+        pkg_map = render_manifest.load_package_map(ROOT / "bases" / "ubuntu" / "packages.map")
+        bundles = render_manifest.load_bundles()
+        profile, _ = render_manifest.resolve_profile("test-engine")
+        abstract = [pkg for bundle_id in profile["software"]["bundles"] for pkg in bundles[bundle_id]]
+        with self.assertRaises(render_manifest.ManifestError) as raised:
+            render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], "ubuntu", "test-engine")
+        message = str(raised.exception)
+        self.assertIn("test-engine", message)
+        self.assertIn("browser-headless", message)
+        self.assertIn("unavailable", message)
 
 
 class TestEngineArchiveTests(unittest.TestCase):
@@ -1358,14 +1367,6 @@ class TestEngineArchiveTests(unittest.TestCase):
             raise unittest.SkipTest(f"package archive is not reachable from this host: {exc}")
 
     def test_every_test_engine_package_resolves_on_every_supported_suite(self) -> None:
-        # A package built locally by this engine (packages/<name>/, checked
-        # by folder name the same way test_control_dependencies.py's
-        # LOCAL_PACKAGES does) is never in anyone's archive by design —
-        # packages/google-chrome-synos is exactly that, a fork of Google's
-        # own real .deb (see PackageResolutionTests.test_google_chrome_fork_recipe_is_real
-        # for what it actually is, rather than skipping it here unchecked).
-        local_packages = {p.name for p in (ROOT / "packages").iterdir() if p.is_dir() and not p.name.startswith("_")}
-        self.assertIn("google-chrome-synos", local_packages)
         bundles = render_manifest.load_bundles()
         failures = []
         for env_path in sorted((ROOT / "bases").glob("*/base.env")):
@@ -1376,8 +1377,13 @@ class TestEngineArchiveTests(unittest.TestCase):
             pkg_map = render_manifest.load_package_map(env_path.parent / "packages.map")
             base_url = base.get("APT_MIRROR", "").rstrip("/")
             components = base.get("COMPONENTS", "main").split()
-            concrete, _unmapped = render_manifest.resolve_packages(bundles["test-engine"], pkg_map, "amd64", ["en"], base_id)
-            concrete = [p for p in concrete if p not in local_packages]
+            # An abstract name marked Unavailable on this base (bases/ubuntu/
+            # packages.map's browser-headless) never resolves to a concrete
+            # package here — that is the point of it — so it is excluded
+            # rather than checked against an archive it was never going to
+            # be in.
+            abstract = [item for item in bundles["test-engine"] if not isinstance(pkg_map.get(item), render_manifest.Unavailable)]
+            concrete, _unmapped = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_id)
             for suite in base.get("SUPPORTED_SUITES", "").split():
                 try:
                     available = self._available_names(base_url, suite, components)

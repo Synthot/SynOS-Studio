@@ -145,6 +145,74 @@ class BaseAdapterTests(unittest.TestCase):
         self.assertNotIn("debian", mod.lower())
 
 
+class UnavailablePackageTests(unittest.TestCase):
+    """profiles/bundles.yml + bases/*/packages.map: `abstract = unavailable:
+    <reason>` marks a role this base's archive genuinely has nothing for
+    (not merely a different name — an actual gap, e.g. bases/ubuntu/
+    packages.map's browser-headless). A profile that reaches that name on
+    that base must fail loudly, naming the profile, the package and the
+    reason, rather than silently resolving one package short."""
+
+    def test_load_package_map_parses_the_unavailable_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "packages.map"
+            path.write_text("real = a b c\nunreal = unavailable: nothing fills this role here\nempty =\n", encoding="utf-8")
+            pkg_map = render_manifest.load_package_map(path)
+            self.assertEqual(["a", "b", "c"], pkg_map["real"])
+            self.assertEqual([], pkg_map["empty"])
+            self.assertIsInstance(pkg_map["unreal"], render_manifest.Unavailable)
+            self.assertEqual("nothing fills this role here", pkg_map["unreal"].reason)
+
+    def test_resolving_an_unavailable_name_refuses_with_the_reason(self) -> None:
+        pkg_map = {"widget": render_manifest.Unavailable("no such widget on this base")}
+        with self.assertRaises(render_manifest.ManifestError) as raised:
+            render_manifest.resolve_packages(["widget"], pkg_map, "amd64", ["en"], "acme", "some-profile")
+        message = str(raised.exception)
+        self.assertIn("some-profile", message)
+        self.assertIn("widget", message)
+        self.assertIn("acme", message)
+        self.assertIn("no such widget on this base", message)
+
+    def test_an_unavailable_name_never_reached_by_a_profile_causes_no_error(self) -> None:
+        pkg_map = {"widget": render_manifest.Unavailable("no such widget on this base"), "gadget": ["gadget-pkg"]}
+        concrete, unmapped = render_manifest.resolve_packages(["gadget"], pkg_map, "amd64", ["en"], "acme")
+        self.assertEqual(["gadget-pkg"], concrete)
+        self.assertEqual([], unmapped)
+
+    def test_removing_an_unavailable_name_is_nothing_to_remove_not_a_refusal(self) -> None:
+        """A profile's software.packages.remove list is resolved through the same
+        map: a role this base never had is simply nothing to remove there, so it
+        must not refuse the build the way *needing* it does."""
+        pkg_map = {"widget": render_manifest.Unavailable("no such widget on this base"), "gadget": ["gadget-pkg"]}
+        concrete, _ = render_manifest.resolve_packages(["widget", "gadget"], pkg_map, "amd64", ["en"], "acme",
+                                                       "some-profile", refuse_unavailable=False)
+        self.assertEqual(["gadget-pkg"], concrete)
+        with self.assertRaises(render_manifest.ManifestError):
+            render_manifest.resolve_packages(["widget"], pkg_map, "amd64", ["en"], "acme", "some-profile")
+
+    def test_the_real_ubuntu_browser_headless_gap_refuses_a_render(self) -> None:
+        """The concrete case this mechanism exists for: a manifest that pins
+        ubuntu and a profile reaching profiles/bundles.yml's "test-engine"
+        group must refuse --check rather than silently build one package
+        short."""
+        with tempfile.TemporaryDirectory() as directory:
+            profile_path = ROOT / "profiles" / "test-engine-ubuntu-check.yml"
+            profile_path.write_text("id: test-engine-ubuntu-check\nextends: minimal\nsoftware:\n  bundles: [test-engine]\n",
+                                     encoding="utf-8")
+            self.addCleanup(profile_path.unlink)
+            manifest = Path(directory) / "m.yml"
+            manifest.write_text(json.dumps({
+                "schema_version": 1, "name": "m", "version": "1.0.0", "base": "ubuntu", "suite": "resolute",
+                "arch": "amd64", "profile": "test-engine-ubuntu-check", "regions": ["fr"], "brand": "synos",
+            }), encoding="utf-8")
+            result = _run("--manifest", str(manifest), "--check")
+            self.assertEqual(1, result.returncode, result.stdout)
+            self.assertIn("manifest error", result.stderr)
+            self.assertIn("test-engine-ubuntu-check", result.stderr)
+            self.assertIn("browser-headless", result.stderr)
+            self.assertIn("unavailable", result.stderr)
+
+
 class StackTests(unittest.TestCase):
     """Every role of the stack is filled by a SynOS package or a base archive package."""
 
@@ -333,7 +401,7 @@ class PortedStackTests(unittest.TestCase):
                         self.assertTrue(ignored, f"{source.name}/upstream/{artefact} must be git-ignored")
             if (source / "fork.json").is_file():
                 spec = json.loads((source / "fork.json").read_text(encoding="utf-8"))
-                self.assertIn(spec["distro"], ("ubuntu", "debian", "mozilla", "google"))
+                self.assertIn(spec["distro"], ("ubuntu", "debian", "mozilla"))
                 self.assertTrue(spec["package"])
         self.assertTrue((ROOT / "packages/_lib/build-guards.sh").is_file())
 

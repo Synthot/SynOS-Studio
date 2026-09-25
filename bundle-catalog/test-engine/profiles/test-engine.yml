@@ -6,14 +6,16 @@ description: >-
   (packaging/install-test-engine.sh; profiles/bundles.yml, "test-engine"):
   a container runtime, QEMU, xorriso, Tesseract OCR, Pillow, PyYAML and a
   headless Chromium, to build a catalogued bundle, boot the resulting
-  image under QEMU and read its boot screen with OCR. Stays on this
-  engine's usual Ubuntu noble: Ubuntu's own "chromium"/"chromium-browser"
-  only installs the Chromium snap, which this engine's images never
-  carry, so the browser comes from packages/google-chrome-synos instead
-  — a fork of Google's own real, non-snap google-chrome-stable .deb
-  (dl.google.com), the same way packages/firefox-synos already forks
-  Firefox from Mozilla's own repository. Still needs an en_US.UTF-8
-  locale and the Yocto build host's disk space (at least 140 GB), more
-  here for the container images and ISOs a conformance run keeps around.
+  image under QEMU and read its boot screen with OCR. Pinned to Debian
+  trixie rather than this engine's usual Ubuntu noble: Debian's own
+  archive ships a real, native, BSD-licensed Chromium, where Ubuntu's own
+  "chromium" only installs the Chromium snap, which this engine's images
+  never carry — and unlike Firefox, there is no free-software substitute
+  this engine is able to redistribute in its place (Google Chrome is
+  proprietary), so bases/ubuntu/packages.map marks the name unavailable
+  there rather than silently doing without it. Still needs an
+  en_US.UTF-8 locale and the Yocto build host's disk space (at least
+  140 GB), more here for the container images and ISOs a conformance
+  run keeps around.
 software:
   bundles: [test-engine]

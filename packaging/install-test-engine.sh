@@ -761,15 +761,16 @@ verify_installation() {  # runtime storage engine_root config python_bin min_sto
         failed=1
         if [ "$browser_status" -eq 2 ]; then
             say "        no chromium, chromium-browser, google-chrome or google-chrome-stable on PATH."
-            say "        A plain distribution archive's own chromium/chromium-browser is often a"
-            say "        transitional package that installs a *snap* rather than a real binary (true"
-            say "        of every currently supported Ubuntu release). Install google-chrome-stable"
-            say "        from Google's own apt repository (https://dl.google.com/linux/chrome/deb/)"
-            say "        yourself and rerun with --skip-packages, or use a distribution whose archive"
-            say "        ships a real chromium, such as Debian's. On a SynOS-built machine, the"
-            say "        \"test-engine\" bundle (profiles/bundles.yml) already installs a working"
-            say "        browser per base (bases/*/packages.map); if it is still missing here, the"
-            say "        build most likely skipped it — check for it in the build log."
+            say "        This installer ships neither browser itself — install one yourself and rerun"
+            say "        with --skip-packages. chromium is the first thing to try: a real package on"
+            say "        Debian, but on Ubuntu \"chromium\"/\"chromium-browser\" only installs the"
+            say "        Chromium *snap* (Pre-Depends: snapd), so it will not help there. On Ubuntu,"
+            say "        install Google Chrome yourself instead, from Google's own apt repository"
+            say "        (https://dl.google.com/linux/chrome/deb/) under Google's own terms — this"
+            say "        project does not redistribute it. On a SynOS-built machine, the \"test-engine\""
+            say "        bundle (profiles/bundles.yml) already ships a real chromium on Debian; on"
+            say "        Ubuntu it refuses to render at all rather than build one short"
+            say "        (tools/render_manifest.py, bases/ubuntu/packages.map)."
         fi
     fi
     run_check "qemu-system-x86_64 runs"                       verify_qemu                                    || failed=1

@@ -63,24 +63,21 @@ tesseract          = tesseract-ocr
 pillow             = python3-pil
 # Headless-capable Chromium/Chrome, the way tools/devtools_browser.py drives
 # it (google-chrome, google-chrome-stable, chromium-browser or chromium).
-# Not Ubuntu's own "chromium"/"chromium-browser": checked directly against
-# archive.ubuntu.com's Packages indexes for jammy, noble and resolute, it is
-# a transitional package everywhere (Pre-Depends: debconf, snapd) whose only
-# job is installing the Chromium *snap* — this base ships no snapd at all
-# (test_package_policy.py, FORBIDDEN_IMAGE_PACKAGES), so apt-get installing
-# it would either drag snapd onto the image or fail outright. Real fixes
-# checked against the archives, not from memory, before landing on this one:
-# no supported Ubuntu release packages a non-snap Chromium under any name;
-# Firefox's own "stock-package-is-forbidden" fix (an upstream-forked build,
-# mod 05) has no Chromium equivalent shipping yet. What does exist, and is
-# used here: Google's own apt repository (dl.google.com/linux/chrome/deb,
-# verified reachable, dated, real .deb, ordinary Depends — no snapd) forked
-# the same way packages/firefox-synos forks Firefox from Mozilla's own repo.
-# packages/google-chrome-synos/fork.json fetches it and drops the upstream
-# maintainer scripts and its cron auto-updater (which would otherwise
-# re-register Google's apt source on every image), keeping only the real
-# google-chrome-stable binary. amd64 and arm64 both exist upstream.
-browser-headless   = google-chrome-synos
+# Genuinely unavailable on this base, checked against the archives, not
+# assumed: archive.ubuntu.com's Packages indexes for jammy, noble and
+# resolute all show "chromium"/"chromium-browser" as a transitional package
+# (Pre-Depends: debconf, snapd) whose only job is installing the Chromium
+# *snap* — this base ships no snapd at all (test_package_policy.py,
+# FORBIDDEN_IMAGE_PACKAGES), so apt-get installing it would either drag
+# snapd onto the image or fail outright. Unlike Firefox (packages/firefox-synos,
+# forked from Mozilla's own repository — MPL-licensed, meant to be
+# redistributed), Google Chrome is proprietary: its terms do not allow a
+# third party to repackage and redistribute it the way a fork.json recipe
+# would (test_package_policy.py's ForkSourceAllowListTests enforces this).
+# So: no substitute, marked unavailable rather than silently dropped —
+# resolve_packages() refuses a profile that reaches this name on this base
+# instead of quietly shipping one package short (tools/render_manifest.py).
+browser-headless   = unavailable: Ubuntu packages no non-snap, freely redistributable Chromium (every "chromium"/"chromium-browser" is transitional, Pre-Depends snapd, and this engine ships no snapd); build the "test-engine" bundle on debian instead, whose own archive ships a real, native, BSD-licensed Chromium
 # Bundle-catalog workstation appliances (docs/BUNDLE.md, "The bundle
 # catalog"): each catalogued bundle pins one base and one suite in its own
 # manifest, so a package below only has to exist on that entry's suite,
