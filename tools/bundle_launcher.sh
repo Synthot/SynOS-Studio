@@ -159,6 +159,17 @@ refuse_existing_storage_in() {  # context-dir context-description
 # never a fresh escalation of its own - and this fails with a clear reason,
 # rather than leaving a half-removed tree, when even that cannot clear it.
 clean_dir() {  # dir
+    # Called only with .build/engine-src/<source-id>, and a source id is
+    # either a release tag or a hash - but this function removes a tree, with
+    # sudo when it has to, so it refuses anything that could reach outside
+    # that directory rather than trusting its caller to have checked.
+    case "$1" in
+        .build/engine-src/?*) ;;
+        *) fail "refusing to remove $1: only an extracted engine source under .build/engine-src/ is ever removed here" 2 ;;
+    esac
+    case "$1" in
+        *../*|*/..|*//*) fail "refusing to remove $1: the path is not a plain .build/engine-src/<id>" 2 ;;
+    esac
     [ -e "$1" ] || return 0
     rm -rf "$1" 2>/dev/null && return 0
     if [ -n "${run_as:-}" ]; then
@@ -465,6 +476,16 @@ check_for_launcher_update() {
 manifest=$(sed -n 's/.*"manifest"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' bundle.json | head -n 1)
 [ -n "$manifest" ] && [ -f "$manifest" ] || fail "bundle.json names no manifest, or $manifest is missing"
 engine=$(sed -n 's/.*"min"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' bundle.json | head -n 1)
+# A bundle is data, and this value is read straight out of it: it ends up in a
+# URL (archive/refs/tags/v<engine>.tar.gz) and, when GitHub's release list
+# cannot be reached, in the name of the directory the engine source is
+# extracted to and removed from. Digits and dots only, so nothing from a
+# bundle can ever reach outside .build/engine-src/ or into a fetched URL's
+# path.
+case "$engine" in
+    "") ;;
+    *[!0-9.]*|*..*|.*|*.) fail "bundle.json names an engine minimum that is not a version: $engine" 1 ;;
+esac
 base=$(field "$manifest" base)
 suite=$(field "$manifest" suite)
 arch=$(field "$manifest" arch)

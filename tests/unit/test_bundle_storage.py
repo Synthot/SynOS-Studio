@@ -107,6 +107,60 @@ class ContainerStorageTests(unittest.TestCase):
         shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
         return bundle
 
+    def test_a_bundle_cannot_name_an_engine_minimum_that_is_a_path(self) -> None:
+        """bundle.json is data, and its engine.min is read straight out of it into a
+        download URL and - when GitHub's release list cannot be reached, which is the
+        documented fallback - into the name of the directory the engine source is
+        extracted to and later removed from, with sudo when the files inside are
+        root-owned. A value that is not a version is refused while it is still just a
+        string, so nothing a bundle says can ever reach outside .build/engine-src/."""
+        for bad in ("../../etc", "0.1.0/../..", "..", "0.1.0;rm -rf /", "0.1."):
+            with self.subTest(min=bad), tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                bundle = write_bundle(tmp / "bundle",
+                                      {"format": 1, "manifest": "manifests/x.yml", "engine": {"min": bad}},
+                                      {"manifests/x.yml": MANIFEST})
+                shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
+                fake = self.make_fake_bin(tmp)
+                env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+                result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env,
+                                        capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+                self.assertIn("not a version", result.stderr)
+                self.assertIn(bad, result.stderr, "the refusal quotes what the bundle actually said")
+
+    def test_the_tree_removal_helper_refuses_anything_outside_the_extraction_directory(self) -> None:
+        """clean_dir() removes a whole tree, through sudo when a previous build left
+        root-owned files in it, so it does not trust its caller: it is lifted out of the
+        real launcher here and exercised directly, since the only paths that reach it in
+        the launcher itself are the ones it is meant to accept."""
+        text = (ROOT / "tools" / "bundle_launcher.sh").read_text(encoding="utf-8")
+        start = text.index("clean_dir() {")
+        end = text.index("\n}\n", start) + 3
+        harness = ("fail() { printf 'error: %s\\n' \"$1\" >&2; exit \"${2:-1}\"; }\n"
+                   + text[start:end] + '\nclean_dir "$1"\necho removed\n')
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            script = tmp / "harness.sh"
+            script.write_text(harness, encoding="utf-8")
+            keep = tmp / "keep-me"
+            keep.mkdir()
+            (keep / "file").write_text("not yours to delete", encoding="utf-8")
+            for bad in (str(keep), "/", "..", ".build/engine-src", ".build/engine-src/../../keep-me",
+                        "dist", ".build/engine-src//x"):
+                with self.subTest(path=bad):
+                    result = subprocess.run(["sh", str(script), bad], cwd=tmp, capture_output=True, text=True)
+                    self.assertEqual(2, result.returncode, result.stdout + result.stderr)
+                    self.assertIn("refusing to remove", result.stderr)
+            self.assertTrue((keep / "file").is_file(), "a refused path is never touched")
+            target = tmp / ".build" / "engine-src" / "v0.3.0"
+            target.mkdir(parents=True)
+            (target / "inside").write_text("x", encoding="utf-8")
+            result = subprocess.run(["sh", str(script), ".build/engine-src/v0.3.0"], cwd=tmp,
+                                    capture_output=True, text=True)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertFalse(target.exists(), "the one shape it accepts is actually removed")
+
     def test_podman_receives_root_and_runroot_docker_never_would(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
