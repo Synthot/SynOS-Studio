@@ -17,12 +17,16 @@
 # as an absolute path even when a relative one was given (a relative one
 # is resolved from this bundle's own directory, before anything uses it -
 # the runtime does not necessarily share this script's own working
-# directory by the time it runs). A location inside the engine source or dist\ is
-# refused, naming both paths: either one is copied, archived or hashed
-# whole as part of the build, and storage written there mid-build corrupts
-# it. -Storage X:\path (or SYNOS_CONTAINER_ROOT) puts it somewhere else
-# instead - a person passes -Storage; a service sets the variable for
-# unattended use.
+# directory by the time it runs; a relative value already remembered from
+# an older version of this script is resolved and rewritten the same way,
+# the first time it is read, rather than left ambiguous). A location
+# inside the engine source or dist\ is refused, naming both paths: either
+# one is copied, archived or hashed whole as part of the build, and
+# storage written there mid-build corrupts it - the same refusal applies
+# when that context already contains Podman's own storage, left there by
+# an earlier run, wherever it came from. -Storage X:\path (or
+# SYNOS_CONTAINER_ROOT) puts it somewhere else instead - a person passes
+# -Storage; a service sets the variable for unattended use.
 # -ContainerRoot still works, an older spelling of the same flag. This is
 # passed straight to Podman the way build.sh does, but has not been
 # exercised on Windows by the project: Podman Desktop on Windows commonly
@@ -101,6 +105,38 @@ function Test-StorageInside([string]$ContextDir, [string]$ContextDescription) {
 }
 
 function Fail([string]$Message, [int]$Code = 1) { Write-Host "error: $Message" -ForegroundColor Red; exit $Code }
+
+# Podman's own storage, once created anywhere, always has this shape at its
+# own root - confirmed against a real, corrupted bundle, not guessed at:
+# overlay, overlay-containers, overlay-images, overlay-layers, libpod,
+# db.sql, defaultNetworkBackend. Checked at the context's own root and one
+# level inside it, since that is where a previous run's storage (a name
+# nothing here controls) actually landed in the field.
+function Find-StorageRootInside([string]$Dir) {
+    $markers = @("overlay", "overlay-containers", "overlay-images", "overlay-layers", "libpod", "db.sql", "defaultNetworkBackend")
+    $candidates = @($Dir) + @(Get-ChildItem -Path $Dir -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+    foreach ($candidate in $candidates) {
+        if (-not (Test-Path $candidate -PathType Container)) { continue }
+        foreach ($marker in $markers) {
+            if (Test-Path (Join-Path $candidate $marker)) { return $candidate }
+        }
+    }
+    return $null
+}
+# Before a whole-directory read (a Containerfile's "COPY . /opt/synos" or
+# equivalent) can walk a context that already contains a storage root,
+# wherever it came from: refuse and name both paths, plus the command to
+# remove it. Independent of Test-StorageInside above, which only stops
+# *this* run's own storage from landing somewhere dangerous - this catches
+# one a run before this fix already left behind.
+function Test-ExistingStorageIn([string]$ContextDir, [string]$ContextDescription) {
+    $context = Resolve-AbsolutePath $ContextDir
+    if (-not (Test-Path $context)) { return }
+    $found = Find-StorageRootInside $context
+    if ($found) {
+        Fail "$ContextDescription ($context) already contains Podman's own storage at $found, left there by an earlier run; this build copies, archives or hashes it whole. Remove it first: Remove-Item -Recurse -Force '$found'" 2
+    }
+}
 foreach ($value in @($Channel, $env:SYNOS_CHANNEL)) {
     if ($value -and $value -notin @("stable", "development")) { Fail "channel must be 'stable' or 'development' (got '$value')" }
 }
@@ -460,7 +496,14 @@ if ((Test-IsPodman) -and (-not $ContainerRoot) -and (Test-Path $rememberedRootFi
         $storageAsked = $true
         Write-Host "using Podman's own storage for this build, not this bundle's disk (change: -Storage <path>; forget: del .build\container-root)"
     } elseif ($remembered) {
-        $ContainerRoot = $remembered
+        # A relative value here was written by a launcher older than the
+        # absolute-path fix above. Resolved against the bundle rather than
+        # discarded, since the person already chose that name on purpose -
+        # discarding it would silently move their storage to a location
+        # they never chose - and rewritten here as absolute, once, so the
+        # file itself is never ambiguous again.
+        $ContainerRoot = Resolve-AbsolutePath $remembered
+        if ($ContainerRoot -ne $remembered) { Remember-ContainerRoot $ContainerRoot }
         $storageAsked = $true
         Write-Host "using the remembered build storage: $ContainerRoot (change: -Storage <path>; forget: del .build\container-root)"
     }
@@ -509,7 +552,10 @@ if ((Test-IsPodman) -and ($ContainerRoot -or $ContainerRunroot)) {
         # for itself always lands under this fixed directory, so a storage
         # location inside it is refused before the directory is created.
         Test-StorageInside (Join-Path $PSScriptRoot ".build\engine-src") "the engine source a build unpacks for itself (.build\engine-src\)"
-        if ($env:SYNOS_ENGINE_SOURCE) { Test-StorageInside $env:SYNOS_ENGINE_SOURCE "the engine source this image would be built from" }
+        if ($env:SYNOS_ENGINE_SOURCE) {
+            Test-StorageInside $env:SYNOS_ENGINE_SOURCE "the engine source this image would be built from"
+            Test-ExistingStorageIn $env:SYNOS_ENGINE_SOURCE "the engine source this image would be built from"
+        }
         New-Item -ItemType Directory -Force -Path $ContainerRoot | Out-Null
         $runtimeRootArgs += @("--root", $ContainerRoot)
         if (-not $containerRootAuto) { Remember-ContainerRoot $ContainerRoot }
@@ -638,6 +684,7 @@ function Build-EngineImage([switch]$Forced) {
     }
     $src = Resolve-AbsolutePath $src
     Test-StorageInside $src "the engine source this image is built from"
+    Test-ExistingStorageIn $src "the engine source this image is built from"
     if (-not (Test-Path (Join-Path $src "bases\$base\Containerfile"))) { Fail "$src has no bases\$base\Containerfile: not an engine checkout" 2 }
     $script:buildSrc = $src
     $localTag = if ($resolvedChannel -eq "development") { "synos-builder:$base-$suite-dev-$sourceId" } else { "synos-builder:$base-$suite-$sourceId" }

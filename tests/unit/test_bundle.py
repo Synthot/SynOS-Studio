@@ -780,6 +780,268 @@ class StableChannelTests(unittest.TestCase):
         self.assertEqual("development", via_env["channel"])
 
 
+ENGINE_CACHE_TOOLS = CHANNEL_TOOLS + ("gzip", "sha256sum", "tail", "cut")
+
+
+def make_engine_archive_bytes(containerfile_body: bytes = b"FROM scratch\n") -> bytes:
+    """A minimal, valid engine-checkout tarball: one top-level directory
+    (stripped on extraction, so its name is never checked) holding just
+    enough (bases/ubuntu/Containerfile) to pass build_engine_image()'s own
+    sanity check."""
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tf:
+        for name, data in (("SynOS-Studio-x/VERSION", b"0.2.0\n"),
+                           ("SynOS-Studio-x/bases/ubuntu/Containerfile", containerfile_body)):
+            info = tarfile.TarInfo(name=name)
+            info.size = len(data)
+            tf.addfile(info, io.BytesIO(data))
+    return buf.getvalue()
+
+
+class EngineSourceCacheTests(unittest.TestCase):
+    """items 175-178: the archive and its extraction are each reused rather
+    than refetched/re-extracted whenever it is safe to, and the launcher
+    says which it is doing. Every runtime and network call here is a fake
+    that logs its argv; no real build, fetch or extraction of a real engine
+    checkout ever runs (the tarball fixtures are synthetic and tiny)."""
+
+    def make_fake(self, tmp: Path) -> Path:
+        fake = tmp / "bin"
+        fake.mkdir()
+        for tool in ENGINE_CACHE_TOOLS:
+            found = shutil.which(tool)
+            if found:
+                (fake / tool).symlink_to(found)
+        fake_df_always(fake)
+        return fake
+
+    def write_docker_never_has_the_published_image(self, fake: Path, log: Path, image_inspect_hits: tuple[str, ...] = ()) -> None:
+        hits = " ".join(image_inspect_hits)
+        write_executable(fake / "docker", (
+            "#!/bin/sh\n"
+            f"printf '%s\\n' \"$*\" >> '{log}'\n"
+            "case \"$1 $2\" in\n"
+            "  'image inspect')\n"
+            f"    for hit in {hits or '__none__'}; do case \"$*\" in *\"$hit\"*) exit 0 ;; esac; done\n"
+            "    exit 1 ;;\n"
+            "  *) case \"$1\" in pull) exit 1 ;; *) exit 0 ;; esac ;;\n"
+            "esac\n"
+        ))
+
+    def test_stable_channel_image_already_built_needs_no_archive_download(self) -> None:
+        """Item 175: on stable, the release tag is the identity, known
+        before any download; when an image already carries that tag, the
+        archive is never fetched - only the release lookup itself, already
+        needed to name the tag in the first place, touches the network."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel=None, engine_min="0.2.0")
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            self.write_docker_never_has_the_published_image(fake, log, ("ubuntu-resolute-v0.2.0",))
+            tags_json = tmp / "tags.json"
+            tags_json.write_text('[{"name": "v0.1.0"}, {"name": "v0.2.0"}]', encoding="utf-8")
+            curl_log = tmp / "curl.log"
+            curl_script = (
+                "#!/bin/sh\n"
+                f"printf '%s\\n' \"$*\" >> '{curl_log}'\n"
+                "out=\"\"; prev=\"\"\n"
+                "for a in \"$@\"; do\n"
+                "    if [ \"$prev\" = \"-o\" ]; then out=$a; fi\n"
+                "    prev=$a\n"
+                "done\n"
+                "case \"$*\" in\n"
+                f"    *'api.github.com/repos/Synthot/SynOS-Studio/tags'*) cp '{tags_json}' \"$out\" ;;\n"
+                "    *'archive/refs/tags'*) echo 'must not be fetched: the image already exists' >&2; exit 1 ;;\n"
+                "    *) exit 1 ;;\n"
+                "esac\n"
+            )
+            write_executable(fake / "curl", curl_script)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("using the engine image already built for v0.2.0: synos-builder:ubuntu-resolute-v0.2.0", result.stdout)
+            calls = curl_log.read_text(encoding="utf-8").splitlines() if curl_log.exists() else []
+            self.assertTrue(any("tags" in c for c in calls), calls)
+            self.assertFalse(any("archive/refs/tags" in c for c in calls),
+                             "the archive must never be fetched once the image for its tag already exists")
+            self.assertFalse((bundle / ".build" / "engine-src.tar.gz").exists())
+
+    def test_development_archive_unchanged_upstream_is_reused_not_redownloaded(self) -> None:
+        """Item 176/178: an unchanged development archive costs a 304, not
+        45 MB - and the launcher says a reuse happened, not a download."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel="development", engine_min="0.1.0")
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            self.write_docker_never_has_the_published_image(fake, log)
+            archive_bytes = make_engine_archive_bytes()
+            archive_file = tmp / "archive.tar.gz"
+            archive_file.write_bytes(archive_bytes)
+            curl_log = tmp / "curl.log"
+            etag = '"fixed-etag"'
+            curl_script = (
+                "#!/bin/sh\n"
+                f"printf '%s\\n' \"$*\" >> '{curl_log}'\n"
+                "out=\"\"; headerfile=\"\"; inm=\"\"; prev=\"\"\n"
+                "for a in \"$@\"; do\n"
+                "    case \"$prev\" in\n"
+                "        -o) out=$a ;;\n"
+                "        -D) headerfile=$a ;;\n"
+                f"        -H) case \"$a\" in If-None-Match:*) inm=$(printf '%s' \"$a\" | sed 's/^If-None-Match: *//') ;; esac ;;\n"
+                "    esac\n"
+                "    prev=$a\n"
+                "done\n"
+                f"if [ \"$inm\" = '{etag}' ]; then\n"
+                "    [ -n \"$headerfile\" ] && : > \"$headerfile\"\n"
+                "    printf '304'\n"
+                "    exit 0\n"
+                "fi\n"
+                f"[ -n \"$headerfile\" ] && printf 'ETag: {etag}\\r\\n' > \"$headerfile\"\n"
+                f"[ -n \"$out\" ] && cp '{archive_file}' \"$out\"\n"
+                "printf '200'\n"
+            )
+            write_executable(fake / "curl", curl_script)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+
+            first = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, first.returncode, first.stdout + first.stderr)
+            self.assertIn("downloading the engine source from", first.stdout)
+            source_id = hashlib.sha256(archive_bytes).hexdigest()[:12]
+            extracted = bundle / ".build" / "engine-src" / source_id
+            marker = bundle / ".build" / "engine-src" / f"{source_id}.ok"
+            self.assertTrue(marker.exists(), "a completed extraction leaves its marker behind")
+            first_marker_mtime = marker.stat().st_mtime_ns
+
+            curl_log.write_text("", encoding="utf-8")
+            second = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, second.returncode, second.stdout + second.stderr)
+            self.assertNotIn("downloading the engine source from", second.stdout)
+            self.assertIn("the development engine source is unchanged upstream; reusing", second.stdout)
+            self.assertIn(f"reusing the engine source already extracted for {source_id}: ", second.stdout)
+            self.assertEqual(first_marker_mtime, marker.stat().st_mtime_ns, "a reused extraction is never touched again")
+            calls = curl_log.read_text(encoding="utf-8").splitlines()
+            self.assertTrue(any("If-None-Match" in c for c in calls), calls)
+
+    def test_development_archive_changed_upstream_downloads_and_extracts_fresh(self) -> None:
+        """Item 176/177: when the server answers with new content (a real
+        200, not a 304), a fresh download and a new content-addressed
+        extraction happen - the old one is left alone, not reused, and not
+        deleted either, since it may still be exactly what an old cached
+        image was built from."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel="development", engine_min="0.1.0")
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            self.write_docker_never_has_the_published_image(fake, log)
+            old_bytes = make_engine_archive_bytes(b"FROM scratch\n# v1\n")
+            new_bytes = make_engine_archive_bytes(b"FROM scratch\n# v2\n")
+            state_dir = tmp / "state"
+            state_dir.mkdir()
+            (state_dir / "archive").write_bytes(old_bytes)
+            (state_dir / "etag").write_text('"etag-v1"', encoding="utf-8")
+            curl_log = tmp / "curl.log"
+            curl_script = (
+                "#!/bin/sh\n"
+                f"printf '%s\\n' \"$*\" >> '{curl_log}'\n"
+                "out=\"\"; headerfile=\"\"; inm=\"\"; prev=\"\"\n"
+                "for a in \"$@\"; do\n"
+                "    case \"$prev\" in\n"
+                "        -o) out=$a ;;\n"
+                "        -D) headerfile=$a ;;\n"
+                f"        -H) case \"$a\" in If-None-Match:*) inm=$(printf '%s' \"$a\" | sed 's/^If-None-Match: *//') ;; esac ;;\n"
+                "    esac\n"
+                "    prev=$a\n"
+                "done\n"
+                f"current_etag=$(cat '{state_dir}/etag')\n"
+                "if [ \"$inm\" = \"$current_etag\" ]; then\n"
+                "    [ -n \"$headerfile\" ] && : > \"$headerfile\"\n"
+                "    printf '304'\n"
+                "    exit 0\n"
+                "fi\n"
+                f"[ -n \"$headerfile\" ] && printf 'ETag: %s\\r\\n' \"$current_etag\" > \"$headerfile\"\n"
+                f"[ -n \"$out\" ] && cp '{state_dir}/archive' \"$out\"\n"
+                "printf '200'\n"
+            )
+            write_executable(fake / "curl", curl_script)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+
+            first = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, first.returncode, first.stdout + first.stderr)
+            old_id = hashlib.sha256(old_bytes).hexdigest()[:12]
+            old_marker = bundle / ".build" / "engine-src" / f"{old_id}.ok"
+            self.assertTrue(old_marker.exists())
+
+            # the server now has new content under a new ETag - simulating
+            # main having actually moved
+            (state_dir / "archive").write_bytes(new_bytes)
+            (state_dir / "etag").write_text('"etag-v2"', encoding="utf-8")
+            second = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, second.returncode, second.stdout + second.stderr)
+            self.assertIn("downloaded a changed engine source from", second.stdout)
+            new_id = hashlib.sha256(new_bytes).hexdigest()[:12]
+            new_marker = bundle / ".build" / "engine-src" / f"{new_id}.ok"
+            self.assertTrue(new_marker.exists(), "the changed content gets its own, new content-addressed directory")
+            self.assertNotEqual(old_id, new_id)
+            self.assertTrue(old_marker.exists(), "the old extraction is left in place, not deleted")
+
+    def test_extracted_tree_missing_its_completion_marker_is_cleaned_and_reextracted(self) -> None:
+        """Item 177: a tree without its own completion marker is never
+        trusted, even when the archive it would come from is itself
+        reused unchanged (a 304) - it is removed and extracted again."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = make_channel_bundle(tmp, channel="development", engine_min="0.1.0")
+            fake = self.make_fake(tmp)
+            log = tmp / "runtime.log"
+            self.write_docker_never_has_the_published_image(fake, log)
+            archive_bytes = make_engine_archive_bytes()
+            archive_file = tmp / "archive.tar.gz"
+            archive_file.write_bytes(archive_bytes)
+            curl_log = tmp / "curl.log"
+            etag = '"fixed-etag"'
+            curl_script = (
+                "#!/bin/sh\n"
+                f"printf '%s\\n' \"$*\" >> '{curl_log}'\n"
+                "out=\"\"; headerfile=\"\"; inm=\"\"; prev=\"\"\n"
+                "for a in \"$@\"; do\n"
+                "    case \"$prev\" in\n"
+                "        -o) out=$a ;;\n"
+                "        -D) headerfile=$a ;;\n"
+                f"        -H) case \"$a\" in If-None-Match:*) inm=$(printf '%s' \"$a\" | sed 's/^If-None-Match: *//') ;; esac ;;\n"
+                "    esac\n"
+                "    prev=$a\n"
+                "done\n"
+                f"if [ \"$inm\" = '{etag}' ]; then\n"
+                "    [ -n \"$headerfile\" ] && : > \"$headerfile\"\n"
+                "    printf '304'\n"
+                "    exit 0\n"
+                "fi\n"
+                f"[ -n \"$headerfile\" ] && printf 'ETag: {etag}\\r\\n' > \"$headerfile\"\n"
+                f"[ -n \"$out\" ] && cp '{archive_file}' \"$out\"\n"
+                "printf '200'\n"
+            )
+            write_executable(fake / "curl", curl_script)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+
+            first = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, first.returncode, first.stdout + first.stderr)
+            source_id = hashlib.sha256(archive_bytes).hexdigest()[:12]
+            marker = bundle / ".build" / "engine-src" / f"{source_id}.ok"
+            extracted = bundle / ".build" / "engine-src" / source_id
+            self.assertTrue(marker.exists())
+            marker.unlink()  # simulate an earlier run interrupted mid-extraction
+
+            second = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, second.returncode, second.stdout + second.stderr)
+            self.assertNotIn(f"reusing the engine source already extracted for {source_id}", second.stdout,
+                             "a tree with no marker is never reused as-is")
+            self.assertTrue(marker.exists(), "re-extraction recreates the marker")
+            self.assertTrue((extracted / "bases" / "ubuntu" / "Containerfile").exists())
+
+
 class SudoEnvironmentTests(unittest.TestCase):
     """The launcher's documented variables must reach an elevated build rather
     than being silently dropped by sudo's own environment reset (docs/BUNDLE.md

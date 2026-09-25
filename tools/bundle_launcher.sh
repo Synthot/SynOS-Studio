@@ -32,6 +32,17 @@
 # this script's own output, in dist/build.log, and in the image it is built
 # from, so nobody mistakes it for a released build.
 #
+# When no engine image can be pulled, this script builds one locally from
+# the engine source, extracted once per source identity into its own
+# directory under .build/engine-src/ (the stable channel's release tag, or a
+# hash of the archive on development) and reused - not re-downloaded, not
+# re-extracted - on every later run for that same identity, the same way
+# the image itself is. A build context already containing podman's own
+# storage (left there by a run before this existed) is refused by name
+# rather than walked; that directory owns whatever a previous run left
+# inside it too, root-owned files included, and is removed and re-extracted
+# rather than silently reused when it does not check out clean.
+#
 # Where the build's bytes land needs nothing from you on podman: this script
 # works out on its own that the disk to use is the one this bundle was
 # unpacked to, and keeps images, layers and the chroot in .build/ right next
@@ -107,6 +118,66 @@ refuse_storage_inside() {  # context-dir context-description
             fail "the build's storage ($container_root) is inside $2 ($context), which this build copies, archives or hashes whole; point --storage at a location outside it" 2 ;;
     esac
 }
+
+# podman's own storage, once created anywhere, always has this shape at its
+# own root - confirmed against a real, corrupted bundle, not guessed at:
+# overlay/, overlay-containers/, overlay-images/, overlay-layers/, libpod/,
+# db.sql, defaultNetworkBackend. Checked at the context's own root and one
+# level inside it, since that is where a previous run's --storage (a name
+# nothing here controls) actually landed in the field; prints the storage
+# root's path on a match, so a caller can name it, and answers nothing (via
+# its own exit status) otherwise.
+find_storage_root_inside() {  # dir
+    for candidate in "$1" "$1"/*/; do
+        [ -d "$candidate" ] || continue
+        for marker in overlay overlay-containers overlay-images overlay-layers libpod db.sql defaultNetworkBackend; do
+            if [ -e "${candidate%/}/$marker" ]; then
+                printf '%s\n' "${candidate%/}"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+# Before COPY . /opt/synos (or an equivalent whole-directory read) can walk
+# a context that already contains a storage root, wherever it came from:
+# refuse and name both paths, plus the command to remove it. Independent of
+# refuse_storage_inside above, which only stops *this* run's own storage
+# from landing somewhere dangerous - this catches one a run before this fix
+# already left behind.
+refuse_existing_storage_in() {  # context-dir context-description
+    context=$(abs_path "$1")
+    found=$(find_storage_root_inside "$context") || return 0
+    fail "$2 ($context) already contains podman's own storage at $found, left there by an earlier run; this build copies, archives or hashes it whole. Remove it first: rm -rf $found (root-owned files there may need: sudo rm -rf $found)" 2
+}
+
+# Removes a directory this build is about to recreate from scratch,
+# tolerating root-owned files a previous run's container runtime left
+# inside it (podman's own storage, unpacked --privileged). Plain rm -rf,
+# run as the invoking user, cannot read into those; escalated exactly when
+# this script already decided the runtime itself needs to be ($run_as) -
+# never a fresh escalation of its own - and this fails with a clear reason,
+# rather than leaving a half-removed tree, when even that cannot clear it.
+clean_dir() {  # dir
+    # Called only with .build/engine-src/<source-id>, and a source id is
+    # either a release tag or a hash - but this function removes a tree, with
+    # sudo when it has to, so it refuses anything that could reach outside
+    # that directory rather than trusting its caller to have checked.
+    case "$1" in
+        .build/engine-src/?*) ;;
+        *) fail "refusing to remove $1: only an extracted engine source under .build/engine-src/ is ever removed here" 2 ;;
+    esac
+    case "$1" in
+        *../*|*/..|*//*) fail "refusing to remove $1: the path is not a plain .build/engine-src/<id>" 2 ;;
+    esac
+    [ -e "$1" ] || return 0
+    rm -rf "$1" 2>/dev/null && return 0
+    if [ -n "${run_as:-}" ]; then
+        $run_as rm -rf "$1" 2>/dev/null && return 0
+    fi
+    fail "could not remove $1, left behind by an earlier build (likely root-owned container storage inside it); remove it yourself: sudo rm -rf $1" 2
+}
+
 [ -z "${SYNOS_ENGINE_SOURCE:-}" ] || SYNOS_ENGINE_SOURCE=$(abs_path "$SYNOS_ENGINE_SOURCE")
 
 yes_to_all=${SYNOS_YES:-}
@@ -135,7 +206,7 @@ for arg in "$@"; do
         --container-runroot=*) container_runroot=${arg#--container-runroot=} ;;
         --channel=*) channel_flag=${arg#--channel=} ;;
         check|build|update) command_word=$arg ;;
-        -h|--help) sed -n '2,75p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,86p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) printf 'unknown argument: %s\n' "$arg" >&2; exit 1 ;;
     esac
 done
@@ -405,6 +476,16 @@ check_for_launcher_update() {
 manifest=$(sed -n 's/.*"manifest"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' bundle.json | head -n 1)
 [ -n "$manifest" ] && [ -f "$manifest" ] || fail "bundle.json names no manifest, or $manifest is missing"
 engine=$(sed -n 's/.*"min"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' bundle.json | head -n 1)
+# A bundle is data, and this value is read straight out of it: it ends up in a
+# URL (archive/refs/tags/v<engine>.tar.gz) and, when GitHub's release list
+# cannot be reached, in the name of the directory the engine source is
+# extracted to and removed from. Digits and dots only, so nothing from a
+# bundle can ever reach outside .build/engine-src/ or into a fetched URL's
+# path.
+case "$engine" in
+    "") ;;
+    *[!0-9.]*|*..*|.*|*.) fail "bundle.json names an engine minimum that is not a version: $engine" 1 ;;
+esac
 base=$(field "$manifest" base)
 suite=$(field "$manifest" suite)
 arch=$(field "$manifest" arch)
@@ -644,7 +725,13 @@ free_kb=$(df -Pk . | awk 'NR==2 {print $4}')
 min_store_kb=31457280                          # 30 GB
 
 # A location already chosen for this bundle (by hand, or by answering the
-# question below on an earlier run) is remembered, never asked twice.
+# question below on an earlier run) is remembered, never asked twice. A
+# relative value here was written by a launcher older than the fix above;
+# resolved against the bundle rather than discarded, since the person
+# already chose that name on purpose - discarding it would silently move
+# their storage to a location they never chose, right when this script is
+# trying hardest not to do exactly that - and rewritten here as absolute,
+# once, so the file itself is never ambiguous again.
 storage_asked=""
 if is_podman && [ -z "$container_root" ] && [ -z "$macos" ] && [ -f "$remembered_root_file" ]; then
     remembered=$(cat "$remembered_root_file" 2>/dev/null || true)
@@ -653,6 +740,7 @@ if is_podman && [ -z "$container_root" ] && [ -z "$macos" ] && [ -f "$remembered
         default) storage_asked=1
                  say "using podman's own storage for this build, not this bundle's disk (change: --storage=<path>; forget: rm $remembered_root_file)" ;;
         *) container_root=$(abs_path "$remembered"); storage_asked=1
+           [ "$container_root" = "$remembered" ] || remember_container_root "$container_root"
            say "using the remembered build storage: $container_root (change: --storage=<path>; forget: rm $remembered_root_file)" ;;
     esac
 fi
@@ -713,7 +801,10 @@ if is_podman && { [ -n "$container_root" ] || [ -n "$container_runroot" ]; }; th
             # here, before the directory is created and before the location is
             # remembered for later runs - not only later, in build_engine_image().
             refuse_storage_inside "$PWD/.build/engine-src" "the engine source a build unpacks for itself (.build/engine-src/)"
-            [ -z "${SYNOS_ENGINE_SOURCE:-}" ] || refuse_storage_inside "$SYNOS_ENGINE_SOURCE" "the engine source this image would be built from"
+            if [ -n "${SYNOS_ENGINE_SOURCE:-}" ]; then
+                refuse_storage_inside "$SYNOS_ENGINE_SOURCE" "the engine source this image would be built from"
+                refuse_existing_storage_in "$SYNOS_ENGINE_SOURCE" "the engine source this image would be built from"
+            fi
             mkdir -p "$container_root" 2>/dev/null || fail "could not create $container_root (--storage)" 2
             check_overlay_fs "$container_root"
             [ -n "$container_root_auto" ] || remember_container_root "$container_root"
@@ -820,38 +911,139 @@ resolve_stable_release() {
     fail "this bundle names no minimum engine version and GitHub's release list could not be checked (offline, or its anonymous rate limit); set SYNOS_ENGINE_URL or SYNOS_ENGINE_SOURCE, try again shortly, or build with --channel=development" 2
 }
 
+# Fetches the engine source archive, reusing the existing file unchanged
+# when the server confirms nothing changed - checked with an ETag
+# (If-None-Match): GitHub's own archive endpoint does not honor
+# If-Modified-Since (confirmed against the real service - it sends no
+# Last-Modified header at all), only If-None-Match, which it answers with a
+# real 304 and no body. Always fetched in full the first time, or whenever
+# no ETag was kept from before; this is exactly where the moving
+# development archive earns the check, since a tag's own URL never repeats
+# with different content in the first place.
+fetch_engine_archive() {  # url archive-file
+    etag_file="$2.etag"
+    headers=".build/engine-src.headers.$$"
+    if [ -f "$2" ] && [ -s "$etag_file" ] && command -v curl >/dev/null 2>&1; then
+        etag=$(cat "$etag_file")
+        http_code=$(curl -sS -L --connect-timeout 5 --max-time 120 -w '%{http_code}' \
+                    -H "If-None-Match: $etag" -D "$headers" -o "$2.new" "$1" 2>/dev/null || true)
+        case "$http_code" in
+            304)
+                rm -f "$2.new" "$headers"
+                say "the development engine source is unchanged upstream; reusing $2"
+                return 0 ;;
+            200)
+                if [ -s "$2.new" ]; then
+                    mv -f "$2.new" "$2"
+                    sed -n 's/^[Ee][Tt][Aa][Gg]:[[:space:]]*//p' "$headers" | tail -n 1 | tr -d '\r' > "$etag_file"
+                    rm -f "$headers"
+                    say "downloaded a changed engine source from $1"
+                    return 0
+                fi ;;
+        esac
+        rm -f "$2.new" "$headers"
+    fi
+    say "downloading the engine source from $1"
+    if command -v curl >/dev/null 2>&1; then
+        if [ -t 1 ]; then curl -fL --progress-bar -D "$headers" "$1" -o "$2.new" || fail "downloading $1 failed" 2
+        else curl -fsSL -D "$headers" "$1" -o "$2.new" || fail "downloading $1 failed" 2; fi
+        sed -n 's/^[Ee][Tt][Aa][Gg]:[[:space:]]*//p' "$headers" | tail -n 1 | tr -d '\r' > "$etag_file" 2>/dev/null || rm -f "$etag_file"
+        rm -f "$headers"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q --show-progress "$1" -O "$2.new" || fail "downloading $1 failed" 2
+        rm -f "$etag_file"
+    else
+        fail "curl or wget is needed to download the engine source (or set SYNOS_ENGINE_SOURCE to a checkout)" 2
+    fi
+    mv -f "$2.new" "$2"
+}
+
+# A content-addressed extraction is trusted only when its own completion
+# marker is there (a half-extracted tree, from an interrupted run, never
+# is) and it still passes the same storage-root scan as any other build
+# context - the marker survives contamination that happened after
+# extraction finished; the scan does not.
+engine_src_is_reusable() {  # dir marker-file
+    [ -d "$1" ] || return 1
+    [ -f "$2" ] || return 1
+    find_storage_root_inside "$1" >/dev/null && return 1
+    return 0
+}
+
 build_engine_image() {  # build_engine_image [forced] - forced skips reusing a same-named image already on this machine
     forced=${1:-}
     src=${SYNOS_ENGINE_SOURCE:-}
-    if [ -z "$src" ]; then
+    if [ -n "$src" ]; then
+        source_id="local"
+        src=$(abs_path "$src")
+    else
         if [ -n "${SYNOS_ENGINE_URL:-}" ]; then
             url=$SYNOS_ENGINE_URL
+            source_id=""
         elif [ "$channel" = development ]; then
             url=https://github.com/Synthot/SynOS-Studio/archive/refs/heads/main.tar.gz
+            source_id=""
         else
             [ -n "${resolved_tag:-}" ] || resolve_stable_release
             url="$GITHUB_REPO_URL/archive/refs/tags/$resolved_tag.tar.gz"
             say "channel stable: building from release $resolved_tag ($resolved_note)"
+            # The release tag is immutable once published, so it is as good an
+            # identity as a hash of the download - without needing the download
+            # to know it first. A changed engine is still always a new tag, so
+            # the "new engine, new name, new build" guarantee this replaces
+            # still holds; only how cheaply that name is reached changes.
+            source_id=$resolved_tag
         fi
-        say "downloading the engine source from $url"
-        mkdir -p .build/engine-src
-        if command -v curl >/dev/null 2>&1; then
-            if [ -t 1 ]; then curl -fL --progress-bar "$url" -o .build/engine-src.tar.gz || fail "downloading $url failed" 2
-            else curl -fsSL "$url" -o .build/engine-src.tar.gz || fail "downloading $url failed" 2; fi
-        elif command -v wget >/dev/null 2>&1; then wget -q --show-progress "$url" -O .build/engine-src.tar.gz || fail "downloading $url failed" 2
-        else fail "curl or wget is needed to download the engine source (or set SYNOS_ENGINE_SOURCE to a checkout)" 2; fi
-        rm -rf .build/engine-src/*
-        tar -xzf .build/engine-src.tar.gz -C .build/engine-src || fail "the engine source archive could not be unpacked" 2
-        src=$(ls -d .build/engine-src/*/ | head -n 1)
-        # The image carries a copy of the engine, so it is named after the source it
-        # was built from; a changed engine gives a new name and a rebuild, which the
-        # container tool's layer cache keeps short (the package layers are unchanged).
-        source_id=$(sha256sum .build/engine-src.tar.gz | cut -c1-12)
-    else
-        source_id="local"
+        mkdir -p .build
+        archive_file=.build/engine-src.tar.gz
+
+        # Known without fetching anything on the stable channel: a run that
+        # has already built this image touches the network for nothing but
+        # the release lookup above.
+        if [ -n "$source_id" ]; then
+            if [ "$channel" = development ]; then local_tag="synos-builder:$base-$suite-dev-$source_id"
+            else local_tag="synos-builder:$base-$suite-$source_id"; fi
+            if [ -z "$forced" ] && run_runtime image inspect "$local_tag" >/dev/null 2>&1; then
+                say "using the engine image already built for $source_id: $local_tag"
+                image=$local_tag; return 0
+            fi
+        fi
+
+        # A source already extracted for this exact identity, complete and
+        # still clean, is reused as-is - no download, nothing re-extracted
+        # for nothing.
+        if [ -n "$source_id" ] && engine_src_is_reusable ".build/engine-src/$source_id" ".build/engine-src/$source_id.ok"; then
+            say "reusing the engine source already extracted for $source_id: .build/engine-src/$source_id"
+        else
+            fetch_engine_archive "$url" "$archive_file"
+            [ -n "$source_id" ] || source_id=$(sha256sum "$archive_file" | cut -c1-12)
+            src_dir=".build/engine-src/$source_id"
+            if ! engine_src_is_reusable "$src_dir" "$src_dir.ok"; then
+                # The directory a source is extracted to is owned by that
+                # extraction: whatever a previous run left inside it - a
+                # half extraction, or a poisoned container storage root,
+                # root-owned or not - is removed first, never reused
+                # silently.
+                clean_dir "$src_dir"
+                rm -f "$src_dir.ok"
+                mkdir -p "$src_dir"
+                tar -xzf "$archive_file" -C "$src_dir" --strip-components=1 \
+                    || { clean_dir "$src_dir"; fail "the engine source archive could not be unpacked" 2; }
+                : > "$src_dir.ok"
+            else
+                # The archive's own identity was not known until it was
+                # fetched (development channel), but the fetch itself just
+                # said whether it changed; when it did not, and the tree
+                # from last time is still there and still trustworthy, say
+                # that plainly too, the same as the stable channel's
+                # already-known-identity case above does.
+                say "reusing the engine source already extracted for $source_id: $src_dir"
+            fi
+        fi
+        src=$(abs_path ".build/engine-src/$source_id")
     fi
-    src=$(abs_path "$src")
     refuse_storage_inside "$src" "the engine source this image is built from"
+    refuse_existing_storage_in "$src" "the engine source this image is built from"
     [ -f "$src/bases/$base/Containerfile" ] || fail "$src has no bases/$base/Containerfile: not an engine checkout" 2
     if [ "$channel" = development ]; then
         local_tag="synos-builder:$base-$suite-dev-$source_id"
