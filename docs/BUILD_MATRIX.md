@@ -795,6 +795,21 @@ not fit this repository's `packages/` recipe pipeline (which builds
 packages for images this engine produces, not for the machine that drives
 the build).
 
+`packaging/install-test-engine.sh` automates steps 2-5 below on a single
+machine already holding a checkout (step 1): it detects the distribution
+(Debian/Ubuntu, Fedora/RHEL, openSUSE, Arch or Alpine; anything else is
+refused rather than guessed), installs whichever of podman, QEMU, xorriso,
+tesseract, Pillow and a headless browser is actually missing, points
+podman's rootless storage at whichever disk has room for a build (an
+explicit `--storage-path`, or the largest suitable filesystem it finds),
+writes `/etc/synos/conformance.yml` from the answers given on the command
+line or interactively (never a template left to edit blind, and never with
+a credential in it), installs the four units with a dedicated user, and
+then runs the cheap checks below for real. `--dry-run` prints every step
+without doing any of it; `--help` lists every option.
+
+By hand:
+
 1. Clone this repository somewhere stable, e.g. `/opt/synos-engine`
    (`git clone … /opt/synos-engine && cd /opt/synos-engine && make check`
    to confirm the host can build at all — `tools/synos check`).
