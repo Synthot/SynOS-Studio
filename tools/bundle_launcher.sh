@@ -4,6 +4,7 @@
 #   ./build.sh            build; the ISO and its evidence land in ./dist
 #   ./build.sh check      only check that this machine can build (installs nothing)
 #   ./build.sh update     fetch the latest launcher scripts and replace these four files, then exit
+#   ./build.sh reset-storage   remove this bundle's own container storage and forget where it was (dist/ is untouched)
 #   ./build.sh --yes      answer yes to the questions (install the container runtime)
 #   ./build.sh --channel=stable|development   override which engine pipeline builds this bundle
 #   ./build.sh --storage /path   keep this build's images, layers and chroot there instead
@@ -70,6 +71,16 @@
 # absolute path) so the next run is never asked again ("forget" it: rm
 # .build/container-root). --storage/SYNOS_CONTAINER_ROOT/--container-root
 # always win over the remembered value, and update it.
+#
+# A storage location that carries state from a different configuration than
+# the one now being asked of it (moved by hand, or reused after a change of
+# --storage) fails with podman's own line shown first, then explained,
+# rather than an opaque build failure: `./build.sh reset-storage` removes
+# this bundle's own container storage (wherever it is remembered to be, the
+# default location, an extracted engine source, and the storage debris an
+# older launcher could leave at the bundle's own root) and forgets where it
+# was, so a wedged build is one command away from starting fresh - dist/
+# (the build log and the evidence next to the ISO) is never touched by it.
 #
 # Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
 #   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
@@ -205,8 +216,8 @@ for arg in "$@"; do
         --container-root=*) container_root=${arg#--container-root=} ;;
         --container-runroot=*) container_runroot=${arg#--container-runroot=} ;;
         --channel=*) channel_flag=${arg#--channel=} ;;
-        check|build|update) command_word=$arg ;;
-        -h|--help) sed -n '2,86p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        check|build|update|reset-storage) command_word=$arg ;;
+        -h|--help) sed -n '2,97p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) printf 'unknown argument: %s\n' "$arg" >&2; exit 1 ;;
     esac
 done
@@ -615,6 +626,101 @@ remember_container_root() {  # value ("default" or a path)
     printf '%s\n' "$1" > "$remembered_root_file" 2>/dev/null || true
 }
 
+# The exact debris a pre-fix launcher could leave at the bundle root:
+# podman's own storage, confirmed against a real corrupted bundle (the
+# same marker set find_storage_root_inside checks), plus its two lock
+# files - never a bundle file (bundle.json, manifests/, profiles/,
+# branding/, keys/, the launchers, README.md are the person's own).
+BUNDLE_ROOT_STORAGE_DEBRIS="overlay overlay-containers overlay-images overlay-layers libpod db.sql defaultNetworkBackend storage.lock userns.lock"
+
+human_kb() {  # kb -> "12 GB" / "340 MB" / "8 KB"
+    kb=$1
+    if [ "$kb" -ge 1048576 ]; then printf '%s GB\n' "$((kb / 1048576))"
+    elif [ "$kb" -ge 1024 ]; then printf '%s MB\n' "$((kb / 1024))"
+    else printf '%s KB\n' "$kb"
+    fi
+}
+# A size to show before removing something, never load-bearing: when `du`
+# is missing or refuses (a permission a plain rm -rf would still get
+# through, via sudo, below), "size unknown" is shown rather than this
+# failing the whole command over a number that is only ever informational.
+target_size() {  # path
+    [ -d "$1" ] || { printf 'a file\n'; return 0; }
+    kb=$(du -sk "$1" 2>/dev/null | awk '{print $1}')
+    case "$kb" in ''|*[!0-9]*) printf 'size unknown\n' ;; *) human_kb "$kb" ;; esac
+}
+
+# The full list of paths ./build.sh reset-storage will ever consider, built
+# once from a closed set of sources - never a path read from anywhere else,
+# and never a bundle file: the remembered storage root (wherever it points -
+# that is the one this bundle is actually using), the default storage
+# directory, an extracted engine source, the debris list above, all three
+# relative to this bundle only, and a --storage/SYNOS_CONTAINER_ROOT given
+# on this same command line (checked below before it is trusted).
+reset_targets=""
+add_reset_target() {  # path
+    [ -e "$1" ] || return 0
+    for existing in $reset_targets; do [ "$existing" = "$1" ] && return 0; done
+    reset_targets="$reset_targets $1"
+}
+
+# ./build.sh reset-storage: the storage this bundle itself created, removed
+# in one command instead of a block of sudo rm -rf pasted from a chat -
+# what a storage-state mismatch (see explain_storage_mismatch above) tells
+# a person to run. dist/ (the build log and the evidence next to the ISO)
+# is never touched: it is not storage, and a person reading why a build
+# failed still needs it after this runs.
+reset_storage() {
+    if [ -n "$container_root" ]; then
+        in_bundle=""
+        case "$container_root" in "$PWD"/*) in_bundle=1 ;; esac
+        remembered_match=""
+        if [ -f "$remembered_root_file" ]; then
+            remembered=$(cat "$remembered_root_file" 2>/dev/null || true)
+            if [ -n "$remembered" ] && [ "$remembered" != default ] && [ "$(abs_path "$remembered")" = "$container_root" ]; then
+                remembered_match=1
+            fi
+        fi
+        if [ -z "$in_bundle" ] && [ -z "$remembered_match" ]; then
+            fail "--storage $container_root is not this bundle's own storage: nothing here remembers it, and it is outside this bundle. reset-storage only ever removes storage this bundle itself created; remove that path yourself if you are sure: sudo rm -rf $container_root" 2
+        fi
+        add_reset_target "$container_root"
+    fi
+    if [ -f "$remembered_root_file" ]; then
+        remembered=$(cat "$remembered_root_file" 2>/dev/null || true)
+        case "$remembered" in
+            ""|default) ;;
+            *) add_reset_target "$(abs_path "$remembered")" ;;
+        esac
+        add_reset_target "$PWD/$remembered_root_file"
+    fi
+    add_reset_target "$PWD/.build/container-storage"
+    add_reset_target "$PWD/.build/engine-src"
+    for name in $BUNDLE_ROOT_STORAGE_DEBRIS; do
+        add_reset_target "$PWD/$name"
+    done
+    if [ -z "$reset_targets" ]; then
+        say "nothing to remove: this bundle has no storage of its own yet."
+        return 0
+    fi
+    say "this will remove:"
+    for t in $reset_targets; do
+        say "  $t ($(target_size "$t"))"
+    done
+    say "dist/ (the build log and the evidence next to the ISO) is left alone - it is not storage."
+    ask "Remove this now?" || { say "nothing removed."; return 0; }
+    reset_failed=""
+    for t in $reset_targets; do
+        rm -rf "$t" 2>/dev/null && continue
+        if [ -n "${run_as:-}" ] && $run_as rm -rf "$t" 2>/dev/null; then continue; fi
+        reset_failed="$reset_failed $t"
+    done
+    if [ -n "$reset_failed" ]; then
+        fail "could not remove:$reset_failed - remove them by hand (sudo rm -rf <path>) and run reset-storage again" 2
+    fi
+    say "removed. The next build starts with fresh storage."
+}
+
 # Already running as root through sudo (rather than this script deciding to
 # elevate a single command itself, below): sudo's default environment reset
 # drops every SYNOS_* variable set before it, even though this script would
@@ -682,6 +788,8 @@ else
     fi
 fi
 
+[ "$command_word" = reset-storage ] && { reset_storage; exit 0; }
+
 # Runs the container runtime with --root/--runroot prepended when a storage
 # location is in effect (podman only; see below - neither is ever set for
 # docker). A string built once and word-split back apart (the earlier shape
@@ -717,6 +825,44 @@ run_runtime_exec() {
     else
         "$runtime" "$@"
     fi
+}
+
+# podman's own wording for a storage location that carries state from a
+# different configuration than the one now being asked of it - reproduced
+# directly against a real podman for this launcher, not guessed at: moving
+# a --root, a --runroot or a graph driver out from under an existing
+# storage all end the same way ("database static dir ... does not match
+# our static dir ...", "database run root ... does not match our run
+# root ...", "database graph driver ... does not match our graph
+# driver ..."), always closing with the same four words, which is the one
+# thing safe to match on rather than any one of those prefixes; the same
+# family covers running the same storage rootless after rootful or back.
+# Podman's own line names exactly what disagrees but not what to do about
+# it, so it is shown verbatim and then explained, never swallowed.
+explain_storage_mismatch() {  # runtime-stderr-text storage-path
+    case "$1" in
+        *'database configuration mismatch'*)
+            printf '%s\n' "$1" >&2
+            fail "$2 carries state from a different configuration than this run is asking for (podman's own message, above, names exactly what disagrees); remove it with ./build.sh reset-storage, or point --storage at a different, empty location" 2 ;;
+    esac
+}
+# `podman/docker info --format <field>` used only to look something up
+# (whether the default storage can be used, how much space is free) -
+# never load-bearing enough to fail the whole run over a field that
+# simply is not there yet (a fresh runtime with nothing built). But a real
+# storage-state mismatch is not "not there yet"; it is translated and
+# stopped here rather than silently degrading to an empty value and a
+# skipped check further down, which would otherwise look like this script
+# just could not tell either way.
+runtime_info_field() {  # format storage-path-for-the-message
+    mkdir -p .build 2>/dev/null || true
+    # Reused, not removed: this is a lookup that can run during `check`
+    # alone, which promises never to need anything build-only like `rm` -
+    # overwritten in place on every call instead (`>`, not a fresh name per
+    # call), so nothing accumulates under .build/ either.
+    err=.build/runtime-info-err
+    value=$(run_runtime info --format "$1" 2>"$err") || explain_storage_mismatch "$(cat "$err" 2>/dev/null)" "$2"
+    printf '%s\n' "$value"
 }
 
 free_kb=$(df -Pk . | awk 'NR==2 {print $4}')
@@ -764,7 +910,7 @@ if is_podman && [ -z "$container_root" ] && [ -z "$macos" ] && [ -z "$storage_as
         vfat|msdos|exfat|ntfs|fuseblk|cifs|smb2|nfs|nfs4) bundle_store_unusable=1 ;;
     esac
     if [ -n "$bundle_store_unusable" ] && [ "$command_word" != check ] && [ -z "$yes_to_all" ] && [ -t 0 ]; then
-        default_store=$(run_runtime info --format '{{.Store.GraphRoot}}' 2>/dev/null || true)
+        default_store=$(runtime_info_field '{{.Store.GraphRoot}}' "podman's own storage")
         case "$default_store" in ""|*"{{"*|"<no value>") default_store="" ;; esac
         if [ -n "$default_store" ] && [ -d "$default_store" ]; then
             default_store_kb=$(df -Pk "$default_store" | awk 'NR==2 {print $4}')
@@ -824,8 +970,8 @@ fi
 if [ -n "$container_root" ] && is_podman; then
     store=$container_root
 else
-    store=$(run_runtime info --format '{{.DockerRootDir}}' 2>/dev/null || true)
-    case "$store" in ""|*"{{"*|"<no value>") store=$(run_runtime info --format '{{.Store.GraphRoot}}' 2>/dev/null || true) ;; esac
+    store=$(runtime_info_field '{{.DockerRootDir}}' "${container_root:-$runtime's own storage}")
+    case "$store" in ""|*"{{"*|"<no value>") store=$(runtime_info_field '{{.Store.GraphRoot}}' "${container_root:-$runtime's own storage}") ;; esac
 fi
 if [ -n "$store" ] && [ -d "$store" ]; then
     store_kb=$(df -Pk "$store" | awk 'NR==2 {print $4}')
@@ -1066,7 +1212,10 @@ build_engine_image() {  # build_engine_image [forced] - forced skips reusing a s
         | awk '/^(STEP [0-9]+\/[0-9]+|Step [0-9]+\/[0-9]+|#[0-9]+ \[[0-9]+\/[0-9]+\]|Get:[0-9]+ |Setting up |Successfully built|Successfully tagged|COMMIT|-->)/ { print "  " $0; fflush() }'
     status=$(cat "$status_file" 2>/dev/null || echo 1)
     rm -f "$status_file"
-    [ "$status" -eq 0 ] || fail "building the engine image failed (exit $status); see dist/image-build.log" 2
+    if [ "$status" -ne 0 ]; then
+        explain_storage_mismatch "$(grep -m 1 'database configuration mismatch' dist/image-build.log 2>/dev/null || true)" "${container_root:-$runtime's own storage}"
+        fail "building the engine image failed (exit $status); see dist/image-build.log" 2
+    fi
     say "engine image built in $(( ($(date +%s) - started) / 60 )) min"
     image=$local_tag
 }
@@ -1207,6 +1356,12 @@ say "building $manifest with $image"
 say "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
 say "the full output is kept in dist/build.log"
 set +e
+# Only stderr is captured here (stdout keeps streaming live, unbuffered, the
+# way it always has): a real storage-state mismatch fails before "synos
+# build" ever gets to write anything to dist/build.log itself, so that log
+# alone cannot show it - this is the one place that failure can actually be
+# seen and translated.
+run_err_file=".build/build-run-stderr.$$"
 run_runtime run --rm --privileged --platform "linux/$arch" \
     -v "$PWD:/bundle:z" \
     -v "synos-cache-$base-$suite:/opt/synos/.build" \
@@ -1215,10 +1370,14 @@ run_runtime run --rm --privileged --platform "linux/$arch" \
     -e "SYNOS_UID=$(id -u)" -e "SYNOS_GID=$(id -g)" \
     -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE \
     -e SYNOS_CHANNEL="$channel" \
-    "$image" synos build /bundle --output /bundle/dist --log /bundle/dist/build.log
+    "$image" synos build /bundle --output /bundle/dist --log /bundle/dist/build.log 2>"$run_err_file"
 status=$?
 set -e
 if [ "$status" -ne 0 ]; then
+    run_err=$(cat "$run_err_file" 2>/dev/null || true)
+    [ -z "$run_err" ] || printf '%s\n' "$run_err" >&2
+    rm -f "$run_err_file"
+    explain_storage_mismatch "$run_err" "${container_root:-$runtime's own storage}"
     say ""
     say "the build did not finish (exit code $status). The first errors in dist/build.log:"
     grep -n -m 6 -E 'No space left on device|dpkg: error|dpkg-query: error|^E: |cannot allocate memory|Killed process|FAILED|package error|skipped .*prebuild|Traceback|error:' dist/build.log 2>/dev/null | grep -v 'locale' | cut -c1-200 | sed 's/^/  /'
