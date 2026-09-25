@@ -13,9 +13,16 @@
 # Where the build's bytes land needs nothing from you on Podman: this script
 # works out on its own that the disk to use is the one this bundle was
 # unpacked to, and keeps images, layers and the chroot in .build\ right next
-# to it. It says so once, the run that creates that directory. -Storage
-# X:\path (or SYNOS_CONTAINER_ROOT) puts it somewhere else instead - a
-# person passes -Storage; a service sets the variable for unattended use.
+# to it. It says so once, the run that creates that directory, and always
+# as an absolute path even when a relative one was given (a relative one
+# is resolved from this bundle's own directory, before anything uses it -
+# the runtime does not necessarily share this script's own working
+# directory by the time it runs). A location inside the engine source or dist\ is
+# refused, naming both paths: either one is copied, archived or hashed
+# whole as part of the build, and storage written there mid-build corrupts
+# it. -Storage X:\path (or SYNOS_CONTAINER_ROOT) puts it somewhere else
+# instead - a person passes -Storage; a service sets the variable for
+# unattended use.
 # -ContainerRoot still works, an older spelling of the same flag. This is
 # passed straight to Podman the way build.sh does, but has not been
 # exercised on Windows by the project: Podman Desktop on Windows commonly
@@ -62,6 +69,36 @@ if ($env:SYNOS_YES) { $Yes = $true }
 if ($Storage) { $ContainerRoot = $Storage }
 if (-not $ContainerRoot -and $env:SYNOS_CONTAINER_ROOT) { $ContainerRoot = $env:SYNOS_CONTAINER_ROOT }
 if (-not $ContainerRunroot -and $env:SYNOS_CONTAINER_RUNROOT) { $ContainerRunroot = $env:SYNOS_CONTAINER_RUNROOT }
+
+# Resolves a path to an absolute one, from this bundle's own directory
+# ($PSScriptRoot, set as the location just above): a relative storage
+# location or engine checkout is used again later, sometimes after
+# Build-EngineImage's own Push-Location, where a relative path would be
+# interpreted by whatever directory the runtime finds itself started in
+# instead. Made absolute once, here, so it is unambiguous everywhere after.
+function Resolve-AbsolutePath([string]$Path) {
+    if ([System.IO.Path]::IsPathRooted($Path)) { return $Path }
+    return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot $Path))
+}
+if ($ContainerRoot) { $ContainerRoot = Resolve-AbsolutePath $ContainerRoot }
+if ($ContainerRunroot) { $ContainerRunroot = Resolve-AbsolutePath $ContainerRunroot }
+if ($env:SYNOS_ENGINE_SOURCE) { $env:SYNOS_ENGINE_SOURCE = Resolve-AbsolutePath $env:SYNOS_ENGINE_SOURCE }
+
+# Refuses a storage location inside a directory this script is about to
+# archive, copy or hash whole: "COPY . /opt/synos" in the engine's own
+# Containerfile walks everything under the engine source, storage included;
+# the evidence files next to the ISO (the SBOM, the checksums) are
+# generated from dist\ the same way.
+function Test-StorageInside([string]$ContextDir, [string]$ContextDescription) {
+    if (-not $ContainerRoot) { return }
+    $context = Resolve-AbsolutePath $ContextDir
+    $normalizedContext = $context.TrimEnd('\') + '\'
+    $normalizedStorage = $ContainerRoot.TrimEnd('\') + '\'
+    if ($normalizedStorage.StartsWith($normalizedContext, [System.StringComparison]::OrdinalIgnoreCase) -or
+        ($ContainerRoot -ieq $context)) {
+        Fail "the build's storage ($ContainerRoot) is inside $ContextDescription ($context), which this build copies, archives or hashes whole; point -Storage at a location outside it" 2
+    }
+}
 
 function Fail([string]$Message, [int]$Code = 1) { Write-Host "error: $Message" -ForegroundColor Red; exit $Code }
 foreach ($value in @($Channel, $env:SYNOS_CHANNEL)) {
@@ -467,6 +504,8 @@ if ((Test-IsPodman) -and (-not $ContainerRoot) -and (-not $storageAsked)) {
 $runtimeRootArgs = @()
 if ((Test-IsPodman) -and ($ContainerRoot -or $ContainerRunroot)) {
     if ($ContainerRoot) {
+        Test-StorageInside (Join-Path $PSScriptRoot "dist") "the build's output directory (dist\)"
+        if ($env:SYNOS_ENGINE_SOURCE) { Test-StorageInside $env:SYNOS_ENGINE_SOURCE "the engine source this image would be built from" }
         New-Item -ItemType Directory -Force -Path $ContainerRoot | Out-Null
         $runtimeRootArgs += @("--root", $ContainerRoot)
         if (-not $containerRootAuto) { Remember-ContainerRoot $ContainerRoot }
@@ -593,6 +632,8 @@ function Build-EngineImage([switch]$Forced) {
         # built from; a changed engine gives a new name and a rebuild (layer cache keeps it short).
         $sourceId = (Get-FileHash -Algorithm SHA256 ".build\engine-src.zip").Hash.Substring(0, 12).ToLower()
     }
+    $src = Resolve-AbsolutePath $src
+    Test-StorageInside $src "the engine source this image is built from"
     if (-not (Test-Path (Join-Path $src "bases\$base\Containerfile"))) { Fail "$src has no bases\$base\Containerfile: not an engine checkout" 2 }
     $script:buildSrc = $src
     $localTag = if ($resolvedChannel -eq "development") { "synos-builder:$base-$suite-dev-$sourceId" } else { "synos-builder:$base-$suite-$sourceId" }
