@@ -6,6 +6,7 @@
 #   ./build.sh update     fetch the latest launcher scripts and replace these four files, then exit
 #   ./build.sh --yes      answer yes to the questions (install the container runtime)
 #   ./build.sh --channel=stable|development   override which engine pipeline builds this bundle
+#   ./build.sh --storage /path   keep this build's images, layers and chroot there instead
 #
 # Works on any Linux distribution (Debian, Ubuntu, Fedora, openSUSE, Arch and
 # their derivatives), on macOS (build.command, or this script from Terminal)
@@ -31,22 +32,28 @@
 # this script's own output, in dist/build.log, and in the image it is built
 # from, so nobody mistakes it for a released build.
 #
-# Where the build's bytes land has nothing to do with where you run this
-# script: podman and docker keep their own storage (images, layers, the
-# chroot), usually on the system disk. With podman, point that storage at a
-# bigger disk with no root and no daemon restart: --container-root=/path
-# (or SYNOS_CONTAINER_ROOT=/path), and optionally --container-runroot=/path
-# (SYNOS_CONTAINER_RUNROOT) for its small state directory, which otherwise
-# stays at podman's own default. Docker's storage is set once for the whole
-# daemon: there is no per-build override, and this script says so, with the
-# steps to move it, instead of guessing.
+# Where the build's bytes land needs nothing from you on podman: this script
+# works out on its own that the disk to use is the one this bundle was
+# unpacked to, and keeps images, layers and the chroot in .build/ right next
+# to it - the same disk you already chose, whatever its size. It says so
+# once, the run that creates that directory. --storage /path (or
+# --storage=/path) puts it somewhere else instead, with no root and no
+# daemon restart needed; SYNOS_CONTAINER_ROOT does the same for unattended
+# use, where a flag is awkward (a person passes --storage; a service sets
+# the variable). --container-root=/path still works, an older spelling of
+# the same flag, for anyone who already scripted it. --container-runroot=/path
+# (SYNOS_CONTAINER_RUNROOT) does the same for podman's small state directory,
+# which otherwise stays at podman's own default. Docker's storage is set
+# once for the whole daemon: there is no per-build override, and this script
+# says so, with the steps to move it, instead of guessing.
 #
-# With podman, when no location was given and podman's own storage looks
-# tight, this script asks once (a terminal, no --yes) whether to use a
-# directory beside the bundle instead, and remembers the answer in
-# .build/container-root so the next run is never asked again ("forget" it:
-# rm .build/container-root). --container-root always wins, and updates what
-# is remembered.
+# With podman, a real choice remains only when the bundle's own disk cannot
+# meet the minimum itself: then, and only then (a terminal, no --yes), this
+# script asks once whether to use podman's own storage instead, and
+# remembers the answer in .build/container-root so the next run is never
+# asked again ("forget" it: rm .build/container-root). --storage/
+# SYNOS_CONTAINER_ROOT/--container-root always win over the remembered
+# value, and update it.
 #
 # Environment: SYNOS_BUILDER_IMAGE (use another image), SYNOS_IMAGE_REPOSITORY
 #   (another registry, default ghcr.io/synthot/synos-builder), SYNOS_ENGINE_SOURCE
@@ -54,11 +61,13 @@
 #   SYNOS_LAUNCHER_URL (source for `update`, default the engine's tools/ on GitHub),
 #   SYNOS_CHANNEL=stable|development (override the bundle's own channel; see above),
 #   SYNOS_NO_UPDATE_CHECK=1 (skip the launcher update check at the start of
-#   check/build), SYNOS_YES=1 (same as --yes), SYNOS_CONTAINER_ROOT and
-#   SYNOS_CONTAINER_RUNROOT (podman only; see above). When this script needs
-#   sudo to run the container runtime, all of the above (plus the signing key
-#   variables) are forwarded to it explicitly - sudo's own environment reset
-#   would otherwise silently drop them even though this script still has them.
+#   check/build), SYNOS_YES=1 (same as --yes), SYNOS_CONTAINER_ROOT (podman
+#   only, same as --storage; see above - unattended use, prefer --storage by
+#   hand) and SYNOS_CONTAINER_RUNROOT (podman only; see above). When this
+#   script needs sudo to run the container runtime, all of the above (plus
+#   the signing key variables) are forwarded to it explicitly - sudo's own
+#   environment reset would otherwise silently drop them even though this
+#   script still has them.
 set -eu
 cd "$(dirname "$0")"
 
@@ -68,17 +77,31 @@ container_root=${SYNOS_CONTAINER_ROOT:-}
 container_runroot=${SYNOS_CONTAINER_RUNROOT:-}
 channel_flag=""
 remembered_root_file=".build/container-root"
+# A for loop, not a positional while/shift: "$@" must survive this parse
+# intact, unconsumed - check_for_launcher_update below, and the two
+# self-refresh restarts further down, all re-exec this script with "$@"
+# exactly as it was invoked. --storage's two-token form is instead handled
+# with a one-step lookahead flag.
+storage_wants_value=""
 for arg in "$@"; do
+    if [ -n "$storage_wants_value" ]; then
+        container_root=$arg
+        storage_wants_value=""
+        continue
+    fi
     case "$arg" in
         --yes|-y) yes_to_all=1 ;;
+        --storage=*) container_root=${arg#--storage=} ;;
+        --storage) storage_wants_value=1 ;;
         --container-root=*) container_root=${arg#--container-root=} ;;
         --container-runroot=*) container_runroot=${arg#--container-runroot=} ;;
         --channel=*) channel_flag=${arg#--channel=} ;;
         check|build|update) command_word=$arg ;;
-        -h|--help) sed -n '2,58p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,70p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) printf 'unknown argument: %s\n' "$arg" >&2; exit 1 ;;
     esac
 done
+[ -z "$storage_wants_value" ] || { printf 'unknown argument: --storage needs a path\n' >&2; exit 1; }
 
 say() { printf '%s\n' "$*"; }
 fail() { printf 'error: %s\n' "$1" >&2; exit "${2:-1}"; }
@@ -437,7 +460,7 @@ docker's storage is one setting for the whole daemon; there is no per-build loca
   plain install:  add "data-root": "<path>" to /etc/docker/daemon.json, then: sudo systemctl restart docker
   snap install:   the same key in /var/snap/docker/current/config/daemon.json, then: sudo snap restart docker
                   (once: sudo snap connect docker:removable-media, so docker can reach /mnt)
-  or: install podman, which takes a location per build, no root, no restart (SYNOS_CONTAINER_ROOT=<path>)
+  or: install podman, which takes a location per build, no root, no restart (--storage=<path>)
   or: build on a machine that already has room where docker keeps its images
 EOF
 }
@@ -450,7 +473,7 @@ check_overlay_fs() {  # path
     fstype=$(stat -f -c %T "$1" 2>/dev/null || true)
     case "$fstype" in
         vfat|msdos|exfat|ntfs|fuseblk|cifs|smb2|nfs|nfs4)
-            fail "$1 is $fstype, which cannot back a container's overlay filesystem; point SYNOS_CONTAINER_ROOT at a disk formatted ext4, xfs, btrfs or similar" 2 ;;
+            fail "$1 is $fstype, which cannot back a container's overlay filesystem; point --storage at a disk formatted ext4, xfs, btrfs or similar" 2 ;;
     esac
 }
 
@@ -557,7 +580,6 @@ free_kb=$(df -Pk . | awk 'NR==2 {print $4}')
 [ "$free_kb" -ge 41943040 ] || fail "at least 40 GB free is needed in $(pwd); $((free_kb / 1048576)) GB available" 2
 
 min_store_kb=31457280                          # 30 GB
-comfortable_store_kb=$((min_store_kb * 2))     # no point even asking when there is clearly room
 
 # A location already chosen for this bundle (by hand, or by answering the
 # question below on an earlier run) is remembered, never asked twice.
@@ -566,31 +588,51 @@ if is_podman && [ -z "$container_root" ] && [ -z "$macos" ] && [ -f "$remembered
     remembered=$(cat "$remembered_root_file" 2>/dev/null || true)
     case "$remembered" in
         "") ;;
-        default) storage_asked=1 ;;
+        default) storage_asked=1
+                 say "using podman's own storage for this build, not this bundle's disk (change: --storage=<path>; forget: rm $remembered_root_file)" ;;
         *) container_root=$remembered; storage_asked=1
-           say "using the remembered build storage: $container_root (change: --container-root=<path>; forget: rm $remembered_root_file)" ;;
+           say "using the remembered build storage: $container_root (change: --storage=<path>; forget: rm $remembered_root_file)" ;;
     esac
 fi
 
-# Proposed once, up front, instead of only refused after the fact - but only
-# when it can actually be answered in two seconds (a terminal, no --yes, no
-# answer already known, not just a check) and only when there is a real
-# question to ask: the default storage is not clearly fine, and the
-# bundle's own disk - right here, already measured above - actually has
-# more room to offer.
-if is_podman && [ -z "$container_root" ] && [ -z "$macos" ] && [ -z "$storage_asked" ] \
-   && [ "$command_word" != check ] && [ -z "$yes_to_all" ] && [ -t 0 ]; then
-    default_store=$(run_runtime info --format '{{.Store.GraphRoot}}' 2>/dev/null || true)
-    case "$default_store" in ""|*"{{"*|"<no value>") default_store="" ;; esac
-    if [ -n "$default_store" ] && [ -d "$default_store" ]; then
-        default_store_kb=$(df -Pk "$default_store" | awk 'NR==2 {print $4}')
-        if [ "$default_store_kb" -lt "$comfortable_store_kb" ] && [ "$free_kb" -gt "$default_store_kb" ]; then
-            alt_dir="$PWD/.build/container-storage"
-            say "podman would keep this build under $default_store ($((default_store_kb / 1048576)) GB free); it needs $((min_store_kb / 1048576)) GB."
-            if ask_yes "Use $alt_dir next to this bundle instead ($((free_kb / 1048576)) GB free there)?"; then
-                container_root=$alt_dir
+# The bundle's own disk is the default, needing nothing from you: this
+# script already knows where to build from where the bundle was unpacked,
+# and that is where its storage goes too - no variable to learn, no
+# question to answer. A real choice remains only when that disk cannot back
+# a container's overlay at all (an unpacked bundle on a removable
+# vfat/exFAT/NTFS drive, say - the free-space minimum below is already
+# guaranteed by the 40 GB check above, so it is never the reason to ask);
+# only then, and only when it can actually be answered in two seconds (a
+# terminal, no --yes, not just a check), is podman's own storage offered
+# instead.
+container_root_auto=""
+if is_podman && [ -z "$container_root" ] && [ -z "$macos" ] && [ -z "$storage_asked" ]; then
+    bundle_store="$PWD/.build/container-storage"
+    bundle_fstype=$(stat -f -c %T . 2>/dev/null || true)
+    bundle_store_unusable=""
+    case "$bundle_fstype" in
+        vfat|msdos|exfat|ntfs|fuseblk|cifs|smb2|nfs|nfs4) bundle_store_unusable=1 ;;
+    esac
+    if [ -n "$bundle_store_unusable" ] && [ "$command_word" != check ] && [ -z "$yes_to_all" ] && [ -t 0 ]; then
+        default_store=$(run_runtime info --format '{{.Store.GraphRoot}}' 2>/dev/null || true)
+        case "$default_store" in ""|*"{{"*|"<no value>") default_store="" ;; esac
+        if [ -n "$default_store" ] && [ -d "$default_store" ]; then
+            default_store_kb=$(df -Pk "$default_store" | awk 'NR==2 {print $4}')
+            say "this bundle's own disk is $bundle_fstype, which cannot back a container's overlay filesystem; podman's own storage at $default_store ($((default_store_kb / 1048576)) GB free) can."
+            if ask_yes "Use podman's own storage there instead?"; then
+                container_root=""
+            else
+                container_root=$bundle_store
             fi
+            storage_asked=1
             remember_container_root "${container_root:-default}"
+        fi
+    fi
+    if [ -z "$storage_asked" ]; then
+        container_root=$bundle_store
+        container_root_auto=1
+        if [ ! -d "$container_root" ]; then
+            say "this build keeps its storage under $container_root; use --storage=<path> (or SYNOS_CONTAINER_ROOT) to put it somewhere else."
         fi
     fi
 fi
@@ -598,14 +640,14 @@ fi
 runtime_root_args=""
 if is_podman && { [ -n "$container_root" ] || [ -n "$container_runroot" ]; }; then
     if [ -n "$macos" ]; then
-        say "note: SYNOS_CONTAINER_ROOT/SYNOS_CONTAINER_RUNROOT have no effect here: podman on macOS runs in its own virtual machine with its own disk (set its size once with podman machine init --disk-size)."
+        say "note: --storage/SYNOS_CONTAINER_ROOT and --container-runroot/SYNOS_CONTAINER_RUNROOT have no effect here: podman on macOS runs in its own virtual machine with its own disk (set its size once with podman machine init --disk-size)."
         container_root=""; container_runroot=""
     else
         if [ -n "$container_root" ]; then
-            mkdir -p "$container_root" 2>/dev/null || fail "could not create $container_root (SYNOS_CONTAINER_ROOT)" 2
+            mkdir -p "$container_root" 2>/dev/null || fail "could not create $container_root (--storage)" 2
             check_overlay_fs "$container_root"
             runtime_root_args="--root $container_root"
-            remember_container_root "$container_root"
+            [ -n "$container_root_auto" ] || remember_container_root "$container_root"
         fi
         if [ -n "$container_runroot" ]; then
             mkdir -p "$container_runroot" 2>/dev/null || fail "could not create $container_runroot (SYNOS_CONTAINER_RUNROOT)" 2
@@ -632,7 +674,7 @@ if [ -n "$store" ] && [ -d "$store" ]; then
         free_store_gb=$((store_kb / 1048576))
         if is_podman; then
             fail "this build needs 30 GB free; only ${free_store_gb} GB is free at $store, where podman keeps the build.
-  no root needed: SYNOS_CONTAINER_ROOT=/path/with/room ./build.sh  (or --container-root=/path/with/room)
+  no root needed: --storage=/path/with/room ./build.sh  (or SYNOS_CONTAINER_ROOT=/path/with/room)
   or: free space at $store
   or: move podman's own default storage (root): graphroot in \$HOME/.config/containers/storage.conf, or /etc/containers/storage.conf" 2
         else

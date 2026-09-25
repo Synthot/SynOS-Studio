@@ -817,18 +817,17 @@ class SudoEnvironmentTests(unittest.TestCase):
             ))
             log = tmp / "runtime.log"
             marker = tmp / "marker"
+            # $1 is no longer necessarily the subcommand: the automatic
+            # bundle-disk default (item 141) puts --root before it whenever
+            # no location was given, as here. Matched on "$*" instead, so
+            # this keeps working regardless of where --root lands.
             podman_script = (
                 "#!/bin/sh\n"
                 f"printf '%s\\n' \"$*\" >> '{log}'\n"
-                "case \"$1\" in\n"
-                "  pull) exit 0 ;;\n"
-                "  run)\n"
-                "    case \"$*\" in\n"
-                f"      *'synos build /bundle'*) printf '%s\\n' \"$SYNOS_SIGNING_KEY\" > '{marker}'; printf '%s\\n' \"$SYNOS_ENGINE_SOURCE\" >> '{marker}' ;;\n"
-                "    esac\n"
-                "    exit 0 ;;\n"
-                "  *) exit 0 ;;\n"
+                "case \"$*\" in\n"
+                f"  *'synos build /bundle'*) printf '%s\\n' \"$SYNOS_SIGNING_KEY\" > '{marker}'; printf '%s\\n' \"$SYNOS_ENGINE_SOURCE\" >> '{marker}' ;;\n"
                 "esac\n"
+                "exit 0\n"
             )
             write_executable(fake / "podman", podman_script)
             env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
@@ -896,6 +895,13 @@ class ContainerStorageTests(unittest.TestCase):
         (fake / "id").unlink()
         write_executable(fake / "id", "#!/bin/sh\ncase \"$1\" in\n  -u) echo 0 ;;\n  -g) echo 0 ;;\n"
                                        f"  *) exec '{real_id}' \"$@\" ;;\nesac\n")
+
+    def write_vfat_stat(self, fake: Path) -> None:
+        """A fake `stat -f -c %T` reporting vfat for every path - the bundle's
+        own disk cannot back a container's overlay, the one case a real
+        choice remains once the bundle's disk is the default."""
+        (fake / "stat").unlink()
+        write_executable(fake / "stat", "#!/bin/sh\necho vfat\n")
 
     def write_logging_runtime(self, fake: Path, name: str, log: Path) -> None:
         """A fake podman/docker that records every invocation's argv, one
@@ -974,7 +980,10 @@ class ContainerStorageTests(unittest.TestCase):
             self.assertTrue(container_runroot.is_dir())
             self.assertIn(f"--root {container_root} --runroot {container_runroot}", result.stdout)
 
-    def test_an_unset_container_root_changes_nothing(self) -> None:
+    def test_default_lands_beside_the_bundle_with_nothing_set(self) -> None:
+        """The default needs nothing: no flag, no variable, no prior answer.
+        On podman the bundle's own disk is where the storage goes, said once,
+        plainly, on the run that creates the directory."""
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             bundle = self.make_bundle(tmp)
@@ -984,14 +993,44 @@ class ContainerStorageTests(unittest.TestCase):
             self.write_logging_runtime(fake, "podman", log)
             self.write_df(fake, str(tmp / "never-matched"), 1)
             env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            bundle_store = bundle / ".build" / "container-storage"
             result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             calls = log.read_text(encoding="utf-8").splitlines()
             self.assertTrue(calls, "podman must have been invoked")
             for call in calls:
+                self.assertIn(f"--root {bundle_store}", call, call)
+            self.assertIn(f"this build keeps its storage under {bundle_store}", result.stdout)
+            self.assertIn("use --storage=<path>", result.stdout)
+            self.assertTrue(bundle_store.is_dir())
+            # automatic, not a decision: nothing is written for the next run to read back
+            self.assertFalse((bundle / ".build" / "container-root").exists())
+
+            # a second run finds the directory already there and says nothing about it
+            log.write_text("", encoding="utf-8")
+            again = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, again.returncode, again.stdout + again.stderr)
+            self.assertNotIn("this build keeps its storage under", again.stdout)
+            self.assertTrue(any(f"--root {bundle_store}" in c for c in log.read_text(encoding="utf-8").splitlines()))
+
+    def test_docker_is_unaffected_by_the_new_default_even_on_a_vfat_bundle_disk(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_vfat_stat(fake)
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "docker", log)
+            self.write_df(fake, str(tmp / "never-matched"), 1)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertNotIn("this build keeps its storage under", result.stdout)
+            self.assertNotIn("cannot back a container's overlay", result.stdout + result.stderr)
+            for call in log.read_text(encoding="utf-8").splitlines():
                 self.assertNotIn("--root", call)
-                self.assertNotIn("--runroot", call)
-            self.assertNotIn("--root", result.stdout)
+            self.assertFalse((bundle / ".build" / "container-root").exists())
+            self.assertFalse((bundle / ".build" / "container-storage").exists())
 
     def test_docker_refuses_a_requested_location_before_any_command_runs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1060,11 +1099,11 @@ class ContainerStorageTests(unittest.TestCase):
             self.assertIn("/var/snap/docker/current/config/daemon.json", message)
             self.assertIn("snap connect docker:removable-media", message)
 
-    def test_prompt_wording_and_enter_accepts_the_offered_default(self) -> None:
-        """The launcher proposes a location up front instead of only refusing
-        after the fact: asked once, with the facts (where, how much free
-        there, how much is needed), the obvious alternative offered as the
-        default answer Enter accepts."""
+    def test_vfat_bundle_disk_prompt_wording_and_enter_switches_to_podmans_storage(self) -> None:
+        """The prompt now has a real, two-sided question only once the
+        bundle's own disk cannot back an overlay at all: asked once, with
+        the facts, the fix (podman's own storage) offered as the default
+        answer Enter accepts."""
         try:
             import pty  # noqa: F401
         except ImportError:
@@ -1074,41 +1113,108 @@ class ContainerStorageTests(unittest.TestCase):
             bundle = self.make_bundle(tmp)
             fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
             self.write_root_id(fake)
+            self.write_vfat_stat(fake)
             store_dir = tmp / "default-store"
             store_dir.mkdir()
             log = tmp / "runtime.log"
             self.write_podman_reporting_store(fake, log, store_dir)
-            self.write_df(fake, str(store_dir), 5 * 1024 * 1024)  # 5 GB there; the bundle disk gets the 100 GB default
+            self.write_df(fake, "never-matched", 1)  # every path (bundle disk included) gets the 100 GB default
             env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
-            alt_dir = bundle / ".build" / "container-storage"
             output = run_under_pty(bundle, env, ["sh", "build.sh"], send_when_seen="[Y/n]", send=b"\n")
-            self.assertIn(f"podman would keep this build under {store_dir} (5 GB free); it needs 30 GB.", output)
-            self.assertIn(f"Use {alt_dir} next to this bundle instead (100 GB free there)? [Y/n]", output)
-            calls = log.read_text(encoding="utf-8").splitlines()
-            self.assertTrue(any(f"--root {alt_dir}" in c for c in calls), calls)
-            self.assertEqual(str(alt_dir), (bundle / ".build" / "container-root").read_text(encoding="utf-8").strip())
-
-    def test_declining_the_prompt_remembers_default_and_uses_no_root_flag(self) -> None:
-        try:
-            import pty  # noqa: F401
-        except ImportError:
-            self.skipTest("the pty module is not available on this platform")
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            bundle = self.make_bundle(tmp)
-            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
-            self.write_root_id(fake)
-            store_dir = tmp / "default-store"
-            store_dir.mkdir()
-            log = tmp / "runtime.log"
-            self.write_podman_reporting_store(fake, log, store_dir)
-            self.write_df(fake, str(store_dir), 5 * 1024 * 1024)
-            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
-            output = run_under_pty(bundle, env, ["sh", "build.sh"], send_when_seen="[Y/n]", send=b"n\n")
-            self.assertIn("[Y/n]", output)
+            self.assertIn(f"this bundle's own disk is vfat, which cannot back a container's overlay filesystem; "
+                          f"podman's own storage at {store_dir} (100 GB free) can.", output)
+            self.assertIn("Use podman's own storage there instead? [Y/n]", output)
             calls = log.read_text(encoding="utf-8").splitlines()
             self.assertFalse(any("--root" in c for c in calls), calls)
             self.assertEqual("default", (bundle / ".build" / "container-root").read_text(encoding="utf-8").strip())
+
+    def test_declining_the_vfat_prompt_keeps_the_bundle_disk_and_then_refuses(self) -> None:
+        try:
+            import pty  # noqa: F401
+        except ImportError:
+            self.skipTest("the pty module is not available on this platform")
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
+            self.write_root_id(fake)
+            self.write_vfat_stat(fake)
+            store_dir = tmp / "default-store"
+            store_dir.mkdir()
+            log = tmp / "runtime.log"
+            self.write_podman_reporting_store(fake, log, store_dir)
+            self.write_df(fake, "never-matched", 1)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
+            bundle_store = bundle / ".build" / "container-storage"
+            output = run_under_pty(bundle, env, ["sh", "build.sh"], send_when_seen="[Y/n]", send=b"n\n")
+            self.assertIn("[Y/n]", output)
+            self.assertIn(f"{bundle_store} is vfat, which cannot back a container's overlay filesystem", output)
+            calls = log.read_text(encoding="utf-8").splitlines()
+            self.assertFalse(any("--root" in c for c in calls), calls)
+            self.assertEqual(str(bundle_store), (bundle / ".build" / "container-root").read_text(encoding="utf-8").strip())
+
+    def test_no_prompt_without_a_terminal_even_on_a_vfat_bundle_disk(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            self.write_vfat_stat(fake)
+            store_dir = tmp / "default-store"
+            store_dir.mkdir()
+            log = tmp / "runtime.log"
+            self.write_podman_reporting_store(fake, log, store_dir)
+            self.write_df(fake, "never-matched", 1)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertNotIn("[Y/n]", result.stdout + result.stderr)
+            self.assertNotIn("podman's own storage at", result.stdout + result.stderr)
+            # unchanged: the existing hard refusal still applies, exactly as before
+            self.assertEqual(2, result.returncode)
+            self.assertIn("cannot back a container's overlay filesystem", result.stderr)
+            self.assertFalse((bundle / ".build" / "container-root").exists())
+
+    def test_no_prompt_with_yes_even_on_a_vfat_bundle_disk(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            self.write_vfat_stat(fake)
+            store_dir = tmp / "default-store"
+            store_dir.mkdir()
+            log = tmp / "runtime.log"
+            self.write_podman_reporting_store(fake, log, store_dir)
+            self.write_df(fake, "never-matched", 1)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertNotIn("[Y/n]", result.stdout + result.stderr)
+            self.assertNotIn("podman's own storage at", result.stdout + result.stderr)
+            self.assertEqual(2, result.returncode)
+            self.assertIn("cannot back a container's overlay filesystem", result.stderr)
+
+    def test_no_prompt_in_check_mode_even_with_a_terminal(self) -> None:
+        try:
+            import pty  # noqa: F401
+        except ImportError:
+            self.skipTest("the pty module is not available on this platform")
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            self.write_vfat_stat(fake)
+            store_dir = tmp / "default-store"
+            store_dir.mkdir()
+            log = tmp / "runtime.log"
+            self.write_podman_reporting_store(fake, log, store_dir)
+            self.write_df(fake, "never-matched", 1)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
+            # nothing ever prompts here, so wait on the line "check" always prints instead
+            output = run_under_pty(bundle, env, ["sh", "build.sh", "check"], send_when_seen="error:", send=b"\n", timeout=8)
+            self.assertNotIn("[Y/n]", output)
+            self.assertNotIn("podman's own storage at", output)
+            self.assertIn("cannot back a container's overlay filesystem", output)
 
     def test_remembered_choice_is_reused_without_asking_again(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1127,10 +1233,33 @@ class ContainerStorageTests(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             self.assertNotIn("[Y/n]", result.stdout)
             self.assertIn(f"using the remembered build storage: {remembered}", result.stdout)
+            self.assertIn("--storage=<path>", result.stdout)
             calls = log.read_text(encoding="utf-8").splitlines()
             self.assertTrue(any(f"--root {remembered}" in c for c in calls), calls)
 
-    def test_a_flag_overrides_the_remembered_value_and_updates_it(self) -> None:
+    def test_remembered_default_choice_is_reused_and_named(self) -> None:
+        """The "keep podman's own storage" answer is remembered too, and
+        named on later runs just like a custom path would be."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            self.write_root_id(fake)
+            (bundle / ".build").mkdir()
+            (bundle / ".build" / "container-root").write_text("default\n", encoding="utf-8")
+            log = tmp / "runtime.log"
+            self.write_logging_runtime(fake, "podman", log)
+            self.write_df(fake, "never-matched", 1)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("using podman's own storage for this build, not this bundle's disk", result.stdout)
+            for call in log.read_text(encoding="utf-8").splitlines():
+                self.assertNotIn("--root", call)
+            self.assertFalse((bundle / ".build" / "container-storage").exists())
+
+    def test_container_root_flag_overrides_the_remembered_value_and_updates_it(self) -> None:
+        """The older --container-root spelling still works, and still wins."""
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             bundle = self.make_bundle(tmp)
@@ -1152,86 +1281,53 @@ class ContainerStorageTests(unittest.TestCase):
             self.assertFalse(any(str(remembered) in c for c in calls), calls)
             self.assertEqual(str(new_root), (bundle / ".build" / "container-root").read_text(encoding="utf-8").strip())
 
-    def test_no_prompt_without_a_terminal_even_when_storage_is_tight(self) -> None:
+    def test_storage_flag_both_spellings_override_a_remembered_value(self) -> None:
+        """--storage=PATH and --storage PATH (the current spelling, item 149)
+        both win over a remembered value, same as the older --container-root."""
+        for form in ("equals", "space"):
+            with self.subTest(form=form), tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                bundle = self.make_bundle(tmp)
+                fake = self.make_fake_bin(tmp)
+                self.write_root_id(fake)
+                remembered = tmp / "old-storage"
+                new_root = tmp / "new-storage"
+                (bundle / ".build").mkdir()
+                (bundle / ".build" / "container-root").write_text(str(remembered) + "\n", encoding="utf-8")
+                log = tmp / "runtime.log"
+                self.write_logging_runtime(fake, "podman", log)
+                self.write_df(fake, str(new_root), 100 * 1024 * 1024)
+                env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
+                argv = ["sh", "build.sh", "check", f"--storage={new_root}"] if form == "equals" \
+                    else ["sh", "build.sh", "check", "--storage", str(new_root)]
+                result = subprocess.run(argv, cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                calls = log.read_text(encoding="utf-8").splitlines()
+                self.assertTrue(any(f"--root {new_root}" in c for c in calls), calls)
+                self.assertFalse(any(str(remembered) in c for c in calls), calls)
+                self.assertEqual(str(new_root), (bundle / ".build" / "container-root").read_text(encoding="utf-8").strip())
+
+    def test_environment_variable_still_works_but_the_flag_wins_over_it(self) -> None:
+        """SYNOS_CONTAINER_ROOT keeps working for unattended use (item 150),
+        and a --storage flag on the same run still wins over it."""
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             bundle = self.make_bundle(tmp)
             fake = self.make_fake_bin(tmp)
             self.write_root_id(fake)
-            store_dir = tmp / "default-store"
-            store_dir.mkdir()
+            env_root = tmp / "env-storage"
+            flag_root = tmp / "flag-storage"
             log = tmp / "runtime.log"
-            self.write_podman_reporting_store(fake, log, store_dir)
-            self.write_df(fake, str(store_dir), 5 * 1024 * 1024)
-            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
-            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
-            self.assertNotIn("[Y/n]", result.stdout + result.stderr)
-            self.assertNotIn("podman would keep", result.stdout + result.stderr)
-            # unchanged: the existing hard refusal still applies, exactly as before
-            self.assertEqual(2, result.returncode)
-            self.assertIn("this build needs 30 GB free", result.stderr)
-            self.assertFalse((bundle / ".build" / "container-root").exists())
-
-    def test_no_prompt_with_yes_even_though_storage_is_tight(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            bundle = self.make_bundle(tmp)
-            fake = self.make_fake_bin(tmp)
-            self.write_root_id(fake)
-            store_dir = tmp / "default-store"
-            store_dir.mkdir()
-            log = tmp / "runtime.log"
-            self.write_podman_reporting_store(fake, log, store_dir)
-            self.write_df(fake, str(store_dir), 5 * 1024 * 1024)
-            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1"}
-            result = subprocess.run(["sh", "build.sh", "check"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
-            self.assertNotIn("[Y/n]", result.stdout + result.stderr)
-            self.assertNotIn("podman would keep", result.stdout + result.stderr)
-            self.assertEqual(2, result.returncode)
-            self.assertIn("this build needs 30 GB free", result.stderr)
-
-    def test_no_prompt_in_check_mode_even_with_a_terminal(self) -> None:
-        try:
-            import pty  # noqa: F401
-        except ImportError:
-            self.skipTest("the pty module is not available on this platform")
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            bundle = self.make_bundle(tmp)
-            fake = self.make_fake_bin(tmp)
-            self.write_root_id(fake)
-            store_dir = tmp / "default-store"
-            store_dir.mkdir()
-            log = tmp / "runtime.log"
-            self.write_podman_reporting_store(fake, log, store_dir)
-            self.write_df(fake, str(store_dir), 5 * 1024 * 1024)
-            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
-            # nothing ever prompts here, so wait on the line "check" always prints instead
-            output = run_under_pty(bundle, env, ["sh", "build.sh", "check"], send_when_seen="GB free in", send=b"\n", timeout=8)
-            self.assertNotIn("[Y/n]", output)
-            self.assertNotIn("podman would keep", output)
-
-    def test_no_prompt_when_the_default_storage_clearly_has_room(self) -> None:
-        try:
-            import pty  # noqa: F401
-        except ImportError:
-            self.skipTest("the pty module is not available on this platform")
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp = Path(tmp)
-            bundle = self.make_bundle(tmp)
-            fake = self.make_fake_bin(tmp, self.BUILD_TOOLS)
-            self.write_root_id(fake)
-            store_dir = tmp / "default-store"
-            store_dir.mkdir()
-            log = tmp / "runtime.log"
-            self.write_podman_reporting_store(fake, log, store_dir)
-            self.write_df(fake, str(store_dir), 70 * 1024 * 1024)  # 70 GB: comfortably above the 60 GB "why ask" line
-            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1"}
-            output = run_under_pty(bundle, env, ["sh", "build.sh"], send_when_seen="pulling the build engine", send=b"\n")
-            self.assertNotIn("[Y/n]", output)
-            self.assertNotIn("podman would keep", output)
+            self.write_logging_runtime(fake, "podman", log)
+            self.write_df(fake, str(flag_root), 100 * 1024 * 1024)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_CONTAINER_ROOT": str(env_root)}
+            result = subprocess.run(["sh", "build.sh", "check", f"--storage={flag_root}"], cwd=bundle, env=env,
+                                    capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             calls = log.read_text(encoding="utf-8").splitlines()
-            self.assertFalse(any("--root" in c for c in calls), calls)
+            self.assertTrue(any(f"--root {flag_root}" in c for c in calls), calls)
+            self.assertFalse(any(str(env_root) in c for c in calls), calls)
 
     def test_a_location_on_a_filesystem_that_cannot_back_an_overlay_is_refused_clearly(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1255,8 +1351,29 @@ class ContainerStorageTests(unittest.TestCase):
 
     def test_launcher_script_documents_the_new_flags(self) -> None:
         text = (ROOT / "tools" / "bundle_launcher.sh").read_text(encoding="utf-8")
-        for needle in ("SYNOS_CONTAINER_ROOT", "SYNOS_CONTAINER_RUNROOT", "--container-root=", "--container-runroot="):
+        for needle in ("SYNOS_CONTAINER_ROOT", "SYNOS_CONTAINER_RUNROOT", "--container-root=", "--container-runroot=",
+                       "--storage", "older spelling"):
             self.assertIn(needle, text, needle)
+
+    def test_help_text_names_the_storage_flag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            env = {"PATH": str(fake), "HOME": str(tmp)}
+            result = subprocess.run(["sh", "build.sh", "--help"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertIn("--storage", result.stdout)
+
+    def test_storage_flag_needs_a_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = self.make_bundle(tmp)
+            fake = self.make_fake_bin(tmp)
+            env = {"PATH": str(fake), "HOME": str(tmp)}
+            result = subprocess.run(["sh", "build.sh", "check", "--storage"], cwd=bundle, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+            self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+            self.assertIn("--storage needs a path", result.stdout + result.stderr)
 
 
 LAUNCHER_UPDATE_TOOLS = ("sh", "sed", "head", "awk", "grep", "cat", "cp", "tr", "dirname", "printf",

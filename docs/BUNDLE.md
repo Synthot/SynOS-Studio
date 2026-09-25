@@ -225,26 +225,60 @@ catalog and written into the zip by the front end) do this and nothing else:
 
 ### Where the build's bytes land
 
-Running the launcher from a roomy disk does not put the build there: the
-chroot, the image layers and the cache live in the container runtime's own
-storage, normally on the system disk, wherever that runtime was installed.
-A machine with a small system disk and a large second one needs the runtime
-told to use it, not the bundle moved.
+The chroot, the image layers and the cache live in the container runtime's
+own storage — not automatically wherever the bundle happens to be, historically,
+which was the trap: podman and docker keep this storage wherever they were
+installed, usually the system disk, regardless of which disk the bundle
+itself was unpacked to.
 
-- **podman** takes a location per invocation. Set `SYNOS_CONTAINER_ROOT`
-  (or pass `--container-root=<path>` to `build.sh`/`tools/synos build`, or
-  `-ContainerRoot` to `build.ps1`) to a directory on the disk with room; no
-  root and no daemon restart are needed, and the same value on the next run
-  reuses what is already there rather than starting over. `SYNOS_CONTAINER_RUNROOT`
-  (`--container-runroot`/`-ContainerRunroot`) does the same for podman's small
-  state directory, which otherwise stays at podman's own default. The chosen
-  path must be on a filesystem that can back a container's overlay (ext4, xfs,
-  btrfs and similar; not vfat, exFAT, NTFS or a network share) — `build.sh`
-  checks this and says so plainly rather than failing deep inside the build.
+**On podman, this needs nothing from you.** The launcher works out on its
+own that the disk to use is the one the bundle was unpacked to — the
+decision the person already made by choosing where to unzip — and keeps
+images, layers and the chroot in `.build/container-storage`, right next to
+the bundle, rather than in podman's own default location. It says so once,
+plainly, the run that creates that directory:
+
+    this build keeps its storage under <bundle>/.build/container-storage; use --storage=<path> (or SYNOS_CONTAINER_ROOT) to put it somewhere else.
+
+Later runs find the directory already there and say nothing further about
+it. **`--storage <path>`** (or `--storage=<path>`) is the current way to put
+it somewhere else instead — no root, no daemon restart, and the same value
+on the next run reuses what is already there rather than starting over.
+`--container-root=<path>` is an older spelling of the same flag and keeps
+working. `SYNOS_CONTAINER_ROOT` does the same for unattended use, where a
+flag is awkward — a person passes `--storage`; a service sets the variable.
+`--container-runroot=<path>`/`SYNOS_CONTAINER_RUNROOT` does the same for
+podman's small state directory, which otherwise stays at podman's own
+default.
+
+**A real choice remains only when the bundle's own disk cannot back a
+container's overlay at all** — an unpacked bundle on a removable
+vfat/exFAT/NTFS drive, say, now the common case rather than the rare one,
+since the bundle's own disk is the default location. Then, and only then (a
+terminal, no `--yes`, not just `check`), `build.sh`/`build.ps1` asks once:
+
+    this bundle's own disk is vfat, which cannot back a container's overlay filesystem; podman's own storage at <podman's default storage> (<N> GB free) can.
+    Use podman's own storage there instead? [Y/n]
+
+Enter (or "y") accepts podman's own storage — the fix, offered as the
+default answer. The answer — that, or "keep the bundle's own disk anyway" —
+is written to `.build/container-root` next to the bundle, so the next run
+says where the storage is instead of asking again:
+
+    using the remembered build storage: <path> (change: --storage=<path>; forget: rm .build/container-root)
+    using podman's own storage for this build, not this bundle's disk (change: --storage=<path>; forget: rm .build/container-root)
+
+`--storage=<path>` (or `SYNOS_CONTAINER_ROOT`, or the older `--container-root=<path>`)
+always wins over the remembered value for that run, and also becomes the
+new remembered value; deleting `.build/container-root` forgets the choice
+and asks again next time.
+
 - **docker**'s storage is one setting for the whole daemon: there is no
-  per-build override. Asking the launcher or `tools/synos build` for a
-  location while running under docker is refused, with the two ways to move
-  it instead (`data-root` in `/etc/docker/daemon.json` and a service restart
+  per-build override, and it is unaffected by any of the above — never asked
+  the question, never given a default location, its storage exactly where
+  it always was. Asking the launcher or `tools/synos build` for a location
+  while running under docker is refused, with the two ways to move it
+  instead (`data-root` in `/etc/docker/daemon.json` and a service restart
   for a plain install; the same key in
   `/var/snap/docker/current/config/daemon.json`, a `snap restart docker`, and
   a one-time `snap connect docker:removable-media` so it can even reach
@@ -252,37 +286,28 @@ told to use it, not the bundle moved.
   already has room where docker keeps its images.
 - `tools/build_matrix.py` and `tools/catalog_conformance.py` accept the same
   setting (`--container-root`/`--container-runroot` on the former,
-  `container_root`/`container_runroot` in the latter's config) and pass it to
-  every target's `tools/synos build`; `tools/host_resources.py` measures free
-  disk there instead of the runtime's default when it is set, so `--jobs auto`
-  is derived from the disk actually being used, not the one being avoided.
+  `container_root`/`container_runroot` in the latter's config — these are
+  automation, never interactive, so they keep the older names rather than a
+  `--storage` meant for a person's own terminal) and pass it to every
+  target's `tools/synos build`; `tools/host_resources.py` measures free disk
+  there instead of the runtime's default when it is set, so `--jobs auto` is
+  derived from the disk actually being used, not the one being avoided.
 
-If your system disk is small, this is the fix: point `SYNOS_CONTAINER_ROOT`
-at the roomier one and nothing about how you run the launcher changes.
-
-**The launcher offers this up front, on podman, before it becomes a
-problem.** When no location was given and podman's own storage is not
-clearly big enough, `build.sh`/`build.ps1` (not `check`, not `--yes`, not
-without a terminal, not when podman's own storage clearly has room) asks
-once:
-
-    podman would keep this build under <podman's default storage> (<N> GB free); it needs 30 GB.
-    Use <bundle>/.build/container-storage next to this bundle instead (<M> GB free there)? [Y/n]
-
-Enter (or "y") accepts the directory beside the bundle; that alternative is
-only offered as the default answer when the bundle's own disk actually has
-more room than podman's default. The answer — that path, or "keep the
-default" — is written to `.build/container-root` next to the bundle, so the
-next run says where the storage is instead of asking again:
-
-    using the remembered build storage: <path> (change: --container-root=<path>; forget: rm .build/container-root)
-
-`--container-root=<path>` (or `SYNOS_CONTAINER_ROOT`) always wins over the
-remembered value for that run, and also becomes the new remembered value;
-deleting `.build/container-root` forgets the choice and asks again next
-time. Never asked on docker, where there is no per-build answer to offer —
-podman is only mentioned there as an alternative once space is actually
-short (see the docker refusal above).
+**The cost of a location beside the bundle: nothing is shared between
+bundles.** Each bundle gets its own `.build/container-storage`, so building
+a second bundle pulls the builder image again (about 1.5 GB) and starts its
+package cache from empty, even though the first bundle already has both.
+For one bundle, or a handful, this is a fair trade for "it just works on the
+disk I chose." For somebody building many bundles from the same machine and
+wanting to share that image pull and cache across all of them, the fix is
+the existing override, used the way a service already does: pick one path
+with room (`SYNOS_CONTAINER_ROOT=/big/disk/synos-storage`, set once, in the
+shell profile or the CI job) and every bundle built from there reuses it,
+the same as pointing multiple bundles at the same disk always has. A shared
+location is not the *default*, deliberately: it would mean guessing at a
+path nobody chose (which disk? whose account?) on the person's behalf, the
+opposite of "the bytes land on the disk you chose." The explicit override
+remains the one place that choice belongs.
 
 Inside the image `synos build` detects `SYNOS_IN_CONTAINER` and runs the
 engine's make directly; the ISO, its evidence files and the log are copied to
