@@ -90,6 +90,15 @@ Honest as of engine 0.3.0 (September 2026):
   and pass on a bare Ubuntu 24.04 machine. They cover the manifest
   renderer, the package builder, the brand kit, the bundle tool, the
   launchers, the catalog, the build matrix and the conformance runner.
+  The easier way to run that command, plus the other checks a push wants
+  (manifest validation, a shell syntax pass, `compileall`, an offline
+  bundle-catalog validation loop), in one sequential pass instead of by
+  hand: `python3 tools/run_checks.py` (`--level fast` for the seconds-long
+  checks only, `--list` to see every stage, `--only NAME` for one of them).
+  Each stage's full output lands under `test-results/checks/`; the tool
+  never builds an image, boots QEMU or touches the network. It can also
+  drive the separate front end's own suites when pointed at that checkout
+  (`--studio-repo PATH` or `SYNOS_STUDIO_REPO`) — never required here.
 - One catalogued appliance (the Nginx web server, Ubuntu 24.04) has been
   built end to end from a bundle the Studio page produced, booted in QEMU,
   and certified on screen: the live session came up without a password and
