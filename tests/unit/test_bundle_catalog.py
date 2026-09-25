@@ -244,7 +244,20 @@ class PackageResolutionTests(unittest.TestCase):
                 self.assertIn(bundle_id, self.bundles, f"{entry['id']}: unknown bundle {bundle_id!r}")
                 for base_id, pkg_map in self.pkg_maps.items():
                     with self.subTest(entry=entry["id"], bundle=bundle_id, base=base_id):
-                        concrete, _ = render_manifest.resolve_packages(self.bundles[bundle_id], pkg_map, "amd64", ["en"], base_id)
+                        try:
+                            concrete, _ = render_manifest.resolve_packages(
+                                self.bundles[bundle_id], pkg_map, "amd64", ["en"], base_id, manifest["profile"])
+                        except render_manifest.ManifestError as exc:
+                            # A base whose archive genuinely has nothing for one of the
+                            # group's roles refuses by design (bases/*/packages.map's
+                            # `unavailable:` marker, e.g. ubuntu's browser-headless).
+                            # Allowed for a base this entry does not pin - the page lets a
+                            # person change base after choosing an appliance, and this
+                            # refusal is exactly what tells them it cannot be that one -
+                            # never for the base the entry itself is built on.
+                            self.assertNotEqual(manifest["base"], base_id,
+                                                f"{entry['id']} pins {base_id}, where {bundle_id} cannot resolve: {exc}")
+                            continue
                         self.assertTrue(concrete, f"{bundle_id} resolves to nothing on {base_id}")
 
     def test_repositories_name_a_key_that_exists_and_is_a_public_key(self) -> None:
