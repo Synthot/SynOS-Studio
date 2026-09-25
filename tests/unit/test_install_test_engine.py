@@ -18,6 +18,7 @@ side effects.
 from __future__ import annotations
 
 import os
+import shutil
 import stat
 import subprocess
 import tempfile
@@ -30,10 +31,61 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "packaging" / "install-test-engine.sh"
 
+# Resolved once, from this test process's own PATH, and used as an absolute
+# path everywhere a test spawns bash itself — never the bare name "bash" —
+# so that resolving the *interpreter* never depends on what a closed PATH
+# built for the *script under test* does or doesn't contain (below).
+BASH = shutil.which("bash") or "/bin/bash"
+
+# Directories real system tools this script itself shells out to (sed, awk,
+# mkdir, dirname, cat, mv, cp, tr, head, id, grep, mktemp, timeout, rm,
+# tail, uname, ...) actually live in, on the distributions this project
+# targets.
+REAL_TOOL_DIRS = ("/usr/bin", "/bin", "/usr/sbin", "/sbin")
+
 
 def _write_executable(path: Path, body: str) -> None:
     path.write_text(f"#!/bin/bash\n{body}", encoding="utf-8")
     path.chmod(path.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+
+
+def build_closed_path(bindir: Path, *, fakes: dict[str, str], omit: set[str] = frozenset()) -> str:
+    """Builds `bindir` into a *closed* PATH entry — the returned string names
+    `bindir` alone, never `bindir` prepended to the real PATH — so a name
+    this script looks up is either one of the fakes given here, a real
+    system tool symlinked in below, or genuinely absent. That last case is
+    the one a "fakes ahead of the real PATH" setup cannot represent at all:
+    prepending only ever adds an earlier match, it can never make a real
+    binary already further down PATH stop existing (item 152 — this is
+    exactly why detect_runtime found the machine's real podman even though
+    the test only ever created a fake docker).
+
+    `fakes`: name -> script body, written as executables directly in
+    `bindir`. `omit`: names that must never appear in the closed PATH at
+    all, real or fake — for a runtime test, always both "podman" and
+    "docker" except whichever one `fakes` itself provides, so the other is
+    guaranteed genuinely absent regardless of what is installed on the
+    machine running the test. Every other real command actually needed
+    (REAL_TOOL_DIRS) is symlinked in unless it's a fake or an omission, so
+    the script still runs normally."""
+    bindir.mkdir(parents=True, exist_ok=True)
+    for name, script_body in fakes.items():
+        _write_executable(bindir / name, script_body)
+    claimed = set(fakes) | set(omit)
+    for real_dir in REAL_TOOL_DIRS:
+        directory = Path(real_dir)
+        if not directory.is_dir():
+            continue
+        for entry in directory.iterdir():
+            if entry.name in claimed:
+                continue
+            try:
+                if entry.is_file() and os.access(entry, os.X_OK):
+                    (bindir / entry.name).symlink_to(entry)
+            except OSError:
+                continue
+            claimed.add(entry.name)  # first match wins, like real PATH order
+    return str(bindir)
 
 
 def run_snippet(body: str, env: dict | None = None) -> subprocess.CompletedProcess:
@@ -376,27 +428,51 @@ class NoCredentialIsEverWrittenTests(unittest.TestCase):
 
 
 class DryRunTests(unittest.TestCase):
-    def _fake_environment(self, tmp: str, runtime: str = "podman") -> tuple[Path, Path]:
+    """Every test in this class runs the whole script (main(), which calls
+    detect_runtime() and requirement_present() against the real PATH it is
+    given) — so every one of them is exactly the kind item 152 is about.
+    Each gets a *closed* PATH (build_closed_path): whichever of podman/
+    docker the test is not naming is guaranteed genuinely absent, not
+    merely "not the first match" — proven both ways by RuntimeIsolationTests
+    below, which runs this same harness with each runtime actually
+    installed and actually absent in turn."""
+
+    RUNTIME_FAKES = {
+        "qemu-system-x86_64": "exit 0\n",
+        "xorriso": "exit 0\n",
+        "tesseract": "exit 0\n",
+        "chromium": "exit 0\n",
+        "sudo": 'exec "$@"\n',
+        "systemctl": "exit 0\n",
+        "useradd": "exit 0\n",
+        "usermod": "exit 0\n",
+        "getent": "exit 0\n",
+        "nproc": "echo 4\n",
+    }
+
+    def _fake_environment(self, tmp: str, runtime: str = "podman") -> tuple[str, Path]:
+        """Returns (closed PATH string, os-release path). `runtime` names
+        exactly which of podman/docker is present; the other is placed in
+        `omit`, so build_closed_path leaves it out of the returned PATH
+        entirely — never found, no matter what this machine actually has
+        installed (item 152)."""
         bindir = Path(tmp) / "bin"
-        bindir.mkdir(exist_ok=True)
-        names = ["qemu-system-x86_64", "xorriso", "tesseract", "chromium",
-                 "sudo", "systemctl", "useradd", "usermod", "getent"]
-        names.append(runtime)  # "podman" or "docker" — never both, as detect_runtime prefers podman first
-        for name in names:
-            _write_executable(bindir / name, "exit 0\n")
-        _write_executable(bindir / "nproc", "echo 4\n")
+        other = "docker" if runtime == "podman" else "podman"
+        fakes = dict(self.RUNTIME_FAKES)
+        fakes[runtime] = "exit 0\n"
+        path = build_closed_path(bindir, fakes=fakes, omit={other, "df", "stat"})
         fake_df_stat(bindir, [("/mnt/big", 5000 * 1048576, "ext4")])
         osr = Path(tmp) / "os-release"
         osr.write_text("ID=debian\n", encoding="utf-8")
-        return bindir, osr
+        return path, osr
 
     def _run(self, tmp: str, extra_args: list[str] | None = None, runtime: str = "podman") -> tuple[subprocess.CompletedProcess, Path]:
-        bindir, osr = self._fake_environment(tmp, runtime=runtime)
+        path, osr = self._fake_environment(tmp, runtime=runtime)
         config_path = Path(tmp) / "conformance.yml"
         env = dict(os.environ)
-        env["PATH"] = f"{bindir}:{env['PATH']}"
+        env["PATH"] = path  # replaced, never prepended: see build_closed_path
         env["SYNOS_OS_RELEASE_FILE"] = str(osr)
-        args = ["bash", str(SCRIPT), "--dry-run", "--yes",
+        args = [BASH, str(SCRIPT), "--dry-run", "--yes",
                 f"--engine-root={ROOT}", "--site-url=https://studio.example",
                 f"--config={config_path}", f"--unit-dir={tmp}/units"] + (extra_args or [])
         result = subprocess.run(args, capture_output=True, text=True, env=env, cwd=str(ROOT), check=False)
@@ -406,6 +482,7 @@ class DryRunTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             result, config_path = self._run(tmp)
             self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+            self.assertRegex(result.stdout, r"container runtime: .*/podman\b")  # item 154
             self.assertIn("[dry-run]", result.stdout)
             self.assertFalse(config_path.exists())
             self.assertFalse((Path(tmp) / "units").exists())
@@ -427,14 +504,14 @@ class DryRunTests(unittest.TestCase):
 
     def test_dry_run_on_an_unsupported_distribution_refuses_without_a_package_manager_guess(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            bindir, osr = self._fake_environment(tmp)
+            path, osr = self._fake_environment(tmp)
             osr.write_text("ID=solaris\n", encoding="utf-8")
             env = dict(os.environ)
-            env["PATH"] = f"{bindir}:{env['PATH']}"
+            env["PATH"] = path
             env["SYNOS_OS_RELEASE_FILE"] = str(osr)
             config_path = Path(tmp) / "conformance.yml"
             result = subprocess.run(
-                ["bash", str(SCRIPT), "--dry-run", "--yes", f"--engine-root={ROOT}",
+                [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={ROOT}",
                  "--site-url=https://studio.example", f"--config={config_path}", f"--unit-dir={tmp}/units"],
                 capture_output=True, text=True, env=env, cwd=str(ROOT), check=False,
             )
@@ -443,12 +520,17 @@ class DryRunTests(unittest.TestCase):
             self.assertFalse(config_path.exists())
 
     def test_docker_still_gets_a_working_configuration_with_storage_advice_printed_once(self) -> None:
-        # item 135: this machine's real runtime is docker, not podman —
+        # item 135: on a machine whose only runtime is docker, not podman —
         # docker_storage_note must print exactly once, and the run must
-        # still complete and write a usable config, not refuse.
+        # still complete and write a usable config, not refuse. Item 152:
+        # this is true regardless of whether *this* machine (running the
+        # test) happens to also have podman installed, because podman is
+        # genuinely absent from the closed PATH this test builds, not just
+        # second in line.
         with tempfile.TemporaryDirectory() as tmp:
             result, _ = self._run(tmp, runtime="docker")
             self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+            self.assertRegex(result.stdout, r"container runtime: .*/docker\b")  # item 154
             self.assertEqual(1, result.stdout.count("is one setting for the whole"), result.stdout)
             self.assertIn("container_root: null", result.stdout)  # never set for docker
             self.assertIn("jobs:", result.stdout)
@@ -462,6 +544,7 @@ class DryRunTests(unittest.TestCase):
             target = f"{tmp}/not-created-yet/storage"
             result, _ = self._run(tmp, extra_args=[f"--storage-path={target}"], runtime="docker")
             self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+            self.assertRegex(result.stdout, r"container runtime: .*/docker\b")
             self.assertFalse(Path(target).exists())  # --dry-run still creates nothing
             self.assertNotIn("could not read free space", result.stdout + result.stderr)
             self.assertIn(f'workdir: "{target}/synos-conformance"', result.stdout)
@@ -470,19 +553,71 @@ class DryRunTests(unittest.TestCase):
         # item 135: a failed storage pick must not be fatal under docker —
         # only podman's own storage depends on it being real.
         with tempfile.TemporaryDirectory() as tmp:
-            bindir, osr = self._fake_environment(tmp, runtime="docker")
+            path, osr = self._fake_environment(tmp, runtime="docker")
+            bindir = Path(tmp) / "bin"
             fake_df_stat(bindir, [("/boot/efi", 500 * 1048576, "vfat")])  # nothing overlay-capable at all
             config_path = Path(tmp) / "conformance.yml"
             env = dict(os.environ)
-            env["PATH"] = f"{bindir}:{env['PATH']}"
+            env["PATH"] = path
             env["SYNOS_OS_RELEASE_FILE"] = str(osr)
             result = subprocess.run(
-                ["bash", str(SCRIPT), "--dry-run", "--yes", f"--engine-root={ROOT}",
+                [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={ROOT}",
                  "--site-url=https://studio.example", f"--config={config_path}", f"--unit-dir={tmp}/units"],
                 capture_output=True, text=True, env=env, cwd=str(ROOT), check=False,
             )
             self.assertEqual(0, result.returncode, result.stderr + result.stdout)  # not a refusal
+            self.assertRegex(result.stdout, r"container runtime: .*/docker\b")
             self.assertIn("using /var/lib/synos-conformance instead", result.stdout + result.stderr)
+
+
+class RuntimeIsolationTests(unittest.TestCase):
+    """item 153: proves the isolation both ways — the docker scenario and
+    the podman scenario each run against a closed PATH (build_closed_path)
+    in which the *other* runtime is placed in `omit` and so is genuinely
+    absent, never merely second in line. Run this file's whole suite on a
+    machine with podman installed (as-is) and again with PATH edited to
+    remove every real podman/docker directory beforehand
+    (`PATH=$(printf '%s\\n' "$PATH" | tr ':' '\\n' | grep -v ... )`, or
+    simplest, a container with neither installed): both of these two tests
+    pass exactly the same way either time, because neither one's outcome
+    depends on the host at all — see this class's own module docstring
+    entry point (build_closed_path) for how."""
+
+    def _closed_path_with_fakes(self, tmp: str, *, runtime: str) -> Path:
+        bindir = Path(tmp) / "bin"
+        fakes = dict(DryRunTests.RUNTIME_FAKES)
+        fakes[runtime] = "exit 0\n"
+        other = "docker" if runtime == "podman" else "podman"
+        build_closed_path(bindir, fakes=fakes, omit={other, "df", "stat"})
+        fake_df_stat(bindir, [("/mnt/big", 5000 * 1048576, "ext4")])
+        return bindir
+
+    def _run(self, tmp: str, bindir: Path, runtime_expected: str) -> subprocess.CompletedProcess:
+        osr = Path(tmp) / "os-release"
+        osr.write_text("ID=debian\n", encoding="utf-8")
+        config_path = Path(tmp) / "conformance.yml"
+        env = dict(os.environ)
+        env["PATH"] = str(bindir)
+        env["SYNOS_OS_RELEASE_FILE"] = str(osr)
+        result = subprocess.run(
+            [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={ROOT}",
+             "--site-url=https://studio.example", f"--config={config_path}", f"--unit-dir={tmp}/units"],
+            capture_output=True, text=True, env=env, cwd=str(ROOT), check=False,
+        )
+        self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+        self.assertRegex(result.stdout, rf"container runtime: .*/{runtime_expected}\b",
+                         f"expected the {runtime_expected} path; got:\n{result.stdout}")
+        return result
+
+    def test_docker_scenario_is_green_with_podman_genuinely_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = self._closed_path_with_fakes(tmp, runtime="docker")
+            self._run(tmp, bindir, "docker")
+
+    def test_podman_scenario_is_green_with_docker_genuinely_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = self._closed_path_with_fakes(tmp, runtime="podman")
+            self._run(tmp, bindir, "podman")
 
 
 class RealDfInvocationTests(unittest.TestCase):
