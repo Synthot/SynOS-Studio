@@ -63,6 +63,50 @@ Exit code: 0 when every target this run attempted succeeded, 1 when at
 least one failed or timed out, 2 when the host itself refuses to start
 (not enough disk, memory or CPUs for `--jobs`, no podman or docker).
 
+## The four layers, and the one question each answers
+
+This file describes one of four checks, and they only make sense together.
+Each answers a question the one before it cannot, and none of them runs on a
+customer's machine — a person opens the Studio page, gets a bundle, and runs
+its launcher.
+
+1. **Does the name exist?** `tools/catalog_apps_audit.py` checks every entry
+   of `profiles/catalog.apps.yml` against the real archive's own package
+   list, on every base and suite it claims. Set membership against
+   `Packages.gz`; 2184 entries in about fifteen seconds. A name the archive
+   has never heard of is a build that dies at `apt-get install` on the
+   buyer's machine — this is what stops the page offering one.
+2. **Will apt install it here?** `tools/catalog_apt_solver.py` takes the
+   entries that exist and asks apt's own solver whether each one installs,
+   alone, on top of the floor every image already carries
+   (`profiles/minimal.yml`, resolved) — `apt-get install --simulate
+   --no-remove` inside a throwaway container of that suite's own image, with
+   the sources the real chroot gets. "The name is real" and "apt will
+   install it alongside what we already install" are different questions, and
+   only the second one predicts the forty-minute failure. `--no-remove` is
+   what makes the answer honest: without it, apt plans to remove a floor
+   package to make room and calls that success. Full catalogue: about six
+   hours, because `apt-get` re-parses every index on every invocation. It
+   downloads no candidate packages at all — only the indexes, once per
+   base and suite — so the cost does not grow with the catalogue.
+3. **Do the engine's own packages build into an image?** The saturation
+   targets below: every application group and every machine profile, per
+   base, in one real ISO that boots. This proves the engine's own abstract
+   names, not the open-ended catalogue a person may add to.
+4. **Is a specific appliance's own configuration intact?**
+   `tools/catalog_conformance.py build`, through the real Studio page and
+   the real launcher, for one catalogued entry at a time. This is the only
+   layer that sees `software.files`, `security.open_ports`, a service's
+   `cap_add`, a kiosk's locked application or a pinned image tag — the class
+   of bug that once produced an Nginx appliance that built and booted with no
+   site to serve.
+
+Layers 1 and 2 belong in a nightly run; 2 is hours, so it is never on a
+per-commit path (`tools/run_checks.py` reaches neither by `--level`). What
+none of the four answers: whether two catalogue entries conflict with *each
+other*. A person picks a handful of applications, and every pair of 2184 is a
+different problem from the one any of these solves.
+
 ## What it proves, and what it does not
 
 A "success" means `tools/synos build` exited 0 for that bundle or manifest
