@@ -9,13 +9,28 @@ builds, end to end, through the engine's own path.
                                    [--jobs N] [--timeout MINUTES] [--pull]
                                    [--no-smoke] [--output DIR] [--resume]
 
-Two kinds of target:
+Three kinds of target:
 
-  catalog   every bundle-catalog/index.yml entry, built with its own pinned
-            base and suite (bundle-catalog/<folder>, docs/BUNDLE.md)
-  core      every (base, suite) combination this engine supports, built once
-            each on the engine's own default profile (manifest.yml's
-            `profile:`) — "the distro cores"
+  catalog     every bundle-catalog/index.yml entry, built with its own pinned
+              base and suite (bundle-catalog/<folder>, docs/BUNDLE.md)
+  core        every (base, suite) combination this engine supports, built once
+              each on the engine's own default profile (manifest.yml's
+              `profile:`) — "the distro cores"
+  saturation  one target per base, generated fresh at plan time by
+              tools/build_saturation.py: every application group in
+              profiles/bundles.yml that base can serve, plus every machine
+              profile's own software.packages.add, in one image — internal
+              test-engine machinery, never a bundle-catalog entry (nothing
+              under bundle-catalog/ names one, tools/export_catalog.py never
+              reads one, tests/unit/test_saturation.py proves both). It
+              proves every catalogued package resolves and installs
+              together; it cannot see a bundle's own configuration
+              (software.files, security.open_ports, a service's
+              cap_add/env_file/exec, a pinned image tag) the way a catalog
+              target's own profile can — docs/BUILD_MATRIX.md says which is
+              which. A person still buys one bundle from the real catalog
+              and builds it with their own launcher; nothing here changes
+              that path.
 
 Each target is built exactly the way a person would build it:
 `tools/synos build <bundle dir or manifest.yml>`, one target at a time by
@@ -66,6 +81,7 @@ import importlib.machinery
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -76,6 +92,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SYNOS = ROOT / "tools" / "synos"
 CORE_MANIFEST_DIR = ROOT / ".build" / "matrix" / "manifests"
+SATURATION_DIR = ROOT / ".build" / "matrix" / "saturation"
 
 DEFAULT_TIMEOUT_MINUTES = 90
 DEFAULT_OUTPUT = ROOT / "dist" / "matrix"
@@ -94,6 +111,7 @@ def _load(name: str, path: Path):
 
 synos_engine = _load("synos_engine", SYNOS)
 render_manifest = _load("render_manifest_bm", ROOT / "tools" / "render_manifest.py")
+build_saturation = _load("build_saturation_bm", ROOT / "tools" / "build_saturation.py")
 
 sys.path.insert(0, str(ROOT / "tools"))
 import smoke_test  # noqa: E402
@@ -203,8 +221,25 @@ def plan_core_targets(root: Path) -> list[Target]:
     return targets
 
 
+def plan_saturation_targets(root: Path) -> list[Target]:
+    """One target per real base (bases/_template excluded): the saturation
+    bundle tools/build_saturation.py generates fresh, written under this
+    checkout's own .build/ (git-ignored) — never bundle-catalog/, never a
+    file this repository tracks. Internal test-engine machinery only
+    (docs/BUILD_MATRIX.md, "What the saturation targets are, and are not");
+    tests/unit/test_saturation.py proves nothing under bundle-catalog/ or
+    tools/export_catalog.py's own output ever names one."""
+    targets = []
+    for base_id in build_saturation.real_bases(root):
+        dest = SATURATION_DIR / base_id
+        result = build_saturation.write_bundle(base_id, dest, root=root)
+        targets.append(Target(id=f"saturation-{base_id}", kind="saturation", base=base_id, suite=result["suite"],
+                              source=dest, checksum=_sha256_tree(dest), profile_id=result["profile_id"]))
+    return targets
+
+
 def plan_targets(root: Path) -> list[Target]:
-    return plan_catalog_targets(root) + plan_core_targets(root)
+    return plan_catalog_targets(root) + plan_core_targets(root) + plan_saturation_targets(root)
 
 
 def select_targets(targets: list[Target], *, only: list[str] | None, base: list[str] | None,
@@ -283,9 +318,12 @@ def _resolve_bundle_profile(profile_id: str, own_text: str | None) -> dict:
 
 
 def _resolved_profile(target: Target) -> dict:
-    if target.kind != "catalog":
+    if target.kind not in ("catalog", "saturation"):
         resolved, _chain = render_manifest.resolve_profile(target.profile_id)
         return resolved
+    # catalog and saturation targets both carry their own profiles/<id>.yml
+    # inside target.source, read from there rather than this checkout's
+    # tracked profiles/ (a saturation profile is never applied into it).
     profile_path = target.source / "profiles" / f"{target.profile_id}.yml"
     own_text = profile_path.read_text(encoding="utf-8") if profile_path.is_file() else None
     return _resolve_bundle_profile(target.profile_id, own_text)
@@ -302,15 +340,24 @@ def _synos_for(scratch_path: Path) -> Path:
 def _materialize_source(target: Target, root: Path, scratch_path: Path) -> Path:
     """Where to point `synos build` inside the scratch checkout. A catalog
     entry's bundle-catalog/<folder> is an ordinary tracked directory, so the
-    worktree already has it checked out; a core target's manifest lives
-    under this checkout's own .build/ (git-ignored, written at plan time),
-    which a worktree of a commit never carries, so its exact text is copied
-    into the scratch checkout's own .build/ before building."""
+    worktree already has it checked out; a core target's manifest and a
+    saturation target's whole generated bundle folder both live under this
+    checkout's own .build/ (git-ignored, written at plan time), which a
+    worktree of a commit never carries, so each is copied into the scratch
+    checkout's own .build/ before building — never applied into any tracked
+    profiles/ or manifests/ (docs/BUILD_MATRIX.md)."""
     relative = target.source.relative_to(root)
     if target.kind == "core":
         dest = scratch_path / relative
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(target.source.read_text(encoding="utf-8"), encoding="utf-8")
+        return dest
+    if target.kind == "saturation":
+        dest = scratch_path / relative
+        if dest.exists():
+            shutil.rmtree(dest)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(target.source, dest)
         return dest
     return scratch_path / relative
 
@@ -553,7 +600,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--only", help="comma-separated target ids to build")
     parser.add_argument("--base", help="comma-separated base ids to restrict to")
     parser.add_argument("--suite", help="comma-separated suites to restrict to")
-    parser.add_argument("--kind", choices=["catalog", "core"], help="restrict to one kind of target")
+    parser.add_argument("--kind", choices=["catalog", "core", "saturation"], help="restrict to one kind of target")
     parser.add_argument("--jobs", default="1",
                         help="builds to run at once: a number, or \"auto\" to derive the safe count from this "
                              "machine's disk, memory and CPUs (tools/host_resources.py); default 1")

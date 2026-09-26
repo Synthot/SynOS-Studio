@@ -138,13 +138,14 @@ class PlannerTests(unittest.TestCase):
         targets = build_matrix.plan_core_targets(ROOT)
         self.assertNotIn("core-ubuntu-jammy", {t.id for t in targets})
 
-    def test_full_plan_is_catalog_plus_core_with_unique_ids(self) -> None:
+    def test_full_plan_is_catalog_plus_core_plus_saturation_with_unique_ids(self) -> None:
         targets = build_matrix.plan_targets(ROOT)
         ids = [t.id for t in targets]
-        self.assertEqual(len(ids), len(set(ids)), "target ids must be unique across catalog and core")
+        self.assertEqual(len(ids), len(set(ids)), "target ids must be unique across catalog, core and saturation")
         catalog = [t for t in targets if t.kind == "catalog"]
         core = [t for t in targets if t.kind == "core"]
-        self.assertEqual(len(targets), len(catalog) + len(core))
+        saturation = [t for t in targets if t.kind == "saturation"]
+        self.assertEqual(len(targets), len(catalog) + len(core) + len(saturation))
 
     def test_core_manifest_resolves_the_engines_default_profile(self) -> None:
         default_profile = build_matrix._default_profile(ROOT)
@@ -154,6 +155,23 @@ class PlannerTests(unittest.TestCase):
             self.assertEqual(default_profile, data["profile"])
             self.assertEqual(target.base, data["base"])
             self.assertEqual(target.suite, data["suite"])
+
+    def test_saturation_targets_cover_every_real_base_and_carry_their_own_generated_bundle(self) -> None:
+        targets = build_matrix.plan_saturation_targets(ROOT)
+        ids = {t.id for t in targets}
+        self.assertEqual({f"saturation-{b}" for b in build_matrix.build_saturation.real_bases(ROOT)}, ids)
+        for target in targets:
+            self.assertEqual("saturation", target.kind)
+            self.assertTrue((target.source / "bundle.json").is_file())
+            self.assertTrue((target.source / "profiles" / f"{target.profile_id}.yml").is_file())
+            self.assertTrue(target.checksum)
+
+    def test_saturation_targets_are_never_under_bundle_catalog(self) -> None:
+        bundle_catalog_dir = (ROOT / "bundle-catalog").resolve()
+        for target in build_matrix.plan_saturation_targets(ROOT):
+            resolved = target.source.resolve()
+            self.assertNotEqual(bundle_catalog_dir, resolved)
+            self.assertNotIn(bundle_catalog_dir, resolved.parents)
 
 
 class SelectionTests(unittest.TestCase):
@@ -330,6 +348,35 @@ class IsolationTests(unittest.TestCase):
                                "the real apply must have written the profile inside the scratch checkout")
                 self.assertFalse((ROOT / "profiles" / "web-server-nginx.yml").exists(),
                                  "and must never have written it into this checkout")
+            finally:
+                build_matrix.scratch_checkout.remove(scratch_path)
+
+        self.assertEqual(before_status, _git_status(ROOT))
+
+    def test_a_real_bundle_apply_over_a_saturation_target_lands_in_the_scratch_checkout_only(self) -> None:
+        """A saturation target's whole generated bundle folder lives under this
+        checkout's own .build/ (git-ignored), which a fresh worktree of HEAD
+        never carries — unlike a catalog entry's tracked folder. _materialize_source
+        must copy the tree into the scratch checkout before `bundle apply` can
+        find it there at all, and never write anything back here."""
+        targets_by_id = {t.id: t for t in build_matrix.plan_saturation_targets(ROOT)}
+        target = targets_by_id["saturation-ubuntu"]
+        before_status = _git_status(ROOT)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            scratch_path = build_matrix.scratch_checkout.create(ROOT, Path(tmp) / "scratch", label="saturation-isolation-test")
+            try:
+                build_source = build_matrix._materialize_source(target, ROOT, scratch_path)
+                self.assertTrue((build_source / "bundle.json").is_file(),
+                               "the generated bundle must have been copied into the scratch checkout")
+                synos_path = build_matrix._synos_for(scratch_path)
+                result = subprocess.run([sys.executable, str(synos_path), "--json", "bundle", "apply", str(build_source)],
+                                        cwd=scratch_path, capture_output=True, text=True, check=False)
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+                self.assertTrue((scratch_path / "profiles" / "saturation-ubuntu.yml").is_file(),
+                               "the real apply must have written the profile inside the scratch checkout")
+                self.assertFalse((ROOT / "profiles" / "saturation-ubuntu.yml").exists(),
+                                 "and must never have written it into this checkout's own tracked profiles/")
             finally:
                 build_matrix.scratch_checkout.remove(scratch_path)
 

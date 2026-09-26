@@ -124,6 +124,23 @@ def make_bundle_archive(*, entry_id: str = "web-server-nginx", base: str = "ubun
     return buf.getvalue()
 
 
+def archive_with_files(entry_id: str, **kwargs) -> bytes:
+    """make_bundle_archive(), but bundle.json carries a real "files" list —
+    the manifest and profile it actually ships — the shape a real download
+    has (tools/export_catalog.py's bundle_catalog(), whose own schema
+    comment says "every file in the bundle except bundle.json itself").
+    make_bundle_archive()'s own default bundle.json omits "files" entirely,
+    which is fine for every test that does not care; --shared-workdir's own
+    clear_shared_folder() acts on exactly that list, so tests for it need
+    the real shape."""
+    files_list = [f"manifests/{entry_id}.yml", f"profiles/{kwargs.get('profile') or entry_id}.yml"]
+    bundle_json = json.dumps({"format": 1, "name": entry_id, "manifest": f"manifests/{entry_id}.yml",
+                              "files": files_list})
+    extra_files = dict(kwargs.pop("extra_files", None) or {})
+    extra_files["bundle.json"] = bundle_json
+    return make_bundle_archive(entry_id=entry_id, extra_files=extra_files, **kwargs)
+
+
 class FakeSession:
     """A fake StudioSession: `browser_factory()` returns one of these, used
     as `with browser_factory() as session: session.download_bundle(id)`."""
@@ -1387,6 +1404,177 @@ class StorageReclaimTests(unittest.TestCase):
             report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
                                   container_engine=lambda: "fake-engine")
         self.assertNotIn("storage_reclaimed", report)
+
+
+class SharedWorkdirTests(unittest.TestCase):
+    """--shared-workdir (docs/BUILD_MATRIX.md, "One shared build folder per
+    pass"): the owner's own proof requirement comes first — a second entry
+    must never see a file the first one shipped — plus the
+    failure-does-not-poison-the-next-entry and
+    engine-source-reuse-is-reported-honestly claims that go with it."""
+
+    def _config(self, tmp, **kwargs) -> "cc.Config":
+        kwargs.setdefault("smoke", False)
+        return cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake-studio", **kwargs)
+
+    def test_a_second_entry_never_sees_a_file_from_the_first(self) -> None:
+        session = FakeSession(archives_by_id={"entry-a": archive_with_files("entry-a"),
+                                              "entry-b": archive_with_files("entry-b")})
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._config(tmp)
+            shared_dir = Path(tmp) / "shared"
+            result_a = cc.build_one({"id": "entry-a"}, config=config, work_dir=shared_dir, browser_factory=session,
+                                    shared=True, target_dir=Path(tmp) / "results-a")
+            self.assertEqual("success", result_a["status"])
+            self.assertTrue((shared_dir / "bundle" / "profiles" / "entry-a.yml").is_file())
+            self.assertTrue((shared_dir / "bundle" / "manifests" / "entry-a.yml").is_file())
+
+            result_b = cc.build_one({"id": "entry-b"}, config=config, work_dir=shared_dir, browser_factory=session,
+                                    shared=True, target_dir=Path(tmp) / "results-b")
+            self.assertEqual("success", result_b["status"])
+            self.assertFalse((shared_dir / "bundle" / "profiles" / "entry-a.yml").exists(),
+                             "entry-b must never see entry-a's own profile")
+            self.assertFalse((shared_dir / "bundle" / "manifests" / "entry-a.yml").exists(),
+                             "entry-b must never see entry-a's own manifest")
+            self.assertTrue((shared_dir / "bundle" / "profiles" / "entry-b.yml").is_file())
+            self.assertTrue((shared_dir / "bundle" / "manifests" / "entry-b.yml").is_file())
+            # each entry's own evidence still lands somewhere per-entry, never
+            # inside the folder the next entry is about to clear.
+            self.assertEqual(str(Path(tmp) / "results-a" / "build.log"), result_a["log_path"])
+            self.assertEqual(str(Path(tmp) / "results-b" / "build.log"), result_b["log_path"])
+
+    def test_a_failed_first_entry_does_not_poison_the_second(self) -> None:
+        session = FakeSession(archives_by_id={
+            "entry-a": archive_with_files("entry-a", build_sh=FAKE_BUILD_SH_ENGINE_FAIL),
+            "entry-b": archive_with_files("entry-b"),
+        })
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._config(tmp)
+            shared_dir = Path(tmp) / "shared"
+            result_a = cc.build_one({"id": "entry-a"}, config=config, work_dir=shared_dir, browser_factory=session,
+                                    shared=True, target_dir=Path(tmp) / "results-a")
+            self.assertEqual("build_failed", result_a["status"])
+            self.assertTrue((shared_dir / "bundle" / "profiles" / "entry-a.yml").is_file(),
+                           "a failed entry keeps its own files exactly where it left them")
+
+            result_b = cc.build_one({"id": "entry-b"}, config=config, work_dir=shared_dir, browser_factory=session,
+                                    shared=True, target_dir=Path(tmp) / "results-b")
+            self.assertEqual("success", result_b["status"],
+                             "the next entry must succeed regardless of why the previous one failed")
+            self.assertFalse((shared_dir / "bundle" / "profiles" / "entry-a.yml").exists())
+            self.assertTrue((shared_dir / "bundle" / "profiles" / "entry-b.yml").is_file())
+
+    def test_dot_build_survives_across_entries_and_reuse_is_reported_honestly(self) -> None:
+        session = FakeSession(archives_by_id={"entry-a": archive_with_files("entry-a"),
+                                              "entry-b": archive_with_files("entry-b")})
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._config(tmp)
+            shared_dir = Path(tmp) / "shared"
+            result_a = cc.build_one({"id": "entry-a"}, config=config, work_dir=shared_dir, browser_factory=session,
+                                    shared=True, target_dir=Path(tmp) / "results-a")
+            self.assertFalse(result_a["shared_workdir"]["engine_source_reused"],
+                             "a fresh shared folder starts with nothing to reuse")
+
+            # Stand in for what the real launcher's own content-addressed
+            # cache would leave behind (tools/bundle_launcher.sh's
+            # .build/engine-src/<id> plus its <id>.ok marker,
+            # engine_src_is_reusable()) - these fakes stand in for build.sh
+            # itself, never for the launcher this mode exists to let reuse
+            # its own cache undisturbed.
+            engine_src_root = shared_dir / "bundle" / ".build" / "engine-src"
+            (engine_src_root / "deadbeef").mkdir(parents=True)
+            (engine_src_root / "deadbeef" / "tools").mkdir()
+            (engine_src_root / "deadbeef" / "tools" / "synos").write_text("stand-in for a real engine checkout")
+            (engine_src_root / "deadbeef.ok").write_text("")
+
+            result_b = cc.build_one({"id": "entry-b"}, config=config, work_dir=shared_dir, browser_factory=session,
+                                    shared=True, target_dir=Path(tmp) / "results-b")
+            self.assertEqual("success", result_b["status"])
+            self.assertTrue(result_b["shared_workdir"]["engine_source_reused"],
+                           "the second entry must see the engine source the first left behind")
+            self.assertTrue((engine_src_root / "deadbeef" / "tools" / "synos").is_file(),
+                           ".build/ must never be touched by the shared clear")
+            self.assertTrue((engine_src_root / "deadbeef.ok").is_file())
+
+    def test_clear_shared_folder_removes_declared_files_and_dist_never_dot_build(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_dir = Path(tmp) / "bundle"
+            (bundle_dir / "profiles").mkdir(parents=True)
+            (bundle_dir / "manifests").mkdir()
+            (bundle_dir / "dist").mkdir()
+            (bundle_dir / ".build" / "engine-src").mkdir(parents=True)
+            (bundle_dir / "profiles" / "old.yml").write_text("old profile")
+            (bundle_dir / "manifests" / "old.yml").write_text("old manifest")
+            (bundle_dir / "dist" / "old.iso").write_text("old iso bytes")
+            (bundle_dir / ".build" / "engine-src" / "keep-me").write_text("must survive")
+            (bundle_dir / "bundle.json").write_text(json.dumps(
+                {"format": 1, "name": "old", "manifest": "manifests/old.yml",
+                 "files": ["manifests/old.yml", "profiles/old.yml"]}))
+
+            result = cc.clear_shared_folder(bundle_dir)
+
+            self.assertFalse((bundle_dir / "profiles" / "old.yml").exists())
+            self.assertFalse((bundle_dir / "manifests" / "old.yml").exists())
+            self.assertFalse((bundle_dir / "bundle.json").exists())
+            self.assertFalse((bundle_dir / "dist").exists())
+            self.assertTrue((bundle_dir / ".build" / "engine-src" / "keep-me").is_file())
+            self.assertIn("bundle.json", result["removed"])
+            self.assertIn("dist/", result["removed"])
+            self.assertIn("manifests/old.yml", result["removed"])
+            self.assertIn("profiles/old.yml", result["removed"])
+
+    def test_clear_shared_folder_on_a_fresh_or_missing_folder_is_a_safe_no_op(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_dir = Path(tmp) / "bundle"  # does not exist yet at all
+            result = cc.clear_shared_folder(bundle_dir)
+        self.assertEqual([], result["removed"])
+
+    def test_run_build_wires_shared_workdir_end_to_end(self) -> None:
+        catalog = real_catalog()
+        ids = ["web-server-nginx", "git-server"]
+        session = FakeSession(archives_by_id={i: archive_with_files(i, base="ubuntu", suite="noble") for i in ids})
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            config = cc.Config(catalog_url="http://x", workdir=work, site_url="http://fake", smoke=False,
+                               shared_workdir=True, cleanup=False)
+            report = cc.run_build(config, catalog=catalog, only=ids, browser_factory=session,
+                                  container_engine=lambda: None)
+            self.assertEqual(set(ids), set(report["targets"]))
+            for entry_id in ids:
+                self.assertEqual("success", report["targets"][entry_id]["status"])
+            self.assertIn("shared_workdir", report)
+            self.assertEqual(set(ids), set(report["shared_workdir"]["order"]))
+            shared_bundle_dir = work / "shared" / "worker-0" / "bundle"
+            self.assertTrue(shared_bundle_dir.is_dir(), "jobs<=1 shared mode uses one folder for the whole pass")
+            for entry_id in ids:
+                self.assertTrue((work / "results" / entry_id / "build.log").is_file(),
+                               f"{entry_id}'s own evidence must land in its own per-entry results folder")
+            remaining_profiles = list((shared_bundle_dir / "profiles").glob("*.yml"))
+            self.assertEqual(1, len(remaining_profiles),
+                             "only the last entry to actually run left its own profile behind in the shared folder")
+
+    def test_non_shared_mode_is_completely_unaffected(self) -> None:
+        """The default path: nothing about --shared-workdir changes it. Same
+        assertions test_a_second_entry_never_sees_a_file_from_the_first
+        makes, but each entry keeps its own separate work_dir, the way it
+        always has, and both entries' files coexist happily (they are not
+        even in the same directory)."""
+        session = FakeSession(archives_by_id={"entry-a": archive_with_files("entry-a"),
+                                              "entry-b": archive_with_files("entry-b")})
+        with tempfile.TemporaryDirectory() as tmp:
+            # cleanup=False: this test is about extraction/isolation, not
+            # about the (unchanged, pre-existing) post-success cleanup that
+            # would otherwise remove bundle_dir wholesale in non-shared mode.
+            config = self._config(tmp, cleanup=False)
+            result_a = cc.build_one({"id": "entry-a"}, config=config, work_dir=Path(tmp) / "work-a",
+                                    browser_factory=session)
+            result_b = cc.build_one({"id": "entry-b"}, config=config, work_dir=Path(tmp) / "work-b",
+                                    browser_factory=session)
+            self.assertEqual("success", result_a["status"])
+            self.assertEqual("success", result_b["status"])
+            self.assertIsNone(result_a["shared_workdir"])
+            self.assertTrue((Path(tmp) / "work-a" / "bundle" / "profiles" / "entry-a.yml").is_file())
+            self.assertTrue((Path(tmp) / "work-b" / "bundle" / "profiles" / "entry-b.yml").is_file())
 
 
 if __name__ == "__main__":

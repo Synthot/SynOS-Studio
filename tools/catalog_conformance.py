@@ -170,6 +170,14 @@ class Config:
     cover_bases: list[str] | None = None    # build only, optional: attempt every selected entry once per base
                                              # named here (e.g. [ubuntu, debian]) instead of once, on whatever base
                                              # its own manifest pins (item 112; docs/BUILD_MATRIX.md)
+    shared_workdir: bool = False            # build only: run every entry (per worker) in one reused folder instead
+                                             # of a fresh one each, so the launcher's own engine-source cache and the
+                                             # container runtime's own image/cache-volume are paid for once per pass
+                                             # rather than once per entry (docs/BUILD_MATRIX.md, "One shared build
+                                             # folder per pass"). tools/bundle_launcher.sh itself is never touched or
+                                             # told about this — it just happens to be invoked from the same
+                                             # directory twice in a row, which is all its own existing
+                                             # content-addressed reuse (.build/engine-src) needs to help.
 
     @classmethod
     def load(cls, path: Path) -> "Config":
@@ -435,21 +443,108 @@ def collect_resolved_config(bundle_dir: Path, target_dir: Path) -> Path | None:
     return dest
 
 
-def cleanup_one(result: dict, *, work_dir: Path) -> dict:
+def clear_shared_folder(bundle_dir: Path) -> dict:
+    """`--shared-workdir` mode only (docs/BUILD_MATRIX.md, "One shared build
+    folder per pass"): removes exactly what the *previous* occupant of this
+    reused `bundle_dir` declared as its own — the bundle.json actually on
+    disk right now, its own `files` list, plus bundle.json itself, plus its
+    `dist/` build output — never a wildcard sweep of the directory, and
+    never anything under `.build/`. That is the one thing left alone on
+    purpose: it is where the launcher's own content-addressed engine-source
+    cache lives (`.build/engine-src`, tools/bundle_launcher.sh's own
+    `engine_src_is_reusable()`), and surviving untouched across entries is
+    the entire saving this mode exists for. `tools/bundle_launcher.sh`
+    itself is never invoked differently and never told any of this is
+    happening — it just finds its own cache already warm, the same way it
+    would for a person who ran `./build.sh` twice in the same directory.
+
+    Safe to call before *every* entry, unconditionally, whatever the
+    previous occupant's outcome was — success, failure, a timeout, or no
+    previous occupant at all (a fresh folder, or this pass's first entry):
+    it reads whatever bundle.json is actually on disk right now and acts
+    only on that, never on an assumption about how it got there. This is
+    also the answer to "can a failed entry poison the next one": no,
+    because the next entry's own clearing does not care why the folder
+    looks the way it does, only what is actually in it."""
+    removed: list[str] = []
+    bundle_json_path = bundle_dir / "bundle.json"
+    if bundle_json_path.is_file():
+        try:
+            previous = json.loads(bundle_json_path.read_text(encoding="utf-8"))
+        except ValueError:
+            previous = {}
+        for rel in previous.get("files", []) or []:
+            target = bundle_dir / rel
+            try:
+                entry_cleanup.safe_remove(bundle_dir, target)
+            except entry_cleanup.CleanupError:
+                continue  # an unsafe path in a stale bundle.json is skipped, never trusted
+            if not target.exists():
+                removed.append(rel)
+        try:
+            entry_cleanup.safe_remove(bundle_dir, bundle_json_path)
+            removed.append("bundle.json")
+        except entry_cleanup.CleanupError:
+            pass
+    dist_dir = bundle_dir / "dist"
+    if dist_dir.exists():
+        try:
+            entry_cleanup.safe_remove(bundle_dir, dist_dir)
+            removed.append("dist/")
+        except entry_cleanup.CleanupError:
+            pass
+    return {"removed": removed}
+
+
+def _entry_base_suite_hint(entry: dict) -> tuple[str | None, str | None]:
+    """Best-effort (base, suite) for *scheduling order only* — read from the
+    catalog's own embedded files (tools/export_catalog.py's bundle_catalog(),
+    the same shape check_one() already trusts for its own separate, offline
+    purpose). `--shared-workdir` mode uses this to group entries so the
+    launcher's per-base/suite cache volume and engine-source cache actually
+    get reused instead of alternating; it never decides what gets built —
+    the real base/suite always comes from the bytes the real page serves,
+    read fresh once actually downloaded (build_one's own `manifest.get`).
+    (None, None) when the catalog entry carries nothing readable; grouping
+    then just falls back to the catalog's own listed order for that entry."""
+    try:
+        files = entry.get("files") or {}
+        descriptor = json.loads(files["bundle.json"])
+        import yaml
+        manifest = yaml.safe_load(files[descriptor["manifest"]])
+        return manifest.get("base"), manifest.get("suite")
+    except Exception:  # noqa: BLE001 - a hint that cannot be read is simply no hint
+        return None, None
+
+
+def cleanup_one(result: dict, *, work_dir: Path, shared: bool = False, target_dir: Path | None = None) -> dict:
     """Items 87-89: called only for a `result["status"] == "success"` entry
     (a failed or skipped one keeps everything — that is exactly what
     somebody will want to read — so this is never even called for one),
     immediately after that entry finishes, never batched to the end of a
     run (so a long run's peak disk usage stays near one build, not fifty).
 
-    Removes the heavy things: the unpacked bundle (its own build tree and
-    `dist/`, including the ISO `build.sh` left there before this tool
-    copied it out) and the copied ISO itself under `work_dir/output` —
-    "the image's name, size and checksum" already live in `result`/
-    build-report.json/build-status.json, which is what "record what a
-    person would need later" (item 87) actually means for the multi-GB
-    image: the bytes are disposable, the proof they existed and what they
-    checksummed to is not.
+    Removes the heavy things. In the default (non-shared) mode: the whole
+    unpacked bundle (its own build tree and `dist/`, including the ISO
+    `build.sh` left there before this tool copied it out) and the copied
+    ISO itself under `work_dir/output` — "the image's name, size and
+    checksum" already live in `result`/build-report.json/build-status.json,
+    which is what "record what a person would need later" (item 87)
+    actually means for the multi-GB image: the bytes are disposable, the
+    proof they existed and what they checksummed to is not.
+
+    In `shared=True` mode (`--shared-workdir`, docs/BUILD_MATRIX.md), the
+    unpacked bundle itself is never removed wholesale here — that is
+    `bundle_dir`, the folder every entry after this one will reuse, and it
+    is also where `.build/engine-src` (the launcher's own cache) lives;
+    removing it would throw that cache away right after paying for it. Only
+    its `dist/` (the build tree and the ISO already copied out) is removed;
+    the rest — bundle.json, the profile and manifest this entry shipped —
+    is left for the *next* entry's own `clear_shared_folder()` to remove
+    right before it unpacks, exactly by that file list, never by a wildcard
+    sweep here either. The copied ISO itself (now under a per-entry
+    `target_dir`, not inside `bundle_dir`) is still removed the same way in
+    both modes.
 
     Keeps the small things: the build log (`tools/entry_cleanup.py`'s
     `maybe_gzip`, compressed only if it is actually large), and the smoke
@@ -459,18 +554,23 @@ def cleanup_one(result: dict, *, work_dir: Path) -> dict:
     same recipe ... applied here without that suite's GRUB-menu and
     screenshot machinery, which this headless smoke test does not need");
     its transcript (the serial log) is the equivalent evidence, and is
-    kept in its place. `work_dir/output` itself (the small directory that
-    held both) is left in place, never removed.
+    kept in its place. `target_dir` itself (the small directory that held
+    both) is left in place, never removed.
 
     Returns a summary — {"performed": True, "removed": [...], "kept":
     [...]} — folded into the entry's own result so build-report.json and
     the run's own summary can say exactly what happened (item 88)."""
     bundle_dir = work_dir / "bundle"
-    target_dir = work_dir / "output"
+    target_dir = target_dir if target_dir is not None else (work_dir / "output")
     removed: list[str] = []
     kept: list[str] = []
 
-    if bundle_dir.exists():
+    if shared:
+        dist_dir = bundle_dir / "dist"
+        if dist_dir.exists():
+            entry_cleanup.safe_remove(bundle_dir, dist_dir)
+            removed.append(str(dist_dir))
+    elif bundle_dir.exists():
         entry_cleanup.safe_remove(work_dir, bundle_dir)
         removed.append(str(bundle_dir))
 
@@ -478,7 +578,7 @@ def cleanup_one(result: dict, *, work_dir: Path) -> dict:
     if iso.get("path"):
         iso_path = Path(iso["path"])
         if iso_path.exists():
-            entry_cleanup.safe_remove(work_dir, iso_path)
+            entry_cleanup.safe_remove(target_dir, iso_path)
             removed.append(str(iso_path))
 
     if result.get("log_path"):
@@ -503,7 +603,7 @@ def cleanup_one(result: dict, *, work_dir: Path) -> dict:
 
 
 def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=None,
-              base_override: str | None = None) -> dict:
+              base_override: str | None = None, shared: bool = False, target_dir: Path | None = None) -> dict:
     """Downloads entry["id"] through the real Studio page, unpacks it, and
     runs its own launcher — see the module docstring for the full flow.
     `browser_factory()` must return a context manager whose `__enter__`
@@ -522,11 +622,23 @@ def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=No
     base fails for real, at whichever stage that actually is (most likely
     "engine", inside the container) — never suppressed or worked around,
     since the honest answer to "does this cover Debian too" is exactly
-    what did or did not happen when it was actually tried."""
+    what did or did not happen when it was actually tried.
+
+    `shared` (`--shared-workdir`, docs/BUILD_MATRIX.md): `work_dir` is a
+    folder this call may not be the only, or the first, occupant of —
+    `clear_shared_folder()` runs before anything is unpacked into it, so
+    whatever a previous entry left behind (its own profile, manifest,
+    build tree) is gone first, exactly by the file list its own bundle.json
+    named, and `.build/` (the launcher's own engine-source cache) is left
+    untouched either way. `target_dir`, where this entry's own log/ISO/
+    smoke evidence lands, is then always a *separate*, per-entry location
+    (never inside the shared `work_dir` itself) — the caller's job, since
+    only it knows whether this run is shared at all."""
     result = {"id": entry["id"], "kind": "catalog", "base": None, "suite": None, "checksum": None,
               "engine": synos_engine.engine_version(), "start": _now(), "end": None, "duration_s": None,
               "exit_code": None, "status": "running", "stage": None, "iso": None, "log_path": None,
-              "log_tail": [], "smoke": None, "download": None, "resolved_config_path": None}
+              "log_tail": [], "smoke": None, "download": None, "resolved_config_path": None,
+              "shared_workdir": None}
     start = time.monotonic()
 
     def _finish(status: str, stage: str | None, log_tail: list[str]) -> dict:
@@ -555,9 +667,24 @@ def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=No
 
     # ---- still "page": a bad archive is the page's own output, same stage ----
     bundle_dir = work_dir / "bundle"
-    target_dir = work_dir / "output"
+    target_dir = target_dir if target_dir is not None else (work_dir / "output")
     log_path = target_dir / "build.log"
     result["log_path"] = str(log_path)
+    if shared:
+        # Whatever the previous occupant of this reused folder left behind
+        # goes first, before anything of this entry's own is unpacked over
+        # it — see clear_shared_folder()'s own docstring for exactly what
+        # that does and does not touch. A pre-existing .build/engine-src is
+        # the saving this mode exists for, so it is checked (never removed)
+        # right here, before clearing, to report honestly whether this
+        # entry actually found a warm cache or is the one paying to fill it.
+        engine_src_dir = bundle_dir / ".build" / "engine-src"
+        had_engine_src = engine_src_dir.is_dir() and any(engine_src_dir.iterdir())
+        try:
+            cleared = clear_shared_folder(bundle_dir)
+        except Exception as exc:  # noqa: BLE001 - clearing must never abort the whole pass
+            cleared = {"removed": [], "error": f"{type(exc).__name__}: {exc}"}
+        result["shared_workdir"] = {"engine_source_reused": had_engine_src, "cleared": cleared}
     try:
         extract_bundle_archive(raw, bundle_dir)
         manifest_rel, manifest = read_bundle_manifest(bundle_dir)
@@ -659,7 +786,7 @@ def build_one(entry: dict, *, config: Config, work_dir: Path, browser_factory=No
     # want to read to see why it failed.
     if result["status"] == "success" and config.cleanup:
         try:
-            result["cleanup"] = cleanup_one(result, work_dir=work_dir)
+            result["cleanup"] = cleanup_one(result, work_dir=work_dir, shared=shared, target_dir=target_dir)
         except entry_cleanup.CleanupError as exc:
             result["cleanup"] = {"performed": False, "removed": [], "kept": [], "error": str(exc)}
     else:
@@ -805,10 +932,38 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
     base_variants = config.cover_bases or [None]
     plan = [_EntryRef(entry, base) for entry in selected for base in base_variants]
 
-    for ref in plan:
-        work_dir = config.workdir / "work" / ref.id
-        if work_dir.exists():
-            shutil.rmtree(work_dir)
+    # --shared-workdir (docs/BUILD_MATRIX.md, "One shared build folder per
+    # pass"): group the plan by (base, suite) — a best-effort hint read from
+    # the catalog's own embedded files when there is no override, exact
+    # when there is one (default_suite_for_base) — so entries that would
+    # actually share the launcher's per-base/suite cache volume and the
+    # engine-source cache run back to back, rather than alternating and
+    # paying for a cold cache every time the base/suite changes. A stable
+    # sort, so entries this cannot group (an unreadable catalog entry) keep
+    # the catalog's own relative order instead of being scattered.
+    if config.shared_workdir:
+        def _group_key(ref: "_EntryRef") -> tuple[str, str]:
+            if ref.base_override is not None:
+                return ref.base_override, default_suite_for_base(ref.base_override) or ""
+            base, suite = _entry_base_suite_hint(ref.entry)
+            return base or "", suite or ""
+        plan.sort(key=_group_key)
+        report["shared_workdir"] = {"order": [ref.id for ref in plan],
+                                    "groups": [list(key) for key in dict.fromkeys(_group_key(r) for r in plan)]}
+
+    # The per-entry work_dir this run has always used, wiped up front so a
+    # previous run's leftovers (a killed build, an old dist/) never leak
+    # into this one. --shared-workdir never does this: it reuses one folder
+    # per worker across every entry on purpose, and clears only what the
+    # previous *entry* (not run) left behind, right before the next one
+    # unpacks over it (build_one's own clear_shared_folder() call) — wiping
+    # it here would throw away the very engine-source cache this mode
+    # exists to keep warm.
+    if not config.shared_workdir:
+        for ref in plan:
+            work_dir = config.workdir / "work" / ref.id
+            if work_dir.exists():
+                shutil.rmtree(work_dir)
 
     # Item 71-73, 93: a small build-status.json, updated live as each
     # (entry, base) moves queued -> testing -> a real outcome (not only at
@@ -851,17 +1006,29 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
     for ref in plan:
         status_updater.queue(ref.entry_id, intended_base(ref))
 
+    def _work_and_target_dir(ref: "_EntryRef", worker_id: int) -> tuple[Path, Path | None]:
+        # Non-shared (the default, unchanged): one folder per entry, holding
+        # both the unpacked bundle and its own output — exactly as before.
+        # Shared: one folder per *worker*, reused by every entry that worker
+        # builds, holding only the unpacked bundle; this entry's own log/ISO/
+        # smoke evidence goes to a separate, always-per-entry results folder,
+        # since work_dir itself is about to be shared with entries that
+        # follow this one.
+        if not config.shared_workdir:
+            return config.workdir / "work" / ref.id, None
+        return config.workdir / "shared" / f"worker-{worker_id}", config.workdir / "results" / ref.id
+
     if jobs <= 1:
         for ref in plan:
-            work_dir = config.workdir / "work" / ref.id
+            work_dir, target_dir = _work_and_target_dir(ref, 0)
             status_updater.start(ref.entry_id, intended_base(ref))
             result = build_one(ref.entry, config=config, work_dir=work_dir, browser_factory=browser_factory,
-                               base_override=ref.base_override)
+                               base_override=ref.base_override, shared=config.shared_workdir, target_dir=target_dir)
             report["targets"][ref.id] = result
             status_updater.record(ref.entry_id, result.get("base") or intended_base(ref), result)
     else:
         def build_one_for_worker(ref: "_EntryRef", worker_id: int) -> dict:
-            work_dir = config.workdir / "work" / ref.id
+            work_dir, target_dir = _work_and_target_dir(ref, worker_id)
             worker_config = config
             if not config.container_root:
                 # Each worker gets its own podman storage, so two workers that
@@ -874,13 +1041,18 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
                 worker_config = dataclasses.replace(config, container_root=str(worker_root))
             status_updater.start(ref.entry_id, intended_base(ref))
             return build_one(ref.entry, config=worker_config, work_dir=work_dir, browser_factory=browser_factory,
-                             base_override=ref.base_override)
+                             base_override=ref.base_override, shared=config.shared_workdir, target_dir=target_dir)
 
         results = job_queue.run_parallel(
             plan, jobs, build_one_for_worker,
             on_result=lambda ref, result: status_updater.record(
                 ref.entry_id, result.get("base") or intended_base(ref), result))
         report["targets"] = results
+
+    if config.shared_workdir:
+        reused = sum(1 for r in report["targets"].values() if (r.get("shared_workdir") or {}).get("engine_source_reused"))
+        report["shared_workdir"]["engine_source_reused_count"] = reused
+        report["shared_workdir"]["engine_source_paid_count"] = len(report["targets"]) - reused
 
     # Item 91: reclaim the container storage this run itself owns, once,
     # at the end — never mid-run, since a worker's own storage root is
@@ -1104,7 +1276,7 @@ def summary_text(report: dict, diff: dict) -> str:
 # ---------------------------------------------------------------- CLI
 def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list[str] | None = None,
         dry_run_upload: bool = False, no_cleanup: bool = False,
-        cover_bases: list[str] | None = None) -> int:
+        cover_bases: list[str] | None = None, shared_workdir: bool = False) -> int:
     catalog = fetch_catalog(config.catalog_url)
     config.workdir.mkdir(parents=True, exist_ok=True)
     report_path = config.workdir / f"{mode}-report.json"
@@ -1130,6 +1302,14 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
                        f"(known: {', '.join(sorted(_known_bases()))})")
                 return 2
             config = dataclasses.replace(config, cover_bases=cover_bases)
+        # --shared-workdir on the command line only ever turns the mode on
+        # for this run; conformance.yml's own shared_workdir: true already
+        # does that without the flag, and there is deliberately no
+        # "--no-shared-workdir" (docs/BUILD_MATRIX.md's own "a mode, not a
+        # replacement" — the config file's own setting is the honest
+        # default either way).
+        if shared_workdir:
+            config = dataclasses.replace(config, shared_workdir=True)
         jobs, problems = resolve_jobs(config)
         if problems:
             for problem in problems:
@@ -1190,6 +1370,11 @@ def main(argv: list[str] | None = None) -> int:
                           help="comma-separated base names (ubuntu, debian) to attempt every selected entry "
                                "against, instead of once on whatever base its own manifest pins - replaces "
                                "conformance.yml's own cover_bases for this run")
+            p.add_argument("--shared-workdir", action="store_true",
+                          help="run every entry (per worker) in one reused folder instead of a fresh one each, "
+                               "so the launcher's own engine-source cache is paid for once per pass instead of "
+                               "once per entry (docs/BUILD_MATRIX.md, 'One shared build folder per pass'); only "
+                               "ever turns this on, same as conformance.yml's own shared_workdir: true")
     args = parser.parse_args(argv)
 
     try:
@@ -1223,7 +1408,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return _run(args.mode, config, max_builds=getattr(args, "max", None), only=only,
                    dry_run_upload=getattr(args, "dry_run_upload", False),
-                   no_cleanup=getattr(args, "no_cleanup", False), cover_bases=cover_bases)
+                   no_cleanup=getattr(args, "no_cleanup", False), cover_bases=cover_bases,
+                   shared_workdir=getattr(args, "shared_workdir", False))
     except ConformanceError as exc:
         _eprint(f"error: {exc}")
         return 2

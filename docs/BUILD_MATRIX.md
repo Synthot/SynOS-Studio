@@ -1,12 +1,20 @@
 # The catalog build matrix
 
 `tools/build_matrix.py` is the unattended proof that the whole catalog
-builds: every entry in `bundle-catalog/index.yml`, and every base/suite
-combination this engine supports ("the distro cores"), each built through
-`tools/synos` exactly the way a person builds it — nothing here talks to
-the engine any other way. `tools/smoke_test.py` then boots the ISO a
-successful build produced and checks that the appliance it promised is
-real. `.github/workflows/catalog-matrix.yml` runs both nightly.
+builds: every entry in `bundle-catalog/index.yml`, every base/suite
+combination this engine supports ("the distro cores"), and the two
+saturation targets (below), each built through `tools/synos` exactly the
+way a person builds it — nothing here talks to the engine any other way.
+`tools/smoke_test.py` then boots the ISO a successful build produced and
+checks that the appliance it promised is real. `.github/workflows/catalog-matrix.yml`
+runs all three nightly.
+
+All of this — catalog, core and saturation — is how this project tests its
+own catalogue. It is not part of what a customer runs: a person buys one
+bundle from the real Bundle Catalog on the Studio page and builds it with
+that bundle's own `tools/synos build` or `bundle_launcher.sh`, exactly as
+always. Nothing in this document changes that path, and nothing in it runs
+on a customer's machine.
 
 This is what feeds `bundle-catalog/build-status.yml`, the file
 `tools/export_catalog.py` merges into `bundle_catalog[].build_status` so a
@@ -34,6 +42,7 @@ python3 tools/build_matrix.py --list                 # every planned target, not
 python3 tools/build_matrix.py --dry-run               # the plan plus the exact command each target would run
 python3 tools/build_matrix.py --only web-server-nginx  # one target
 python3 tools/build_matrix.py --kind core              # only the base/suite cores
+python3 tools/build_matrix.py --kind saturation         # only saturation-ubuntu and saturation-debian
 python3 tools/build_matrix.py --base ubuntu --suite noble
 python3 tools/build_matrix.py --resume                 # a nightly run: skip what already succeeded
 ```
@@ -68,6 +77,22 @@ stronger claim than an unattended matrix run can make by itself; a maintainer
 still stands behind `verified: true`, `bundle-catalog/build-status.yml` is
 the engine's own record of the last time the matrix actually built it).
 
+A `saturation` target's success means something narrower still, and the
+difference matters enough to say twice: it proves every *package* the
+engine ships resolves and installs together in one image on that base. It
+proves nothing about a bundle's own *configuration* — `software.files`
+(the worst bug this project has had was exactly here: an Nginx appliance
+that built and booted with no site to serve and the wrong ports open,
+because the page dropped `software.files` and `security.open_ports` on
+save), `security.open_ports`, a service's `cap_add`/`env_file`/`exec`,
+`policy.kiosk_app`, a dconf lockdown, or a pinned container image tag —
+because none of that lives in `profiles/bundles.yml` or a machine
+profile's `software.packages.add`, the only two things a saturation
+profile is built from. Those checks are the catalog and core targets'
+job (offline, seconds per entry) and `tools/catalog_conformance.py check`'s
+job (against the published catalog); a saturation build replaces neither.
+See "The saturation targets" below for what it *is* for.
+
 ## What it costs
 
 Per target: the same as building it by hand — 40+ GB free under the
@@ -79,6 +104,84 @@ catalog entries plus four cores, one at a time, is the better part of a day;
 CPU a build needs. This is why the matrix's own job in CI only runs on a
 self-hosted runner (below) and why `--resume` exists: a nightly run only
 rebuilds what changed or previously failed.
+
+## The saturation targets
+
+Fifty-odd catalog entries each pin one base and resolve their own small
+package list. Measured once, honestly: those 51 entries resolve to a union
+of 151 concrete packages on ubuntu and 158 on debian (142 shared); the
+*whole* engine — every application group in `profiles/bundles.yml` plus
+every machine profile's own `software.packages.add` — comes to 169
+concrete packages on debian. Building one image per base that installs
+every package the engine ships covers every package-resolution path the
+catalog does, at a fraction of fifty-odd separate builds. That is what
+`saturation-ubuntu` and `saturation-debian` are: internal test-engine
+machinery, generated fresh at plan time by `tools/build_saturation.py`,
+never a bundle-catalog entry — nothing under `bundle-catalog/` names one,
+`tools/export_catalog.py` never reads one, and `tests/unit/test_saturation.py`
+proves both, so a future change that starts exporting one fails a test,
+not a code review. A person still buys one ordinary bundle from the real
+catalog and builds it with that bundle's own `tools/synos build` or
+`bundle_launcher.sh`; nothing about the saturation targets touches that
+path.
+
+```bash
+python3 tools/build_saturation.py --check              # the plan and package counts, writes nothing
+python3 tools/build_saturation.py                       # writes both bundles under .build/saturation/
+python3 tools/build_matrix.py --kind saturation --list   # the two targets, as build_matrix plans them
+```
+
+**What the profile is built from.** `tools/build_saturation.py` reads
+`profiles/bundles.yml` (every application group, every run — a group added
+there needs no update here to be covered by the next saturation build) and
+every machine profile file under `profiles/` for its own, un-inherited
+`software.packages.add`. It resolves both through `bases/<base>/packages.map`,
+the same `resolve_packages()` every other profile is resolved through, and
+writes the result as an ordinary bundle (`bundle.json`, `manifests/`,
+`profiles/`) — the generated profile itself just lists `software.bundles`
+and `software.packages.add`/`remove`, resolved the normal way at build
+time, not a pre-computed package list baked into the file.
+
+**Two honest ways a name can be missing, never confused with each other.**
+A group this base's own archive cannot serve at all —
+`bases/<base>/packages.map`'s `unavailable:` (the same marker
+`resolve_packages()` already refuses on any profile) — is skipped for that
+base, named and reasoned in the generated profile's own `description:` and
+in this tool's output. This is not an exclusion; it is the base saying no.
+The current case: `test-engine` needs `browser-headless`, which
+`bases/ubuntu/packages.map` marks unavailable (no non-snap Chromium in
+Ubuntu's own archive), so `saturation-ubuntu` skips that one group and
+`saturation-debian`, whose archive has a real Chromium, does not.
+
+A genuine collision — two packages that `Conflicts:` or `Breaks:` each
+other in the real archive, or a maintainer's own documented reason for a
+non-package collision such as a kiosk policy against a full desktop — is a
+different thing: an *exclusion*, listed in the optional
+`bases/<base>/saturation-exclusions.map`, one `name = excluded: <reason>`
+line per excluded bundle-group id or concrete package name, the same
+marker idiom `bases/*/packages.map`'s `unavailable:` and `bases/*/live.map`
+already use. Nothing is excluded without a written reason, and the tool
+refuses to start if an entry names something that never appears anywhere
+in the union on that base — a stale exclusion is exactly the drift this
+idiom exists to prevent. As of this writing, the real archive check
+documented in both files' own headers (every package in the union's own
+`Conflicts:`/`Breaks:`/`Provides:` field, read from `Packages.gz` the same
+way `tools/catalog_conformance.py check` already fetches it, and
+cross-checked against every other package in the same union) found zero
+genuine collisions on either base — both files exist, and are empty of
+active entries, on purpose. A red saturation build is still meant to mean
+something: when a future group does collide, the entry goes in with the
+evidence above it.
+
+**What this does and does not replace** is "What it proves, and what it
+does not" above, worth repeating in one line here: a saturation build
+proves packages resolve and install together; it cannot see a bundle's own
+`software.files`, `security.open_ports`, a service's
+`cap_add`/`env_file`/`exec`, `policy.kiosk_app`, or a pinned container
+image tag, because none of that lives in `profiles/bundles.yml` or a
+machine profile's `software.packages.add`. The catalog and core targets,
+and `tools/catalog_conformance.py check`, are unchanged and still the only
+things that check those.
 
 ## Resuming
 
@@ -784,6 +887,110 @@ runtime's own refusal to remove a volume something still has mounted *is*
 the "another build may be using it" check. Exactly what was pruned and
 what was left alone (and why) is in the run's own summary and
 `build-report.json`'s `storage_reclaimed`.
+
+## One shared build folder per pass
+
+This is machinery for the per-entry builds that must still happen — the
+ones proving a bundle's own *configuration* (`software.files`,
+`security.open_ports`, a service's `cap_add`/`env_file`/`exec`, a pinned
+container image tag), which the saturation targets above cannot see. It is
+a mode of `tools/catalog_conformance.py`'s own `build`, never of
+`tools/bundle_launcher.sh`: the launcher a customer's own downloaded bundle
+runs behaves exactly as it always has, with no new flags and no shared
+directories of its own — it just happens, in this mode, to be invoked from
+the same directory more than once in a row, which is all it needs for its
+own existing cache to help.
+
+**What is paid per entry today, and should not be.** Every entry gets a
+fresh `workdir/work/<id>`, wiped before it starts. The launcher's own
+engine-source download and extraction (`.build/engine-src/<id>`, already
+content-addressed with a `.ok` completion marker,
+`tools/bundle_launcher.sh`'s `engine_src_is_reusable()`) lives inside that
+folder, so it is paid again every time even though the launcher's own
+logic was built to avoid exactly that, given the chance. The builder
+image and the per-base/suite cache volume (`synos-cache-<base>-<suite>`)
+are *not* actually re-paid per entry today — the image lives in the
+container runtime's own storage (`container_root`, already reused across
+a worker's whole run — "Isolation and parallelism" above) and the cache
+volume is a named runtime volume, not tied to any folder — so this mode
+does not change either of those; it only fixes the one thing that was
+actually being thrown away for no reason.
+
+**`--shared-workdir`** (or `shared_workdir: true` in `conformance.yml`)
+turns this on:
+
+```bash
+python3 tools/catalog_conformance.py build --config conformance.yml --shared-workdir
+```
+
+- **One working directory for the whole pass**, per worker (`jobs` still
+  controls how many; a shared, single-threaded pass uses exactly one).
+  Before each entry, `clear_shared_folder()` removes exactly what the
+  *previous* occupant declared as its own — the bundle.json actually on
+  disk right now, its own `files` list, plus bundle.json itself, plus its
+  `dist/` build output — never a wildcard sweep, and never anything under
+  `.build/`. That is on purpose: `.build/engine-src` is where the saving
+  lives, and it is the one thing left exactly alone. `tests/unit/test_catalog_conformance.py`'s
+  `SharedWorkdirTests` proves the risk this exists to prevent cannot
+  happen: a second entry built in the same folder never sees a file the
+  first one shipped.
+- **A failure cannot poison the next entry.** `clear_shared_folder()` is
+  called unconditionally, before every entry, and it decides what to
+  remove from what is actually on disk, never from an assumption about how
+  it got there — a failed, timed-out or errored entry's own files are
+  simply the next thing cleared, exactly the same way a successful one's
+  would be. Nothing about a bad entry makes the folder unsafe to reuse.
+- **`dist/` is harvested first.** The existing per-entry harvest (the ISO,
+  its checksum and size, the build log, the smoke test's evidence) runs
+  exactly as it always has, into a `target_dir` that is *always* per-entry
+  (`workdir/results/<id>`) even when the folder the build itself ran in is
+  shared — never the shared folder itself, which the next entry is about
+  to clear. "Freeing disk as it goes" above still runs on success too, in
+  a shared-aware way: it removes `dist/` (the one genuinely heavy,
+  genuinely per-entry thing) but never the shared folder itself, since
+  that is exactly where `.build/engine-src` lives.
+- **Order matters for the saving.** The cache volume and the engine-source
+  cache are both per base/suite; a pass that mixes bases still works (every
+  entry still builds correctly) but stops saving anything on a base/suite
+  switch. `--shared-workdir` sorts the plan by (base, suite) first — read
+  from the fetched catalog's own embedded files when there is no
+  `--cover-bases` override, exact when there is one — so entries that would
+  actually share a cache run back to back. The run's own report
+  (`shared_workdir.order`, `.groups`) says what order it actually ran in
+  and how many groups that came to, and `shared_workdir.engine_source_reused_count`
+  per entry says, honestly, whether a warm `.build/engine-src` was actually
+  there when that entry started — never assumed.
+- **Nothing here is left running by itself.** The shared folder is not
+  removed at the end of a pass (unlike a successful non-shared entry's own
+  folder) — the next pass gets to reuse whatever is left, on purpose; there
+  is deliberately no extra flag to force it away, since `--no-cleanup`
+  already exists for "keep everything" and a stale shared folder is safe
+  by construction (the next entry clears it before using it either way).
+
+**Measured, honestly, on a fake runtime — no real container, no real
+network, no real `build.sh`.** A real build is 40-plus minutes; timing
+three real ones just to compare wall clocks was not worth it, so the
+comparison instead used a stand-in `build.sh` that simulates exactly the
+one mechanism this mode changes: it sleeps 0.4s the first time (standing
+in for the real engine-source download+extract) unless `.build/engine-src`'s
+own marker is already there, in which case it says so and skips the sleep,
+then always sleeps 0.1s (standing in for the build itself, which every
+entry pays regardless). Three entries, `tools/catalog_conformance.py`'s
+own `build_one()` called directly, no mocking beyond the fake `build.sh`:
+
+| | wall clock | cold engine-source downloads |
+|---|---|---|
+| today (per-entry `work_dir`) | 1.61s | 3 |
+| `--shared-workdir` | 0.77s | 1 (2 reused) |
+
+52% faster on this synthetic harness — but that ratio is an artifact of
+making the simulated download (0.4s) comparable in size to the simulated
+build (0.1s) so the effect would be visible at all; on a real ~40-minute
+build against a real ~45 MB download, the same avoided-downloads saving is
+a much smaller fraction of one pass's wall clock. The real value is not in
+that percentage: it is 49 avoided 45 MB downloads and re-extractions on a
+full 51-entry pass, and the disk churn that goes with them, for exactly
+zero change to what each entry actually proves.
 
 ## Installing it as a service
 
