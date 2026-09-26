@@ -132,6 +132,25 @@ function mount_folders() {
     print_ok "Copying the local SynOS package repository to chroot /root/repo..."
     sudo rm -rf new_building_os/root/repo
     if [ -f "$SCRIPT_DIR/${LOCAL_REPO_DIR:-.build/repo}/Packages" ]; then
+        # tools/build_packages.py's own recipe_fingerprint() correctly rebuilds
+        # a package (and this repo's Packages index) whenever packages/<name>/
+        # itself changes -- but only when `make packages` actually runs again.
+        # Nothing here ever verified that it had: this check exists because an
+        # image can otherwise ship a package whose metadata (Depends included)
+        # does not match this checkout at all, with no error anywhere -- a
+        # `packages/*/control` edited after the last `make packages` (a stale
+        # .build/repo carried into a build by hand, from a script that skips
+        # it, or from a manifest/output override pointing at an old repo) is
+        # silently packaged as if nothing changed. Compare the newest mtime
+        # under packages/ against this repository's own Packages index (its
+        # build_repository() writes that file last, after every package's own
+        # fingerprint check) -- older than any actual package input means the
+        # repository does not reflect this checkout and must not ship.
+        stale_source=$(find "$SCRIPT_DIR/packages" -type f -newer "$SCRIPT_DIR/${LOCAL_REPO_DIR:-.build/repo}/Packages" 2>/dev/null | head -n1)
+        if [ -n "$stale_source" ]; then
+            print_error "the local package repository (${LOCAL_REPO_DIR:-.build/repo}) is older than $stale_source; run 'make packages' again before building, or this image will ship a package whose metadata does not match this checkout"
+            exit 1
+        fi
         sudo cp -r "$SCRIPT_DIR/${LOCAL_REPO_DIR:-.build/repo}" new_building_os/root/repo
         judge "Copy local package repository"
     else

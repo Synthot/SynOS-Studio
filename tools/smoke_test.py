@@ -573,6 +573,40 @@ def strip_ansi(text: str) -> str:
     return ANSI_ESCAPE_RE.sub("", text)
 
 
+# A boot that stalls on one service failing to start is the single most
+# likely real-world failure this tool will ever see (a unit stuck in a
+# restart loop floods the serial console with its own systemd status lines
+# forever, so the debug shell's "# " prompt -- or a command's own end
+# marker -- never appears and every wait_for() times out looking at a wall
+# of that same text). Naming the unit directly, in one line, saves whoever
+# reads the report from scrolling a multi-kilobyte transcript to find it
+# themselves. These match systemd's own plain-English status lines
+# (`systemctl`'s colourized `[FAILED] Failed to start X - description.` /
+# `[DEPEND] Dependency failed for X - description.`) after strip_ansi has
+# already removed the colour codes wrapping the unit name.
+FAILED_UNIT_RE = re.compile(r"Failed to start (\S+) -")
+DEPENDENCY_FAILED_UNIT_RE = re.compile(r"Dependency failed for (\S+) -")
+
+
+def find_failed_unit(text: str) -> str | None:
+    """The systemd unit named in the transcript's own last "Failed to start"
+    line (falling back to the last "Dependency failed for" line if no unit
+    ever printed its own failure), or None if the boot's serial output shows
+    neither -- scanned on ANSI-stripped text so the colour codes systemd
+    wraps around the unit name never break the match. "Last" because a
+    stuck boot that retries a unit repeatedly (systemd's own Restart=
+    handling) prints the same failure several times, and whichever one is
+    closest to wherever the transcript ends is the one actually still
+    blocking the boot right now. Pure and unit-tested directly; never
+    raises, never touches a live QEMU process."""
+    plain = strip_ansi(text)
+    matches = FAILED_UNIT_RE.findall(plain)
+    if matches:
+        return matches[-1]
+    matches = DEPENDENCY_FAILED_UNIT_RE.findall(plain)
+    return matches[-1] if matches else None
+
+
 def parse_connected_device(nmcli_output: str) -> str | None:
     """The first non-loopback device nmcli's terse `-t -f DEVICE,TYPE,STATE
     device` output reports as actually `connected` -- not `unmanaged`,
@@ -962,7 +996,23 @@ def run(iso_path: Path, resolved_profile: dict, *, output_dir: Path,
     except SmokeTestUnavailable as exc:
         return {"status": "skipped", "reason": str(exc), "profile_source": profile_source}
     except QemuBootTimeout as exc:
-        return {"status": "failed", "reason": str(exc), "checks": checks, "transcript": str(transcript),
+        # The transcript file (written incrementally by SerialSession's own
+        # reader thread, independent of whatever fit in the exception's own
+        # tail) is the honest, complete record; find_failed_unit() reads it
+        # fresh here rather than relying on the exception message's last
+        # 2000 bytes, which can end mid-repeat of the same failure. A boot
+        # that never even reaches a shell -- the one case wait_for's own
+        # QemuBootTimeout is raised for -- is exactly the case a stuck unit
+        # produces, so this is checked unconditionally, not only for a
+        # timeout during a later command.
+        reason = str(exc)
+        try:
+            failed_unit = find_failed_unit(transcript.read_text(encoding="utf-8", errors="replace"))
+        except OSError:
+            failed_unit = None
+        if failed_unit:
+            reason = f"boot stalled: unit {failed_unit!r} failed to start; {reason}"
+        return {"status": "failed", "reason": reason, "checks": checks, "transcript": str(transcript),
                 "profile_source": profile_source}
     except Exception as exc:  # noqa: BLE001 - never let a smoke-test bug fail the whole matrix run
         return {"status": "error", "reason": f"{type(exc).__name__}: {exc}", "checks": checks,

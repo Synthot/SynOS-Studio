@@ -185,6 +185,42 @@ class NetworkCheckParsingTests(unittest.TestCase):
         colored = "\x1b[32mens3\x1b[0m:\x1b[32methernet\x1b[0m:\x1b[32mconnected\x1b[0m"
         self.assertEqual("ens3:ethernet:connected", smoke_test.strip_ansi(colored))
 
+
+class FailedUnitDetectionTests(unittest.TestCase):
+    """A boot stuck on one failed service should be reported in one line
+    naming that service, not just "timed out" with a wall of serial text."""
+
+    def test_finds_the_unit_from_a_real_colorized_failed_to_start_line(self) -> None:
+        transcript = (
+            "         Starting \x1b[0;1;39maudit-rules.service\x1b[0m - Load Audit Rules...\r\r\r\n"
+            "[\x1b[0;32m  OK  \x1b[0m] Finished \x1b[0;1;39maudit-rules.service\x1b[0m - Load Audit Rules.\r\r\r\n"
+            "         Starting \x1b[0;1;39mauditd.service\x1b[0m - Security Audit Logging Service...\r\r\r\n"
+            "[\x1b[0;1;31mFAILED\x1b[0m] Failed to start \x1b[0;1;39mauditd.service\x1b[0m - Security Audit Logging Service.\r\r\r\n"
+        )
+        self.assertEqual("auditd.service", smoke_test.find_failed_unit(transcript))
+
+    def test_prefers_the_last_failure_over_an_earlier_one(self) -> None:
+        transcript = (
+            "[FAILED] Failed to start first.service - First.\r\n"
+            "[FAILED] Failed to start second.service - Second.\r\n"
+        )
+        self.assertEqual("second.service", smoke_test.find_failed_unit(transcript))
+
+    def test_falls_back_to_a_dependency_failure_when_nothing_itself_failed(self) -> None:
+        transcript = "[DEPEND] Dependency failed for auditd.service - Security Audit Logging Service.\r\n"
+        self.assertEqual("auditd.service", smoke_test.find_failed_unit(transcript))
+
+    def test_a_start_failure_is_preferred_over_a_dependency_failure(self) -> None:
+        transcript = (
+            "[FAILED] Failed to start audit-rules.service - Load Audit Rules.\r\n"
+            "[DEPEND] Dependency failed for auditd.service - Security Audit Logging Service.\r\n"
+        )
+        self.assertEqual("audit-rules.service", smoke_test.find_failed_unit(transcript))
+
+    def test_a_clean_boot_transcript_finds_nothing(self) -> None:
+        transcript = "[  OK  ] Started NetworkManager.service - Network Manager.\r\n"
+        self.assertIsNone(smoke_test.find_failed_unit(transcript))
+
     def test_parse_connected_device_skips_loopback_and_picks_connected(self) -> None:
         output = "lo:loopback:connected (externally)\nens3:ethernet:connected\n"
         self.assertEqual("ens3", smoke_test.parse_connected_device(output))

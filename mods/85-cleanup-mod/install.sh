@@ -45,10 +45,54 @@ print_ok "Cleaning up apt lists..."
 find /var/lib/apt/lists -mindepth 1 -maxdepth 1 ! -name 'lock' ! -name 'partial' -delete 2>/dev/null || true
 judge "Clean up apt lists"
 
-# Clean up log files
+# Clean up log files -- contents only, never the directories. Plenty of
+# packages ship or create their own directory under /var/log (dpkg -L
+# <pkg> lists it as a path the package owns), with its own ownership and
+# mode, created once by a maintainer script -- not recreated at every
+# start, and never by dpkg again once the package is already "installed".
+# auditd is the one this build was actually caught by: deleting
+# /var/log/audit here left the daemon with nowhere to write, so it failed
+# every boot, live and installed, with "Could not open dir /var/log/audit"
+# (exit 6/NOTCONFIGURED), retried five times, hit systemd's start-limit,
+# and stayed failed forever -- but it is not the only one. nginx-common
+# ships ./var/log/nginx/ the same way; cups, samba and plenty of the rest
+# of the catalog do too. Deleting the directory itself (the old
+# `-mindepth 1 -delete`, confirmed against a real tree to remove every
+# such directory along with its mode and ownership) breaks all of them
+# identically, silently, until whichever daemon happens to need that
+# directory tries to start. `-type f` clears every log file -- the actual
+# build-time content this step exists to drop -- while leaving every
+# package-created directory, its mode and its ownership exactly as the
+# package's own maintainer script set them, so nothing here needs to know
+# which packages care or special-case any one of them.
 print_ok "Cleaning up log files..."
-find /var/log -mindepth 1 -delete 2>/dev/null || true
+find /var/log -type f -delete 2>/dev/null || true
 judge "Clean up log files"
+
+# Any package apt left in dpkg's "rc" state (removed, but its config data
+# was kept) is dead weight in the shipped image: nothing uses it, but it
+# still shows up in `dpkg -l`, in `dpkg -s <meta-package>`'s own Depends
+# resolution, and in the packages.lock/SBOM build_iso() generates further
+# down this same build (the manifest step there lists every package dpkg
+# still knows about, "rc" included, not just "ii"). This is exactly what a
+# Conflicts/Replaces/Provides package swap leaves behind mid-build -- e.g.
+# a profile's own firmware-audio role asking for Debian's firmware-sof-signed
+# where firmware-sof-synos (Provides: firmware-sof-signed) was already
+# installed by the desktop stack group: apt correctly removes the one and
+# installs the other in the same transaction (synos-desktop-core's
+# `firmware-sof-synos | firmware-sof-signed` Depends ends up satisfied,
+# verified against a live boot), but dpkg keeps the removed side's status
+# entry around as "rc" rather than purging it outright. Purge every such
+# leftover here, before the manifest is generated, so the shipped image's
+# own package database -- and everything derived from it -- reflects only
+# what is actually installed.
+print_ok "Purging packages left in dpkg's removed-but-not-purged state..."
+RC_PACKAGES=$(dpkg -l | awk '$1 == "rc" {print $2}')
+if [ -n "$RC_PACKAGES" ]; then
+    # shellcheck disable=SC2086
+    dpkg --purge $RC_PACKAGES || true
+fi
+judge "Purge packages left in dpkg's removed-but-not-purged state"
 
 # Truncate machine id
 print_ok "Truncating machine id..."

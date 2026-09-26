@@ -170,6 +170,25 @@ def _run_catalog_validate(ctx: Context) -> Outcome:
                    command="tools/synos --json bundle validate <each of bundle-catalog/*/>", cwd=ctx.root)
 
 
+# ---- package dependency satisfiability --------------------------------
+def _run_package_dependencies(ctx: Context) -> Outcome:
+    """tools/check_package_dependencies.py against every dist/*.packages.lock
+    a build already left behind: every SynOS-authored package that ended up
+    actually installed in that image has its own Depends/Pre-Depends really
+    satisfied by what else is installed, alternatives (`pkgA | pkgB`) and
+    Provides included -- catching exactly the class of bug where an
+    alternative dependency ends up with neither side installed. Entirely
+    offline (packages/*/control plus the lock file), so it belongs at
+    --level fast; a fresh checkout with nothing built yet has no lock file
+    at all, which is a clean skip here, the same way a missing tool skips
+    tools/smoke_test.py's checks rather than failing them."""
+    locks = sorted(ctx.root.glob("dist/*.packages.lock"))
+    if not locks:
+        return Outcome(status="skipped", note="no dist/*.packages.lock present (nothing built yet in this checkout)")
+    return _run_argv([sys.executable, str(ctx.root / "tools" / "check_package_dependencies.py"), *map(str, locks)],
+                     cwd=ctx.root, timeout=60)
+
+
 # ---- host check ------------------------------------------------------------
 def _run_host_check(ctx: Context) -> Outcome:
     """tools/synos check is about *this machine*, not the code: a missing
@@ -264,6 +283,11 @@ STAGES: list[Stage] = [
          "every bundle-catalog/ entry validates against the bundle schema, offline "
          "(tools/synos bundle validate, looped; ~10s for the current catalog)",
          "fast", _run_catalog_validate),
+    Stage("package-dependencies",
+         "every SynOS-authored package actually installed in a real build's dist/*.packages.lock has its "
+         "own Depends/Pre-Depends really satisfied by what else is installed (tools/check_package_dependencies.py, "
+         "offline); skipped cleanly when nothing has been built yet in this checkout",
+         "fast", _run_package_dependencies),
     Stage("host-check",
          "this machine's own build readiness: container engine, disk, python modules "
          "(tools/synos check) — informational; a missing container engine here never fails this run",
