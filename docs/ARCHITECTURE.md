@@ -210,14 +210,14 @@ cover the two ways a profile brings a unit in, both keyed on the same
   `[Install] WantedBy=`), so an installed boot starts it exactly as before;
   a live boot's systemd refuses the start and says so as a failed condition,
   not a crash, in `systemctl status`.
-- **Packages the appliance itself adds** (`software.packages.add` —
-  resolved by `tools/render_manifest.py` into
-  `resolved["packages"]["appliance"]` and carried into the chroot as
-  `synos_appliance_packages`, right next to `synos_profile`):
-  `synos.workstation.live_service_gating` (run by `customize_chroot.yml`,
-  next to `container_services`) reads every `.service` and `.socket` unit
-  those packages actually shipped (`dpkg -L`) and drops the same
-  `ConditionKernelCommandLine=!rd.synos.live` into a
+- **Packages the appliance itself adds** (`software.packages.add`, plus
+  every `software.repositories[].packages` entry — combined by
+  `tools/render_manifest.py` into `resolved["packages"]["appliance"]` and
+  carried into the chroot as `synos_appliance_packages`, right next to
+  `synos_profile`): `synos.workstation.live_service_gating` (run by
+  `customize_chroot.yml`, next to `container_services`) reads every
+  `.service` and `.socket` unit those packages actually shipped (`dpkg -L`)
+  and drops the same `ConditionKernelCommandLine=!rd.synos.live` into a
   `/etc/systemd/system/<unit>.d/` override for each. `.socket` is gated the
   same way as `.service`, defensively, for a unit that would otherwise sit
   listening whether or not its backend ever starts.
@@ -227,14 +227,25 @@ cover the two ways a profile brings a unit in, both keyed on the same
   `printing` resolves to `cups`, `containers` to `podman`, both workstation
   conveniences a person trying the live desktop should keep, not appliance
   services — so gating "every package beyond desktop-core" would have
-  suppressed `cups` for anyone whose profile happens to add printing.
-  `software.packages.add` is the one place an appliance profile names its
-  *own* real daemons (`kubernetes-server`'s `containerd`/`runc`, this
-  engine's own `openssh-server` when a profile turns SSH on), across the
-  whole `extends` chain (`deep_merge` concatenates `add` lists, so a
-  bundle-catalog leaf's own additions already carry every parent's).
-  Gating a package that ships no unit at all (an inherited add like `git`
-  or `python3-venv`) is already a no-op — `dpkg -L` finds nothing to drop a
+  suppressed `cups` for anyone whose profile happens to add printing. The
+  boundary is instead every declaration path an appliance profile actually
+  uses to name its *own* real daemons, and only those: `software.packages
+  .add` (`kubernetes-server`'s `containerd`/`runc`, this engine's own
+  `openssh-server` when a profile turns SSH on), resolved concretely across
+  the whole `extends` chain (`deep_merge` concatenates `add` lists, so a
+  bundle-catalog leaf's own additions already carry every parent's); and
+  `software.repositories[].packages` — a third-party repository exists to
+  bring a daemon, which is exactly the thing this suppresses
+  (`kubernetes-server`'s own `pkgs.k8s.io` repository is the one catalog
+  entry using this path today, for `kubelet`, `kubeadm`, `kubectl` and
+  `cri-tools` — `kubelet` being the single worst unit to leave running in a
+  passwordless live session: it would try to serve or join a cluster on
+  whatever network the stick is plugged into). Those names are never
+  resolved through `bases/*/packages.map` at all — a role like `office`
+  means nothing to `pkgs.k8s.io` — so they are taken literally, exactly as
+  the profile wrote them, never passed through `resolve_packages`. Gating a
+  package that ships no unit at all (an inherited add like `git` or
+  `python3-venv`) is already a no-op — `dpkg -L` finds nothing to drop a
   Condition onto — so nothing here needs a hand-written package list to
   keep in step by hand; resist "optimizing" that list back in.
 

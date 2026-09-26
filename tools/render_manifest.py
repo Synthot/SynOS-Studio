@@ -757,21 +757,41 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
     # workstation profile happens to carry (docs/ARCHITECTURE.md, "Live
     # session vs. installed system"). No group in profiles/bundles.yml ships
     # a server — printing resolves to cups, containers to podman, and
-    # neither is an appliance service — so the boundary is software.packages
-    # .add only (resolved the same way as everything else, concrete, across
-    # the whole extends chain: deep_merge concatenates "add" lists, so a
-    # bundle-catalog leaf's own additions already carry its parent's, e.g.
-    # kubernetes-server's containerd/runc alongside server's own
-    # ssh-server). software.services (container_services' quadlet units)
-    # covers the other half of "what an appliance itself asked for" and
-    # carries its own Condition directly in service.container.j2 — this list
-    # is only ever handed to synos.workstation.live_service_gating (run by
-    # customize_chroot.yml), which gates the units the resolved packages
-    # below actually shipped (dpkg -L) and is a safe no-op for one that ships
-    # none (an inherited add like git or python3-venv), so nothing here
-    # needs a hand-written package list to keep in step by hand.
+    # neither is an appliance service — so the boundary is the appliance's
+    # own explicit declarations, never a curated group: software.services
+    # (container_services' quadlet units, which carry their own Condition
+    # directly in service.container.j2 and are not part of this list at
+    # all), software.packages.add, and every software.repositories[]
+    # .packages entry. All three are things the profile itself named, and a
+    # third-party repository in particular exists to bring a daemon — that
+    # is exactly what this suppresses (kubernetes-server's own repository
+    # adds kubelet, the single worst thing to leave running unauthenticated
+    # on whatever network the stick is plugged into).
+    #
+    # software.packages.add is resolved the same way as everything else,
+    # concrete, across the whole extends chain (deep_merge concatenates
+    # "add" lists, so a bundle-catalog leaf's own additions already carry
+    # its parent's, e.g. kubernetes-server's containerd/runc alongside
+    # server's own ssh-server). software.repositories[].packages is
+    # different: those names are installed by mod 08, straight from a
+    # third-party repository, and are never resolved through
+    # bases/*/packages.map at all (a role like "office" would mean nothing
+    # to pkgs.k8s.io) — they are concrete by construction, so they are
+    # taken literally here, never passed through resolve_packages. Do not
+    # "fix" that later; it is deliberate.
+    #
+    # This combined list is only ever handed to
+    # synos.workstation.live_service_gating (run by customize_chroot.yml),
+    # which gates the units the packages below actually shipped (dpkg -L)
+    # and is a safe no-op for one that ships none (an inherited add like git
+    # or python3-venv), so nothing here needs a hand-written package list to
+    # keep in step by hand.
     appliance_packages, _ = resolve_packages(add_refs, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"],
                                              suite=suite, lang_pkg_map=lang_pkg_map, lang_gaps=[])
+    for repo in software.get("repositories", []) or []:
+        for repo_package in repo.get("packages", []) or []:
+            if repo_package not in appliance_packages:
+                appliance_packages.append(repo_package)
     appliance_packages = [p for p in appliance_packages if p not in remove_packages]
     installer = profile.get("installer", {}) or {}
     ansible_cfg = profile.get("ansible", {}) or {}

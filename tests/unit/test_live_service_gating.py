@@ -9,12 +9,17 @@ Two mechanisms cover the two ways a profile brings a unit in:
   - software.services (containers): service.container.j2 carries the
     Condition itself (covered by tests/unit/test_ai_workstation.py's
     test_quadlet_unit_never_starts_in_the_live_session).
-  - software.packages.add, resolved across the whole extends chain (never
-    a curated profiles/bundles.yml group -- see
-    tests/unit/test_manifest_render.py's ApplianceLiveGatingTests for why
-    cups and podman must stay out of this list even though they are
-    genuinely installed): synos.workstation.live_service_gating, wired
-    into customize_chroot.yml next to container_services, covered here.
+  - every other way an appliance profile explicitly names its own package:
+    software.packages.add (resolved across the whole extends chain) and
+    software.repositories[].packages (taken literally -- kubernetes-server's
+    own kubelet/kubeadm/kubectl/cri-tools from pkgs.k8s.io, never resolved
+    through packages.map). Never a curated profiles/bundles.yml group --
+    see tests/unit/test_manifest_render.py's ApplianceLiveGatingTests for
+    why cups and podman must stay out of this list even though they are
+    genuinely installed. Both feed the same live_service_gating_packages
+    list; synos.workstation.live_service_gating (wired into
+    customize_chroot.yml next to container_services) does not need to know
+    or care which of the two a given name came from, covered here.
 
 Plus the one on-screen note (synos-live-session-setup's motd line) for
 whoever never runs systemctl status."""

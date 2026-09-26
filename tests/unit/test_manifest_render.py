@@ -215,8 +215,11 @@ class UnavailablePackageTests(unittest.TestCase):
 
 class ApplianceLiveGatingTests(unittest.TestCase):
     """resolved["packages"]["appliance"] (docs/ARCHITECTURE.md, "Live session
-    vs. installed system"): software.packages.add, resolved concretely
-    across the whole extends chain — the boundary
+    vs. installed system"): every one of an appliance's own explicit
+    declarations — software.packages.add (resolved concretely across the
+    whole extends chain) and every software.repositories[].packages entry
+    (taken literally: those names are never resolved through
+    bases/*/packages.map at all) — the boundary
     synos.workstation.live_service_gating uses to decide which units a live
     boot (rd.synos.live=1) must never start. Not a curated group: no group
     in profiles/bundles.yml ships a server (printing resolves to cups,
@@ -227,7 +230,11 @@ class ApplianceLiveGatingTests(unittest.TestCase):
     (profiles/developer.yml: bundles [containers, build-tools] inherited
     from workstation's [office, communication, remote-access, printing,
     vpn], packages.add [git, python3-venv] on top of workstation's own
-    [keepassxc]) rather than inventing a fixture."""
+    [keepassxc]; bundle-catalog/kubernetes-server, the one catalog entry
+    that uses software.repositories[].packages at all, for kubelet/
+    kubeadm/kubectl/cri-tools — the single worst thing to leave running
+    unauthenticated on whatever network the live stick is plugged into)
+    rather than inventing a fixture."""
 
     def _render(self, profile_id: str, base: str = "ubuntu", suite: str = "resolute") -> dict:
         with tempfile.TemporaryDirectory() as directory:
@@ -266,20 +273,78 @@ class ApplianceLiveGatingTests(unittest.TestCase):
         # up without developer repeating it.
         self.assertEqual({"git", "python3-venv", "keepassxc"}, appliance)
 
-    def test_kubernetes_appliance_packages_survive_the_narrowing(self) -> None:
-        """bundle-catalog/kubernetes-server: software.packages.add:
-        [containerd, runc] on top of server's own [ssh-server] — real
-        daemons a package installs and dpkg enables by policy, exactly what
-        this mechanism exists to keep out of the live session. Copied into
-        profiles/ for the duration of this test the way tools/synos bundle
-        apply would place it in a real build, and removed after."""
+    def _with_kubernetes_server_profile(self) -> None:
+        """Copies bundle-catalog/kubernetes-server's own profile into
+        profiles/ for the duration of a test, the way tools/synos bundle
+        apply would place it in a real build, and removes it after."""
         target = ROOT / "profiles" / "kubernetes-server.yml"
         self.addCleanup(target.unlink, missing_ok=True)
         target.write_text((ROOT / "bundle-catalog/kubernetes-server/profiles/kubernetes-server.yml").read_text(encoding="utf-8"),
                           encoding="utf-8")
+
+    def test_kubernetes_appliance_packages_survive_the_narrowing(self) -> None:
+        """bundle-catalog/kubernetes-server: software.packages.add
+        [containerd, runc] on top of server's own [ssh-server] — real
+        daemons a package installs and dpkg enables by policy, exactly what
+        this mechanism exists to keep out of the live session. (Its
+        software.repositories[].packages entries — kubelet and friends —
+        are covered separately, below.)"""
+        self._with_kubernetes_server_profile()
         resolved = self._render("kubernetes-server", suite="noble")
         appliance = set(resolved["packages"]["appliance"])
-        self.assertEqual({"containerd", "runc", "openssh-server"}, appliance)
+        self.assertLessEqual({"containerd", "runc", "openssh-server"}, appliance)
+
+    def test_appliance_packages_includes_every_repository_packages_entry(self) -> None:
+        """kubernetes-server's own repository (keys/kubernetes.asc,
+        pkgs.k8s.io) declares packages: [kubelet, kubeadm, kubectl,
+        cri-tools] — never resolved through packages.map at all (a role
+        like "office" would mean nothing to that repository), so they must
+        appear in resolved["packages"]["appliance"] as the literal names the
+        profile gave, not run through resolve_packages. kubelet in
+        particular is the single worst unit to leave running in a
+        passwordless live session: it would try to serve or join a cluster
+        on whatever network the stick is plugged into."""
+        self._with_kubernetes_server_profile()
+        resolved = self._render("kubernetes-server", suite="noble")
+        appliance = set(resolved["packages"]["appliance"])
+        self.assertEqual({"containerd", "runc", "openssh-server", "kubelet", "kubeadm", "kubectl", "cri-tools"},
+                         appliance)
+        # These never touch bases/*/packages.map, unlike packages.add: absent
+        # from resolved["packages"]["unmapped"] is not the test here, only
+        # that they show up in "appliance" as-is either way.
+        self.assertNotIn("kubelet", resolved["packages"]["install"],
+                         "repository packages are installed by mod 08, a separate path from PROFILE_INSTALL_PACKAGES")
+
+    def test_ansible_is_required_for_repository_packages_alone(self) -> None:
+        """A hypothetical profile whose only appliance content is a
+        repository's packages (no software.services, no packages.add)
+        still needs live_service_gating to run."""
+        self._with_kubernetes_server_profile()
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "args.sh"
+            resolved_path = Path(directory) / "resolved.json"
+            profile_path = ROOT / "profiles" / "unit-repo-only.yml"
+            self.addCleanup(profile_path.unlink, missing_ok=True)
+            profile_path.write_text("""id: unit-repo-only
+extends: minimal
+software:
+  repositories:
+    - name: kubernetes
+      url: https://pkgs.k8s.io/core:/stable:/v1.31/deb/
+      suite: "/"
+      key: keys/kubernetes.asc
+      packages: [kubelet]
+""", encoding="utf-8")
+            manifest = Path(directory) / "m.yml"
+            manifest.write_text(json.dumps({
+                "schema_version": 1, "name": "m", "version": "1.0.0", "base": "ubuntu", "suite": "resolute",
+                "arch": "amd64", "profile": "unit-repo-only", "regions": ["us"], "brand": "synos",
+            }), encoding="utf-8")
+            result = _run("--manifest", str(manifest), "--output", str(output), "--resolved", str(resolved_path))
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn('export ANSIBLE_CHROOT_REQUIRED="true"', output.read_text(encoding="utf-8"))
+            resolved = json.loads(resolved_path.read_text(encoding="utf-8"))
+            self.assertEqual(["kubelet"], resolved["packages"]["appliance"])
 
     def test_ansible_is_required_for_appliance_packages_alone(self) -> None:
         """profiles/developer.yml triggers none of ansible_required's other
