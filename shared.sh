@@ -44,6 +44,19 @@ function judge() {
   fi
 }
 
+function record_phase_timing() {
+  # record_phase_timing <file> <phase name> <seconds>
+  # Appends one phase's timing as its own JSON line, the moment that phase
+  # ends -- never held in memory and flushed later, so a build that dies
+  # partway still leaves every completed phase's cost on disk. <file> is a
+  # plain path (the host's .build/timings.jsonl, or a mod's chroot-local
+  # timings.jsonl); this never needs anything beyond mkdir/printf, so it
+  # works the same inside the chroot, before most packages are installed.
+  local file="$1" name="$2" seconds="$3"
+  mkdir -p "$(dirname "$file")" 2>/dev/null
+  printf '{"phase": "%s", "seconds": %s}\n' "$name" "$seconds" >> "$file"
+}
+
 function wait_network() {
     local wget_opts=(--spider -q --timeout=5 --tries=1)
 
@@ -55,4 +68,4 @@ function wait_network() {
     print_ok "Network is online. Continue..."
 }
 
-export -f print_ok print_error print_warn judge wait_network print_info
+export -f print_ok print_error print_warn judge wait_network print_info record_phase_timing

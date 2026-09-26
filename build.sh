@@ -22,6 +22,14 @@ case "$TARGET_ARCH" in
         ;;
 esac
 
+# Machine-readable phase-timing ledger: one JSON line per phase, appended the
+# moment that phase ends (never accumulated and flushed later), so a build
+# that dies partway still leaves every completed phase's cost on disk.
+# report_build_timings (called at the very end of a successful build) turns
+# this into dist/<name>.timings.json, next to .resolved.json and .sbom.cdx.json.
+TIMINGS_FILE="$SCRIPT_DIR/.build/timings.jsonl"
+export TIMINGS_FILE
+
 function bind_signal() {
     print_ok "Bind signal..."
     trap umount_on_exit EXIT
@@ -37,9 +45,22 @@ function clean() {
     sudo umount new_building_os/run || sudo umount -lf new_building_os/run || true
     sudo rm -rf new_building_os image || true
     judge "Clean up build artifacts"
+
+    # This run's own phases start with a clean ledger too, so a direct
+    # re-run of ./build.sh (packages not rebuilt) never mixes a previous
+    # run's mods/ansible/squashfs/iso timings with this one. The package-
+    # building step's own entry (already written by tools/build_packages.py,
+    # which always runs first) is the one thing worth keeping when it ran
+    # this time -- and this is a no-op then, since it already reset the file.
+    if [ -f "$TIMINGS_FILE" ]; then
+        grep '"phase": "Build packages"' "$TIMINGS_FILE" > "$TIMINGS_FILE.tmp" 2>/dev/null || true
+        mv -f "$TIMINGS_FILE.tmp" "$TIMINGS_FILE" 2>/dev/null || true
+        rm -f "$TIMINGS_FILE.tmp" 2>/dev/null || true
+    fi
 }
 
 function download_base_system() {
+    local __phase_t0=$(date +%s)
     print_ok "Creating new_building_os directory..."
     sudo mkdir -p new_building_os
     judge "Create build directory"
@@ -62,6 +83,7 @@ function download_base_system() {
         --include=ca-certificates,wget,dbus \
         "$TARGET_SUITE" new_building_os "$APT_SOURCE"
     judge "Download base system"
+    record_phase_timing "$TIMINGS_FILE" "Download base system" "$(( $(date +%s) - __phase_t0 ))"
 }
 
 function mount_folders() {
@@ -215,6 +237,22 @@ LOCALPIN
     judge "Upgrade base system"
 }
 
+function collect_mod_timings() {
+    # Each mod times itself (mods/install_all_mods.sh) and writes to a file
+    # next to it inside the chroot, since python -- and the host's .build/ --
+    # are not reachable from in there. That file lives on ordinary host disk
+    # (new_building_os/root/mods/, not a bind mount), so it survives the
+    # chroot exiting; this just folds it into the host-side ledger right
+    # after each of the two chroot invocations (early, then cleanup) returns,
+    # and clears it so the next invocation's mods are not merged in twice.
+    local mod_timings="new_building_os/root/mods/timings.jsonl"
+    if [ -f "$mod_timings" ]; then
+        mkdir -p "$(dirname "$TIMINGS_FILE")" 2>/dev/null
+        sudo cat "$mod_timings" >> "$TIMINGS_FILE" 2>/dev/null || true
+        sudo rm -f "$mod_timings" 2>/dev/null || true
+    fi
+}
+
 function run_chroot() {
     # Every mod except 85-cleanup-mod: the cleanup mod deletes the apt lists
     # (to keep the squashfs small) and must not run until after the profile
@@ -230,12 +268,14 @@ function run_chroot() {
     print_warn "   chroot ENV execution completed!"
     print_warn "============================================"
     judge "Run install_all_mods.sh (early mods) in new_building_os"
+    collect_mod_timings
 
     print_ok "Sleeping for 5 seconds to allow chroot to exit cleanly..."
     sleep 5
 }
 
 function run_ansible_chroot() {
+    local __phase_t0=$(date +%s)
     local collection_playbook="$SCRIPT_DIR/ansible/collections/ansible_collections/synos/workstation/playbooks/customize_chroot.yml"
     if ! command -v ansible-playbook >/dev/null 2>&1; then
         if [ "${ANSIBLE_CHROOT_REQUIRED:-false}" = "true" ]; then
@@ -243,6 +283,7 @@ function run_ansible_chroot() {
             exit 1
         fi
         print_warn "ansible-playbook not installed; profile policy playbooks skipped (nothing required them)"
+        record_phase_timing "$TIMINGS_FILE" "Apply profile with Ansible in chroot" "$(( $(date +%s) - __phase_t0 ))"
         return 0
     fi
     print_ok "Applying the profile inside the chroot with Ansible..."
@@ -259,6 +300,7 @@ function run_ansible_chroot() {
             --extra-vars "@$SCRIPT_DIR/${ANSIBLE_VARS_FILE:-.build/ansible-vars.json}" \
             "${playbooks[@]}"
     judge "Apply profile with Ansible in chroot"
+    record_phase_timing "$TIMINGS_FILE" "Apply profile with Ansible in chroot" "$(( $(date +%s) - __phase_t0 ))"
 }
 
 function run_cleanup_mod() {
@@ -276,6 +318,7 @@ function run_cleanup_mod() {
     print_warn "   chroot ENV execution completed!"
     print_warn "============================================"
     judge "Run the image-finalization cleanup mod in new_building_os"
+    collect_mod_timings
 }
 
 function umount_folders() {
@@ -331,6 +374,8 @@ function write_iso_checksum() {
 }
 
 function build_iso() {
+    local __iso_t0=$(date +%s)
+    local __squash_dur=0
     print_ok "Building ISO image..."
 
     # Copy the kernel and the separately-built non-host-only Live initrd.
@@ -475,6 +520,7 @@ EOF
     judge "Generate manifest for filesystem-desktop"
 
     print_ok "Compressing the single root filesystem as /LiveOS/rootfs.squashfs..."
+    local __squash_t0=$(date +%s)
     sudo mksquashfs new_building_os image/LiveOS/rootfs.squashfs \
         -noappend -no-duplicates -no-recovery \
         -wildcards -b 1M \
@@ -485,7 +531,9 @@ EOF
         -e "boot/synos-live-initrd.img" \
         -e "swapfile"
     judge "Compress rootfs"
-    
+    __squash_dur=$(( $(date +%s) - __squash_t0 ))
+    record_phase_timing "$TIMINGS_FILE" "Compress rootfs" "$__squash_dur"
+
     print_ok "Generating filesystem.size on /LiveOS/filesystem.size..."
     filesystem_size=$(sudo du -sx --block-size=1 new_building_os | cut -f1)
     printf '%s\n' "$filesystem_size" > image/LiveOS/filesystem.size
@@ -727,7 +775,24 @@ HANDOFF
         "$SCRIPT_DIR/dist/$TARGET_FILE_NAME-$TARGET_BUILD_VERSION-$BASE_ID-$TARGET_SUITE-$DATE-$TARGET_ARCH.resolved.json"
     judge "Write package lock and SBOM"
 
+    # Everything build_iso does other than compressing the rootfs: boot
+    # media, the .iso itself, and the evidence written beside it -- one
+    # phase, named after the step that produces the .iso file.
+    record_phase_timing "$TIMINGS_FILE" "Create iso image" "$(( $(date +%s) - __iso_t0 - __squash_dur ))"
+
     popd
+}
+
+function report_build_timings() {
+    # The line the owner actually reads: every recorded phase, longest
+    # first, with its share of the total. tools/build_timings.py writes the
+    # same ranking as dist/<name>.timings.json, next to .resolved.json and
+    # .sbom.cdx.json, so a runner can compare two builds without parsing this.
+    print_ok "Summarizing phase timings..."
+    python3 "$SCRIPT_DIR/tools/build_timings.py" summarize \
+        --file "$TIMINGS_FILE" \
+        --stem "$SCRIPT_DIR/dist/$TARGET_FILE_NAME-$TARGET_BUILD_VERSION-$BASE_ID-$TARGET_SUITE-$DATE-$TARGET_ARCH"
+    judge "Summarize phase timings"
 }
 
 function umount_on_exit() {
@@ -755,4 +820,5 @@ umount_folders
 prepare_iso_directory
 prepare_live_grub_font
 build_iso
+report_build_timings
 echo "$0 - Build completed."
