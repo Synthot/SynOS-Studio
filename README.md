@@ -48,7 +48,12 @@ macOS. It offers to install podman if you have no runtime, pulls the published
 builder image or builds it locally from this repository's source when none
 can be pulled, builds the image,
 and tells you how to write it to a USB stick or boot it in a virtual
-machine. The first build takes about 40 minutes; later ones reuse a cache.
+machine. The ISO has to be written whole, byte for byte — balenaEtcher,
+Fedora Media Writer, GNOME Disks' "Restore Disk Image", or `dd`. A tool that
+copies the ISO's *files* onto the stick instead, as Ubuntu's Startup Disk
+Creator, Rufus in ISO mode, UNetbootin and Ventoy do, makes a stick that
+starts and then fails with squashfs read errors; the boot menu's "Check
+installation media for defects" entry says so in one minute. The first build takes about 40 minutes; later ones reuse a cache.
 `./build.sh check` only verifies your machine. The complete output is kept
 in `dist/build.log`.
 
