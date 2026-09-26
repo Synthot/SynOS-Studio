@@ -36,6 +36,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -43,6 +44,10 @@ SPEC = importlib.util.spec_from_file_location("render_manifest", ROOT / "tools" 
 render_manifest = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(render_manifest)
+_TIMINGS_SPEC = importlib.util.spec_from_file_location("build_timings", ROOT / "tools" / "build_timings.py")
+build_timings = importlib.util.module_from_spec(_TIMINGS_SPEC)
+assert _TIMINGS_SPEC.loader is not None
+_TIMINGS_SPEC.loader.exec_module(build_timings)
 ManifestError = render_manifest.ManifestError
 
 # Signing key location. SYNOS_KEYS_DIR overrides the default keys/ (tests, CI).
@@ -709,10 +714,18 @@ def main(argv: list[str] | None = None) -> int:
         for source in sources:
             print(source.name)
         return 0
+    # The package-building step is always the first phase of a real build
+    # (the makefile's `current` target runs packages before ./build.sh), so
+    # this is where the shared ledger starts fresh; build.sh's own phases
+    # just append to it from here on.
+    timings_path = Path(args.output).resolve().parent / "timings.jsonl"
+    build_timings.reset_timings(timings_path)
+    phase_start = time.monotonic()
     try:
         key_source = ensure_signing_key(brand["display_name"])
     except (PackageError, subprocess.CalledProcessError) as exc:
         print(f"signing key error: {exc}", file=sys.stderr)
+        build_timings.append_phase(timings_path, "Build packages", time.monotonic() - phase_start)
         return 1
     if key_source == "generated":
         print(f"note: generated a new repository signing key in {PRIVATE_KEY.parent} (development key; "
@@ -754,6 +767,7 @@ def main(argv: list[str] | None = None) -> int:
         signed = build_repository(debs, output, subs)
     except PackageError as exc:
         print(f"package error: {exc}", file=sys.stderr)
+        build_timings.append_phase(timings_path, "Build packages", time.monotonic() - phase_start)
         return 1
     rel = output.relative_to(ROOT) if output.is_relative_to(ROOT) else output
     if not_for_base:
@@ -762,8 +776,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"skipped {name}: {why}", file=sys.stderr)
     if skipped and args.strict:
         print(f"package error: {len(skipped)} package(s) could not be built (--strict)", file=sys.stderr)
+        build_timings.append_phase(timings_path, "Build packages", time.monotonic() - phase_start)
         return 1
     (output / "SKIPPED").write_text("".join(f"{n}\t{w}\n" for n, w in skipped), encoding="utf-8")
+    build_timings.append_phase(timings_path, "Build packages", time.monotonic() - phase_start)
     print(f"built {len(debs)} package(s) into {rel} ({'signed' if signed else 'unsigned'}; {len(skipped)} skipped on this host)")
     return 0
 

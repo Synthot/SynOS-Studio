@@ -104,6 +104,8 @@ class InstallAllModsPhaseTests(unittest.TestCase):
                 #!/bin/bash
                 set -e -u -o pipefail
                 print_info() {{ :; }}
+                print_ok() {{ :; }}
+                record_phase_timing() {{ :; }}
                 SCRIPT_DIR="{mods_dir}"
                 CLEANUP_MOD={loop}
             """)
@@ -135,6 +137,8 @@ class InstallAllModsPhaseTests(unittest.TestCase):
                 #!/bin/bash
                 set -e -u -o pipefail
                 print_info() {{ :; }}
+                print_ok() {{ :; }}
+                record_phase_timing() {{ :; }}
                 SCRIPT_DIR="{mods_dir}"
                 CLEANUP_MOD={loop}
             """)

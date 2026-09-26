@@ -64,10 +64,20 @@ for mod in "$SCRIPT_DIR"/*; do
                 ;;
         esac
         print_info "Processing mod: $mod"
+        mod_t0=$(date +%s)
         (
             cd "$mod" && \
             chmod +x install.sh && \
             bash "$mod/install.sh"
         )
+        mod_dur=$(( $(date +%s) - mod_t0 ))
+        print_ok "Mod $mod_name finished in ${mod_dur}s"
+        # This runs inside the chroot, before most of the image's own
+        # packages exist, so it writes plain JSON lines with printf (shared.sh,
+        # not python) to a file next to this script -- SCRIPT_DIR here is
+        # /root/mods (args.sh derives it from $0, not the sourcing script's
+        # own path). build.sh's run_chroot/run_cleanup_mod read it back into
+        # the host-side ledger right after this script returns to them.
+        record_phase_timing "$SCRIPT_DIR/timings.jsonl" "$mod_name" "$mod_dur"
     fi
 done
