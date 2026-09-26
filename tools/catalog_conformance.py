@@ -1103,7 +1103,8 @@ def resolved_install_packages(manifest: dict, profile: dict) -> list[str]:
         expanded += bundles.get(bundle_name, [])
     expanded += (software.get("packages", {}) or {}).get("add", [])
     remove = set((software.get("packages", {}) or {}).get("remove", []) or [])
-    concrete, _unmapped = render_manifest.resolve_packages(expanded, pkg_map, manifest.get("arch", "amd64"), ["en"], manifest["base"])
+    concrete, _unmapped = render_manifest.resolve_packages(expanded, pkg_map, manifest.get("arch", "amd64"), ["en"],
+                                                            manifest["base"], suite=manifest.get("suite"))
     return [p for p in concrete if p not in remove]
 
 

@@ -2,7 +2,18 @@
 # Browser and audio firmware come from upstream forks (mod 05) until packages/ ships;
 # the acceptance policy forbids the stock firefox and firmware-sof-signed packages.
 browser            =
-browser-esr        = firefox-esr
+# Ubuntu's own Firefox package is named plain "firefox" — there is no
+# separate "firefox-esr" here, that is Debian's own naming (see
+# bases/debian/packages.map) — and "firefox" itself is on this engine's own
+# forbidden-image-package list (tests/assertions/install.py's
+# FORBIDDEN_IMAGE_PACKAGES) because the browser role above already ships
+# Firefox from the packages/firefox-synos fork (mod 05) instead of the
+# stock package. Checked against archive.ubuntu.com's real indexes for
+# noble and resolute, including -updates/-backports/-security, 2026-09-25:
+# no "firefox-esr" package or Provides anywhere. Currently unreferenced by
+# any profile or bundle; marked unavailable rather than left pointing at a
+# name this base's archive does not have.
+browser-esr        = unavailable: Ubuntu ships no firefox-esr package (Debian-only naming) and its own plain "firefox" is on this project's own forbidden-image-package list in favor of the packages/firefox-synos fork the browser role above already provides
 office             = libreoffice libreoffice-gtk4
 mail               = evolution evolution-ews
 firmware-audio     =
@@ -18,14 +29,35 @@ smartcard          = opensc pcscd
 directory          = sssd realmd adcli krb5-user libpam-sss libnss-sss oddjob-mkhomedir
 hardening          = apparmor-profiles-extra ufw auditd fwupd unattended-upgrades
 usbguard           = usbguard
-openscap           = libopenscap8 ssg-base
+# libopenscap's SONAME/soversion differs by suite, not merely by base:
+# checked against archive.ubuntu.com's real indexes, including
+# -updates/-backports/-security, 2026-09-25 — noble carries libopenscap25t64,
+# resolute (a newer archive) already carries libopenscap33; "libopenscap8"
+# is on neither. No single name is right for every suite this base
+# supports, so this is a per-suite override (see load_package_map's
+# `abstract-name@suite` syntax); a caller that resolves without a suite
+# refuses loudly instead of guessing which one to use.
+openscap           = unavailable: libopenscap's SONAME differs per suite (libopenscap25t64 on noble, libopenscap33 on resolute) — resolve with a suite so this file's openscap@noble / openscap@resolute override applies
+openscap@noble     = libopenscap25t64 ssg-base
+openscap@resolute  = libopenscap33 ssg-base
 containers         = podman buildah skopeo
 evince             = evince
 gnome-calendar     = gnome-calendar
 build-essential    = build-essential
 gdb                = gdb
 cmake              = cmake
-code-oss           = code
+# VS Code OSS/Codium is not packaged in Ubuntu's own archive at all —
+# checked against archive.ubuntu.com's real indexes for noble and resolute,
+# including -updates/-backports/-security, 2026-09-25: no "code",
+# "code-oss", "codium" or "vscodium" package, and no Provides for any of
+# them, on either suite. It ships only from Microsoft's own apt repository
+# (proprietary VS Code) or third-party repositories this engine does not
+# add by default — the same shape as browser-headless's Chromium gap
+# below, and the same question Google Chrome already settled for the
+# browser role: this project does not repackage proprietary software, and
+# it has nothing free to substitute here either. Marked unavailable rather
+# than silently resolving to Microsoft's proprietary "code" package.
+code-oss           = unavailable: not packaged in Ubuntu's own archive on any supported suite; ships only from Microsoft's own (proprietary VS Code) or third-party apt repositories, which this engine does not add by default
 ssh-server         = openssh-server
 web-admin          = cockpit cockpit-podman cockpit-networkmanager cockpit-storaged
 virtualization     = qemu-system libvirt-daemon-system virtinst
@@ -33,6 +65,15 @@ gpu-nvidia         = nvidia-driver-580-open nvidia-cuda-toolkit nvidia-utils-580
 gpu-amd            = rocminfo rocm-smi
 gpu-intel          = intel-opencl-icd libze-intel-gpu1 libze1 intel-media-va-driver-non-free
 ai-dev             = python3-torch python3-venv python3-pip llama.cpp
+# python3-torch and llama.cpp are real, installable packages on resolute
+# (checked against archive.ubuntu.com's real indexes, including
+# -updates/-backports/-security, 2026-09-25) but do not exist anywhere in
+# noble's own archive at all — not renamed, not split, genuinely absent;
+# PyTorch/llama.cpp packaging landed in Debian/Ubuntu after noble's own
+# release. The AI workstation appliance (bundle-catalog/ai-workstation,
+# the ai-dev bundle above) needs both, so it is pinned to suite resolute
+# instead of this engine's usual noble (see its own manifest.yml).
+ai-dev@noble       = unavailable: python3-torch and llama.cpp are not packaged for Ubuntu noble at all (checked against archive.ubuntu.com's real indexes, including noble-updates/-backports/-security, 2026-09-25); both are present on resolute's own archive instead — pin suite resolute (or base debian/trixie) for a profile that needs this role
 # Yocto Project reference manual, "Ubuntu and Debian" required packages, plus
 # python3-websockets (needed on every supported suite but jammy/22.04, where
 # the archive version is too old for BitBake's hash equivalence server; use

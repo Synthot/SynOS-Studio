@@ -2,8 +2,13 @@ schema_version: 1
 name: ai-workstation
 version: 1.0.0
 
+# suite: resolute, not this engine's usual noble — bases/ubuntu/packages.map's
+# ai-dev@noble marks python3-torch and llama.cpp unavailable there (neither
+# is packaged for noble at all, checked against the real archive,
+# 2026-09-25); both are real on resolute, which this profile's ai-dev
+# bundle needs.
 base: ubuntu
-suite: noble
+suite: resolute
 arch: amd64
 
 profile: ai-workstation

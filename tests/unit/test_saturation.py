@@ -32,14 +32,19 @@ def _independent_union(base_id: str) -> set[str]:
     """The same union, computed straight from profiles/bundles.yml and
     profiles/*.yml without going through build_saturation.plan() at all —
     so a test comparing against this cannot pass just because both sides
-    share a bug."""
+    share a bug. Resolved against the same suite plan() itself now resolves
+    against (build_saturation.target_suite) — packages.map can carry a
+    per-suite override (render_manifest.load_package_map), so this must
+    pick the same suite plan() does or the two sides would disagree for a
+    reason that has nothing to do with a real bug in either."""
     base_dir = ROOT / "bases" / base_id
     pkg_map = render_manifest.load_package_map(base_dir / "packages.map")
     bundles = render_manifest.load_bundles()
+    suite = build_saturation.target_suite(base_id, ROOT)
     union: set[str] = set()
     for gid, abstract in bundles.items():
         try:
-            concrete, _ = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_id)
+            concrete, _ = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_id, suite=suite)
         except render_manifest.ManifestError:
             continue
         union.update(concrete)
@@ -48,7 +53,7 @@ def _independent_union(base_id: str) -> set[str]:
         if not names:
             continue
         try:
-            concrete, _ = render_manifest.resolve_packages(names, pkg_map, "amd64", ["en"], base_id)
+            concrete, _ = render_manifest.resolve_packages(names, pkg_map, "amd64", ["en"], base_id, suite=suite)
         except render_manifest.ManifestError:
             continue
         union.update(concrete)

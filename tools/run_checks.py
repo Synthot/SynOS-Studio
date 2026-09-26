@@ -20,11 +20,13 @@ Levels:
            when --studio-repo/SYNOS_STUDIO_REPO is given).
 
 Nothing that builds an image, boots QEMU, pulls a container image or needs
-the network ever runs at any --level. The one stage here that drives a real
-browser (studio-e2e) is never selected by --level at all; it exists only
-for --only, with its cost stated in its own description. It does report a
-real verdict, so --only studio-e2e can be trusted as a gate; it is simply
-not something to pay for on every run.
+the network ever runs at any --level. The stages here that do need one of
+those — studio-e2e (a real browser) and packages-map-archives (the real
+archive indexes, tens of megabytes per suite) — are never selected by
+--level at all; they exist only for --only, with their cost stated in their
+own description. Both still report a real verdict, so --only studio-e2e or
+--only packages-map-archives can be trusted as a gate; they are simply not
+something to pay for on every run.
 
 A stage whose tool is genuinely absent (no node, no google-chrome, the
 separate front end not configured) is reported "skipped" with the reason
@@ -235,6 +237,18 @@ def _run_studio_e2e(ctx: Context) -> Outcome:
     return _run_argv([sys.executable, "tests/e2e_open_bundle.py"], cwd=ctx.studio_repo, env=env, timeout=300)
 
 
+# ---- packages.map archive conformance --------------------------------------
+def _run_packages_map_archives(ctx: Context) -> Outcome:
+    """tools/packages_map_conformance.py: every concrete name in bases/*/
+    packages.map, checked against the real archive it will actually be
+    installed from. Genuinely needs the network (tens of megabytes of real
+    Packages indexes per suite) — this is the one thing that keeps it out of
+    every --level, never a reason to skip it here: --only
+    packages-map-archives runs it for real and reports a real exit code."""
+    return _run_argv([sys.executable, str(ctx.root / "tools" / "packages_map_conformance.py")],
+                     cwd=ctx.root, timeout=180)
+
+
 STAGES: list[Stage] = [
     Stage("manifest",
          "manifest.yml validates and its base/profile/brand chain resolves, without writing args.sh "
@@ -270,6 +284,14 @@ STAGES: list[Stage] = [
          "its own checks fails, so this stage's status can be trusted; kept out of --level "
          "because of the browser and the minute and a half. Reach it with --only studio-e2e.",
          None, _run_studio_e2e, _studio_e2e_precheck),
+    Stage("packages-map-archives",
+         "every concrete package name in bases/*/packages.map, checked against the real archive it "
+         "will actually be installed from — the full apt view a real build configures (suite, "
+         "-updates, -backports, -security), on every suite render_manifest.live_capable_suites() "
+         "says that base can build (tools/packages_map_conformance.py; a few minutes, several dozen "
+         "megabytes of real archive indexes). Needs the network, so it is kept out of --level the "
+         "same way studio-e2e is. Reach it with --only packages-map-archives.",
+         None, _run_packages_map_archives),
 ]
 
 STAGES_BY_NAME = {s.name: s for s in STAGES}

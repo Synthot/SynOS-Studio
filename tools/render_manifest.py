@@ -251,7 +251,31 @@ class Unavailable(NamedTuple):
 
 def load_package_map(path: Path) -> dict[str, list[str] | Unavailable]:
     """abstract-name = concrete packages (may be empty: provided elsewhere on this
-    base) or `unavailable: <reason>` (see Unavailable)."""
+    base) or `unavailable: <reason>` (see Unavailable).
+
+    A key may instead be `abstract-name@suite` — a per-suite override, for the
+    case a base's own archive names a role differently on one of its supported
+    suites than on another (or has it on one suite and not another at all):
+    availability is decided per *suite*, not per base, and packages.map is
+    otherwise a per-base file with no suite dimension at all. resolve_packages()
+    tries `f"{name}@{suite}"` first when it is given a suite, falling back to
+    the bare `name` when no override exists for that suite — so a role with no
+    suite-specific quirk needs no `@suite` line at all, and a base gains suite
+    awareness one override at a time rather than every role having to declare
+    one. main() checks every `@suite` here actually names a suite the base's
+    own SUPPORTED_SUITES lists (check_packages_map_suite_overrides_are_known),
+    so a typo or a renamed suite is a repository bug caught here, not a role
+    that silently never applies.
+
+    The concrete case this exists for: bases/ubuntu/packages.map's ai-dev
+    (python3-torch, llama.cpp) is real on suite resolute and does not exist at
+    all on suite noble — checked against archive.ubuntu.com's own indexes,
+    including the -updates/-backports/-security pockets bases/ubuntu/
+    sources.tmpl actually configures, not merely the bare suite pocket. See
+    ai-dev@noble there, and openscap@noble / openscap@resolute for a role
+    whose *name* itself (not merely its presence) differs by suite
+    (libopenscap25t64 vs libopenscap33 — an upstream SONAME/soversion bump
+    landed on different suites' own archive snapshots)."""
     mapping: dict[str, list[str] | Unavailable] = {}
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.split("#", 1)[0].strip()
@@ -264,6 +288,26 @@ def load_package_map(path: Path) -> dict[str, list[str] | Unavailable]:
         else:
             mapping[key.strip()] = value.split()
     return mapping
+
+
+def check_packages_map_suite_overrides_are_known(base_id: str, base: dict[str, str],
+                                                  pkg_map: dict[str, list[str] | Unavailable]) -> None:
+    """Every `abstract-name@suite` key in bases/<base_id>/packages.map (see
+    load_package_map) must name a suite base.env's own SUPPORTED_SUITES
+    actually lists — the same "never a second, independently maintained list
+    that can drift" discipline check_live_map_agrees_with_supported_suites
+    already applies to live.map, extended to packages.map's own per-suite
+    overrides: a typo or a suite renamed on one side and not the other is a
+    repository bug, refused here, rather than an override that silently never
+    applies to anything."""
+    supported = set(base.get("SUPPORTED_SUITES", "").split())
+    for key in pkg_map:
+        if "@" not in key:
+            continue
+        _name, _, suite = key.partition("@")
+        if suite not in supported:
+            raise ManifestError(f"bases/{base_id}/packages.map names {key!r}, but {suite!r} is not one of "
+                                f"base.env's SUPPORTED_SUITES ({sorted(supported)}) — fix whichever one is wrong")
 
 
 def load_live_suite_map(path: Path) -> dict[str, Unavailable]:
@@ -344,7 +388,7 @@ def load_bundles() -> dict[str, list[str]]:
 
 def resolve_packages(
     abstract: list[str], pkg_map: dict[str, list[str] | Unavailable], arch: str, lang_codes: list[str], base_id: str,
-    profile_id: str = "", refuse_unavailable: bool = True,
+    profile_id: str = "", refuse_unavailable: bool = True, suite: str | None = None,
 ) -> tuple[list[str], list[str]]:
     """Expand abstract names to concrete packages. Unknown names pass through as
     concrete. A name mapped `unavailable: <reason>` (Unavailable) on this base
@@ -352,7 +396,17 @@ def resolve_packages(
     (it is not merely absent from the map), so silently shipping one package
     short is exactly the bug this refuses. refuse_unavailable=False is for
     resolving a *removal* list, where a role this base never had is simply
-    nothing to remove, not a reason to refuse the build."""
+    nothing to remove, not a reason to refuse the build.
+
+    `suite`, when given, makes `f"{item}@{suite}"` (load_package_map's
+    per-suite override) take precedence over the bare `item` entry — the one
+    place that lookup order is decided, so every caller that knows which
+    suite it is rendering for (render(), catalog_conformance.py's
+    resolved_install_packages(), tools/build_saturation.py's plan()) gets a
+    role that differs by suite resolved correctly instead of falling back to
+    a name that may only be right for *some* of a base's suites. Left as
+    None, resolution is exactly what it was before per-suite overrides
+    existed — every existing caller that does not pass it is unaffected."""
     concrete: list[str] = []
     unmapped: list[str] = []
 
@@ -366,11 +420,12 @@ def resolve_packages(
             if only_on and base_id not in only_on:
                 continue
             item = item["name"]
-        if item not in pkg_map:
+        key = f"{item}@{suite}" if suite and f"{item}@{suite}" in pkg_map else item
+        if key not in pkg_map:
             unmapped.append(item)
             add(item)
             continue
-        entry = pkg_map[item]
+        entry = pkg_map[key]
         if isinstance(entry, Unavailable):
             if not refuse_unavailable:
                 continue
@@ -583,7 +638,7 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
         lp = lang_pack_code(code)
         if lp not in lang_codes:
             lang_codes.append(lp)
-    language_packs, _ = resolve_packages(["translations"], pkg_map, arch, lang_codes, base["BASE_ID"])
+    language_packs, _ = resolve_packages(["translations"], pkg_map, arch, lang_codes, base["BASE_ID"], suite=suite)
     packages = " ".join(language_packs)
     software = profile.get("software", {}) or {}
     pkgs = software.get("packages", {}) or {}
@@ -611,9 +666,10 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
     gpu = (profile.get("hardware", {}) or {}).get("gpu", "none")
     if gpu != "none":
         abstract.append(f"gpu-{gpu}")            # the compute stack, per base (bases/*/packages.map)
-    install_packages, unmapped = resolve_packages(abstract, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"])
+    install_packages, unmapped = resolve_packages(abstract, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"],
+                                                  suite=suite)
     remove_packages, _ = resolve_packages(remove, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"],
-                                          refuse_unavailable=False)
+                                          refuse_unavailable=False, suite=suite)
     install_packages = [p for p in install_packages if p not in remove_packages]
     installer = profile.get("installer", {}) or {}
     ansible_cfg = profile.get("ansible", {}) or {}
@@ -790,6 +846,7 @@ def main(argv: list[str] | None = None) -> int:
         regions = resolve_regions(list(manifest["regions"]))
         brand = resolve_brand(manifest["brand"])
         pkg_map = load_package_map(base_dir / "packages.map")
+        check_packages_map_suite_overrides_are_known(manifest["base"], base, pkg_map)
         bundles = load_bundles()
         live_map = load_live_suite_map(base_dir / "live.map")
         check_live_map_agrees_with_supported_suites(manifest["base"], base, live_map)

@@ -16,14 +16,29 @@ smartcard          = opensc pcscd
 directory          = sssd realmd adcli krb5-user libpam-sss libnss-sss oddjob-mkhomedir
 hardening          = apparmor-profiles-extra ufw auditd fwupd unattended-upgrades
 usbguard           = usbguard
-openscap           = libopenscap25t64 ssg-base
+# libopenscap33 is the real name on trixie (checked against
+# deb.debian.org's real indexes, including trixie-updates/-backports and
+# security.debian.org's trixie-security, 2026-09-25); "libopenscap25t64" is
+# noble's own name (see bases/ubuntu/packages.map's openscap@noble), not
+# this base's. This base has only one supported suite (base.env's
+# SUPPORTED_SUITES), so no per-suite override is needed here — just the
+# right name.
+openscap           = libopenscap33 ssg-base
 containers         = podman buildah skopeo
 evince             = evince
 gnome-calendar     = gnome-calendar
 build-essential    = build-essential
 gdb                = gdb
 cmake              = cmake
-code-oss           = code-oss
+# VS Code OSS/Codium is not packaged in Debian's own archive either —
+# checked against deb.debian.org's real indexes for trixie, including
+# trixie-updates/-backports and security.debian.org's trixie-security,
+# 2026-09-25: no "code-oss", "code", "codium" or "vscodium" package, and no
+# Provides for any of them. Same gap as bases/ubuntu/packages.map's
+# code-oss, for the same reason (see there): it ships only from
+# Microsoft's own or third-party apt repositories, which this engine does
+# not add by default.
+code-oss           = unavailable: not packaged in Debian's own archive on any supported suite; ships only from Microsoft's own (proprietary VS Code) or third-party apt repositories, which this engine does not add by default
 ssh-server         = openssh-server
 web-admin          = cockpit cockpit-podman cockpit-networkmanager cockpit-storaged
 virtualization     = qemu-system libvirt-daemon-system virtinst
