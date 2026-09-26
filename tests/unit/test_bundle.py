@@ -296,6 +296,10 @@ class HostAndBuildTests(unittest.TestCase):
 
         original = cli.subprocess.run
         cli.subprocess.run = fake_run
+        # cli.sys is the real sys module, so this replaces stderr process-wide:
+        # keep the original to put back, or the restore below hands every later
+        # test a closed file (this silencer used to do exactly that).
+        real_stderr = sys.stderr
         cli.sys.stderr = open(os.devnull, 'w')
         cli.host_report = lambda: {"problems": [], "engine": "/usr/bin/podman"}
         try:
@@ -317,7 +321,7 @@ class HostAndBuildTests(unittest.TestCase):
         finally:
             cli.subprocess.run = original
             cli.sys.stderr.close()
-            cli.sys.stderr = sys.stderr
+            cli.sys.stderr = real_stderr
 
     def test_container_root_is_passed_to_podman_before_every_subcommand(self) -> None:
         cli = load_cli()
@@ -332,6 +336,10 @@ class HostAndBuildTests(unittest.TestCase):
 
         original = cli.subprocess.run
         cli.subprocess.run = fake_run
+        # cli.sys is the real sys module, so this replaces stderr process-wide:
+        # keep the original to put back, or the restore below hands every later
+        # test a closed file (this silencer used to do exactly that).
+        real_stderr = sys.stderr
         cli.sys.stderr = open(os.devnull, 'w')
         cli.host_report = lambda: {"problems": [], "engine": "/usr/bin/podman"}
         try:
@@ -345,7 +353,7 @@ class HostAndBuildTests(unittest.TestCase):
         finally:
             cli.subprocess.run = original
             cli.sys.stderr.close()
-            cli.sys.stderr = sys.stderr
+            cli.sys.stderr = real_stderr
 
     def test_container_root_is_refused_for_docker_before_any_command_runs(self) -> None:
         cli = load_cli()
@@ -384,6 +392,10 @@ class HostAndBuildTests(unittest.TestCase):
 
         original = cli.subprocess.run
         cli.subprocess.run = fake_run
+        # cli.sys is the real sys module, so this replaces stderr process-wide:
+        # keep the original to put back, or the restore below hands every later
+        # test a closed file (this silencer used to do exactly that).
+        real_stderr = sys.stderr
         cli.sys.stderr = open(os.devnull, 'w')
         cli.host_report = lambda: {"problems": [], "engine": "/usr/bin/podman"}
         try:
@@ -393,7 +405,7 @@ class HostAndBuildTests(unittest.TestCase):
         finally:
             cli.subprocess.run = original
             cli.sys.stderr.close()
-            cli.sys.stderr = sys.stderr
+            cli.sys.stderr = real_stderr
 
     def test_makefile_routes_container_build_through_the_tool(self) -> None:
         makefile = (ROOT / "makefile").read_text(encoding="utf-8")
@@ -568,7 +580,8 @@ class LauncherTests(unittest.TestCase):
         original_run, original_env = cli.subprocess.run, dict(os.environ)
         cli.subprocess.run = fake_run
         os.environ["SYNOS_IN_CONTAINER"] = "1"
-        cli.sys.stderr = open(os.devnull, "w")
+        real_stderr = sys.stderr          # see the note above: restoring sys.stderr
+        cli.sys.stderr = open(os.devnull, "w")   # itself would restore a closed file
         try:
             with tempfile.TemporaryDirectory() as tmp:
                 result = cli.container_build(ROOT / "manifests" / "test-build.yml", None, True, None, Path(tmp) / "out")
@@ -580,7 +593,7 @@ class LauncherTests(unittest.TestCase):
         finally:
             cli.subprocess.run = original_run
             cli.sys.stderr.close()
-            cli.sys.stderr = sys.stderr
+            cli.sys.stderr = real_stderr
             os.environ.clear()
             os.environ.update(original_env)
 

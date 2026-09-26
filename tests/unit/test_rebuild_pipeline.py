@@ -95,10 +95,22 @@ class AnsibleHookTests(unittest.TestCase):
         self.assertEqual("active-directory", variables["synos_profile"]["directory"]["join"])
         self.assertEqual("example-acme", variables["synos_brand"]["id"])
 
-    def test_minimal_profile_does_not_require_ansible(self) -> None:
+    def test_ansible_is_required_whenever_a_profile_adds_packages_of_its_own(self) -> None:
+        """This repository's own manifest.yml builds the workstation profile, whose
+        `software.packages.add` carries keepassxc — so Ansible is required, because
+        the live-session gating role has to look at what units those packages ship
+        and suppress them under rd.synos.live (see tools/render_manifest.py's
+        appliance package set and docs/ARCHITECTURE.md's "Live session vs.
+        installed system"). Skipping that silently would ship an image whose
+        appliance services run in a passwordless live session, so this is a
+        deliberate, loud requirement rather than the "false" it used to be; the
+        builder image carries ansible (bases/*/Containerfile), so no ordinary
+        build is affected. A profile that adds nothing of its own still says
+        false — tests/unit/test_manifest_render.py holds that case."""
         with tempfile.TemporaryDirectory() as directory:
             text, _ = _render(ROOT / "manifest.yml", Path(directory))
-        self.assertIn('export ANSIBLE_CHROOT_REQUIRED="false"', text)
+        self.assertIn('export PROFILE_PACKAGES_ADD="keepassxc"', text)
+        self.assertIn('export ANSIBLE_CHROOT_REQUIRED="true"', text)
 
     def test_missing_customer_playbook_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

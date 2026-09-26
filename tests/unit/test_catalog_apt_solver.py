@@ -149,10 +149,18 @@ class FloorPackagesTests(unittest.TestCase):
     profiles/minimal.yml and bases/<base>/packages.map, both local files."""
 
     def test_a_package_the_real_archive_does_not_have_is_named_absent_not_installed(self) -> None:
-        present, absent = cas.floor_packages("debian", frozenset({"locales", "ufw", "auditd"}))
-        self.assertIn("locales", present)
-        self.assertNotIn("hunspell-en", present)
-        self.assertIn("hunspell-en", absent)
+        """The split is driven by what the caller says the archive has, not by a
+        package that happens to be missing today: this used to assert on
+        "hunspell-en", a name the floor genuinely resolved to and no archive
+        carried, and it stopped meaning anything the moment the language
+        packages were resolved from the archive instead of a naming convention
+        (bases/*/language-packages.map). The floor is stated here instead, so
+        the test proves the partition rather than a passing defect."""
+        floor, _ = cas.floor_packages("debian", frozenset({"locales", "ufw", "auditd"}))
+        self.assertIn("locales", floor, "a package the archive has is installed")
+        present, absent = cas.floor_packages("debian", frozenset({"ufw", "auditd"}))
+        self.assertNotIn("locales", present, "a package the archive lacks is never installed")
+        self.assertIn("locales", absent, "and is named as absent instead")
 
     def test_every_present_package_is_also_wanted(self) -> None:
         present, absent = cas.floor_packages("ubuntu", frozenset({"language-pack-en"}))
