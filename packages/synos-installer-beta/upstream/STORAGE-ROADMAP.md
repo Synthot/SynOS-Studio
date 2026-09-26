@@ -78,8 +78,13 @@ formatting, geometry drift and graph/write-set drift.
 An existing ESP now requires a fresh read-only `fsck.fat -n` result, stable
 PARTUUID/filesystem UUID and at least 64 MiB free. Capacity is measured from a
 temporary read-only `vfat` mount with `nosuid,nodev,noexec`. The guided boot
-plan writes only `EFI/SynOS`, passes `--no-extra-removable`, then creates
-and verifies an exact SynOS NVRAM entry. Unavailable EFI variables fail
+plan writes only `EFI/SynOS`, declares `--no-extra-removable`, then creates
+and verifies an exact SynOS NVRAM entry. That one option is dropped at
+execution time on a target whose grub-install does not offer it (Debian
+trixie's 2.12-9+deb13u2 is the confirmed case; its default already installs
+no removable-media fallback, so omitting the flag there reaches the same
+outcome) — every other planned option still fails the install if the target
+does not support it. Unavailable EFI variables fail
 before the compiler authorizes disk writes. These compiler invariants remain
 mandatory now that guided execution is available in the beta.
 

@@ -65,15 +65,26 @@ def build_boot_commands(plan: InstallPlan, target: str) -> BootCommandPlan:
         "--recheck",
         "--no-nvram",
     ]
-    # Ubuntu GRUB 2.14 installs the EFI/BOOT fallback path by default and
-    # exposes only --no-extra-removable to opt out.  The older
-    # --force-extra-removable option no longer exists in Resolute.
+    # Several current grub-install builds (Ubuntu noble's 2.12-1ubuntu7.3 and
+    # every 2.14 build checked so far) default to installing the EFI/BOOT
+    # removable-media fallback and expose only --no-extra-removable to opt
+    # out; --force-extra-removable no longer exists there. Debian trixie's
+    # 2.12-9+deb13u2 predates that default flip: it has neither option and
+    # already does not install the fallback, so omitting the flag there
+    # reaches the same outcome. This plan still declares the flag
+    # optimistically for every UEFI target; bootloader.py's executor is the
+    # one with a real target to probe, so it drops this specific option when
+    # the target's own grub-install --help does not offer it (see
+    # _adapt_for_grub_capabilities). Planning stays target-blind on purpose.
     creates_nvram_entry = plan.platform.firmware is Firmware.UEFI
     if creates_nvram_entry:
         # An installed system must not rely on shim's removable-media
         # fallback application to create its first NVRAM entry and reboot.
         # Some firmware keeps selecting that fallback entry after ResetSystem,
-        # producing an endless "Reset System" loop.
+        # producing an endless "Reset System" loop. Whether that guarantee is
+        # met by this flag or by the target's own default (see above), no
+        # fallback file is ever written on this branch, so `fallback = ""`
+        # and the explicit-NVRAM loader path below stay correct either way.
         efi_install.append("--no-extra-removable")
         fallback = ""
     if plan.platform.secure_boot is SecureBoot.ENABLED:
@@ -185,6 +196,11 @@ def _build_vendor_only_boot_commands(
         "--bootloader-id=SynOS",
         "--recheck",
         "--no-nvram",
+        # See build_boot_commands() above: declared optimistically here too.
+        # This plan is frozen before the target rootfs exists (preflight,
+        # before partitioning), so there is no grub-install to probe yet;
+        # bootloader.py's executor drops this option later if the real
+        # target's grub-install does not offer it.
         "--no-extra-removable",
     ]
     if plan.platform.secure_boot is SecureBoot.ENABLED:
