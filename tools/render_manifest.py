@@ -753,6 +753,46 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
     remove_packages, _ = resolve_packages(remove, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"],
                                           refuse_unavailable=False, suite=suite, lang_pkg_map=lang_pkg_map)
     install_packages = [p for p in install_packages if p not in remove_packages]
+    # What an appliance itself asked for, as opposed to a curated group a
+    # workstation profile happens to carry (docs/ARCHITECTURE.md, "Live
+    # session vs. installed system"). No group in profiles/bundles.yml ships
+    # a server — printing resolves to cups, containers to podman, and
+    # neither is an appliance service — so the boundary is the appliance's
+    # own explicit declarations, never a curated group: software.services
+    # (container_services' quadlet units, which carry their own Condition
+    # directly in service.container.j2 and are not part of this list at
+    # all), software.packages.add, and every software.repositories[]
+    # .packages entry. All three are things the profile itself named, and a
+    # third-party repository in particular exists to bring a daemon — that
+    # is exactly what this suppresses (kubernetes-server's own repository
+    # adds kubelet, the single worst thing to leave running unauthenticated
+    # on whatever network the stick is plugged into).
+    #
+    # software.packages.add is resolved the same way as everything else,
+    # concrete, across the whole extends chain (deep_merge concatenates
+    # "add" lists, so a bundle-catalog leaf's own additions already carry
+    # its parent's, e.g. kubernetes-server's containerd/runc alongside
+    # server's own ssh-server). software.repositories[].packages is
+    # different: those names are installed by mod 08, straight from a
+    # third-party repository, and are never resolved through
+    # bases/*/packages.map at all (a role like "office" would mean nothing
+    # to pkgs.k8s.io) — they are concrete by construction, so they are
+    # taken literally here, never passed through resolve_packages. Do not
+    # "fix" that later; it is deliberate.
+    #
+    # This combined list is only ever handed to
+    # synos.workstation.live_service_gating (run by customize_chroot.yml),
+    # which gates the units the packages below actually shipped (dpkg -L)
+    # and is a safe no-op for one that ships none (an inherited add like git
+    # or python3-venv), so nothing here needs a hand-written package list to
+    # keep in step by hand.
+    appliance_packages, _ = resolve_packages(add_refs, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"],
+                                             suite=suite, lang_pkg_map=lang_pkg_map, lang_gaps=[])
+    for repo in software.get("repositories", []) or []:
+        for repo_package in repo.get("packages", []) or []:
+            if repo_package not in appliance_packages:
+                appliance_packages.append(repo_package)
+    appliance_packages = [p for p in appliance_packages if p not in remove_packages]
     installer = profile.get("installer", {}) or {}
     ansible_cfg = profile.get("ansible", {}) or {}
     playbooks = list(ansible_cfg.get("playbooks", []))
@@ -766,7 +806,7 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
         or ansible_cfg.get("first_boot_roles") or ansible_cfg.get("pull_url")
         or installer.get("ssh") == "enabled" or security.get("open_ports")
         or (profile.get("software") or {}).get("services") or (profile.get("hardware") or {}).get("gpu", "none") != "none"
-        or profile_files
+        or profile_files or appliance_packages
     )
     stack = resolve_stack(manifest)
     stack_exports = "".join(
@@ -899,6 +939,7 @@ export LOCAL_REPO_DIR=".build/repo"
         "packages": {
             "abstract": [a if isinstance(a, str) else a["name"] for a in abstract],
             "install": install_packages,
+            "appliance": appliance_packages,
             "remove": remove_packages,
             "unmapped": unmapped,
             "language_gaps": lang_gaps,
@@ -981,6 +1022,7 @@ def main(argv: list[str] | None = None) -> int:
     ansible_vars.write_text(json.dumps({
         "synos_profile": resolved["profile"], "synos_brand": resolved["brand"],
         "synos_manifest": resolved["manifest"], "synos_regions": resolved["regions"],
+        "synos_appliance_packages": resolved["packages"]["appliance"],
     }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"rendered {_short(output)} ({len(resolved['live_entries'])} live entries) and {_short(resolved_path)}")
     return 0

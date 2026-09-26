@@ -1,0 +1,1 @@
+live_service_gating_packages: []      # concrete package names the appliance itself declared: software.packages.add (resolved across the whole extends chain) plus every software.repositories[].packages entry, taken literally (tools/render_manifest.py's resolved["packages"]["appliance"]) — never a curated profiles/bundles.yml group

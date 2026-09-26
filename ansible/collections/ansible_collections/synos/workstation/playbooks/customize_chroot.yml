@@ -7,6 +7,7 @@
   become: false
   vars:
     profile: "{{ synos_profile }}"
+    appliance_packages: "{{ synos_appliance_packages | default([]) }}"
   tasks:
     - name: Hardening from the profile
       ansible.builtin.include_role:
@@ -41,6 +42,13 @@
       vars:
         profile_files: "{{ profile.software.files | default([]) }}"
       when: (profile.software.files | default([])) | length > 0
+
+    - name: Never start this profile's own appliance packages' units in the live session
+      ansible.builtin.include_role:
+        name: synos.workstation.live_service_gating
+      vars:
+        live_service_gating_packages: "{{ appliance_packages }}"
+      when: appliance_packages | length > 0
 
     - name: Fleet enrollment from the profile
       ansible.builtin.include_role:

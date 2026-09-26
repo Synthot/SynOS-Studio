@@ -104,6 +104,20 @@ software:
         self.assertNotIn("AddDevice", none)
         self.assertIn("PublishPort=11434:11434", none)
 
+    def test_quadlet_unit_never_starts_in_the_live_session(self) -> None:
+        """docs/ARCHITECTURE.md, "Live session vs. installed system": every
+        quadlet unit this template generates carries
+        ConditionKernelCommandLine=!rd.synos.live, so it stays enabled
+        ([Install] WantedBy=, unaffected by a Condition) and starts normally
+        once installed, but a live boot (which always carries
+        rd.synos.live=1) never starts it."""
+        import jinja2
+        template = jinja2.Template((ROOT / "ansible/collections/ansible_collections/synos/workstation/roles/container_services/templates/service.container.j2").read_text(encoding="utf-8"),
+                                   trim_blocks=True, lstrip_blocks=True)
+        rendered = template.render(item={"name": "nginx", "image": "docker.io/library/nginx:1.31.2"}, container_services_gpu="none")
+        self.assertIn("ConditionKernelCommandLine=!rd.synos.live", rendered)
+        self.assertIn("WantedBy=multi-user.target default.target", rendered)
+
 
 if __name__ == "__main__":
     unittest.main()
