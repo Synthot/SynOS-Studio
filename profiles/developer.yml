@@ -3,8 +3,16 @@ extends: workstation
 description: Workstation plus containers and toolchains, no policy lockdown.
 software:
   bundles: [containers, build-tools]
+  # code-oss dropped 2026-09-25: bases/*/packages.map's code-oss role is
+  # `unavailable` on both bases (VS Code OSS/Codium is not packaged in
+  # either archive, checked against the real indexes) — this profile was
+  # silently shipping without a code editor already, since the concrete
+  # names it used to resolve to ("code" on ubuntu, "code-oss" on debian)
+  # were never real packages either; mods/06-profile-software/install.sh's
+  # own install-time filter just skipped them quietly. Removed rather than
+  # left pointing at a role that now refuses to render at all.
   packages:
-    add: [git, code-oss, python3-venv]
+    add: [git, python3-venv]
 installer:
   passwordless_sudo: true
 security:

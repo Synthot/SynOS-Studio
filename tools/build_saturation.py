@@ -165,12 +165,32 @@ def load_exclusions(base_id: str, root: Path = ROOT) -> dict[str, str]:
 
 
 # ------------------------------------------------------------- resolution
-def _resolve_whole(items: list, pkg_map, base_id: str, label: str) -> tuple[list[str] | None, str | None]:
+def target_suite(base_id: str, root: Path = ROOT) -> str:
+    """The one suite the saturation bundle for `base_id` actually targets:
+    base.env's own DEFAULT_SUITE when it can back a Live image, else the
+    first suite that can (render_manifest.live_capable_suites) — the same
+    choice generate_manifest() writes into the generated manifest's own
+    `suite:` field, factored out here so plan()'s own package resolution
+    (which needs to know which suite it is planning for, now that
+    packages.map can carry a per-suite override — see load_package_map)
+    can never drift from the suite the generated bundle will actually try
+    to build against."""
+    base_dir = root / "bases" / base_id
+    env = rm.load_env(base_dir / "base.env")
+    live_suites = rm.live_capable_suites(base_dir, env)
+    suite = env.get("DEFAULT_SUITE", "")
+    if suite not in live_suites:
+        suite = live_suites[0] if live_suites else suite
+    return suite
+
+
+def _resolve_whole(items: list, pkg_map, base_id: str, label: str, suite: str | None = None) -> tuple[list[str] | None, str | None]:
     """Resolve one bundle group or one profile's whole add list; if the base
-    cannot serve any item in it (Unavailable), the whole thing is skipped —
-    (concrete, None) on success, (None, reason) when this base says no."""
+    cannot serve any item in it (Unavailable) *on this suite*, the whole
+    thing is skipped — (concrete, None) on success, (None, reason) when this
+    base/suite says no."""
     try:
-        concrete, _unmapped = rm.resolve_packages(items, pkg_map, ARCH, ["en"], base_id, profile_id=label)
+        concrete, _unmapped = rm.resolve_packages(items, pkg_map, ARCH, ["en"], base_id, profile_id=label, suite=suite)
     except rm.ManifestError as exc:
         return None, str(exc)
     return concrete, None
@@ -180,9 +200,17 @@ def plan(base_id: str, root: Path = ROOT) -> dict:
     """Everything tools/build_matrix.py's saturation target and this tool's own
     --check need for one base: which bundle groups and profile add-lists it
     can serve, which it cannot (named, reasoned), which are excluded (named,
-    reasoned), and the resulting resolved concrete package union."""
+    reasoned), and the resulting resolved concrete package union.
+
+    Resolved against target_suite(base_id) — the exact suite
+    generate_manifest() will pin the generated bundle to — so a role that is
+    unavailable only on *that* suite (bases/ubuntu/packages.map's ai-dev@noble)
+    is named and skipped here the same way a role unavailable on the whole
+    base always was, instead of plan() reporting a group as included when the
+    generated bundle's own real render() would go on to refuse it."""
     base_dir = root / "bases" / base_id
     pkg_map = rm.load_package_map(base_dir / "packages.map")
+    suite = target_suite(base_id, root)
     bundles = rm.load_bundles()
     exclusions = load_exclusions(base_id, root)
     bundle_ids = set(bundles)
@@ -195,7 +223,7 @@ def plan(base_id: str, root: Path = ROOT) -> dict:
         if gid in exclusions:
             excluded_groups.append((gid, exclusions[gid]))
             continue
-        concrete, reason = _resolve_whole(abstract, pkg_map, base_id, f"saturation-{base_id}:bundle:{gid}")
+        concrete, reason = _resolve_whole(abstract, pkg_map, base_id, f"saturation-{base_id}:bundle:{gid}", suite=suite)
         if reason is not None:
             skipped_bundles.append((gid, reason))
             continue
@@ -207,7 +235,7 @@ def plan(base_id: str, root: Path = ROOT) -> dict:
         pid, names = profile_own_add(path)
         if not names:
             continue
-        concrete, reason = _resolve_whole(names, pkg_map, base_id, f"saturation-{base_id}:profile:{pid}")
+        concrete, reason = _resolve_whole(names, pkg_map, base_id, f"saturation-{base_id}:profile:{pid}", suite=suite)
         if reason is not None:
             skipped_add.append((pid, reason))
             continue
@@ -215,10 +243,10 @@ def plan(base_id: str, root: Path = ROOT) -> dict:
 
     concrete_union: set[str] = set()
     for gid in included_bundles:
-        concrete, _ = _resolve_whole(bundles[gid], pkg_map, base_id, f"saturation-{base_id}:bundle:{gid}")
+        concrete, _ = _resolve_whole(bundles[gid], pkg_map, base_id, f"saturation-{base_id}:bundle:{gid}", suite=suite)
         concrete_union.update(concrete or [])
     for pid, names in add_by_profile.items():
-        concrete, _ = _resolve_whole(names, pkg_map, base_id, f"saturation-{base_id}:profile:{pid}")
+        concrete, _ = _resolve_whole(names, pkg_map, base_id, f"saturation-{base_id}:profile:{pid}", suite=suite)
         concrete_union.update(concrete or [])
 
     package_exclusions: list[tuple[str, str]] = []
@@ -293,12 +321,7 @@ def generate_profile(base_id: str, result: dict) -> dict:
 
 
 def generate_manifest(base_id: str, root: Path = ROOT) -> tuple[dict, str]:
-    base_dir = root / "bases" / base_id
-    env = rm.load_env(base_dir / "base.env")
-    live_suites = rm.live_capable_suites(base_dir, env)
-    suite = env.get("DEFAULT_SUITE", "")
-    if suite not in live_suites:
-        suite = live_suites[0] if live_suites else suite
+    suite = target_suite(base_id, root)
     manifest = {
         "schema_version": 1,
         "name": f"saturation-{base_id}",

@@ -1,4 +1,13 @@
-# abstract-name = concrete package(s) on this base
+# abstract-name = concrete package(s) on this base, or `unavailable: <reason>`
+# when this base's archive has nothing that fills the role at all.
+#
+# A role whose right name (or presence at all) differs by *suite*, not by
+# base, gets a per-suite override instead: `abstract-name@suite = ...`, tried
+# before the bare `abstract-name` line whenever the caller knows which suite
+# it is resolving for (tools/render_manifest.py's load_package_map). See
+# bases/ubuntu/packages.map's openscap@noble/openscap@resolute (same role,
+# two different real names) and ai-dev@noble (a role real on one suite and
+# genuinely absent on another) for the two cases this exists for.
 browser            = firefox-esr
 browser-esr        = firefox-esr
 office             = libreoffice libreoffice-gtk4

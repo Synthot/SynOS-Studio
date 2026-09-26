@@ -10,7 +10,7 @@
     "version": "0.1.0"
   },
   "created": "2026-09-22T00:00:00Z",
-  "description": "AI Workstation \u2014 ubuntu noble amd64, profile ai-workstation",
+  "description": "AI Workstation \u2014 ubuntu resolute amd64, profile ai-workstation",
   "files": [
     "manifests/ai-workstation.yml"
   ]
