@@ -25,6 +25,10 @@ entry. Either way, the result records which source was used.
 
 What it asserts, over a root shell on the serial console (the headless boot):
   - the live system reaches its default systemd target
+  - the live session has a working network: a managed device, a global
+    IPv4 address and a default route, all from a real DHCP handshake
+    against the virtio NIC QEMU's own user-mode networking gives this
+    boot for free (see check_network and spawn_qemu's `restrict=on`)
   - the ports opened by the shipped first-boot firewall script
     (/usr/libexec/synos-first-boot-services) match the profile's
     security.open_ports exactly
@@ -54,17 +58,35 @@ needs tesseract and Pillow). Their absence is a clean skip, never a
 failure: run() returns {"status": "skipped", ...} if the headless boot's
 own tools are missing, or check_graphical_boot returns its own
 {"outcome": "skipped", ...} if only the graphical check's extra tools are
-missing — everything else still runs. Nothing here touches the network:
-the live kernel and initrd are pulled out of the ISO with `xorriso
--osirrox` and booted directly (-kernel/-initrd), bypassing the graphical
-GRUB menu. The headless boot adds a root debug shell on the serial console
-(console=ttyS0, systemd.debug_shell=ttyS0, serial-getty masked) — the same
-recipe tests/framework/grub.py's debug_kernel_arguments uses for the full
+missing — everything else still runs. The live kernel and initrd are
+pulled out of the ISO with `xorriso -osirrox` and booted directly
+(-kernel/-initrd), bypassing the graphical GRUB menu. The headless boot
+adds a root debug shell on the serial console (console=ttyS0,
+systemd.debug_shell=ttyS0, serial-getty masked) — the same recipe
+tests/framework/grub.py's debug_kernel_arguments uses for the full
 acceptance suite, applied here without that suite's GRUB-menu and
 screenshot machinery. The graphical boot carries none of that: it is the
 plain boot a person would actually see, captured with QEMU's own monitor
 (`-display none` still renders into emulated video RAM; `screendump` reads
-it directly, without a viewer or a window).
+it directly, without a viewer or a window); it also has no NIC at all
+(`-net none`), since OCR of the first screen is all it certifies.
+
+The headless boot alone gets a virtio NIC (spawn_qemu's `-netdev
+user,...,restrict=on`): QEMU's own user-mode networking ("slirp") runs a
+complete virtual router and DHCP server inside the qemu process itself,
+so the guest can do a real DHCP handshake — get a managed device, a
+lease, a default route — with no host privileges, no host network setup
+and no dependency on whatever the host itself can reach. `restrict=on`
+keeps this fully hermetic in the other direction too: the guest can talk
+to that virtual router and nothing past it, so it can never reach a real
+container registry or the real internet, on any host, with or without
+its own connectivity. A unit that tries to pull an image at boot (a
+software.services quadlet) still fails exactly as it always did — see
+check_service_unit's own note — this only gives check_network something
+real to measure. What it does not and cannot prove is covered in
+check_network's own docstring: a virtio NIC needs no driver quirk or
+firmware blob to appear, so it cannot stand in for a real Wi-Fi or
+Ethernet adapter on real hardware.
 """
 from __future__ import annotations
 
@@ -89,6 +111,7 @@ DEFAULT_MEMORY_MB = 2048
 DEFAULT_BOOT_TIMEOUT = 180        # seconds waiting for the debug shell to answer
 DEFAULT_TARGET_TIMEOUT = 240      # seconds waiting for the default target to become active
 DEFAULT_COMMAND_TIMEOUT = 20      # seconds per command sent over the serial line
+NETWORK_POLL_INTERVAL = 2         # seconds between retries of a single network-readiness stage
 
 # The graphical check renders a real desktop session (GDM + GNOME Shell),
 # not just a text-mode debug shell, so it needs more memory and much more
@@ -290,7 +313,16 @@ def spawn_qemu(iso_path: Path, kernel: Path, initrd: Path, label: str, memory_mb
         "-no-reboot",
         "-serial", "stdio",
         "-monitor", "none",
-        "-net", "none",
+        # A virtio NIC against QEMU's own user-mode networking ("slirp"):
+        # a real DHCP server and virtual router live inside the qemu
+        # process itself, so check_network gets a real device/lease/route
+        # to assert on with no host privileges and no host network setup
+        # at all. restrict=on keeps the guest talking only to that virtual
+        # router -- it can never reach a real registry or the real
+        # internet, on any host, so this stays exactly as hermetic as
+        # `-net none` was for every check that isn't check_network itself.
+        "-netdev", "user,id=net0,restrict=on",
+        "-device", "virtio-net-pci,netdev=net0",
         "-machine", "accel=kvm:tcg",
     ]
     return subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -526,6 +558,139 @@ def check_shipped_file(session: SerialSession, path: str, expected_mode: str) ->
     except ValueError:
         mode_ok = mode == expected_mode
     return {"name": f"file:{path}", "passed": mode_ok, "mode": mode, "expected_mode": expected_mode, "size": int(size)}
+
+
+# ------------------------------------------------------------------ network
+ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;:]*[a-zA-Z]")
+
+
+def strip_ansi(text: str) -> str:
+    """Strip ANSI/VT100 colour escapes. `nmcli` and friends auto-colourize
+    the moment their stdout is a tty, and the serial console's pty always
+    looks like one from the guest's side -- `-t`/`--terse` normally
+    suppresses this on its own, but stripping defensively first costs
+    nothing and keeps every parser below honest either way."""
+    return ANSI_ESCAPE_RE.sub("", text)
+
+
+def parse_connected_device(nmcli_output: str) -> str | None:
+    """The first non-loopback device nmcli's terse `-t -f DEVICE,TYPE,STATE
+    device` output reports as actually `connected` -- not `unmanaged`,
+    `unavailable`, or merely `connecting` (none of which is "has a
+    network" yet). Terse fields are colon-separated, and a real device
+    name/type/state never itself contains a colon, so a plain split is
+    exact here."""
+    for line in strip_ansi(nmcli_output).splitlines():
+        parts = line.strip().split(":")
+        if len(parts) != 3:
+            continue
+        device, device_type, state = parts
+        if device_type == "loopback":
+            continue
+        if state == "connected":
+            return device
+    return None
+
+
+def parse_ipv4_global_address(ip_addr_output: str) -> str | None:
+    """The first global-scope IPv4 address off `ip -o -4 addr show ...
+    scope global`'s one-line-per-address output, or None if there isn't
+    one -- a device can be "connected" in nmcli's own state machine for a
+    moment before its DHCP lease has actually landed."""
+    match = re.search(r"inet (\d{1,3}(?:\.\d{1,3}){3})/\d+", strip_ansi(ip_addr_output))
+    return match.group(1) if match else None
+
+
+def parse_default_route(ip_route_output: str) -> str | None:
+    """The first `default ...` line off `ip route show default`'s output,
+    or None if there isn't one."""
+    for line in strip_ansi(ip_route_output).splitlines():
+        line = line.strip()
+        if line.startswith("default"):
+            return line
+    return None
+
+
+def check_network(session: SerialSession, timeout: float, poll_interval: float = NETWORK_POLL_INTERVAL) -> dict:
+    """The live session's own proof that it has a *working* network, not
+    just that the packages for one are installed (software.services'
+    checks above prove translation and enablement the same limited way).
+    Checked in the order a real bring-up actually happens -- a managed,
+    connected device; then a global IPv4 address on it; then a default
+    route -- so a failure names exactly which stage was never reached
+    ("lost_at": "device" / "address" / "route"), never just a bare "no
+    network".
+
+    This is answerable at all only because spawn_qemu gives this boot a
+    virtio NIC against QEMU's own user-mode DHCP server (see the module
+    docstring for why that is still fully hermetic). A passing result
+    proves this image's own NetworkManager/netplan/ufw/systemd wiring can
+    take a device from cold to managed, addressed and routed. It proves
+    nothing about whether a real Wi-Fi or Ethernet adapter is recognized
+    and bound to a driver on real hardware: a virtio device needs no
+    firmware blob, no vendor driver and no probe delay, and it never
+    fails to appear the way a real NIC can. A "device"-stage loss here
+    would be a real regression in this repo's own configuration; a pass
+    here says nothing about that separate, real-hardware-only failure
+    mode. See docs/BUILD_MATRIX.md."""
+    deadline = time.monotonic() + timeout
+
+    device: str | None = None
+    device_raw = ""
+    while True:
+        device_raw, _ = session.run("nmcli -t -f DEVICE,TYPE,STATE device 2>/dev/null", DEFAULT_COMMAND_TIMEOUT)
+        device = parse_connected_device(device_raw)
+        if device or time.monotonic() >= deadline:
+            break
+        time.sleep(poll_interval)
+    if device is None:
+        return {
+            "name": "network", "passed": False, "lost_at": "device",
+            "nmcli_device": device_raw.strip(),
+            "note": (f"no non-loopback device ever reached nmcli's \"connected\" state within {timeout:.0f}s "
+                     "over the virtio NIC this boot was given -- NetworkManager itself not running, "
+                     "netplan's renderer marking it unmanaged, or a unit that masks/disables NetworkManager "
+                     "is the likely fault, since a virtio device needs no real-hardware driver or firmware "
+                     "to appear"),
+        }
+
+    address: str | None = None
+    addr_raw = ""
+    while True:
+        addr_raw, _ = session.run(f"ip -o -4 addr show dev {shlex.quote(device)} scope global 2>/dev/null",
+                                   DEFAULT_COMMAND_TIMEOUT)
+        address = parse_ipv4_global_address(addr_raw)
+        if address or time.monotonic() >= deadline:
+            break
+        time.sleep(poll_interval)
+    if address is None:
+        return {
+            "name": "network", "passed": False, "lost_at": "address", "device": device,
+            "ip_addr": addr_raw.strip(),
+            "note": (f"{device!r} is managed and connected but never carries a global IPv4 address within "
+                     f"{timeout:.0f}s -- the DHCP handshake against QEMU's own DHCP server (no host network "
+                     "needed for this) never completed, which points at the DHCP client path itself rather "
+                     "than device enablement"),
+        }
+
+    route_raw, _ = session.run("ip route show default 2>/dev/null", DEFAULT_COMMAND_TIMEOUT)
+    route = parse_default_route(route_raw)
+    if route is None:
+        return {
+            "name": "network", "passed": False, "lost_at": "route", "device": device, "address": address,
+            "ip_route": route_raw.strip(),
+            "note": (f"{device!r} has address {address} but no default route -- an address with no route "
+                     "is still not a working network for anything that talks off-host, even though the "
+                     "device and its DHCP client both worked"),
+        }
+
+    return {
+        "name": "network", "passed": True, "device": device, "address": address, "route": route,
+        "note": ("a real DHCP handshake against QEMU's own user-mode DHCP server gave the live session a "
+                 "managed device, a global IPv4 address and a default route -- proving this image's own "
+                 "NetworkManager/netplan/ufw/systemd wiring works, not that a real Wi-Fi or Ethernet adapter "
+                 "is recognized on real hardware, which needs none of that wiring to fail"),
+    }
 
 
 # --------------------------------------------------------- graphical check
@@ -768,6 +933,7 @@ def run(iso_path: Path, resolved_profile: dict, *, output_dir: Path,
             session.run("stty -echo 2>/dev/null", 5)
 
             checks.append(wait_default_target(session, target_timeout))
+            checks.append(check_network(session, target_timeout))
 
             security = resolved_profile.get("security", {}) or {}
             checks.append(check_open_ports(session, list(security.get("open_ports", []) or [])))

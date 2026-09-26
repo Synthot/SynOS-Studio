@@ -374,6 +374,26 @@ no disk) and, over a root shell on the serial console, checks:
 
 - the live system reaches its default systemd target (`systemctl get-default`,
   then polls `systemctl is-active` on it);
+- the live session has a *working* network: a managed, connected device
+  (`nmcli`), a global IPv4 address on it (`ip addr`) and a default route
+  (`ip route`) — in that order, so a failure names exactly which stage was
+  never reached (`"lost_at": "device"/"address"/"route"`). This is checkable
+  at all only because this one boot (not the graphical boot below) is given
+  a virtio NIC against QEMU's own user-mode networking: a full DHCP server
+  and virtual router that live inside the qemu process itself, so a real
+  DHCP handshake is available with no host privileges, no host network
+  setup, and (`restrict=on`) no way for the guest to reach anything past
+  QEMU's own virtual router — a unit that tries to pull a container image
+  at boot still cannot reach a real registry, on any host, exactly as
+  before this check existed. What a pass here proves is that this image's
+  own NetworkManager/netplan/ufw/systemd wiring can take a device from cold
+  to managed-and-routed; what it *cannot* prove is that a real Wi-Fi or
+  Ethernet adapter is recognized and bound to a driver on real hardware —
+  a virtio device needs no firmware blob, no vendor driver and no probe
+  delay, and never fails to appear the way a real one can. A build whose
+  live session has no working network on real hardware despite every
+  package for it being installed is exactly the failure this check cannot
+  see; see `check_network`'s own docstring in `tools/smoke_test.py`;
 - the ports the shipped first-boot firewall script
   (`/usr/libexec/synos-first-boot-services`) would open match the profile's
   `security.open_ports` exactly. This checks the *shipped configuration*,
@@ -403,14 +423,19 @@ check does not need. `qemu-system-x86_64` and `xorriso` missing on
 Every parsing and comparison rule the smoke test applies — recovering a
 command's output from a raw serial transcript, matching the shipped
 firewall script's `ufw allow` lines against a profile's `open_ports`,
-reading `systemctl is-enabled`'s answer, reading a `stat` line's mode — is a
-small, pure function, and `tests/unit/test_smoke_test.py` exercises every
-one of them against fixed fixtures: a fake firewall script's text, a fake
-`systemctl` answer, a fake `stat -c '%a %s'` line, and a fake serial
-transcript carrying the shell's own echoed input around the markers this
-tool sends. A `FakeSession` stands in for the QEMU serial connection in the
-handful of tests that exercise a whole check (`check_open_ports`,
-`check_service_unit`, `check_shipped_file`) end to end. No test in that file
+reading `systemctl is-enabled`'s answer, reading a `stat` line's mode,
+picking the one `nmcli` device that is actually connected out of terse
+`DEVICE:TYPE:STATE` lines, reading the address off an `ip addr` line and
+the default route off an `ip route` line — is a small, pure function, and
+`tests/unit/test_smoke_test.py` exercises every one of them against fixed
+fixtures: a fake firewall script's text, a fake `systemctl` answer, a fake
+`stat -c '%a %s'` line, fake `nmcli`/`ip addr`/`ip route` output (including
+ANSI colour codes `nmcli` adds the moment its stdout looks like a tty,
+which the serial console's pty always does), and a fake serial transcript
+carrying the shell's own echoed input around the markers this tool sends.
+A `FakeSession` stands in for the QEMU serial connection in the handful of
+tests that exercise a whole check (`check_open_ports`, `check_service_unit`,
+`check_shipped_file`, `check_network`) end to end. No test in that file
 starts `qemu-system-x86_64`; `tests/unit/test_build_matrix.py` likewise
 never shells out to a real build, standing a small fake script in for
 `tools/synos` (success, failure and hang, to cover the timeout path) so the
