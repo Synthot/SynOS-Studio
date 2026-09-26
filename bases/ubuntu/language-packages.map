@@ -1,0 +1,225 @@
+# GENERATED FILE — do not hand-edit.
+#
+# Written by tools/generate_language_packages.py on 2026-09-26 02:20 UTC, checked against the
+# real archive (suite + updates + backports + security, every component base.env
+# names) this base actually configures — see that script's own module docstring for
+# the resolution order. Re-run it after a region/language is added, or when this base's
+# own archive snapshot has moved on.
+#
+# key = template/language-code[@suite]
+# value = concrete package name(s), space-separated, or `unavailable: <reason>` (same
+#         marker as packages.map's own Unavailable — a language this software genuinely
+#         has nothing for on this base/suite, not a name this script failed to guess).
+#
+# Read by tools/render_manifest.py's resolve_packages() (its `lang_pkg_map` parameter) in
+# place of naively substituting the language code into the ${LANG} template, and by
+# tools/packages_map_conformance.py's check_base() for the same reason.
+
+# language-pack-${LANG}
+language-pack-${LANG}/ar = language-pack-ar  # exact match in the archive's own Package: list
+language-pack-${LANG}/bg = language-pack-bg  # exact match in the archive's own Package: list
+language-pack-${LANG}/cs = language-pack-cs  # exact match in the archive's own Package: list
+language-pack-${LANG}/da = language-pack-da  # exact match in the archive's own Package: list
+language-pack-${LANG}/de = language-pack-de  # exact match in the archive's own Package: list
+language-pack-${LANG}/el = language-pack-el  # exact match in the archive's own Package: list
+language-pack-${LANG}/en = language-pack-en  # exact match in the archive's own Package: list
+language-pack-${LANG}/es = language-pack-es  # exact match in the archive's own Package: list
+language-pack-${LANG}/et = language-pack-et  # exact match in the archive's own Package: list
+language-pack-${LANG}/fi = language-pack-fi  # exact match in the archive's own Package: list
+language-pack-${LANG}/fr = language-pack-fr  # exact match in the archive's own Package: list
+language-pack-${LANG}/ga@noble = language-pack-ga  # exact match in the archive's own Package: list
+language-pack-${LANG}/ga@resolute = unavailable: no language-pack-ga (or regional variant, or Provides) found in the archive
+language-pack-${LANG}/he = language-pack-he  # exact match in the archive's own Package: list
+language-pack-${LANG}/hi = language-pack-hi  # exact match in the archive's own Package: list
+language-pack-${LANG}/hr = language-pack-hr  # exact match in the archive's own Package: list
+language-pack-${LANG}/hu = language-pack-hu  # exact match in the archive's own Package: list
+language-pack-${LANG}/id = language-pack-id  # exact match in the archive's own Package: list
+language-pack-${LANG}/is = language-pack-is  # exact match in the archive's own Package: list
+language-pack-${LANG}/it = language-pack-it  # exact match in the archive's own Package: list
+language-pack-${LANG}/ja = language-pack-ja  # exact match in the archive's own Package: list
+language-pack-${LANG}/ko = language-pack-ko  # exact match in the archive's own Package: list
+language-pack-${LANG}/lb = unavailable: no language-pack-lb (or regional variant, or Provides) found in the archive
+language-pack-${LANG}/lt = language-pack-lt  # exact match in the archive's own Package: list
+language-pack-${LANG}/lv = language-pack-lv  # exact match in the archive's own Package: list
+language-pack-${LANG}/nb = language-pack-nb  # exact match in the archive's own Package: list
+language-pack-${LANG}/nl = language-pack-nl  # exact match in the archive's own Package: list
+language-pack-${LANG}/pl = language-pack-pl  # exact match in the archive's own Package: list
+language-pack-${LANG}/pt = language-pack-pt  # exact match in the archive's own Package: list
+language-pack-${LANG}/ro = language-pack-ro  # exact match in the archive's own Package: list
+language-pack-${LANG}/sk = language-pack-sk  # exact match in the archive's own Package: list
+language-pack-${LANG}/sl = language-pack-sl  # exact match in the archive's own Package: list
+language-pack-${LANG}/sv = language-pack-sv  # exact match in the archive's own Package: list
+language-pack-${LANG}/sw = unavailable: no language-pack-sw (or regional variant, or Provides) found in the archive
+language-pack-${LANG}/th = language-pack-th  # exact match in the archive's own Package: list
+language-pack-${LANG}/tr = language-pack-tr  # exact match in the archive's own Package: list
+language-pack-${LANG}/uk = language-pack-uk  # exact match in the archive's own Package: list
+language-pack-${LANG}/vi = language-pack-vi  # exact match in the archive's own Package: list
+language-pack-${LANG}/zh-hans = language-pack-zh-hans  # exact match in the archive's own Package: list
+language-pack-${LANG}/zh-hant = language-pack-zh-hant  # exact match in the archive's own Package: list
+
+# language-pack-${LANG}-base
+language-pack-${LANG}-base/ar = language-pack-ar-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/bg = language-pack-bg-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/cs = language-pack-cs-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/da = language-pack-da-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/de = language-pack-de-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/el = language-pack-el-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/en = language-pack-en-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/es = language-pack-es-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/et = language-pack-et-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/fi = language-pack-fi-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/fr = language-pack-fr-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/ga@noble = language-pack-ga-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/ga@resolute = unavailable: no language-pack-ga-base (or regional variant, or Provides) found in the archive
+language-pack-${LANG}-base/he = language-pack-he-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/hi = language-pack-hi-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/hr = language-pack-hr-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/hu = language-pack-hu-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/id = language-pack-id-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/is = language-pack-is-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/it = language-pack-it-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/ja = language-pack-ja-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/ko = language-pack-ko-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/lb = unavailable: no language-pack-lb-base (or regional variant, or Provides) found in the archive
+language-pack-${LANG}-base/lt = language-pack-lt-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/lv = language-pack-lv-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/nb = language-pack-nb-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/nl = language-pack-nl-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/pl = language-pack-pl-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/pt = language-pack-pt-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/ro = language-pack-ro-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/sk = language-pack-sk-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/sl = language-pack-sl-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/sv = language-pack-sv-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/sw = unavailable: no language-pack-sw-base (or regional variant, or Provides) found in the archive
+language-pack-${LANG}-base/th = language-pack-th-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/tr = language-pack-tr-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/uk = language-pack-uk-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/vi = language-pack-vi-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/zh-hans = language-pack-zh-hans-base  # exact match in the archive's own Package: list
+language-pack-${LANG}-base/zh-hant = language-pack-zh-hant-base  # exact match in the archive's own Package: list
+
+# language-pack-gnome-${LANG}
+language-pack-gnome-${LANG}/ar = language-pack-gnome-ar  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/bg = language-pack-gnome-bg  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/cs = language-pack-gnome-cs  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/da = language-pack-gnome-da  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/de = language-pack-gnome-de  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/el = language-pack-gnome-el  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/en = language-pack-gnome-en  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/es = language-pack-gnome-es  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/et = language-pack-gnome-et  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/fi = language-pack-gnome-fi  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/fr = language-pack-gnome-fr  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/ga@noble = language-pack-gnome-ga  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/ga@resolute = unavailable: no language-pack-gnome-ga (or regional variant, or Provides) found in the archive
+language-pack-gnome-${LANG}/he = language-pack-gnome-he  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/hi = language-pack-gnome-hi  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/hr = language-pack-gnome-hr  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/hu = language-pack-gnome-hu  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/id = language-pack-gnome-id  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/is = language-pack-gnome-is  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/it = language-pack-gnome-it  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/ja = language-pack-gnome-ja  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/ko = language-pack-gnome-ko  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/lb = unavailable: no language-pack-gnome-lb (or regional variant, or Provides) found in the archive
+language-pack-gnome-${LANG}/lt = language-pack-gnome-lt  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/lv = language-pack-gnome-lv  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/nb = language-pack-gnome-nb  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/nl = language-pack-gnome-nl  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/pl = language-pack-gnome-pl  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/pt = language-pack-gnome-pt  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/ro = language-pack-gnome-ro  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/sk = language-pack-gnome-sk  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/sl = language-pack-gnome-sl  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/sv = language-pack-gnome-sv  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/sw = unavailable: no language-pack-gnome-sw (or regional variant, or Provides) found in the archive
+language-pack-gnome-${LANG}/th = language-pack-gnome-th  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/tr = language-pack-gnome-tr  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/uk = language-pack-gnome-uk  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/vi = language-pack-gnome-vi  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/zh-hans = language-pack-gnome-zh-hans  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}/zh-hant = language-pack-gnome-zh-hant  # exact match in the archive's own Package: list
+
+# language-pack-gnome-${LANG}-base
+language-pack-gnome-${LANG}-base/ar = language-pack-gnome-ar-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/bg = language-pack-gnome-bg-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/cs = language-pack-gnome-cs-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/da = language-pack-gnome-da-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/de = language-pack-gnome-de-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/el = language-pack-gnome-el-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/en = language-pack-gnome-en-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/es = language-pack-gnome-es-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/et = language-pack-gnome-et-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/fi = language-pack-gnome-fi-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/fr = language-pack-gnome-fr-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/ga@noble = language-pack-gnome-ga-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/ga@resolute = unavailable: no language-pack-gnome-ga-base (or regional variant, or Provides) found in the archive
+language-pack-gnome-${LANG}-base/he = language-pack-gnome-he-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/hi = language-pack-gnome-hi-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/hr = language-pack-gnome-hr-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/hu = language-pack-gnome-hu-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/id = language-pack-gnome-id-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/is = language-pack-gnome-is-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/it = language-pack-gnome-it-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/ja = language-pack-gnome-ja-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/ko = language-pack-gnome-ko-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/lb = unavailable: no language-pack-gnome-lb-base (or regional variant, or Provides) found in the archive
+language-pack-gnome-${LANG}-base/lt = language-pack-gnome-lt-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/lv = language-pack-gnome-lv-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/nb = language-pack-gnome-nb-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/nl = language-pack-gnome-nl-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/pl = language-pack-gnome-pl-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/pt = language-pack-gnome-pt-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/ro = language-pack-gnome-ro-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/sk = language-pack-gnome-sk-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/sl = language-pack-gnome-sl-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/sv = language-pack-gnome-sv-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/sw = unavailable: no language-pack-gnome-sw-base (or regional variant, or Provides) found in the archive
+language-pack-gnome-${LANG}-base/th = language-pack-gnome-th-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/tr = language-pack-gnome-tr-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/uk = language-pack-gnome-uk-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/vi = language-pack-gnome-vi-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/zh-hans = language-pack-gnome-zh-hans-base  # exact match in the archive's own Package: list
+language-pack-gnome-${LANG}-base/zh-hant = language-pack-gnome-zh-hant-base  # exact match in the archive's own Package: list
+
+# hunspell-${LANG}
+hunspell-${LANG}/ar = hunspell-ar  # exact match in the archive's own Package: list
+hunspell-${LANG}/bg = hunspell-bg  # exact match in the archive's own Package: list
+hunspell-${LANG}/cs = hunspell-cs  # exact match in the archive's own Package: list
+hunspell-${LANG}/da = hunspell-da  # exact match in the archive's own Package: list
+hunspell-${LANG}/de = hunspell-de-de  # regions/de.yml's own locale uses country 'de'
+hunspell-${LANG}/el = hunspell-el  # exact match in the archive's own Package: list
+hunspell-${LANG}/en = hunspell-en-us  # en_US is this engine's own baseline locale (render_manifest.py's hardcoded LC_ALL)
+hunspell-${LANG}/es = hunspell-es  # exact match in the archive's own Package: list
+hunspell-${LANG}/et = myspell-et  # the archive's own real package behind the Provides: 'hunspell-et'
+hunspell-${LANG}/fi = voikko-fi libenchant-2-voikko libreoffice-voikko  # Finnish has no hunspell or myspell dictionary in either archive at all; Finnish spellcheck is provided by an entirely different technology, Voikko, which needs voikko-fi (the dictionary/engine), libenchant-2-voikko (the bridge so the desktop's enchant-based spellchecker can use it) and libreoffice-voikko (LibreOffice's own native Voikko support) — not a rename of this role, three packages this base's hunspell-${LANG}/myspell-${LANG} templates could never have named.
+hunspell-${LANG}/fr = hunspell-fr  # exact match in the archive's own Package: list
+hunspell-${LANG}/ga = myspell-ga  # no hunspell-family package for 'ga'; exact match in the archive's own Package: list, under myspell- instead
+hunspell-${LANG}/he = hunspell-he  # exact match in the archive's own Package: list
+hunspell-${LANG}/hi = hunspell-hi  # exact match in the archive's own Package: list
+hunspell-${LANG}/hr = hunspell-hr  # exact match in the archive's own Package: list
+hunspell-${LANG}/hu = hunspell-hu  # exact match in the archive's own Package: list
+hunspell-${LANG}/id = hunspell-id  # exact match in the archive's own Package: list
+hunspell-${LANG}/is = hunspell-is  # exact match in the archive's own Package: list
+hunspell-${LANG}/it = hunspell-it  # exact match in the archive's own Package: list
+hunspell-${LANG}/ja = unavailable: no hunspell-ja[-<country>] or myspell-ja[-<country>] package or Provides found in the archive
+hunspell-${LANG}/ko = hunspell-ko  # exact match in the archive's own Package: list
+hunspell-${LANG}/lb = unavailable: no hunspell-lb[-<country>] or myspell-lb[-<country>] package or Provides found in the archive
+hunspell-${LANG}/lt = hunspell-lt  # exact match in the archive's own Package: list
+hunspell-${LANG}/lv = hunspell-lv  # exact match in the archive's own Package: list
+hunspell-${LANG}/nb = myspell-nb  # no hunspell-family package for 'nb'; exact match in the archive's own Package: list, under myspell- instead
+hunspell-${LANG}/nl = hunspell-nl  # exact match in the archive's own Package: list
+hunspell-${LANG}/pl = hunspell-pl  # exact match in the archive's own Package: list
+hunspell-${LANG}/pt = hunspell-pt-pt  # regions/pt.yml's own locale uses country 'pt'
+hunspell-${LANG}/ro = hunspell-ro  # exact match in the archive's own Package: list
+hunspell-${LANG}/sk = hunspell-sk  # exact match in the archive's own Package: list
+hunspell-${LANG}/sl = hunspell-sl  # exact match in the archive's own Package: list
+hunspell-${LANG}/sv = hunspell-sv  # exact match in the archive's own Package: list
+hunspell-${LANG}/sw = hunspell-sw  # exact match in the archive's own Package: list
+hunspell-${LANG}/th = hunspell-th  # exact match in the archive's own Package: list
+hunspell-${LANG}/tr = hunspell-tr  # exact match in the archive's own Package: list
+hunspell-${LANG}/uk = hunspell-uk  # exact match in the archive's own Package: list
+hunspell-${LANG}/vi = hunspell-vi  # exact match in the archive's own Package: list
+hunspell-${LANG}/zh-hans = unavailable: no hunspell-zh-hans[-<country>] or myspell-zh-hans[-<country>] package or Provides found in the archive
+hunspell-${LANG}/zh-hant = unavailable: no hunspell-zh-hant[-<country>] or myspell-zh-hant[-<country>] package or Provides found in the archive

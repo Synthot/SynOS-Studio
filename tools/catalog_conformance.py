@@ -1096,6 +1096,8 @@ def fetch_archive_package_names(urls: list[str], fetcher=_http_get) -> set[str]:
 def resolved_install_packages(manifest: dict, profile: dict) -> list[str]:
     base_dir = ROOT / "bases" / manifest["base"]
     pkg_map = render_manifest.load_package_map(base_dir / "packages.map")
+    lang_pkg_map_path = base_dir / "language-packages.map"
+    lang_pkg_map = render_manifest.load_language_package_map(lang_pkg_map_path) if lang_pkg_map_path.is_file() else None
     software = profile.get("software", {}) or {}
     bundles = render_manifest.load_bundles()
     expanded: list = []
@@ -1104,7 +1106,8 @@ def resolved_install_packages(manifest: dict, profile: dict) -> list[str]:
     expanded += (software.get("packages", {}) or {}).get("add", [])
     remove = set((software.get("packages", {}) or {}).get("remove", []) or [])
     concrete, _unmapped = render_manifest.resolve_packages(expanded, pkg_map, manifest.get("arch", "amd64"), ["en"],
-                                                            manifest["base"], suite=manifest.get("suite"))
+                                                            manifest["base"], suite=manifest.get("suite"),
+                                                            lang_pkg_map=lang_pkg_map)
     return [p for p in concrete if p not in remove]
 
 

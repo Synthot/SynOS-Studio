@@ -247,6 +247,72 @@ class CheckBaseTests(unittest.TestCase):
             with self.assertRaises(pmc.rm.ManifestError):
                 pmc.check_base("fake", root, fetcher=lambda url: (_ for _ in ()).throw(FileNotFoundError()))
 
+    def _write_lang_map(self, root: Path, text: str) -> None:
+        (root / "bases" / "fake" / "language-packages.map").write_text(text, encoding="utf-8")
+
+    def test_a_language_the_map_marks_unavailable_is_counted_not_applicable_never_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._make_base(root, packages_map="spellcheck = hunspell-${LANG}\n")
+            self._write_lang_map(root, "hunspell-${LANG}/en = unavailable: no dictionary for this language\n")
+
+            def fetcher(url: str) -> bytes:
+                raise AssertionError(f"a language-packages.map unavailable entry must never be fetched: {url}")
+
+            result = pmc.check_base("fake", root, fetcher=fetcher)
+            self.assertEqual([], result["missing"])
+            self.assertEqual(0, result["packages_checked"])
+            self.assertEqual(1, len(result["not_applicable"]))
+            self.assertEqual("no dictionary for this language", result["not_applicable"][0]["reason"])
+
+    def test_a_language_map_resolved_name_is_checked_instead_of_the_naive_substitution(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._make_base(root, packages_map="spellcheck = hunspell-${LANG}\n")
+            self._write_lang_map(root, "hunspell-${LANG}/en = hunspell-en-us\n")
+
+            def fetcher(url: str) -> bytes:
+                if "binary-amd64/Packages.gz" in url and "/sid/" in url:
+                    return _gz("Package: hunspell-en-us\n")
+                raise FileNotFoundError("404")
+
+            result = pmc.check_base("fake", root, fetcher=fetcher)
+            self.assertEqual([], result["missing"])
+            self.assertEqual(1, result["packages_checked"])
+
+    def test_a_language_missing_from_a_covered_template_is_reported_as_stale_not_silently_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._make_base(root, packages_map="spellcheck = hunspell-${LANG}\n")
+            (root / "regions").mkdir(exist_ok=True)
+            (root / "regions" / "xx.yml").write_text(
+                "id: xx\nname: Xx\nlocales: [xx_XX.UTF-8]\nkeyboard: us\ntimezone: UTC\n", encoding="utf-8")
+            self._write_lang_map(root, "hunspell-${LANG}/en = hunspell-en-us\n")
+
+            def fetcher(url: str) -> bytes:
+                if "binary-amd64/Packages.gz" in url and "/sid/" in url:
+                    return _gz("Package: hunspell-en-us\n")
+                raise FileNotFoundError("404")
+
+            result = pmc.check_base("fake", root, fetcher=fetcher)
+            self.assertEqual([], result["missing"])
+            self.assertEqual(1, len(result["uncovered"]))
+            self.assertEqual("xx", result["uncovered"][0]["lang"])
+
+    def test_a_language_map_absent_entirely_falls_back_to_naive_substitution(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._make_base(root, packages_map="widget = hunspell-${LANG}\n")
+
+            def fetcher(url: str) -> bytes:
+                if "binary-amd64/Packages.gz" in url and "/sid/" in url:
+                    return _gz("Package: something-else\n")
+                raise FileNotFoundError("404")
+
+            result = pmc.check_base("fake", root, fetcher=fetcher)
+            self.assertTrue(result["missing"])
+            self.assertEqual("hunspell-en", result["missing"][0]["package"])
+
 
 class SummaryTextTests(unittest.TestCase):
     def test_reports_counts_missing_and_provides_only_lines(self) -> None:

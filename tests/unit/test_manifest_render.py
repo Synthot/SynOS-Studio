@@ -213,6 +213,94 @@ class UnavailablePackageTests(unittest.TestCase):
             self.assertIn("unavailable", result.stderr)
 
 
+class LanguagePackageMapTests(unittest.TestCase):
+    """bases/<base>/language-packages.map (tools/generate_language_packages.py):
+    the real, archive-verified package for one `${LANG}` template and one
+    language, consulted by resolve_packages()'s `lang_pkg_map` parameter in
+    place of naively substituting the language code into the template — the
+    fix for hunspell-de not being a package (the real name is
+    hunspell-de-de), libreoffice-l10n-en never existing (English is
+    LibreOffice's own source language), and the like."""
+
+    def test_load_language_package_map_parses_concrete_and_unavailable_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "language-packages.map"
+            path.write_text(
+                "hunspell-${LANG}/de = hunspell-de-de\n"
+                "hunspell-${LANG}/fi = voikko-fi libenchant-2-voikko\n"
+                "hunspell-${LANG}/ja = unavailable: no dictionary in either archive\n"
+                "language-pack-${LANG}/ga@noble = language-pack-ga\n"
+                "language-pack-${LANG}/ga@resolute = unavailable: not built for this suite\n",
+                encoding="utf-8")
+            table = render_manifest.load_language_package_map(path)
+            self.assertEqual(["hunspell-de-de"], table["hunspell-${LANG}"]["de"])
+            self.assertEqual(["voikko-fi", "libenchant-2-voikko"], table["hunspell-${LANG}"]["fi"])
+            self.assertIsInstance(table["hunspell-${LANG}"]["ja"], render_manifest.Unavailable)
+            self.assertEqual("no dictionary in either archive", table["hunspell-${LANG}"]["ja"].reason)
+            self.assertEqual(["language-pack-ga"], table["language-pack-${LANG}"]["ga@noble"])
+            self.assertIsInstance(table["language-pack-${LANG}"]["ga@resolute"], render_manifest.Unavailable)
+
+    def test_resolve_packages_uses_the_language_map_instead_of_naive_substitution(self) -> None:
+        pkg_map = {"spellcheck": ["hunspell-${LANG}"]}
+        lang_pkg_map = {"hunspell-${LANG}": {"de": ["hunspell-de-de"], "fr": ["hunspell-fr"]}}
+        concrete, _ = render_manifest.resolve_packages(["spellcheck"], pkg_map, "amd64", ["de", "fr"], "acme",
+                                                        lang_pkg_map=lang_pkg_map)
+        self.assertEqual(["hunspell-de-de", "hunspell-fr"], concrete)
+
+    def test_a_language_the_map_marks_unavailable_is_dropped_not_added_and_recorded_as_a_gap(self) -> None:
+        pkg_map = {"office-l10n": ["libreoffice-l10n-${LANG}"]}
+        lang_pkg_map = {"libreoffice-l10n-${LANG}": {
+            "en": render_manifest.Unavailable("English is LibreOffice's own source language"),
+            "de": ["libreoffice-l10n-de"],
+        }}
+        gaps: list[dict] = []
+        concrete, _ = render_manifest.resolve_packages(["office-l10n"], pkg_map, "amd64", ["en", "de"], "acme",
+                                                        lang_pkg_map=lang_pkg_map, lang_gaps=gaps)
+        self.assertEqual(["libreoffice-l10n-de"], concrete)
+        self.assertEqual([{"template": "libreoffice-l10n-${LANG}", "lang": "en",
+                          "reason": "English is LibreOffice's own source language"}], gaps)
+
+    def test_a_suite_specific_override_takes_precedence_over_the_bare_language_entry(self) -> None:
+        pkg_map = {"translations": ["language-pack-${LANG}"]}
+        lang_pkg_map = {"language-pack-${LANG}": {
+            "ga": ["language-pack-ga"],
+            "ga@resolute": render_manifest.Unavailable("not built for this suite"),
+        }}
+        concrete, _ = render_manifest.resolve_packages(["translations"], pkg_map, "amd64", ["ga"], "ubuntu",
+                                                        suite="noble", lang_pkg_map=lang_pkg_map)
+        self.assertEqual(["language-pack-ga"], concrete)
+        concrete, _ = render_manifest.resolve_packages(["translations"], pkg_map, "amd64", ["ga"], "ubuntu",
+                                                        suite="resolute", lang_pkg_map=lang_pkg_map)
+        self.assertEqual([], concrete)
+
+    def test_a_language_the_table_does_not_cover_at_all_refuses_loudly(self) -> None:
+        """The table covers this template (it has other languages in it) but not
+        this one — a stale table (a region added a language after the table was
+        last generated), not a language with nothing to offer. That must refuse,
+        not silently fall back to a guess."""
+        pkg_map = {"spellcheck": ["hunspell-${LANG}"]}
+        lang_pkg_map = {"hunspell-${LANG}": {"de": ["hunspell-de-de"]}}
+        with self.assertRaises(render_manifest.ManifestError) as raised:
+            render_manifest.resolve_packages(["spellcheck"], pkg_map, "amd64", ["xx"], "acme", lang_pkg_map=lang_pkg_map)
+        self.assertIn("xx", str(raised.exception))
+        self.assertIn("language-packages.map", str(raised.exception))
+
+    def test_a_template_the_map_does_not_cover_falls_back_to_naive_substitution(self) -> None:
+        """lang_pkg_map covers some templates, not this one: unaffected, exactly
+        the behaviour before this file existed at all — a partially-generated
+        table, or one for a different base's own templates, must not break every
+        other ${LANG} role."""
+        pkg_map = {"other-role": ["something-${LANG}"]}
+        concrete, _ = render_manifest.resolve_packages(["other-role"], pkg_map, "amd64", ["en", "fr"], "acme",
+                                                        lang_pkg_map={"hunspell-${LANG}": {"en": ["hunspell-en-us"]}})
+        self.assertEqual(["something-en", "something-fr"], concrete)
+
+    def test_no_language_map_at_all_is_the_same_as_before_this_file_existed(self) -> None:
+        pkg_map = {"spellcheck": ["hunspell-${LANG}"]}
+        concrete, _ = render_manifest.resolve_packages(["spellcheck"], pkg_map, "amd64", ["de"], "acme")
+        self.assertEqual(["hunspell-de"], concrete)
+
+
 class LiveSuiteTests(unittest.TestCase):
     """bases/*/live.map: a suite base.env's SUPPORTED_SUITES accepts but whose
     own archive cannot back a Live image (mods/stack.sh's

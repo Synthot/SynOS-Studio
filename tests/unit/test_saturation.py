@@ -39,12 +39,15 @@ def _independent_union(base_id: str) -> set[str]:
     reason that has nothing to do with a real bug in either."""
     base_dir = ROOT / "bases" / base_id
     pkg_map = render_manifest.load_package_map(base_dir / "packages.map")
+    lang_pkg_map_path = base_dir / "language-packages.map"
+    lang_pkg_map = render_manifest.load_language_package_map(lang_pkg_map_path) if lang_pkg_map_path.is_file() else None
     bundles = render_manifest.load_bundles()
     suite = build_saturation.target_suite(base_id, ROOT)
     union: set[str] = set()
     for gid, abstract in bundles.items():
         try:
-            concrete, _ = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_id, suite=suite)
+            concrete, _ = render_manifest.resolve_packages(abstract, pkg_map, "amd64", ["en"], base_id, suite=suite,
+                                                            lang_pkg_map=lang_pkg_map)
         except render_manifest.ManifestError:
             continue
         union.update(concrete)
@@ -53,7 +56,8 @@ def _independent_union(base_id: str) -> set[str]:
         if not names:
             continue
         try:
-            concrete, _ = render_manifest.resolve_packages(names, pkg_map, "amd64", ["en"], base_id, suite=suite)
+            concrete, _ = render_manifest.resolve_packages(names, pkg_map, "amd64", ["en"], base_id, suite=suite,
+                                                            lang_pkg_map=lang_pkg_map)
         except render_manifest.ManifestError:
             continue
         union.update(concrete)

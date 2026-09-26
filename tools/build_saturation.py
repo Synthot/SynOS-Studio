@@ -184,13 +184,15 @@ def target_suite(base_id: str, root: Path = ROOT) -> str:
     return suite
 
 
-def _resolve_whole(items: list, pkg_map, base_id: str, label: str, suite: str | None = None) -> tuple[list[str] | None, str | None]:
+def _resolve_whole(items: list, pkg_map, base_id: str, label: str, suite: str | None = None,
+                   lang_pkg_map=None) -> tuple[list[str] | None, str | None]:
     """Resolve one bundle group or one profile's whole add list; if the base
     cannot serve any item in it (Unavailable) *on this suite*, the whole
     thing is skipped — (concrete, None) on success, (None, reason) when this
     base/suite says no."""
     try:
-        concrete, _unmapped = rm.resolve_packages(items, pkg_map, ARCH, ["en"], base_id, profile_id=label, suite=suite)
+        concrete, _unmapped = rm.resolve_packages(items, pkg_map, ARCH, ["en"], base_id, profile_id=label, suite=suite,
+                                                   lang_pkg_map=lang_pkg_map)
     except rm.ManifestError as exc:
         return None, str(exc)
     return concrete, None
@@ -210,6 +212,8 @@ def plan(base_id: str, root: Path = ROOT) -> dict:
     generated bundle's own real render() would go on to refuse it."""
     base_dir = root / "bases" / base_id
     pkg_map = rm.load_package_map(base_dir / "packages.map")
+    lang_pkg_map_path = base_dir / "language-packages.map"
+    lang_pkg_map = rm.load_language_package_map(lang_pkg_map_path) if lang_pkg_map_path.is_file() else None
     suite = target_suite(base_id, root)
     bundles = rm.load_bundles()
     exclusions = load_exclusions(base_id, root)
@@ -223,7 +227,8 @@ def plan(base_id: str, root: Path = ROOT) -> dict:
         if gid in exclusions:
             excluded_groups.append((gid, exclusions[gid]))
             continue
-        concrete, reason = _resolve_whole(abstract, pkg_map, base_id, f"saturation-{base_id}:bundle:{gid}", suite=suite)
+        concrete, reason = _resolve_whole(abstract, pkg_map, base_id, f"saturation-{base_id}:bundle:{gid}", suite=suite,
+                                          lang_pkg_map=lang_pkg_map)
         if reason is not None:
             skipped_bundles.append((gid, reason))
             continue
@@ -235,7 +240,8 @@ def plan(base_id: str, root: Path = ROOT) -> dict:
         pid, names = profile_own_add(path)
         if not names:
             continue
-        concrete, reason = _resolve_whole(names, pkg_map, base_id, f"saturation-{base_id}:profile:{pid}", suite=suite)
+        concrete, reason = _resolve_whole(names, pkg_map, base_id, f"saturation-{base_id}:profile:{pid}", suite=suite,
+                                          lang_pkg_map=lang_pkg_map)
         if reason is not None:
             skipped_add.append((pid, reason))
             continue
@@ -243,10 +249,12 @@ def plan(base_id: str, root: Path = ROOT) -> dict:
 
     concrete_union: set[str] = set()
     for gid in included_bundles:
-        concrete, _ = _resolve_whole(bundles[gid], pkg_map, base_id, f"saturation-{base_id}:bundle:{gid}", suite=suite)
+        concrete, _ = _resolve_whole(bundles[gid], pkg_map, base_id, f"saturation-{base_id}:bundle:{gid}", suite=suite,
+                                     lang_pkg_map=lang_pkg_map)
         concrete_union.update(concrete or [])
     for pid, names in add_by_profile.items():
-        concrete, _ = _resolve_whole(names, pkg_map, base_id, f"saturation-{base_id}:profile:{pid}", suite=suite)
+        concrete, _ = _resolve_whole(names, pkg_map, base_id, f"saturation-{base_id}:profile:{pid}", suite=suite,
+                                     lang_pkg_map=lang_pkg_map)
         concrete_union.update(concrete or [])
 
     package_exclusions: list[tuple[str, str]] = []

@@ -1,0 +1,139 @@
+# GENERATED FILE — do not hand-edit.
+#
+# Written by tools/generate_language_packages.py on 2026-09-26 02:19 UTC, checked against the
+# real archive (suite + updates + backports + security, every component base.env
+# names) this base actually configures — see that script's own module docstring for
+# the resolution order. Re-run it after a region/language is added, or when this base's
+# own archive snapshot has moved on.
+#
+# key = template/language-code[@suite]
+# value = concrete package name(s), space-separated, or `unavailable: <reason>` (same
+#         marker as packages.map's own Unavailable — a language this software genuinely
+#         has nothing for on this base/suite, not a name this script failed to guess).
+#
+# Read by tools/render_manifest.py's resolve_packages() (its `lang_pkg_map` parameter) in
+# place of naively substituting the language code into the ${LANG} template, and by
+# tools/packages_map_conformance.py's check_base() for the same reason.
+
+# libreoffice-l10n-${LANG}
+libreoffice-l10n-${LANG}/ar = libreoffice-l10n-ar  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/bg = libreoffice-l10n-bg  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/cs = libreoffice-l10n-cs  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/da = libreoffice-l10n-da  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/de = libreoffice-l10n-de  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/el = libreoffice-l10n-el  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/en = unavailable: no libreoffice-l10n-en (or regional variant, or Provides) found in the archive
+libreoffice-l10n-${LANG}/es = libreoffice-l10n-es  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/et = libreoffice-l10n-et  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/fi = libreoffice-l10n-fi  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/fr = libreoffice-l10n-fr  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/ga = libreoffice-l10n-ga  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/he = libreoffice-l10n-he  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/hi = libreoffice-l10n-hi  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/hr = libreoffice-l10n-hr  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/hu = libreoffice-l10n-hu  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/id = libreoffice-l10n-id  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/is = libreoffice-l10n-is  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/it = libreoffice-l10n-it  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/ja = libreoffice-l10n-ja  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/ko = libreoffice-l10n-ko  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/lb = unavailable: no libreoffice-l10n-lb (or regional variant, or Provides) found in the archive
+libreoffice-l10n-${LANG}/lt = libreoffice-l10n-lt  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/lv = libreoffice-l10n-lv  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/nb = libreoffice-l10n-nb  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/nl = libreoffice-l10n-nl  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/pl = libreoffice-l10n-pl  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/pt = libreoffice-l10n-pt  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/ro = libreoffice-l10n-ro  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/sk = libreoffice-l10n-sk  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/sl = libreoffice-l10n-sl  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/sv = libreoffice-l10n-sv  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/sw = unavailable: no libreoffice-l10n-sw (or regional variant, or Provides) found in the archive
+libreoffice-l10n-${LANG}/th = libreoffice-l10n-th  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/tr = libreoffice-l10n-tr  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/uk = libreoffice-l10n-uk  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/vi = libreoffice-l10n-vi  # exact match in the archive's own Package: list
+libreoffice-l10n-${LANG}/zh-hans = libreoffice-l10n-zh-cn  # 'zh-hans' is this engine's own script code (render_manifest.LANG_PACK_MAP); the archive's own package for this family uses the locale-style code 'zh-cn' instead
+libreoffice-l10n-${LANG}/zh-hant = libreoffice-l10n-zh-tw  # 'zh-hant' is this engine's own script code (render_manifest.LANG_PACK_MAP); the archive's own package for this family uses the locale-style code 'zh-tw' instead
+
+# firefox-esr-l10n-${LANG}
+firefox-esr-l10n-${LANG}/ar = firefox-esr-l10n-ar  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/bg = firefox-esr-l10n-bg  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/cs = firefox-esr-l10n-cs  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/da = firefox-esr-l10n-da  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/de = firefox-esr-l10n-de  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/el = firefox-esr-l10n-el  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/en = unavailable: no firefox-esr-l10n-en (or regional variant, or Provides) found in the archive
+firefox-esr-l10n-${LANG}/es = firefox-esr-l10n-es-es  # regions/es.yml's own locale uses country 'es'
+firefox-esr-l10n-${LANG}/et = firefox-esr-l10n-et  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/fi = firefox-esr-l10n-fi  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/fr = firefox-esr-l10n-fr  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/ga = firefox-esr-l10n-ga-ie  # the only real regional variant for this language in this family
+firefox-esr-l10n-${LANG}/he = firefox-esr-l10n-he  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/hi = firefox-esr-l10n-hi-in  # the only real regional variant for this language in this family
+firefox-esr-l10n-${LANG}/hr = firefox-esr-l10n-hr  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/hu = firefox-esr-l10n-hu  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/id = firefox-esr-l10n-id  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/is = firefox-esr-l10n-is  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/it = firefox-esr-l10n-it  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/ja = firefox-esr-l10n-ja  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/ko = firefox-esr-l10n-ko  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/lb = unavailable: no firefox-esr-l10n-lb (or regional variant, or Provides) found in the archive
+firefox-esr-l10n-${LANG}/lt = firefox-esr-l10n-lt  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/lv = firefox-esr-l10n-lv  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/nb = firefox-esr-l10n-nb-no  # the only real regional variant for this language in this family
+firefox-esr-l10n-${LANG}/nl = firefox-esr-l10n-nl  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/pl = firefox-esr-l10n-pl  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/pt = firefox-esr-l10n-pt-pt  # regions/pt.yml's own locale uses country 'pt'
+firefox-esr-l10n-${LANG}/ro = firefox-esr-l10n-ro  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/sk = firefox-esr-l10n-sk  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/sl = firefox-esr-l10n-sl  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/sv = firefox-esr-l10n-sv-se  # the only real regional variant for this language in this family
+firefox-esr-l10n-${LANG}/sw = unavailable: no firefox-esr-l10n-sw (or regional variant, or Provides) found in the archive
+firefox-esr-l10n-${LANG}/th = firefox-esr-l10n-th  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/tr = firefox-esr-l10n-tr  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/uk = firefox-esr-l10n-uk  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/vi = firefox-esr-l10n-vi  # exact match in the archive's own Package: list
+firefox-esr-l10n-${LANG}/zh-hans = firefox-esr-l10n-zh-cn  # 'zh-hans' is this engine's own script code (render_manifest.LANG_PACK_MAP); the archive's own package for this family uses the locale-style code 'zh-cn' instead
+firefox-esr-l10n-${LANG}/zh-hant = firefox-esr-l10n-zh-tw  # 'zh-hant' is this engine's own script code (render_manifest.LANG_PACK_MAP); the archive's own package for this family uses the locale-style code 'zh-tw' instead
+
+# hunspell-${LANG}
+hunspell-${LANG}/ar = hunspell-ar  # exact match in the archive's own Package: list
+hunspell-${LANG}/bg = hunspell-bg  # exact match in the archive's own Package: list
+hunspell-${LANG}/cs = hunspell-cs  # exact match in the archive's own Package: list
+hunspell-${LANG}/da = hunspell-da  # exact match in the archive's own Package: list
+hunspell-${LANG}/de = hunspell-de-de  # regions/de.yml's own locale uses country 'de'
+hunspell-${LANG}/el = hunspell-el  # exact match in the archive's own Package: list
+hunspell-${LANG}/en = hunspell-en-us  # en_US is this engine's own baseline locale (render_manifest.py's hardcoded LC_ALL)
+hunspell-${LANG}/es = hunspell-es  # exact match in the archive's own Package: list
+hunspell-${LANG}/et = myspell-et  # the archive's own real package behind the Provides: 'hunspell-et'
+hunspell-${LANG}/fi = voikko-fi libenchant-2-voikko libreoffice-voikko  # Finnish has no hunspell or myspell dictionary in either archive at all; Finnish spellcheck is provided by an entirely different technology, Voikko, which needs voikko-fi (the dictionary/engine), libenchant-2-voikko (the bridge so the desktop's enchant-based spellchecker can use it) and libreoffice-voikko (LibreOffice's own native Voikko support) — not a rename of this role, three packages this base's hunspell-${LANG}/myspell-${LANG} templates could never have named.
+hunspell-${LANG}/fr = hunspell-fr  # exact match in the archive's own Package: list
+hunspell-${LANG}/ga = myspell-ga  # no hunspell-family package for 'ga'; exact match in the archive's own Package: list, under myspell- instead
+hunspell-${LANG}/he = hunspell-he  # exact match in the archive's own Package: list
+hunspell-${LANG}/hi = hunspell-hi  # exact match in the archive's own Package: list
+hunspell-${LANG}/hr = hunspell-hr  # exact match in the archive's own Package: list
+hunspell-${LANG}/hu = hunspell-hu  # exact match in the archive's own Package: list
+hunspell-${LANG}/id = hunspell-id  # exact match in the archive's own Package: list
+hunspell-${LANG}/is = hunspell-is  # exact match in the archive's own Package: list
+hunspell-${LANG}/it = hunspell-it  # exact match in the archive's own Package: list
+hunspell-${LANG}/ja = unavailable: no hunspell-ja[-<country>] or myspell-ja[-<country>] package or Provides found in the archive
+hunspell-${LANG}/ko = hunspell-ko  # exact match in the archive's own Package: list
+hunspell-${LANG}/lb = unavailable: no hunspell-lb[-<country>] or myspell-lb[-<country>] package or Provides found in the archive
+hunspell-${LANG}/lt = hunspell-lt  # exact match in the archive's own Package: list
+hunspell-${LANG}/lv = hunspell-lv  # exact match in the archive's own Package: list
+hunspell-${LANG}/nb = myspell-nb  # no hunspell-family package for 'nb'; exact match in the archive's own Package: list, under myspell- instead
+hunspell-${LANG}/nl = hunspell-nl  # exact match in the archive's own Package: list
+hunspell-${LANG}/pl = hunspell-pl  # exact match in the archive's own Package: list
+hunspell-${LANG}/pt = hunspell-pt-pt  # regions/pt.yml's own locale uses country 'pt'
+hunspell-${LANG}/ro = hunspell-ro  # exact match in the archive's own Package: list
+hunspell-${LANG}/sk = hunspell-sk  # exact match in the archive's own Package: list
+hunspell-${LANG}/sl = hunspell-sl  # exact match in the archive's own Package: list
+hunspell-${LANG}/sv = hunspell-sv  # exact match in the archive's own Package: list
+hunspell-${LANG}/sw = hunspell-sw  # exact match in the archive's own Package: list
+hunspell-${LANG}/th = hunspell-th  # exact match in the archive's own Package: list
+hunspell-${LANG}/tr = hunspell-tr  # exact match in the archive's own Package: list
+hunspell-${LANG}/uk = hunspell-uk  # exact match in the archive's own Package: list
+hunspell-${LANG}/vi = hunspell-vi  # exact match in the archive's own Package: list
+hunspell-${LANG}/zh-hans = unavailable: no hunspell-zh-hans[-<country>] or myspell-zh-hans[-<country>] package or Provides found in the archive
+hunspell-${LANG}/zh-hant = unavailable: no hunspell-zh-hant[-<country>] or myspell-zh-hant[-<country>] package or Provides found in the archive
