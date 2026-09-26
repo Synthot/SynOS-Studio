@@ -138,7 +138,14 @@ browser-headless   = unavailable: Ubuntu packages no non-snap, freely redistribu
 # qjackctl instead.
 audio-production-tools = ardour pipewire-jack qpwgraph a2jmidid jack-mixer calf-plugins x42-plugins lsp-plugins-jack hydrogen guitarix rakarrack rtkit
 # video-editing-workstation targets noble.
-video-editing-tools    = kdenlive ffmpeg va-driver-all vainfo mesa-va-drivers vdpau-driver-all
+# Hardware video acceleration, per suite: resolute's Mesa is consolidated into
+# one mesa-libgallium package that *provides* mesa-va-drivers and
+# mesa-vdpau-drivers, and drops vdpau-driver-all entirely (libvdpau-va-gl1 is
+# what provides a vdpau driver there). Named directly on each suite rather than
+# installed through those Provides, so what this file says is what apt gets —
+# checked against the real indexes, which is how the difference was found.
+video-editing-tools         = kdenlive ffmpeg va-driver-all vainfo mesa-va-drivers vdpau-driver-all
+video-editing-tools@resolute = kdenlive ffmpeg va-driver-all vainfo mesa-libgallium libvdpau-va-gl1
 # photography-workstation targets noble (displaycal is missing from jammy).
 photography-tools      = darktable rawtherapee argyll gphoto2 displaycal
 # cad-3d-printing-workstation targets Debian trixie instead (see
