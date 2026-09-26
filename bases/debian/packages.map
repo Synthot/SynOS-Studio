@@ -5,6 +5,14 @@ office             = libreoffice libreoffice-gtk4
 mail               = evolution evolution-ews
 firmware-audio     = firmware-sof-signed
 firmware-wifi      = firmware-iwlwifi firmware-realtek firmware-atheros firmware-linux
+# ${LANG} here does not mean "substitute the language code literally" —
+# libreoffice-l10n-de exists but libreoffice-l10n-en never will (English is
+# LibreOffice's own source language) and hunspell-de does not exist at all
+# (the real name is hunspell-de-de). resolve_packages() resolves ${LANG}
+# through bases/debian/language-packages.map (tools/generate_language_packages.py),
+# the real, archive-verified name (or a documented "this language has
+# nothing for this role" fact) for every language this engine can be asked
+# for, not this line's own literal template.
 translations       = locales libreoffice-l10n-${LANG} firefox-esr-l10n-${LANG}
 spellcheck         = hunspell-${LANG}
 # The desktop is provided by the upstream metapackage (mod 05) until packages/ ships.

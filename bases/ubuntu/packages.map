@@ -18,6 +18,14 @@ office             = libreoffice libreoffice-gtk4
 mail               = evolution evolution-ews
 firmware-audio     =
 firmware-wifi      = linux-firmware
+# ${LANG} here does not mean "substitute the language code literally" —
+# hunspell-de does not exist (the real name is hunspell-de-de) and Irish's
+# own language-pack exists on noble but not on resolute. resolve_packages()
+# resolves ${LANG} through bases/ubuntu/language-packages.map
+# (tools/generate_language_packages.py), the real, archive-verified name
+# (or a documented "this language has nothing for this role" fact, per
+# suite where it differs) for every language this engine can be asked for,
+# not this line's own literal template.
 translations       = language-pack-${LANG} language-pack-${LANG}-base language-pack-gnome-${LANG} language-pack-gnome-${LANG}-base
 spellcheck         = hunspell-${LANG}
 # The desktop is provided by the upstream metapackage (mod 05) until packages/ ships.

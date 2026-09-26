@@ -192,13 +192,30 @@ def check_base(base_id: str, root: Path = ROOT, fetcher=_http_get) -> dict:
     actually build a Live image for — a role's own `@suite` override, when
     it has one, is checked only against that suite; the bare role is
     checked against every live-capable suite that has no override for it,
-    exactly resolve_packages()'s own lookup order (load_package_map)."""
+    exactly resolve_packages()'s own lookup order (load_package_map).
+
+    For a `${LANG}` template bases/<base_id>/language-packages.map covers
+    (tools/generate_language_packages.py's own output — optional; a base
+    with no such file, or a template it does not cover, is checked the old
+    way, naive substitution), this checks *that file's* resolved package(s)
+    per language instead of the naive `hunspell-${LANG}` substitution this
+    tool used before that file existed: a language it correctly marks
+    `unavailable` (a fact about the language, checked when the file was
+    generated — English needing no libreoffice-l10n-en, Finnish having no
+    hunspell dictionary) is counted under `not_applicable`, never `missing`,
+    so this stays green without stopping being honest about coverage. A
+    language `lang_codes()` reaches that the file has no entry for at all
+    (a region added since the file was last generated) is counted under
+    `uncovered` — the file falls out of date silently otherwise, exactly the
+    kind of gap this whole tool exists to catch."""
     base_dir = root / "bases" / base_id
     base_env = rm.load_env(base_dir / "base.env")
     pkg_map = rm.load_package_map(base_dir / "packages.map")
     rm.check_packages_map_suite_overrides_are_known(base_id, base_env, pkg_map)
     suites = rm.live_capable_suites(base_dir, base_env)
     codes = lang_codes(root)
+    lang_pkg_map_path = base_dir / "language-packages.map"
+    lang_pkg_map = rm.load_language_package_map(lang_pkg_map_path) if lang_pkg_map_path.is_file() else None
 
     archives: dict[str, tuple[set[str], dict[str, set[str]]]] = {}
 
@@ -217,7 +234,20 @@ def check_base(base_id: str, root: Path = ROOT, fetcher=_http_get) -> dict:
 
     missing: list[dict] = []
     provides_only: list[dict] = []
+    not_applicable: list[dict] = []
+    uncovered: list[dict] = []
     checked = 0
+
+    def check_one(concrete: str, role: str, suite: str, arch: str) -> None:
+        nonlocal checked
+        checked += 1
+        if concrete in names:
+            return
+        if concrete in provides:
+            provides_only.append({"role": role, "package": concrete, "suite": suite, "arch": arch,
+                                  "provided_by": sorted(provides[concrete])})
+            return
+        missing.append({"role": role, "package": concrete, "suite": suite, "arch": arch})
 
     for key, entry in sorted(pkg_map.items()):
         if isinstance(entry, rm.Unavailable) or not entry:
@@ -230,18 +260,27 @@ def check_base(base_id: str, root: Path = ROOT, fetcher=_http_get) -> dict:
             for arch in arches_for(entry):
                 names, provides = archive_for_arch(suite, arch)
                 for template in entry:
-                    for concrete in expand(template, codes, arch):
-                        checked += 1
-                        if concrete in names:
-                            continue
-                        if concrete in provides:
-                            provides_only.append({"role": key, "package": concrete, "suite": suite, "arch": arch,
-                                                  "provided_by": sorted(provides[concrete])})
-                            continue
-                        missing.append({"role": key, "package": concrete, "suite": suite, "arch": arch})
+                    if "${LANG}" in template and lang_pkg_map is not None and template in lang_pkg_map:
+                        table = lang_pkg_map[template]
+                        for code in codes:
+                            lookup_key = f"{code}@{suite}" if f"{code}@{suite}" in table else code
+                            if lookup_key not in table:
+                                uncovered.append({"role": key, "template": template, "lang": code, "suite": suite})
+                                continue
+                            resolved = table[lookup_key]
+                            if isinstance(resolved, rm.Unavailable):
+                                not_applicable.append({"role": key, "template": template, "lang": code,
+                                                       "suite": suite, "reason": resolved.reason})
+                                continue
+                            for concrete in resolved:
+                                check_one(concrete.replace("${ARCH}", arch), key, suite, arch)
+                    else:
+                        for concrete in expand(template, codes, arch):
+                            check_one(concrete, key, suite, arch)
 
     return {"base": base_id, "suites": suites, "packages_checked": checked,
-            "missing": missing, "provides_only": provides_only}
+            "missing": missing, "provides_only": provides_only,
+            "not_applicable": not_applicable, "uncovered": uncovered}
 
 
 def check_all(bases: list[str], root: Path = ROOT, fetcher=_http_get) -> dict:
@@ -258,9 +297,12 @@ def real_bases(root: Path = ROOT) -> list[str]:
 def summary_text(report: dict) -> str:
     lines = []
     for result in report["bases"]:
+        not_applicable = result.get("not_applicable", [])
+        uncovered = result.get("uncovered", [])
+        extra = f", {len(not_applicable)} not applicable to their language" if not_applicable else ""
         lines.append(f"{result['base']} ({', '.join(result['suites'])}): "
                      f"{result['packages_checked']} name(s) checked, "
-                     f"{len(result['missing'])} missing, {len(result['provides_only'])} via Provides only")
+                     f"{len(result['missing'])} missing, {len(result['provides_only'])} via Provides only{extra}")
         for item in result["missing"]:
             lines.append(f"  MISSING {item['role']}: {item['package']!r} not on {result['base']}/{item['suite']} "
                          f"({item['arch']}), checked suite+updates+backports+security")
@@ -268,6 +310,10 @@ def summary_text(report: dict) -> str:
             lines.append(f"  provides-only {item['role']}: {item['package']!r} on {result['base']}/{item['suite']} "
                          f"({item['arch']}) only via Provides of {', '.join(item['provided_by'])} — installable, "
                          f"but packages.map does not name the real package")
+        for item in uncovered:
+            lines.append(f"  UNCOVERED {item['role']}: language {item['lang']!r} of template {item['template']!r} "
+                         f"has no entry in bases/{result['base']}/language-packages.map for suite {item['suite']} — "
+                         f"the table is stale (run tools/generate_language_packages.py)")
     return "\n".join(lines)
 
 
@@ -294,7 +340,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(summary_text(report))
 
-    any_missing = any(result["missing"] for result in report["bases"])
+    any_missing = any(result["missing"] or result.get("uncovered") for result in report["bases"])
     return 1 if any_missing else 0
 
 

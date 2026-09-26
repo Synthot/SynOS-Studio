@@ -26,7 +26,18 @@ for pkg in ${PROFILE_INSTALL_PACKAGES:-}; do
 done
 
 if [ "${#SKIPPED[@]}" -gt 0 ]; then
-    print_warn "Not installable on ${BASE_ID} ${TARGET_SUITE}, skipped: ${SKIPPED[*]}"
+    # Every name here was asked for by name — resolved by tools/render_manifest.py
+    # through bases/${BASE_ID}/packages.map (and, for a spellcheck/translations
+    # role, bases/${BASE_ID}/language-packages.map, which drops a language's own
+    # verified-absent packages before they ever reach PROFILE_INSTALL_PACKAGES at
+    # all). Reaching this branch means the archive this image is building against
+    # does not have a name the manifest resolution believed it would — one line
+    # per package, unmistakable, not folded into a single list a scrollback can
+    # bury; not a hard failure (a profile still gets everything else it asked
+    # for), but never silent either.
+    for pkg in "${SKIPPED[@]}"; do
+        print_warn "PACKAGE UNEXPECTEDLY MISSING on ${BASE_ID} ${TARGET_SUITE}: '${pkg}' was requested by name for this build and is not installable — the image will ship without it. This is unexpected; check bases/${BASE_ID}/packages.map (and language-packages.map, if this is a language-related name) against the real archive."
+    done
 fi
 
 if [ "${#INSTALL[@]}" -gt 0 ]; then
