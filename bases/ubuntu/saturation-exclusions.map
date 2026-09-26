@@ -1,0 +1,48 @@
+# name = excluded: <reason>
+#
+# One entry per bundle-group id (profiles/bundles.yml) or concrete package
+# name that tools/build_saturation.py's own resolved union for this base
+# would otherwise install alongside something it genuinely collides with —
+# a real Conflicts:/Breaks: field in this base's own archive, or a
+# maintainer's own documented reason for a non-package collision (a kiosk
+# policy against a full desktop, two appliances that both want the same
+# port). Same marker idiom as bases/ubuntu/packages.map's `unavailable:` and
+# bases/ubuntu/live.map: the reason lives in the data, checked against the
+# real archive, never invented (tools/build_saturation.py refuses to start
+# if a name here never appears anywhere in the union — a stale entry is
+# exactly the drift this idiom exists to prevent).
+#
+# A name absent from this file is not known to collide with anything — this
+# file only ever lists exceptions, so it can never quietly drift out of step
+# with profiles/bundles.yml as groups are added.
+#
+# Checked 2026-09-25 against archive.ubuntu.com's real noble indexes (main,
+# restricted, universe, multiverse; binary-amd64) for every one of the 162
+# concrete packages tools/build_saturation.py resolves into this base's
+# union: every package's Conflicts:, Breaks: and Provides: field was read
+# and cross-checked against every other package in the same union (the same
+# method tools/catalog_conformance.py's `check` mode uses to fetch
+# Packages.gz, extended here to Conflicts:/Breaks:/Provides: instead of just
+# package names). Result: zero genuine collisions.
+#
+# What looked like a hit and was not, so the next person re-running this
+# check does not have to re-learn it:
+#   - language-pack-en-base Conflicts: language-pack-en (<< <version>), and
+#     language-pack-gnome-en-base likewise — a package-split transition
+#     guard against an *older* version of its own sibling, never the
+#     current one a fresh install resolves; Depends: already requires the
+#     newer sibling, so both always land together.
+#   - tcpdump Breaks: apparmor-profiles-extra (<< 1.12~); texlive-latex-extra,
+#     texlive-latex-recommended and texlive-xetex Break: each other, all
+#     versioned `<<` — the same upgrade-safety idiom, never triggered
+#     against the current archive's own versions.
+#   - python3-pandas Breaks: python3-seaborn (<< 0.13.0~) — same idiom.
+#   - qemu-system-x86 and qemu-system-arm both Provide: qemu-system-any (a
+#     virtual alternative used by Depends:, not a Conflicts: target); apt
+#     installs both without issue, which is the whole point of listing them
+#     both explicitly in yocto-practical-tools.
+#
+# This file has no active entries because none were found to be needed —
+# not because the check was skipped. When a future profiles/bundles.yml
+# group introduces a real collision, add it here with the evidence above it
+# and the run this proves red for a reason.
