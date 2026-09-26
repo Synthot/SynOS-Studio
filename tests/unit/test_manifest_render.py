@@ -213,6 +213,88 @@ class UnavailablePackageTests(unittest.TestCase):
             self.assertIn("unavailable", result.stderr)
 
 
+class ApplianceLiveGatingTests(unittest.TestCase):
+    """resolved["packages"]["appliance"] (docs/ARCHITECTURE.md, "Live session
+    vs. installed system"): what a profile's own bundles beyond desktop-core,
+    plus software.packages.add, resolve to — the boundary
+    synos.workstation.live_service_gating uses to decide which units a live
+    boot (rd.synos.live=1) must never start. Derived from the profile's own
+    data, not a hand-written list, so these tests render a real profile
+    (profiles/developer.yml: bundles [containers, build-tools], packages.add
+    [git, python3-venv], nothing else that would already require Ansible)
+    rather than inventing a fixture."""
+
+    def _render(self, profile_id: str) -> dict:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "args.sh"
+            resolved = Path(directory) / "resolved.json"
+            manifest = Path(directory) / "m.yml"
+            manifest.write_text(json.dumps({
+                "schema_version": 1, "name": "m", "version": "1.0.0", "base": "ubuntu", "suite": "resolute",
+                "arch": "amd64", "profile": profile_id, "regions": ["us"], "brand": "synos",
+            }), encoding="utf-8")
+            result = _run("--manifest", str(manifest), "--output", str(output), "--resolved", str(resolved))
+            self.assertEqual(0, result.returncode, result.stderr)
+            return json.loads(resolved.read_text(encoding="utf-8"))
+
+    def test_appliance_packages_excludes_desktop_core(self) -> None:
+        resolved = self._render("developer")
+        appliance = set(resolved["packages"]["appliance"])
+        install = set(resolved["packages"]["install"])
+        # desktop-core's own hardening role (bases/*/packages.map) resolves to
+        # auditd on both bases; developer never asked for it itself, so it must
+        # be in what gets installed (every profile inherits desktop-core) but
+        # never in what live_service_gating is told to gate.
+        self.assertIn("auditd", install)
+        self.assertNotIn("auditd", appliance)
+
+    def test_appliance_packages_includes_the_profiles_own_bundles_and_packages_add(self) -> None:
+        resolved = self._render("developer")
+        appliance = set(resolved["packages"]["appliance"])
+        # containers (a bundle developer adds beyond desktop-core) and
+        # software.packages.add (git, python3-venv) must both be in scope.
+        self.assertIn("podman", appliance)
+        self.assertIn("git", appliance)
+        self.assertIn("python3-venv", appliance)
+
+    def test_ansible_is_required_for_appliance_packages_alone(self) -> None:
+        """profiles/developer.yml triggers none of ansible_required's other
+        conditions (no policy, no compliance, no open_ports, no
+        software.services, no hardware.gpu, no software.files) — before
+        appliance_packages was added to that check, a build host without
+        ansible-playbook installed would silently skip live_service_gating
+        for this profile instead of refusing the way every other
+        Ansible-needing profile already does."""
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "args.sh"
+            resolved_path = Path(directory) / "resolved.json"
+            manifest = Path(directory) / "m.yml"
+            manifest.write_text(json.dumps({
+                "schema_version": 1, "name": "m", "version": "1.0.0", "base": "ubuntu", "suite": "resolute",
+                "arch": "amd64", "profile": "developer", "regions": ["us"], "brand": "synos",
+            }), encoding="utf-8")
+            result = _run("--manifest", str(manifest), "--output", str(output), "--resolved", str(resolved_path))
+            self.assertEqual(0, result.returncode, result.stderr)
+            text = output.read_text(encoding="utf-8")
+            self.assertIn('export ANSIBLE_CHROOT_REQUIRED="true"', text)
+
+    def test_ansible_vars_json_carries_the_appliance_package_list(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "args.sh"
+            resolved_path = Path(directory) / "resolved.json"
+            manifest = Path(directory) / "m.yml"
+            manifest.write_text(json.dumps({
+                "schema_version": 1, "name": "m", "version": "1.0.0", "base": "ubuntu", "suite": "resolute",
+                "arch": "amd64", "profile": "developer", "regions": ["us"], "brand": "synos",
+            }), encoding="utf-8")
+            result = _run("--manifest", str(manifest), "--output", str(output), "--resolved", str(resolved_path))
+            self.assertEqual(0, result.returncode, result.stderr)
+            ansible_vars = json.loads((resolved_path.with_name("ansible-vars.json")).read_text(encoding="utf-8"))
+            self.assertIn("synos_appliance_packages", ansible_vars)
+            self.assertIn("git", ansible_vars["synos_appliance_packages"])
+            self.assertNotIn("auditd", ansible_vars["synos_appliance_packages"])
+
+
 class LanguagePackageMapTests(unittest.TestCase):
     """bases/<base>/language-packages.map (tools/generate_language_packages.py):
     the real, archive-verified package for one `${LANG}` template and one

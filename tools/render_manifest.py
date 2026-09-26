@@ -753,6 +753,20 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
     remove_packages, _ = resolve_packages(remove, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"],
                                           refuse_unavailable=False, suite=suite, lang_pkg_map=lang_pkg_map)
     install_packages = [p for p in install_packages if p not in remove_packages]
+    # "Which of this profile's own packages are not just the base/desktop
+    # group" (docs/ARCHITECTURE.md, "Live session vs. installed system"): the
+    # concrete set desktop-core alone resolves to, subtracted from what the
+    # profile as a whole resolves to. What is left is what an appliance
+    # brought in — this profile's own bundles beyond desktop-core, plus
+    # software.packages.add — the boundary
+    # synos.workstation.live_service_gating (run by customize_chroot.yml)
+    # uses to decide which systemd units a live boot must never start
+    # (rd.synos.live=1 is on the kernel command line of every live boot),
+    # without a hand-written package list to keep in step by hand.
+    desktop_group_packages, _ = resolve_packages(bundles.get("desktop-core", []), pkg_map, arch, lang_codes,
+                                                 base["BASE_ID"], manifest["profile"], suite=suite,
+                                                 lang_pkg_map=lang_pkg_map, lang_gaps=[])
+    appliance_packages = [p for p in install_packages if p not in set(desktop_group_packages)]
     installer = profile.get("installer", {}) or {}
     ansible_cfg = profile.get("ansible", {}) or {}
     playbooks = list(ansible_cfg.get("playbooks", []))
@@ -766,7 +780,7 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
         or ansible_cfg.get("first_boot_roles") or ansible_cfg.get("pull_url")
         or installer.get("ssh") == "enabled" or security.get("open_ports")
         or (profile.get("software") or {}).get("services") or (profile.get("hardware") or {}).get("gpu", "none") != "none"
-        or profile_files
+        or profile_files or appliance_packages
     )
     stack = resolve_stack(manifest)
     stack_exports = "".join(
@@ -899,6 +913,7 @@ export LOCAL_REPO_DIR=".build/repo"
         "packages": {
             "abstract": [a if isinstance(a, str) else a["name"] for a in abstract],
             "install": install_packages,
+            "appliance": appliance_packages,
             "remove": remove_packages,
             "unmapped": unmapped,
             "language_gaps": lang_gaps,
@@ -981,6 +996,7 @@ def main(argv: list[str] | None = None) -> int:
     ansible_vars.write_text(json.dumps({
         "synos_profile": resolved["profile"], "synos_brand": resolved["brand"],
         "synos_manifest": resolved["manifest"], "synos_regions": resolved["regions"],
+        "synos_appliance_packages": resolved["packages"]["appliance"],
     }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"rendered {_short(output)} ({len(resolved['live_entries'])} live entries) and {_short(resolved_path)}")
     return 0

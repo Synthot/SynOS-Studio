@@ -149,6 +149,23 @@ if [ -z "$test_mode" ]; then
     done
 fi
 
+# Whatever this appliance carries (a web server, a database, a container
+# registry, and so on) does not start in this session: this boot is
+# deliberately passwordless (rd.synos.live=1), and every one of that
+# appliance's own units was built with ConditionKernelCommandLine=!rd.synos.live
+# (docs/ARCHITECTURE.md, "Live session vs. installed system") so it starts on
+# an installed system and nowhere else. `systemctl status` on one of those
+# units already names the condition; this note is for whoever never runs
+# that command. Installing this same image starts them for real.
+motd="$(target_path /etc/motd)"
+mkdir -p "$(dirname "$motd")"
+{
+    printf '\n'
+    printf '%s\n' 'This is a live SynOS session (passwordless by design): any services'
+    printf '%s\n' "this appliance carries are deliberately not running here. Install it"
+    printf '%s\n' 'to start them for real.'
+} >> "$motd"
+
 # The boot medium is already the running system: keep the desktop from
 # automounting it (a hybrid ISO on USB exposes the same filesystem on the
 # whole device and on its first partition, so it would appear twice).

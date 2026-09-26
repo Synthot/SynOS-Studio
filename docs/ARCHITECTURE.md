@@ -189,6 +189,58 @@ something a bundle can opt into on its own. The catalog
 (`profiles/catalog.yml`, `services`) describes the ones Studio offers with
 the image per GPU. The `ai-workstation` archetype uses all of this.
 
+## Live session vs. installed system
+
+Every live boot entry (`build.sh`'s `LIVE_BOOT_ARGS`, and the "To Go"
+persistent entry) carries `rd.synos.live=1` on the kernel command line; an
+installed system never does. That is the one reliable signal that
+distinguishes the two, and it matters because the live session is
+deliberately passwordless (a product feature the boot certification checks
+for) — so a service that starts unconditionally starts on an unauthenticated
+machine the moment the stick is plugged in.
+
+Nothing an appliance profile asks for should start in that session, and
+nothing about it should need a second step once installed. Two mechanisms
+cover the two ways a profile brings a unit in, both keyed on the same
+`rd.synos.live=1`:
+
+- **Container services** (`software.services`): `service.container.j2`
+  (`container_services` role) writes `ConditionKernelCommandLine=!rd.synos.live`
+  into every quadlet unit it generates. The unit stays enabled (quadlet's own
+  `[Install] WantedBy=`), so an installed boot starts it exactly as before;
+  a live boot's systemd refuses the start and says so as a failed condition,
+  not a crash, in `systemctl status`.
+- **Packages the profile adds** (its own `software.bundles` beyond
+  `desktop-core`, plus `software.packages.add` — resolved by
+  `tools/render_manifest.py` into `resolved["packages"]["appliance"]` and
+  carried into the chroot as `synos_appliance_packages`, right next to
+  `synos_profile`): `synos.workstation.live_service_gating` (run by
+  `customize_chroot.yml`, next to `container_services`) reads every
+  `.service` and `.socket` unit those packages actually shipped (`dpkg -L`)
+  and drops the same `ConditionKernelCommandLine=!rd.synos.live` into a
+  `/etc/systemd/system/<unit>.d/` override for each — gating the `.socket`
+  too, where one exists (Cockpit's `web-admin` bundle group is exactly this
+  shape: a `.socket` that would otherwise sit listening on 9090 whether or
+  not its `.service` ever starts), so nothing is left even accepting a
+  connection it can never answer. The boundary is derived from the profile's
+  own resolved package list, not a hand-written allow-list: `desktop-core`
+  (the base/desktop bundle every profile inherits — NetworkManager, the
+  display manager, the desktop itself, hardening/logging tools) is
+  subtracted out, so those units are never touched and keep running in both
+  sessions; nothing outside `PROFILE_INSTALL_PACKAGES` (the base OS, the
+  installer, SynOS's own `synos-*` packages) is in scope at all, because it
+  never passes through the profile/bundle machinery to begin with.
+  Enablement is untouched either way — dpkg already enabled these units by
+  policy when the package installed — so an installed system needs nothing
+  extra done to it at install time; only the live boot's own attempt to
+  start them is refused.
+
+`packages/synos-live-settings`'s `synos-live-session-setup` (the live
+session's own setup script, `ConditionPathExists=/run/synos-live/environment`)
+appends one honest line to `/etc/motd` saying the same thing in plain words,
+for whoever never runs `systemctl status`: this appliance's own services are
+deliberately idle here, not broken, and installing starts them for real.
+
 ## Configuration files a profile ships
 
 `software.files` lists plain configuration files a profile writes into the

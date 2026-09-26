@@ -1,0 +1,1 @@
+live_service_gating_packages: []      # concrete package names this profile itself added (tools/render_manifest.py's resolved["packages"]["appliance"] — install_packages minus what desktop-core alone resolves to)
