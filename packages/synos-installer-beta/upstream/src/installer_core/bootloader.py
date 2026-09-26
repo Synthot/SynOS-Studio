@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -90,6 +91,21 @@ class InstallBootloaderStep:
         else:
             commands = build_boot_commands(context.plan, str(target))
             installs = commands.installs
+        # boot_commands.py plans --no-extra-removable optimistically because
+        # it never has a target to probe. Probe the real one now and drop
+        # that one option if this grub-install predates it (Debian trixie's
+        # 2.12-9+deb13u2: see _adapt_for_grub_capabilities). Every other
+        # planned option is still enforced verbatim by
+        # _verify_grub_install_options below.
+        help_text = _grub_install_help_text(self.runner, target)
+        adapted_installs = _adapt_for_grub_capabilities(installs, help_text)
+        if adapted_installs != installs:
+            installs = adapted_installs
+            commands = (
+                dataclasses.replace(commands, install=installs[0])
+                if vendor_only
+                else dataclasses.replace(commands, installs=installs)
+            )
         explicit_nvram = bool(commands.nvram_create)
         context.values["boot_command_plan"] = commands
         _verify_grub_platform_modules(target, installs)
@@ -98,7 +114,7 @@ class InstallBootloaderStep:
             installs,
             context.plan.storage.filesystem,
         )
-        _verify_grub_install_options(self.runner, target, installs)
+        _verify_grub_install_options(help_text, installs)
         devices = context.values.get("partition_devices", {})
         context.log(
             "Bootloader target disk: "
@@ -352,17 +368,60 @@ def _target(context: InstallContext) -> Path:
     return target
 
 
-def _verify_grub_install_options(
-    runner: CommandRunner,
-    target: Path,
-    installs: tuple[tuple[str, ...], ...],
-) -> None:
+def _grub_install_help_text(runner: CommandRunner, target: Path) -> str:
+    """The one real probe of what this target's grub-install supports.
+
+    Every capability decision for this step reads from this text instead of
+    inferring a GRUB generation from the distro or suite name: Ubuntu noble's
+    2.12-1ubuntu7.3 and Debian trixie's 2.12-9+deb13u2 report the same GRUB
+    version number but offer different --*-extra-removable options (Ubuntu
+    carries its own long-standing packaging patch for this, independent of
+    upstream's 2.14 default change), so the version string alone is not a
+    reliable signal.
+    """
+
     result = runner.run(
         ("chroot", str(target), "grub-install", "--help"),
         timeout=30,
         log_output=False,
     )
-    help_text = f"{result.stdout}\n{result.stderr}"
+    return f"{result.stdout}\n{result.stderr}"
+
+
+def _adapt_for_grub_capabilities(
+    installs: tuple[tuple[str, ...], ...],
+    help_text: str,
+) -> tuple[tuple[str, ...], ...]:
+    """Drop --no-extra-removable when this target's grub-install has no such
+    option.
+
+    This is the one, narrowly-scoped, understood adaptation: on a
+    grub-install that predates the --no-extra-removable/--force-extra-
+    removable split (Debian trixie's 2.12-9+deb13u2 is the confirmed case;
+    it offers --force-extra-removable instead and does not install the
+    EFI/BOOT removable-media fallback unless that is passed), omitting
+    --no-extra-removable already produces the same "no removable fallback"
+    result the flag exists to guarantee on builds that flipped the default
+    (confirmed for Ubuntu noble's 2.12-1ubuntu7.3 and every 2.14 build
+    checked, both of which offer --no-extra-removable and have dropped
+    --force-extra-removable). Every other planned option is left untouched
+    here, so _verify_grub_install_options still fails the install on any
+    other genuinely unsupported option; this function must never grow into
+    a general filter.
+    """
+
+    if "--no-extra-removable" in help_text:
+        return installs
+    return tuple(
+        tuple(argument for argument in command if argument != "--no-extra-removable")
+        for command in installs
+    )
+
+
+def _verify_grub_install_options(
+    help_text: str,
+    installs: tuple[tuple[str, ...], ...],
+) -> None:
     planned_options = {
         argument.split("=", 1)[0]
         for command in installs
