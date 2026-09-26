@@ -50,6 +50,50 @@ print_ok "Cleaning up log files..."
 find /var/log -mindepth 1 -delete 2>/dev/null || true
 judge "Clean up log files"
 
+# auditd (hardening group, bases/*/packages.map -- installed on every base,
+# every profile, as part of desktop-core's "hardening baseline (always on)")
+# ships /var/log/audit as a package-owned directory (dpkg -L auditd lists it
+# alongside /var/log itself), created once by its postinst -- not via a
+# tmpfiles.d entry, and not recreated by auditd itself at every start. The
+# blanket log wipe above deletes it along with everything else under
+# /var/log, and since dpkg never re-runs a package's postinst on a system
+# that already has it "installed", nothing put it back: auditd then fails
+# every boot, live and installed, with "Could not open dir /var/log/audit"
+# (exit 6/NOTCONFIGURED), retries five times, hits systemd's start-limit,
+# and stays failed forever. Recreate it here with the exact mode/group the
+# real Debian trixie auditd package itself sets (verified against the
+# upstream .deb: 0750 root:adm -- adm matching auditd.conf's own
+# `log_group = adm`), so the daemon has somewhere to write from the very
+# first boot, on both sides of the live/installed line.
+print_ok "Restoring auditd's own log directory..."
+install -d -m 0750 -o root -g adm /var/log/audit
+judge "Restore auditd's own log directory"
+
+# Any package apt left in dpkg's "rc" state (removed, but its config data
+# was kept) is dead weight in the shipped image: nothing uses it, but it
+# still shows up in `dpkg -l`, in `dpkg -s <meta-package>`'s own Depends
+# resolution, and in the packages.lock/SBOM build_iso() generates further
+# down this same build (the manifest step there lists every package dpkg
+# still knows about, "rc" included, not just "ii"). This is exactly what a
+# Conflicts/Replaces/Provides package swap leaves behind mid-build -- e.g.
+# a profile's own firmware-audio role asking for Debian's firmware-sof-signed
+# where firmware-sof-synos (Provides: firmware-sof-signed) was already
+# installed by the desktop stack group: apt correctly removes the one and
+# installs the other in the same transaction (synos-desktop-core's
+# `firmware-sof-synos | firmware-sof-signed` Depends ends up satisfied,
+# verified against a live boot), but dpkg keeps the removed side's status
+# entry around as "rc" rather than purging it outright. Purge every such
+# leftover here, before the manifest is generated, so the shipped image's
+# own package database -- and everything derived from it -- reflects only
+# what is actually installed.
+print_ok "Purging packages left in dpkg's removed-but-not-purged state..."
+RC_PACKAGES=$(dpkg -l | awk '$1 == "rc" {print $2}')
+if [ -n "$RC_PACKAGES" ]; then
+    # shellcheck disable=SC2086
+    dpkg --purge $RC_PACKAGES || true
+fi
+judge "Purge packages left in dpkg's removed-but-not-purged state"
+
 # Truncate machine id
 print_ok "Truncating machine id..."
 truncate -s 0 /etc/machine-id || true
