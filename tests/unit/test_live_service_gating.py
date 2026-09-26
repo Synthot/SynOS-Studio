@@ -9,8 +9,11 @@ Two mechanisms cover the two ways a profile brings a unit in:
   - software.services (containers): service.container.j2 carries the
     Condition itself (covered by tests/unit/test_ai_workstation.py's
     test_quadlet_unit_never_starts_in_the_live_session).
-  - packages the profile adds beyond desktop-core (software.bundles,
-    software.packages.add): synos.workstation.live_service_gating, wired
+  - software.packages.add, resolved across the whole extends chain (never
+    a curated profiles/bundles.yml group -- see
+    tests/unit/test_manifest_render.py's ApplianceLiveGatingTests for why
+    cups and podman must stay out of this list even though they are
+    genuinely installed): synos.workstation.live_service_gating, wired
     into customize_chroot.yml next to container_services, covered here.
 
 Plus the one on-screen note (synos-live-session-setup's motd line) for
@@ -48,15 +51,17 @@ class RoleTests(unittest.TestCase):
         self.assertIn("synos.workstation.container_services", playbook)
         self.assertIn("synos.workstation.live_service_gating", playbook)
         self.assertIn("synos_appliance_packages", playbook)
-        # The role only ever runs when the profile actually added something
-        # beyond desktop-core; nothing to gate is not an error.
+        # The role only ever runs when the profile's own software.packages.add
+        # actually resolved to something; nothing to gate is not an error.
         self.assertIn("when: appliance_packages | length > 0", playbook)
 
     def test_unit_discovery_command_covers_both_service_and_socket_units(self) -> None:
-        """Cockpit (the web-admin bundle group) ships cockpit.socket, not just
-        cockpit.service -- a unit that would otherwise sit listening on 9090
-        whether or not its backend ever starts. Both extensions must be
-        caught, from either of Debian's pre- and post-usrmerge unit paths."""
+        """A socket-activated appliance daemon (a future software.packages.add
+        entry that ships a .socket alongside its .service) must be caught the
+        same way as a plain .service -- a .socket would otherwise sit
+        listening whether or not its backend ever starts. Both extensions
+        must be caught, from either of Debian's pre- and post-usrmerge unit
+        paths."""
         tasks_text = (ROLE / "tasks" / "main.yml").read_text(encoding="utf-8")
         self.assertIn(r"\.(service|socket)$", tasks_text)
         self.assertIn("/(usr/)?lib/systemd/system/", tasks_text)
@@ -69,10 +74,16 @@ class RoleTests(unittest.TestCase):
         tasks = env.from_string((ROLE / "tasks" / "main.yml").read_text(encoding="utf-8"))
         # Render with a fake registered-command result standing in for
         # synos_live_gated_units, the way Ansible would after the shell task.
-        out = tasks.render(item="cockpit.socket", live_service_gating_packages=["cockpit"],
-                            synos_live_gated_units={"stdout_lines": ["cockpit.socket"]})
-        self.assertIn("cockpit.socket.d", out)
+        # containerd (kubernetes-server's own software.packages.add) is a
+        # real package this role gates today; .socket is exercised with a
+        # synthetic name since no catalog entry currently adds one.
+        out = tasks.render(item="containerd.service", live_service_gating_packages=["containerd"],
+                            synos_live_gated_units={"stdout_lines": ["containerd.service"]})
+        self.assertIn("containerd.service.d", out)
         self.assertIn("ConditionKernelCommandLine=!rd.synos.live", out)
+        socket_out = tasks.render(item="example.socket", live_service_gating_packages=["example"],
+                                  synos_live_gated_units={"stdout_lines": ["example.socket"]})
+        self.assertIn("example.socket.d", socket_out)
         self.assertIn("90-synos-live-suppress.conf", out)
 
 

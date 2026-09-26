@@ -1,1 +1,1 @@
-live_service_gating_packages: []      # concrete package names this profile itself added (tools/render_manifest.py's resolved["packages"]["appliance"] — install_packages minus what desktop-core alone resolves to)
+live_service_gating_packages: []      # concrete software.packages.add, resolved across the whole extends chain (tools/render_manifest.py's resolved["packages"]["appliance"]) — never a curated profiles/bundles.yml group

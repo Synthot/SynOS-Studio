@@ -210,26 +210,34 @@ cover the two ways a profile brings a unit in, both keyed on the same
   `[Install] WantedBy=`), so an installed boot starts it exactly as before;
   a live boot's systemd refuses the start and says so as a failed condition,
   not a crash, in `systemctl status`.
-- **Packages the profile adds** (its own `software.bundles` beyond
-  `desktop-core`, plus `software.packages.add` — resolved by
-  `tools/render_manifest.py` into `resolved["packages"]["appliance"]` and
-  carried into the chroot as `synos_appliance_packages`, right next to
-  `synos_profile`): `synos.workstation.live_service_gating` (run by
-  `customize_chroot.yml`, next to `container_services`) reads every
-  `.service` and `.socket` unit those packages actually shipped (`dpkg -L`)
-  and drops the same `ConditionKernelCommandLine=!rd.synos.live` into a
-  `/etc/systemd/system/<unit>.d/` override for each — gating the `.socket`
-  too, where one exists (Cockpit's `web-admin` bundle group is exactly this
-  shape: a `.socket` that would otherwise sit listening on 9090 whether or
-  not its `.service` ever starts), so nothing is left even accepting a
-  connection it can never answer. The boundary is derived from the profile's
-  own resolved package list, not a hand-written allow-list: `desktop-core`
-  (the base/desktop bundle every profile inherits — NetworkManager, the
-  display manager, the desktop itself, hardening/logging tools) is
-  subtracted out, so those units are never touched and keep running in both
-  sessions; nothing outside `PROFILE_INSTALL_PACKAGES` (the base OS, the
-  installer, SynOS's own `synos-*` packages) is in scope at all, because it
-  never passes through the profile/bundle machinery to begin with.
+- **Packages the appliance itself adds** (`software.packages.add` —
+  resolved by `tools/render_manifest.py` into
+  `resolved["packages"]["appliance"]` and carried into the chroot as
+  `synos_appliance_packages`, right next to `synos_profile`):
+  `synos.workstation.live_service_gating` (run by `customize_chroot.yml`,
+  next to `container_services`) reads every `.service` and `.socket` unit
+  those packages actually shipped (`dpkg -L`) and drops the same
+  `ConditionKernelCommandLine=!rd.synos.live` into a
+  `/etc/systemd/system/<unit>.d/` override for each. `.socket` is gated the
+  same way as `.service`, defensively, for a unit that would otherwise sit
+  listening whether or not its backend ever starts.
+
+  This is deliberately *not* "everything the profile resolves to minus the
+  desktop group": no group in `profiles/bundles.yml` ships a server —
+  `printing` resolves to `cups`, `containers` to `podman`, both workstation
+  conveniences a person trying the live desktop should keep, not appliance
+  services — so gating "every package beyond desktop-core" would have
+  suppressed `cups` for anyone whose profile happens to add printing.
+  `software.packages.add` is the one place an appliance profile names its
+  *own* real daemons (`kubernetes-server`'s `containerd`/`runc`, this
+  engine's own `openssh-server` when a profile turns SSH on), across the
+  whole `extends` chain (`deep_merge` concatenates `add` lists, so a
+  bundle-catalog leaf's own additions already carry every parent's).
+  Gating a package that ships no unit at all (an inherited add like `git`
+  or `python3-venv`) is already a no-op — `dpkg -L` finds nothing to drop a
+  Condition onto — so nothing here needs a hand-written package list to
+  keep in step by hand; resist "optimizing" that list back in.
+
   Enablement is untouched either way — dpkg already enabled these units by
   policy when the package installed — so an installed system needs nothing
   extra done to it at install time; only the live boot's own attempt to

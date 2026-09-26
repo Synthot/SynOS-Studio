@@ -753,20 +753,26 @@ def render(manifest: dict, base: dict, profile: dict, chain: list[str], regions:
     remove_packages, _ = resolve_packages(remove, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"],
                                           refuse_unavailable=False, suite=suite, lang_pkg_map=lang_pkg_map)
     install_packages = [p for p in install_packages if p not in remove_packages]
-    # "Which of this profile's own packages are not just the base/desktop
-    # group" (docs/ARCHITECTURE.md, "Live session vs. installed system"): the
-    # concrete set desktop-core alone resolves to, subtracted from what the
-    # profile as a whole resolves to. What is left is what an appliance
-    # brought in — this profile's own bundles beyond desktop-core, plus
-    # software.packages.add — the boundary
-    # synos.workstation.live_service_gating (run by customize_chroot.yml)
-    # uses to decide which systemd units a live boot must never start
-    # (rd.synos.live=1 is on the kernel command line of every live boot),
-    # without a hand-written package list to keep in step by hand.
-    desktop_group_packages, _ = resolve_packages(bundles.get("desktop-core", []), pkg_map, arch, lang_codes,
-                                                 base["BASE_ID"], manifest["profile"], suite=suite,
-                                                 lang_pkg_map=lang_pkg_map, lang_gaps=[])
-    appliance_packages = [p for p in install_packages if p not in set(desktop_group_packages)]
+    # What an appliance itself asked for, as opposed to a curated group a
+    # workstation profile happens to carry (docs/ARCHITECTURE.md, "Live
+    # session vs. installed system"). No group in profiles/bundles.yml ships
+    # a server — printing resolves to cups, containers to podman, and
+    # neither is an appliance service — so the boundary is software.packages
+    # .add only (resolved the same way as everything else, concrete, across
+    # the whole extends chain: deep_merge concatenates "add" lists, so a
+    # bundle-catalog leaf's own additions already carry its parent's, e.g.
+    # kubernetes-server's containerd/runc alongside server's own
+    # ssh-server). software.services (container_services' quadlet units)
+    # covers the other half of "what an appliance itself asked for" and
+    # carries its own Condition directly in service.container.j2 — this list
+    # is only ever handed to synos.workstation.live_service_gating (run by
+    # customize_chroot.yml), which gates the units the resolved packages
+    # below actually shipped (dpkg -L) and is a safe no-op for one that ships
+    # none (an inherited add like git or python3-venv), so nothing here
+    # needs a hand-written package list to keep in step by hand.
+    appliance_packages, _ = resolve_packages(add_refs, pkg_map, arch, lang_codes, base["BASE_ID"], manifest["profile"],
+                                             suite=suite, lang_pkg_map=lang_pkg_map, lang_gaps=[])
+    appliance_packages = [p for p in appliance_packages if p not in remove_packages]
     installer = profile.get("installer", {}) or {}
     ansible_cfg = profile.get("ansible", {}) or {}
     playbooks = list(ansible_cfg.get("playbooks", []))

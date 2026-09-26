@@ -215,47 +215,71 @@ class UnavailablePackageTests(unittest.TestCase):
 
 class ApplianceLiveGatingTests(unittest.TestCase):
     """resolved["packages"]["appliance"] (docs/ARCHITECTURE.md, "Live session
-    vs. installed system"): what a profile's own bundles beyond desktop-core,
-    plus software.packages.add, resolve to — the boundary
+    vs. installed system"): software.packages.add, resolved concretely
+    across the whole extends chain — the boundary
     synos.workstation.live_service_gating uses to decide which units a live
-    boot (rd.synos.live=1) must never start. Derived from the profile's own
-    data, not a hand-written list, so these tests render a real profile
-    (profiles/developer.yml: bundles [containers, build-tools], packages.add
-    [git, python3-venv], nothing else that would already require Ansible)
-    rather than inventing a fixture."""
+    boot (rd.synos.live=1) must never start. Not a curated group: no group
+    in profiles/bundles.yml ships a server (printing resolves to cups,
+    containers to podman — workstation conveniences, not appliance
+    services), so a profile that only adds those must see them installed
+    but never gated. Derived from the profile's own data, not a
+    hand-written list, so these tests render real profiles
+    (profiles/developer.yml: bundles [containers, build-tools] inherited
+    from workstation's [office, communication, remote-access, printing,
+    vpn], packages.add [git, python3-venv] on top of workstation's own
+    [keepassxc]) rather than inventing a fixture."""
 
-    def _render(self, profile_id: str) -> dict:
+    def _render(self, profile_id: str, base: str = "ubuntu", suite: str = "resolute") -> dict:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "args.sh"
             resolved = Path(directory) / "resolved.json"
             manifest = Path(directory) / "m.yml"
             manifest.write_text(json.dumps({
-                "schema_version": 1, "name": "m", "version": "1.0.0", "base": "ubuntu", "suite": "resolute",
+                "schema_version": 1, "name": "m", "version": "1.0.0", "base": base, "suite": suite,
                 "arch": "amd64", "profile": profile_id, "regions": ["us"], "brand": "synos",
             }), encoding="utf-8")
             result = _run("--manifest", str(manifest), "--output", str(output), "--resolved", str(resolved))
             self.assertEqual(0, result.returncode, result.stderr)
             return json.loads(resolved.read_text(encoding="utf-8"))
 
-    def test_appliance_packages_excludes_desktop_core(self) -> None:
+    def test_appliance_packages_excludes_curated_groups_like_printing_and_containers(self) -> None:
         resolved = self._render("developer")
         appliance = set(resolved["packages"]["appliance"])
         install = set(resolved["packages"]["install"])
-        # desktop-core's own hardening role (bases/*/packages.map) resolves to
-        # auditd on both bases; developer never asked for it itself, so it must
-        # be in what gets installed (every profile inherits desktop-core) but
-        # never in what live_service_gating is told to gate.
-        self.assertIn("auditd", install)
-        self.assertNotIn("auditd", appliance)
+        # printing (inherited from workstation) resolves to cups; containers
+        # (developer's own bundle) resolves to podman. Both must be
+        # installed — every one of developer's bundles genuinely runs — but
+        # neither is an appliance service, so live_service_gating must never
+        # be told to gate them: someone trying the live desktop keeps
+        # printing.
+        self.assertIn("cups", install)
+        self.assertNotIn("cups", appliance)
+        self.assertIn("podman", install)
+        self.assertNotIn("podman", appliance)
 
-    def test_appliance_packages_includes_the_profiles_own_bundles_and_packages_add(self) -> None:
+    def test_appliance_packages_is_exactly_packages_add_across_the_whole_chain(self) -> None:
         resolved = self._render("developer")
         appliance = set(resolved["packages"]["appliance"])
-        # containers (a bundle developer adds beyond desktop-core) and
-        # software.packages.add (git, python3-venv) must both be in scope.
-        self.assertIn("podman", appliance)
-        self.assertIn("git", appliance)
-        self.assertIn("python3-venv", appliance)
+        # git, python3-venv: developer's own software.packages.add.
+        # keepassxc: workstation's (developer's parent) own add — deep_merge
+        # concatenates "add" lists across extends, so this must still show
+        # up without developer repeating it.
+        self.assertEqual({"git", "python3-venv", "keepassxc"}, appliance)
+
+    def test_kubernetes_appliance_packages_survive_the_narrowing(self) -> None:
+        """bundle-catalog/kubernetes-server: software.packages.add:
+        [containerd, runc] on top of server's own [ssh-server] — real
+        daemons a package installs and dpkg enables by policy, exactly what
+        this mechanism exists to keep out of the live session. Copied into
+        profiles/ for the duration of this test the way tools/synos bundle
+        apply would place it in a real build, and removed after."""
+        target = ROOT / "profiles" / "kubernetes-server.yml"
+        self.addCleanup(target.unlink, missing_ok=True)
+        target.write_text((ROOT / "bundle-catalog/kubernetes-server/profiles/kubernetes-server.yml").read_text(encoding="utf-8"),
+                          encoding="utf-8")
+        resolved = self._render("kubernetes-server", suite="noble")
+        appliance = set(resolved["packages"]["appliance"])
+        self.assertEqual({"containerd", "runc", "openssh-server"}, appliance)
 
     def test_ansible_is_required_for_appliance_packages_alone(self) -> None:
         """profiles/developer.yml triggers none of ansible_required's other
@@ -278,6 +302,28 @@ class ApplianceLiveGatingTests(unittest.TestCase):
             text = output.read_text(encoding="utf-8")
             self.assertIn('export ANSIBLE_CHROOT_REQUIRED="true"', text)
 
+    def test_ansible_is_not_required_for_a_profile_with_no_add_and_no_services(self) -> None:
+        """profiles/minimal.yml: bundles: [desktop-core] only, no
+        packages.add, no policy, no compliance, no open_ports, no
+        software.services, no hardware.gpu, no software.files — the
+        narrowing must restore this to False (its behavior before this
+        mechanism existed) rather than newly requiring Ansible for every
+        profile just because it now has *some* concrete install list."""
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "args.sh"
+            resolved_path = Path(directory) / "resolved.json"
+            manifest = Path(directory) / "m.yml"
+            manifest.write_text(json.dumps({
+                "schema_version": 1, "name": "m", "version": "1.0.0", "base": "ubuntu", "suite": "resolute",
+                "arch": "amd64", "profile": "minimal", "regions": ["us"], "brand": "synos",
+            }), encoding="utf-8")
+            result = _run("--manifest", str(manifest), "--output", str(output), "--resolved", str(resolved_path))
+            self.assertEqual(0, result.returncode, result.stderr)
+            resolved = json.loads(resolved_path.read_text(encoding="utf-8"))
+            self.assertEqual([], resolved["packages"]["appliance"])
+            text = output.read_text(encoding="utf-8")
+            self.assertIn('export ANSIBLE_CHROOT_REQUIRED="false"', text)
+
     def test_ansible_vars_json_carries_the_appliance_package_list(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "args.sh"
@@ -292,7 +338,8 @@ class ApplianceLiveGatingTests(unittest.TestCase):
             ansible_vars = json.loads((resolved_path.with_name("ansible-vars.json")).read_text(encoding="utf-8"))
             self.assertIn("synos_appliance_packages", ansible_vars)
             self.assertIn("git", ansible_vars["synos_appliance_packages"])
-            self.assertNotIn("auditd", ansible_vars["synos_appliance_packages"])
+            self.assertNotIn("podman", ansible_vars["synos_appliance_packages"])
+            self.assertNotIn("cups", ansible_vars["synos_appliance_packages"])
 
 
 class LanguagePackageMapTests(unittest.TestCase):
