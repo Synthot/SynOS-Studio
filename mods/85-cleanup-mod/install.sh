@@ -45,29 +45,29 @@ print_ok "Cleaning up apt lists..."
 find /var/lib/apt/lists -mindepth 1 -maxdepth 1 ! -name 'lock' ! -name 'partial' -delete 2>/dev/null || true
 judge "Clean up apt lists"
 
-# Clean up log files
-print_ok "Cleaning up log files..."
-find /var/log -mindepth 1 -delete 2>/dev/null || true
-judge "Clean up log files"
-
-# auditd (hardening group, bases/*/packages.map -- installed on every base,
-# every profile, as part of desktop-core's "hardening baseline (always on)")
-# ships /var/log/audit as a package-owned directory (dpkg -L auditd lists it
-# alongside /var/log itself), created once by its postinst -- not via a
-# tmpfiles.d entry, and not recreated by auditd itself at every start. The
-# blanket log wipe above deletes it along with everything else under
-# /var/log, and since dpkg never re-runs a package's postinst on a system
-# that already has it "installed", nothing put it back: auditd then fails
+# Clean up log files -- contents only, never the directories. Plenty of
+# packages ship or create their own directory under /var/log (dpkg -L
+# <pkg> lists it as a path the package owns), with its own ownership and
+# mode, created once by a maintainer script -- not recreated at every
+# start, and never by dpkg again once the package is already "installed".
+# auditd is the one this build was actually caught by: deleting
+# /var/log/audit here left the daemon with nowhere to write, so it failed
 # every boot, live and installed, with "Could not open dir /var/log/audit"
-# (exit 6/NOTCONFIGURED), retries five times, hits systemd's start-limit,
-# and stays failed forever. Recreate it here with the exact mode/group the
-# real Debian trixie auditd package itself sets (verified against the
-# upstream .deb: 0750 root:adm -- adm matching auditd.conf's own
-# `log_group = adm`), so the daemon has somewhere to write from the very
-# first boot, on both sides of the live/installed line.
-print_ok "Restoring auditd's own log directory..."
-install -d -m 0750 -o root -g adm /var/log/audit
-judge "Restore auditd's own log directory"
+# (exit 6/NOTCONFIGURED), retried five times, hit systemd's start-limit,
+# and stayed failed forever -- but it is not the only one. nginx-common
+# ships ./var/log/nginx/ the same way; cups, samba and plenty of the rest
+# of the catalog do too. Deleting the directory itself (the old
+# `-mindepth 1 -delete`, confirmed against a real tree to remove every
+# such directory along with its mode and ownership) breaks all of them
+# identically, silently, until whichever daemon happens to need that
+# directory tries to start. `-type f` clears every log file -- the actual
+# build-time content this step exists to drop -- while leaving every
+# package-created directory, its mode and its ownership exactly as the
+# package's own maintainer script set them, so nothing here needs to know
+# which packages care or special-case any one of them.
+print_ok "Cleaning up log files..."
+find /var/log -type f -delete 2>/dev/null || true
+judge "Clean up log files"
 
 # Any package apt left in dpkg's "rc" state (removed, but its config data
 # was kept) is dead weight in the shipped image: nothing uses it, but it
