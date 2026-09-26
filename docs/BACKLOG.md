@@ -60,6 +60,35 @@ engine, never captivity (a company leaves with its bundle and builds alone).
   region override arguments are new code that this suite is meant to prove.
 - **Boot an AI workstation image on real GPU hardware**: NVIDIA first, then
   AMD; check Ollama answers on 11434 and the CDI generation at boot.
+- **No network in the live session on real hardware (reported against a
+  built yocto-builder image; the kernel, its modules, Wi-Fi/Ethernet
+  firmware and network-manager were all confirmed present in that build's
+  package lock).** Booting that exact ISO in QEMU with a virtio NIC found
+  the live session's own configuration correct and working: NetworkManager
+  is enabled and active, netplan's `01-network-manager-all.yaml`
+  (`mods/83-network-manager-patch`) hands it the device with no
+  `unmanaged-devices` side effect, nothing competes with it
+  (`systemd-networkd` present from systemd's own stock preset but
+  confirmed inactive; no `ifupdown`/`connman`/`/etc/network/interfaces`
+  shipped), ufw runs with `default-deny-inbound` (`base_hardening`) but its
+  stock, unmodified `before.rules` still passes DHCP client traffic, and
+  GNOME Shell has its own NetworkManager integration
+  (`gir1.2-nm-1.0`, via `synos-installer-beta`) independent of the absent
+  `network-manager-gnome` tray applet. The device reached `connected`,
+  got a real DHCP lease and a default route, and systemd reached
+  `network-online.target` — all proven by `tools/smoke_test.py`'s new
+  `check_network` (see `docs/BUILD_MATRIX.md`), which now runs on every
+  smoke-tested image specifically so a future regression here cannot ship
+  unnoticed again. What this does **not** and cannot prove: a virtio NIC
+  needs no firmware blob, no vendor driver and no probe delay, and never
+  fails to appear the way a real Wi-Fi or Ethernet adapter can — the
+  reported failure is therefore still open as a real-hardware question
+  (driver binding, firmware loading order, USB enumeration timing on a
+  live-boot medium, or a WPA network that a live session cannot join
+  without someone selecting it in GNOME's own network menu). Needs an
+  actual boot on the reporter's hardware with `journalctl -b` and
+  `nmcli device status` compared against this finding before assuming a
+  driver-level fix is required at all.
 - **Boot a server image**: SSH reachable after first boot, Cockpit on 9090,
   firewall openings applied.
 - **macOS launcher** on an Intel and an Apple Silicon Mac.

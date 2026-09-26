@@ -180,6 +180,90 @@ class DefaultTargetTests(unittest.TestCase):
         self.assertFalse(result["passed"])
 
 
+class NetworkCheckParsingTests(unittest.TestCase):
+    def test_strip_ansi_removes_color_codes(self) -> None:
+        colored = "\x1b[32mens3\x1b[0m:\x1b[32methernet\x1b[0m:\x1b[32mconnected\x1b[0m"
+        self.assertEqual("ens3:ethernet:connected", smoke_test.strip_ansi(colored))
+
+    def test_parse_connected_device_skips_loopback_and_picks_connected(self) -> None:
+        output = "lo:loopback:connected (externally)\nens3:ethernet:connected\n"
+        self.assertEqual("ens3", smoke_test.parse_connected_device(output))
+
+    def test_parse_connected_device_ignores_unmanaged_or_unavailable(self) -> None:
+        output = "lo:loopback:unmanaged\nwlan0:wifi:unavailable\n"
+        self.assertIsNone(smoke_test.parse_connected_device(output))
+
+    def test_parse_connected_device_handles_empty_output(self) -> None:
+        self.assertIsNone(smoke_test.parse_connected_device(""))
+
+    def test_parse_ipv4_global_address_finds_the_address(self) -> None:
+        output = "2: ens3    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic ens3"
+        self.assertEqual("10.0.2.15", smoke_test.parse_ipv4_global_address(output))
+
+    def test_parse_ipv4_global_address_missing(self) -> None:
+        self.assertIsNone(smoke_test.parse_ipv4_global_address(""))
+
+    def test_parse_default_route_finds_the_default_line(self) -> None:
+        output = ("default via 10.0.2.2 dev ens3 proto dhcp src 10.0.2.15 metric 100\n"
+                  "10.0.2.0/24 dev ens3 proto kernel scope link src 10.0.2.15 metric 100")
+        self.assertEqual("default via 10.0.2.2 dev ens3 proto dhcp src 10.0.2.15 metric 100",
+                          smoke_test.parse_default_route(output))
+
+    def test_parse_default_route_missing(self) -> None:
+        output = "10.0.2.0/24 dev ens3 proto kernel scope link src 10.0.2.15 metric 100"
+        self.assertIsNone(smoke_test.parse_default_route(output))
+
+
+class NetworkCheckTests(unittest.TestCase):
+    """check_network end to end against a FakeSession -- the same pattern
+    check_open_ports/check_service_unit/check_shipped_file use above."""
+
+    def test_passes_with_a_managed_device_an_address_and_a_route(self) -> None:
+        session = FakeSession({
+            "nmcli -t -f DEVICE,TYPE,STATE device": (
+                "ens3:ethernet:connected\nlo:loopback:connected (externally)\n", 0),
+            "ip -o -4 addr show dev ens3": (
+                "2: ens3    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic ens3", 0),
+            "ip route show default": ("default via 10.0.2.2 dev ens3 proto dhcp src 10.0.2.15 metric 100\n", 0),
+        })
+        result = smoke_test.check_network(session, timeout=1, poll_interval=0.01)
+        self.assertTrue(result["passed"])
+        self.assertEqual("ens3", result["device"])
+        self.assertEqual("10.0.2.15", result["address"])
+        self.assertIn("default via 10.0.2.2", result["route"])
+
+    def test_fails_at_device_when_nothing_ever_connects(self) -> None:
+        session = FakeSession({
+            "nmcli -t -f DEVICE,TYPE,STATE device": ("lo:loopback:connected (externally)\n", 0),
+        })
+        result = smoke_test.check_network(session, timeout=0.05, poll_interval=0.01)
+        self.assertFalse(result["passed"])
+        self.assertEqual("device", result["lost_at"])
+
+    def test_fails_at_address_when_the_device_never_gets_a_lease(self) -> None:
+        session = FakeSession({
+            "nmcli -t -f DEVICE,TYPE,STATE device": ("ens3:ethernet:connected\n", 0),
+            "ip -o -4 addr show dev ens3": ("", 0),
+        })
+        result = smoke_test.check_network(session, timeout=0.05, poll_interval=0.01)
+        self.assertFalse(result["passed"])
+        self.assertEqual("address", result["lost_at"])
+        self.assertEqual("ens3", result["device"])
+
+    def test_fails_at_route_when_addressed_but_unrouted(self) -> None:
+        session = FakeSession({
+            "nmcli -t -f DEVICE,TYPE,STATE device": ("ens3:ethernet:connected\n", 0),
+            "ip -o -4 addr show dev ens3": (
+                "2: ens3    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic ens3", 0),
+            "ip route show default": ("", 0),
+        })
+        result = smoke_test.check_network(session, timeout=0.05, poll_interval=0.01)
+        self.assertFalse(result["passed"])
+        self.assertEqual("route", result["lost_at"])
+        self.assertEqual("ens3", result["device"])
+        self.assertEqual("10.0.2.15", result["address"])
+
+
 class ProfileResolutionTests(unittest.TestCase):
     """Bug: the expectation for open-ports came from a bundle's own leaf
     profile (which declares no ports of its own, inheriting them from the
