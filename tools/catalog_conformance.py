@@ -56,8 +56,14 @@ Config (YAML; see conformance.example.yml):
     container_root: null       # build only, podman only: SYNOS_CONTAINER_ROOT equivalent; also where free disk is measured
     container_runroot: null    # build only, podman only: SYNOS_CONTAINER_RUNROOT equivalent
     report_url: null           # optional: POST the finished report here
-    upload: null                # build only, optional: send workdir/build-status.json to the deployed site
-                                 # (tools/status_uploader.py; docs/BUILD_MATRIX.md's "Publishing the build-status badge")
+    upload: null                # build only, optional: one destination (a mapping) or several, in order (a list) --
+                                 # send workdir/build-status.json to wherever it needs to be served from
+                                 # (tools/status_uploader.py; docs/BUILD_MATRIX.md's "Publishing the build-status
+                                 # badge"). A `protocol: local` destination (a plain file copy, no network at all) is
+                                 # treated as a rehearsal: published, then fetched back from site_url + this same
+                                 # file's own path under it and checked to actually be valid *as served*, before any
+                                 # other ("production") destination in the list is even attempted -- a rehearsal
+                                 # failure is reported and none of them is touched.
     cleanup: true                # build only: free a successful entry's heavy directories as it finishes; set
                                  # false (or --no-cleanup) to keep everything for a debugging run
 
@@ -103,6 +109,8 @@ DEFAULT_TIMEOUT_MINUTES = 90
 DEFAULT_MAX_BUILDS = 5
 LOG_TAIL_LINES = 60
 HTTP_TIMEOUT = 30
+STATUS_FILENAME = "build-status.json"  # written under config.workdir; also the path the upload rehearsal's own
+                                         # fetch-back check reads back, under site_url + "/data/"
 
 STAGE_PAGE, STAGE_LAUNCHER, STAGE_ENGINE, STAGE_SMOKE = "page", "launcher", "engine", "smoke"
 
@@ -164,7 +172,8 @@ class Config:
     container_root: str | None = None      # podman only: SYNOS_CONTAINER_ROOT equivalent, also where free disk is measured
     container_runroot: str | None = None   # podman only: SYNOS_CONTAINER_RUNROOT equivalent
     report_url: str | None = None
-    upload: dict | None = None             # build only, optional: see tools/status_uploader.py; never committed
+    upload: dict | list | None = None      # build only, optional: one mapping or a list of them; see
+                                             # tools/status_uploader.py:parse_upload_destinations; never committed
     cleanup: bool = True                   # build only: free a successful entry's heavy directories as it finishes
                                              # (tools/entry_cleanup.py); set false (or --no-cleanup) to keep everything
     cover_bases: list[str] | None = None    # build only, optional: attempt every selected entry once per base
@@ -902,6 +911,7 @@ def reclaim_container_storage(config: Config, *, jobs: int, targets: dict,
 def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, jobs: int = 1,
              only: list[str] | None = None, browser_factory=None, upload_config=None,
              dry_run_upload: bool = False, upload_transport=None, upload_sleeper=None,
+             upload_verify_url: str | None = None, upload_verify_fetcher=None,
              container_engine=None, volume_remover=None) -> dict:
     # Item 90: refuse the whole run, not only cleanup, when workdir looks
     # like a filesystem root, a home directory, or a source checkout —
@@ -974,11 +984,24 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
     # the whole run finishes. The uploader is entirely optional: no
     # `upload:` section in the config means `changer.enabled` is False and
     # `maybe_upload` is a no-op.
-    status_path = config.workdir / "build-status.json"
-    changer = status_uploader.ChangeUploader(upload_config, dry_run=dry_run_upload,
-                                             transport=upload_transport, sleeper=upload_sleeper)
+    status_path = config.workdir / STATUS_FILENAME
+    # upload_config accepts either shape run_build has ever taken: a single
+    # UploadConfig (every existing caller/test) or a list of them
+    # (status_uploader.parse_upload_destinations' own return, several
+    # destinations in order) -- normalized to a list once, here, so
+    # FanOutUploader (below) is the only thing that ever has to reason
+    # about "one or several".
+    if upload_config is None:
+        upload_destinations: list = []
+    elif isinstance(upload_config, list):
+        upload_destinations = upload_config
+    else:
+        upload_destinations = [upload_config]
+    uploader = status_uploader.FanOutUploader(
+        upload_destinations, dry_run=dry_run_upload, transport=upload_transport, sleeper=upload_sleeper,
+        verify_url=upload_verify_url, verify_fetcher=upload_verify_fetcher)
     status_updater = build_status.StatusUpdater(
-        status_path, on_change=(changer.maybe_upload if changer.enabled else None),
+        status_path, on_change=(uploader.maybe_upload if uploader.enabled else None),
         own_paths=[str(config.workdir), str(Path.home())], hostname=socket.gethostname())
 
     # Item 93: an (entry, base) a previous run left "testing" (killed
@@ -1065,10 +1088,17 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
     # The end-of-run upload item 73 asks for regardless of whether the
     # last entry changed state — the same file every per-entry change
     # already sent, so this is a low-cost final sync, not a second file.
-    if changer.enabled:
-        changer.maybe_upload(status_path)
-    if changer.warnings:
-        report["upload_warnings"] = list(changer.warnings)
+    if uploader.enabled:
+        uploader.maybe_upload(status_path)
+    if uploader.outcomes:
+        # Full per-destination detail (item 197: what a partial failure
+        # reports) — every destination's own name, protocol, ok/skipped,
+        # and detail text, in the order FanOutUploader attempted (or
+        # skipped) them; upload_warnings below stays the flat list of
+        # strings existing callers already read.
+        report["upload_results"] = [dataclasses.asdict(o) for o in uploader.outcomes]
+    if uploader.warnings:
+        report["upload_warnings"] = list(uploader.warnings)
 
     return report
 
@@ -1320,13 +1350,23 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
                 _eprint(f"error: {problem}")
             return 2
         try:
-            upload_config = status_uploader.parse_upload_config(config.upload)
+            upload_destinations = status_uploader.parse_upload_destinations(config.upload)
         except status_uploader.UploadConfigError as exc:
             _eprint(f"error: {exc}")
             return 2
+        # The rehearsal's own fetch-back check (item 197) reuses this run's
+        # own site_url -- no second URL to keep in sync by hand -- at the
+        # same "/data/<file>" path the Studio page's own build-status badge
+        # is served from (docs/BUILD_MATRIX.md, "Publishing the build-status
+        # badge"; the installer derives catalog_url from site_url the same
+        # way). Only meaningful when at least one destination is a local
+        # rehearsal copy; FanOutUploader itself is the thing that decides
+        # whether to use it at all.
+        upload_verify_url = f"{config.site_url.rstrip('/')}/data/{STATUS_FILENAME}" if config.site_url else None
         try:
             report = run_build(config, catalog=catalog, max_builds=max_builds, jobs=jobs, only=only,
-                               upload_config=upload_config, dry_run_upload=dry_run_upload)
+                               upload_config=upload_destinations, dry_run_upload=dry_run_upload,
+                               upload_verify_url=upload_verify_url)
         except ConformanceError as exc:
             _eprint(f"error: {exc}")
             return 2

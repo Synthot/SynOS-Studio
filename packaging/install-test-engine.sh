@@ -1,14 +1,31 @@
 #!/usr/bin/env bash
-# packaging/install-test-engine.sh — install and configure the catalog
-# conformance test service (packaging/catalog-conformance/, driven by
-# tools/catalog_conformance.py) on a single machine: checks the machine,
-# installs whatever it is missing, points podman's storage at a disk with
-# room for a build, writes /etc/synos/conformance.yml from answers instead
-# of handing over a template to edit, installs the systemd units with a
-# dedicated user, and then proves the result actually works.
+# packaging/install-test-engine.sh — bootstrap a brand-new machine, or bring
+# an already-bootstrapped one up to date, for the catalog conformance test
+# service (packaging/catalog-conformance/, driven by
+# tools/catalog_conformance.py) and, optionally, its private monitoring
+# console behind an authenticated nginx site: checks the machine, installs
+# whatever it is missing (including cloning or fetching the engine checkout
+# itself), points podman's storage at a disk with room for a build, writes
+# /etc/synos/conformance.yml from answers instead of handing over a
+# template to edit, installs the systemd units with a dedicated user, and
+# then proves the result actually works.
 #
-# The REQUIREMENTS list below (podman, QEMU, xorriso, tesseract, Pillow,
-# PyYAML and a headless browser) is also what profiles/bundles.yml's
+# Safe to run again and again, on purpose: create what is missing, update
+# what is already there, never destroy anything. An existing checkout is
+# fetched and fast-forwarded, never reset or force-checked-out, and is
+# refused outright — with the reason — if it has uncommitted changes, a
+# different remote, or an unexpected branch, rather than silently forced
+# into shape. An existing configuration that already matches these answers
+# is left alone; one that differs is reported and left alone too, even
+# with -y/--yes, unless --overwrite-config says otherwise — a config that
+# may hold real, hand-filled-in credentials is the one thing this script
+# must never clobber on a second run. Every run ends with a summary of
+# what it created, updated, left alone, and skipped, plus whatever the
+# operator still has to do by hand — --dry-run shows all of it and touches
+# nothing.
+#
+# The REQUIREMENTS list below (git, podman, QEMU, xorriso, tesseract,
+# Pillow, PyYAML and a headless browser) is also what profiles/bundles.yml's
 # "test-engine" group ships into a SynOS image itself, for building a
 # machine that runs this service instead of installing it onto one that
 # already exists (docs/BUILD_MATRIX.md, "Installing it as a service"; the
@@ -18,11 +35,23 @@
 # Usage:
 #   packaging/install-test-engine.sh [options]
 #
-# Options:
-#   --engine-root=PATH       checkout this service runs against (default:
-#                             autodetected when this script still lives
-#                             under packaging/ of a checkout; otherwise
-#                             required)
+# Options (the test engine):
+#   --engine-root=PATH       the checkout this service runs against.
+#                             Cloned from --engine-repo at --engine-ref
+#                             when this path does not exist yet (or exists
+#                             empty); fetched and fast-forwarded in place
+#                             (never reset, never force-checked-out) when
+#                             it does. Default: autodetected when this
+#                             script still lives under packaging/ of a
+#                             checkout (then that same checkout is what
+#                             gets updated); otherwise required.
+#   --engine-repo=URL        where to clone --engine-root from, when it
+#                             does not exist yet (default:
+#                             https://github.com/Synthot/SynOS-Studio)
+#   --engine-ref=REF          branch or tag to check out and keep it on
+#                             (default: main; pin a tag for a real
+#                             deployment, leave main for a test rig).
+#                             Report shows the commit before and after.
 #   --site-url=URL           the real Studio page "build" mode drives
 #   --catalog-url=URL        the Studio site's exported catalog JSON
 #                             (default: SITE_URL/data/catalog.json)
@@ -38,6 +67,29 @@
 #                             machine's own disk/memory/CPU numbers)
 #   --config=PATH            where to write the configuration (default:
 #                             /etc/synos/conformance.yml)
+#   --dev-site-root=PATH     a local development copy of the Studio page's
+#                             own document root, already deployed with the
+#                             Studio repository's own deploy.sh (this
+#                             script never deploys it); when given, the
+#                             written config's upload: list gains a
+#                             `protocol: local` rehearsal destination
+#                             copying build-status.json there, and a
+#                             commented-out "production" destination
+#                             template to fill in by hand (never a real
+#                             credential written by this installer). Point
+#                             --site-url at this same development site for
+#                             the rehearsal's fetch-back check to mean
+#                             anything.
+#   --dev-site-owner=USER[:GROUP]  chown that copy to this after writing it
+#                             (optional; matches whatever user nginx runs
+#                             as, e.g. www-data)
+#   --dev-site-mode=MODE     chmod that copy to this after writing it
+#                             (optional, e.g. 0644)
+#   --overwrite-config       replace an existing --config/--monitoring-config
+#                             file that differs from what these answers
+#                             would produce; without it, a differing file is
+#                             reported and left exactly as it is, even with
+#                             -y/--yes
 #   --service-user=NAME      dedicated system user (default: synos-conformance)
 #   --unit-dir=PATH          where systemd unit files go (default:
 #                             /etc/systemd/system)
@@ -45,10 +97,63 @@
 #                             anything; use when packages were installed by
 #                             hand on a distribution this script does not
 #                             recognize
+#
+# Options (the monitoring app — a private, separate repository; entirely
+# optional, and the test engine above behaves identically without any of
+# these given at all):
+#   --monitoring-app=PATH    a checkout of the monitoring app: an existing
+#                             one to use as-is, or, together with
+#                             --monitoring-repo, where to put/keep one
+#                             cloned from it. Neither this nor
+#                             --monitoring-repo given at all: nothing
+#                             monitoring-related happens, silently.
+#   --monitoring-repo=URL    clone/fetch --monitoring-app from here (the
+#                             private repository has no anonymous access,
+#                             so this needs --monitoring-ssh-key too)
+#   --monitoring-ssh-key=PATH  the SSH private key for that clone/fetch;
+#                             used only for that one git subprocess
+#                             (GIT_SSH_COMMAND), never written anywhere,
+#                             never logged, never prompted for
+#   --monitoring-ref=REF     branch or tag to keep --monitoring-app on
+#                             (default: main)
+#   --monitoring-config=PATH   where to write the app's own configuration
+#                             (default: /etc/synos-forge/forge.toml)
+#   --monitoring-service-user=NAME   dedicated system user (default:
+#                             synos-forge)
+#   --monitoring-port=N      the app's own loopback bind port (default:
+#                             8420); it never binds anywhere but 127.0.0.1
+#   --monitoring-nginx-port=N   nginx's own listen port for the additive
+#                             site this adds in front of it (default: 8421)
+#   --monitoring-nginx-location=PATH   the location inside that site's own,
+#                             dedicated server block (default: /)
+#   --monitoring-allow-from=CIDR   let clients in this address range reach
+#                             the site; without it, the site is loopback-
+#                             only (127.0.0.1), same as the app itself
+#   --monitoring-allow-insecure-http   accept serving the site over plain
+#                             HTTP to something other than loopback;
+#                             refused without this (or a certificate)
+#                             because the app has no authentication of its
+#                             own to fall back on
+#   --monitoring-tls-cert=PATH / --monitoring-tls-key=PATH   serve the site
+#                             over TLS with this certificate/key instead
+#   --monitor-auth-file=PATH   an existing htpasswd file for the site's
+#                             HTTP basic auth; without it, one is generated
+#                             and its plaintext credential is printed once,
+#                             to this terminal, and nowhere else — never
+#                             into a file, a log, or the systemd unit
+#   --monitor-auth-user=NAME   the user named in a generated htpasswd file
+#                             (default: admin)
+#
+# Options (either):
 #   -y, --yes                answer yes to every question this script asks
 #   --dry-run                print every action this script would take;
 #                             perform none of them
 #   -h, --help                this text
+#
+# This script never deploys the Studio page itself (development or
+# production) — that stays the Studio repository's own build.py/deploy.sh,
+# named again in this script's own closing summary so the two jobs are
+# never confused.
 #
 # Bash, not POSIX sh: uses arrays, [[ ]]-free but bash-only local/printf -v
 # and process substitution avoided in favor of portable-within-bash
@@ -169,6 +274,7 @@ pkg_manager_for() {
 pkg_name() {  # family generic
     case "$1:$2" in
         debian:python3)  printf 'python3\n' ;;
+        debian:git)      printf 'git\n' ;;
         debian:pyyaml)   printf 'python3-yaml\n' ;;
         debian:podman)   printf 'podman\n' ;;
         debian:qemu)     printf 'qemu-system-x86\n' ;;
@@ -177,6 +283,7 @@ pkg_name() {  # family generic
         debian:pillow)   printf 'python3-pil\n' ;;
         debian:browser)  printf 'chromium\n' ;;
         fedora:python3)  printf 'python3\n' ;;
+        fedora:git)      printf 'git\n' ;;
         fedora:pyyaml)   printf 'python3-pyyaml\n' ;;
         fedora:podman)   printf 'podman\n' ;;
         fedora:qemu)     printf 'qemu-system-x86\n' ;;
@@ -185,6 +292,7 @@ pkg_name() {  # family generic
         fedora:pillow)   printf 'python3-pillow\n' ;;
         fedora:browser)  printf 'chromium\n' ;;
         suse:python3)    printf 'python3\n' ;;
+        suse:git)        printf 'git\n' ;;
         suse:pyyaml)     printf 'python3-PyYAML\n' ;;
         suse:podman)     printf 'podman\n' ;;
         suse:qemu)       printf 'qemu-x86\n' ;;
@@ -193,6 +301,7 @@ pkg_name() {  # family generic
         suse:pillow)     printf 'python3-Pillow\n' ;;
         suse:browser)    printf 'chromium\n' ;;
         arch:python3)    printf 'python\n' ;;
+        arch:git)        printf 'git\n' ;;
         arch:pyyaml)     printf 'python-yaml\n' ;;
         arch:podman)     printf 'podman\n' ;;
         arch:qemu)       printf 'qemu-system-x86_64\n' ;;
@@ -201,6 +310,7 @@ pkg_name() {  # family generic
         arch:pillow)     printf 'python-pillow\n' ;;
         arch:browser)    printf 'chromium\n' ;;
         alpine:python3)  printf 'python3\n' ;;
+        alpine:git)      printf 'git\n' ;;
         alpine:pyyaml)   printf 'py3-yaml\n' ;;
         alpine:podman)   printf 'podman\n' ;;
         alpine:qemu)     printf 'qemu-system-x86_64\n' ;;
@@ -212,11 +322,12 @@ pkg_name() {  # family generic
     esac
 }
 
-REQUIREMENTS='python3 pyyaml podman qemu xorriso tesseract pillow browser'
+REQUIREMENTS='python3 git pyyaml podman qemu xorriso tesseract pillow browser'
 
 requirement_present() {  # generic
     case "$1" in
         python3)  command -v "$PYTHON_BIN" >/dev/null 2>&1 ;;
+        git)      command -v git >/dev/null 2>&1 ;;
         pyyaml)   "$PYTHON_BIN" -c 'import yaml' >/dev/null 2>&1 ;;
         podman)   command -v podman >/dev/null 2>&1 || command -v docker >/dev/null 2>&1 ;;
         qemu)     command -v qemu-system-x86_64 >/dev/null 2>&1 ;;
@@ -232,6 +343,7 @@ requirement_present() {  # generic
 requirement_description() {  # generic
     case "$1" in
         python3)  printf 'runs every tool this service uses\n' ;;
+        git)      printf 'clones/updates the engine checkout itself, on a machine that does not have one yet\n' ;;
         pyyaml)   printf 'reads conformance.yml and bundle manifests (tools/catalog_conformance.py)\n' ;;
         podman)   printf 'the container runtime each catalog entry actually builds in (tools/bundle_launcher.sh)\n' ;;
         qemu)     printf 'boots the built ISO for the smoke test (tools/smoke_test.py)\n' ;;
@@ -288,6 +400,105 @@ install_requirements() {  # family
         fail "still missing after the installation attempt: $(printf '%s ' $missing)" 4
     fi
     say "installed."
+}
+
+# -------------------------------------------------------------- git checkouts
+# Bootstraps a fresh machine (clone) and keeps an already-bootstrapped one
+# up to date (fetch + fast-forward) the same safe way every time: never a
+# `git reset --hard`, never a `git checkout -f`, never anything that could
+# discard work sitting in a checkout by hand. A checkout that is not safe
+# to touch — uncommitted changes, a different remote than asked for, a
+# branch other than the one asked for — is refused outright, with exactly
+# which of the three and why, never forced into shape.
+git_rev() { git -C "$1" rev-parse --short HEAD 2>/dev/null; }
+git_branch() { git -C "$1" symbolic-ref -q --short HEAD 2>/dev/null; }  # empty when detached (e.g. a tag)
+git_is_clean() { [ -z "$(git -C "$1" status --porcelain 2>/dev/null)" ]; }
+git_remote_url() { git -C "$1" remote get-url "${2:-origin}" 2>/dev/null; }
+
+# sync_git_checkout root url ref [ssh_key] label
+#
+# Prints, on stdout, exactly one of: created | updated | unchanged |
+# left-alone (a real, non-empty directory that is not a git checkout at
+# all — used exactly as found, never touched) | would-create | would-update
+# (both --dry-run only) -- and only that, so a caller can capture it with
+# $(...) the same way select_storage_path's own callers do. Every
+# diagnostic line (the before/after commit, what it is doing) goes to
+# stderr instead, for the same reason select_storage_path's own numbers
+# do: a $(...) capture swallows every line of stdout, not only the last
+# one. Returns nonzero, via `fail` (so it also exits, same as every other
+# hard prerequisite in this script), on every refusal.
+sync_git_checkout() {  # root url ref ssh_key(optional) label
+    local root=$1 url=$2 ref=$3 ssh_key=${4:-} label=$5
+    local -a git_env=()
+    if [ -n "$ssh_key" ]; then
+        git_env=(env "GIT_SSH_COMMAND=ssh -i $ssh_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new")
+    fi
+
+    if [ ! -e "$root" ] || { [ -d "$root" ] && [ -z "$(ls -A "$root" 2>/dev/null)" ]; }; then
+        printf '%s: not present yet at %s\n' "$label" "$root" >&2
+        if [ "$DRY_RUN" = "1" ]; then
+            printf '  [dry-run] would clone %s (%s) into %s\n' "$url" "$ref" "$root" >&2
+            printf 'would-create\n'
+            return 0
+        fi
+        mkdir -p "$(dirname "$root")" 2>/dev/null
+        "${git_env[@]}" git clone --branch "$ref" --quiet "$url" "$root" \
+            || fail "$label: could not clone $url ($ref) into $root" 7
+        printf '  cloned %s (%s) -> %s (%s)\n' "$url" "$ref" "$(git_rev "$root")" "$(git_branch "$root")" >&2
+        printf 'created\n'
+        return 0
+    fi
+
+    # git -C ... rev-parse, not `[ -d "$root/.git" ]`: a git *worktree*'s
+    # .git is a plain file (a gitdir pointer), not a directory, and is
+    # every bit as real a checkout to fetch/fast-forward as a plain clone.
+    if ! git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        printf '%s: %s already exists and is not a git checkout; using it exactly as it is (managing it is up to you -- pass a matching --*-repo only when you want this script to keep it updated).\n' "$label" "$root" >&2
+        printf 'left-alone\n'
+        return 0
+    fi
+
+    local before_rev before_branch
+    before_rev=$(git_rev "$root")
+    before_branch=$(git_branch "$root")
+    printf '%s: %s, currently %s (%s)\n' "$label" "$root" "${before_rev:-unknown}" "${before_branch:-detached}" >&2
+
+    local actual_url
+    actual_url=$(git_remote_url "$root")
+    if [ -n "$actual_url" ] && [ "$actual_url" != "$url" ]; then
+        fail "$label: $root's remote 'origin' is $actual_url, not $url -- refusing to touch a checkout that may be pointed somewhere deliberately. Pass a matching URL, or point this script at a different path." 7
+    fi
+
+    git_is_clean "$root" || fail "$label: $root has uncommitted changes -- refusing to touch it. Commit or discard them yourself (never a job for this script), then rerun." 7
+
+    if [ -n "$before_branch" ] && [ "$before_branch" != "$ref" ]; then
+        fail "$label: $root is on branch '$before_branch', not '$ref' -- refusing to switch it for you. Check out $ref yourself, or match it with the --*-ref flag, then rerun." 7
+    fi
+
+    if [ "$DRY_RUN" = "1" ]; then
+        printf '  [dry-run] would fetch %s and fast-forward to %s\n' "$url" "$ref" >&2
+        printf 'would-update\n'
+        return 0
+    fi
+
+    "${git_env[@]}" git -C "$root" fetch --quiet --tags origin "$ref" \
+        || fail "$label: could not fetch $ref from $url" 7
+    if [ -n "$before_branch" ]; then
+        "${git_env[@]}" git -C "$root" merge --ff-only --quiet "origin/$ref" \
+            || fail "$label: $root and origin/$ref have diverged -- refusing to force it. Resolve this by hand, then rerun." 7
+    else
+        git -C "$root" checkout --quiet "$ref" 2>/dev/null \
+            || fail "$label: could not check out $ref in $root" 7
+    fi
+    local after_rev
+    after_rev=$(git_rev "$root")
+    if [ "$after_rev" = "$before_rev" ]; then
+        printf '  already up to date at %s\n' "$after_rev" >&2
+        printf 'unchanged\n'
+    else
+        printf '  updated %s -> %s\n' "$before_rev" "$after_rev" >&2
+        printf 'updated\n'
+    fi
 }
 
 # --------------------------------------------------------------- the runtime
@@ -566,8 +777,9 @@ yaml_scalar() {  # value -- double-quoted YAML scalar, quotes/backslashes escape
 # person to edit blind, and never with a credential in it: the upload
 # section is always fully commented out, naming where the real secret goes
 # and what permissions it needs, never a value read from anywhere.
-write_config() {  # catalog_url site_url workdir container_root max_builds jobs service_user
+write_config() {  # catalog_url site_url workdir container_root max_builds jobs service_user [dev_site_root] [dev_site_owner] [dev_site_mode]
     local catalog_url=$1 site_url=$2 workdir=$3 container_root=$4 max_builds=$5 jobs=$6 service_user=$7
+    local dev_site_root=${8:-} dev_site_owner=${9:-} dev_site_mode=${10:-}
     printf '# Written by packaging/install-test-engine.sh from the answers given at install\n'
     printf '# time. Safe to edit by hand; rerunning the installer only touches the keys it\n'
     printf '# itself asks about.\n\n'
@@ -595,42 +807,121 @@ write_config() {  # catalog_url site_url workdir container_root max_builds jobs 
     printf 'report_url: null\n'
     printf 'cleanup: true\n'
     printf '\n'
-    printf '# Upload credentials are NEVER written by this installer. To enable uploading\n'
-    printf '# the build-status badge, uncomment below and fill in the destination, then put\n'
-    printf '# the actual secret (a password, or better, an unencrypted ssh private key) in\n'
-    printf '# its own file, owned by %s, mode 600 (chmod 600, chown %s) — never in this file.\n' "$service_user" "$service_user"
-    printf '#\n'
-    printf '# upload:\n'
-    printf '#   protocol: sftp\n'
-    printf '#   host: <upload host>\n'
-    printf '#   port: 22\n'
-    printf '#   username: <upload username>\n'
-    printf '#   key_path: /etc/synos/conformance-upload-key   # mode 600, owned by %s; the secret goes ONLY here\n' "$service_user"
-    printf '#   remote_path: <remote path to build-status.json>\n'
-    printf '#   allow_insecure_ftp: false\n'
-    printf '#   retries: 3\n'
-    printf '#   retry_backoff_s: 5\n'
+    if [ -n "$dev_site_root" ]; then
+        printf '# Rehearsal-then-production upload list (tools/status_uploader.py,\n'
+        printf '# docs/BUILD_MATRIX.md'"'"'s "Publishing the build-status badge"): "dev-site" below is a\n'
+        printf '# plain file copy to this machine'"'"'s own development Studio site -- not a network\n'
+        printf '# call at all -- published, then fetched back from site_url above and checked to\n'
+        printf '# actually be valid *as served* before anything further down this list is even\n'
+        printf '# attempted. A rehearsal failure is reported and never touches production.\n'
+        printf '#\n'
+        printf '# Fill in a real "production" destination yourself, outside any checkout, the same\n'
+        printf '# way the commented-out example below shows -- the actual secret (a password, or\n'
+        printf '# better, an unencrypted ssh private key) goes in its own file, owned by %s,\n' "$service_user"
+        printf '# mode 600 -- never in this file, and never written by this installer.\n'
+        printf 'upload:\n'
+        printf '  - name: dev-site\n'
+        printf '    protocol: local\n'
+        printf '    remote_path: %s\n' "$(yaml_scalar "${dev_site_root%/}/data/build-status.json")"
+        if [ -n "$dev_site_owner" ]; then
+            printf '    owner: %s\n' "$(yaml_scalar "$dev_site_owner")"
+        fi
+        if [ -n "$dev_site_mode" ]; then
+            printf '    mode: %s\n' "$(yaml_scalar "$dev_site_mode")"
+        fi
+        printf '  # - name: production\n'
+        printf '  #   protocol: sftp\n'
+        printf '  #   host: <upload host>\n'
+        printf '  #   port: 22\n'
+        printf '  #   username: <upload username>\n'
+        printf '  #   key_path: /etc/synos/conformance-upload-key   # mode 600, owned by %s; the secret goes ONLY here\n' "$service_user"
+        printf '  #   remote_path: <remote path to build-status.json>\n'
+        printf '  #   allow_insecure_ftp: false\n'
+        printf '  #   retries: 3\n'
+        printf '  #   retry_backoff_s: 5\n'
+    else
+        printf '# Upload credentials are NEVER written by this installer. To enable uploading\n'
+        printf '# the build-status badge, uncomment below and fill in the destination, then put\n'
+        printf '# the actual secret (a password, or better, an unencrypted ssh private key) in\n'
+        printf '# its own file, owned by %s, mode 600 (chmod 600, chown %s) — never in this file.\n' "$service_user" "$service_user"
+        printf '#\n'
+        printf '# upload:\n'
+        printf '#   protocol: sftp\n'
+        printf '#   host: <upload host>\n'
+        printf '#   port: 22\n'
+        printf '#   username: <upload username>\n'
+        printf '#   key_path: /etc/synos/conformance-upload-key   # mode 600, owned by %s; the secret goes ONLY here\n' "$service_user"
+        printf '#   remote_path: <remote path to build-status.json>\n'
+        printf '#   allow_insecure_ftp: false\n'
+        printf '#   retries: 3\n'
+        printf '#   retry_backoff_s: 5\n'
+    fi
+}
+
+# Writes `rendered` to `path`, or reports and leaves an existing, differing
+# file exactly alone -- never overwritten automatically, even with
+# -y/--yes, unless `overwrite` is "1" (--overwrite-config): a config file
+# may hold real, hand-filled-in credentials or edits, and this is the one
+# seam every config-writing call in this script goes through, so that
+# guarantee holds everywhere, not only where someone remembered to check.
+# Appends one summary line to the SUMMARY array (declared in main) --
+# created, updated (overwritten), or left alone (and why) -- so the
+# closing report says what actually happened, not just what was asked for.
+write_or_skip_config() {  # description path rendered overwrite
+    local desc=$1 path=$2 rendered=$3 overwrite=$4
+    if [ "$DRY_RUN" = "1" ]; then
+        say "[dry-run] would write $path:"
+        printf '%s\n' "$rendered" | sed 's/^/  /'
+        SUMMARY+=("$desc: would write $path")
+        return 0
+    fi
+    if [ -f "$path" ] && [ "$rendered" = "$(cat "$path")" ]; then
+        say "$path already matches these answers; leaving it alone."
+        SUMMARY+=("$desc: left alone (already up to date)")
+        return 0
+    fi
+    if [ -f "$path" ]; then
+        if [ "$overwrite" = "1" ]; then
+            printf '%s\n' "$rendered" > "$path.new.$$" && mv "$path.new.$$" "$path"
+            say "overwrote $path (--overwrite-config)"
+            SUMMARY+=("$desc: overwritten (--overwrite-config)")
+        else
+            warn "$path already exists and differs from what these answers would produce; leaving it unchanged (pass --overwrite-config to replace it -- never done automatically, even with -y/--yes, in case it holds real credentials or edits made by hand)."
+            SUMMARY+=("$desc: left alone (differs from these answers; rerun with --overwrite-config to replace it)")
+        fi
+        return 0
+    fi
+    mkdir -p "$(dirname "$path")" 2>/dev/null
+    printf '%s\n' "$rendered" > "$path.new.$$" && mv "$path.new.$$" "$path"
+    say "wrote $path"
+    SUMMARY+=("$desc: created")
 }
 
 # -------------------------------------------------------------- the service
 SERVICE_USER=${SERVICE_USER:-synos-conformance}
 SERVICE_GROUP=${SERVICE_GROUP:-synos-conformance}
 
-create_service_user() {  # home runtime
-    local home=$1 runtime=$2
-    if id "$SERVICE_USER" >/dev/null 2>&1; then
-        say "service user $SERVICE_USER already exists."
+# create_service_user user group home runtime -- generalized so both the
+# conformance service user and the monitoring app's own (an independent
+# name, home and group) go through exactly one, already-proven path
+# (item 134's own --home-dir fix included) instead of two copies drifting
+# apart. The two callers in main() each still default their own
+# user/group from SERVICE_USER/MONITORING_SERVICE_USER.
+create_service_user() {  # user group home runtime
+    local user=$1 group=$2 home=$3 runtime=$4
+    if id "$user" >/dev/null 2>&1; then
+        say "service user $user already exists."
     else
-        ask_yes "Create system user $SERVICE_USER (home $home)?" \
-            || fail "a dedicated system user is required; create $SERVICE_USER yourself, then rerun this installer" 5
-        maybe "create system user $SERVICE_USER (home $home)" \
-            sudo useradd --system --home-dir "$home" --create-home --shell /usr/sbin/nologin "$SERVICE_USER" \
-            || fail "could not create user $SERVICE_USER" 5
+        ask_yes "Create system user $user (home $home)?" \
+            || fail "a dedicated system user is required; create $user yourself, then rerun this installer" 5
+        maybe "create system user $user (home $home)" \
+            sudo useradd --system --home-dir "$home" --create-home --shell /usr/sbin/nologin "$user" \
+            || fail "could not create user $user" 5
     fi
-    local group
-    group=$(runtime_group "$runtime")
-    if getent group "$group" >/dev/null 2>&1; then
-        maybe "add $SERVICE_USER to group $group" sudo usermod -aG "$group" "$SERVICE_USER"
+    local runtime_grp
+    runtime_grp=$(runtime_group "$runtime")
+    if getent group "$runtime_grp" >/dev/null 2>&1; then
+        maybe "add $user to group $runtime_grp" sudo usermod -aG "$runtime_grp" "$user"
     fi
 }
 
@@ -784,6 +1075,243 @@ verify_installation() {  # runtime storage engine_root config python_bin min_sto
     say "all checks passed."
 }
 
+# Bare metal genuinely has /dev/kvm; a nested/virtualized build host often
+# does not. Purely informational -- never a run_check PASS/FAIL, never a
+# reason to refuse anything -- because a missing /dev/kvm does not make the
+# boot check wrong, only much slower (minutes instead of seconds each), and
+# silently eating that cost with no explanation is worse than a plain note.
+kvm_status() {
+    if [ ! -e /dev/kvm ]; then
+        printf 'not present -- the boot check will run unaccelerated (minutes, not seconds, per boot); on bare metal this usually means virtualization is disabled in firmware or the kvm module is not loaded\n'
+    elif [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+        printf 'present and accessible -- the boot check will run accelerated\n'
+    else
+        printf 'present but not accessible (permissions on /dev/kvm) -- the boot check will run unaccelerated; add the service user to the kvm group\n'
+    fi
+}
+
+# ------------------------------------------------------- the monitoring app
+# Entirely optional (packaging/install-test-engine.sh's own header
+# comment): every function below only ever runs when --monitoring-app or
+# --monitoring-repo is given, and none of it is reachable, or even
+# mentioned, otherwise. Installs a private, separate repository's own
+# checkout (never any of its code copied into this one) behind an nginx
+# site that is always either authenticated or refused outright -- see the
+# nginx/auth functions below for the one rule this half of the script
+# never bends: the app itself keeps binding 127.0.0.1 only, and nothing
+# unauthenticated is ever put on a network beyond loopback.
+MONITORING_SERVICE_USER=${MONITORING_SERVICE_USER:-synos-forge}
+
+# python3 -m venv needs its own package on Debian/Ubuntu (python3-venv);
+# every other family this script knows already bundles it into python3
+# itself, so this is only ever missing on that one family.
+ensure_python_venv_available() {  # family
+    local family=$1
+    "$PYTHON_BIN" -m venv --help >/dev/null 2>&1 && return 0
+    [ "$family" = "debian" ] || fail "python3's own venv module is missing and this is not a distribution family this installer knows a package name for; install it yourself and rerun with --skip-packages" 8
+    if [ "$DRY_RUN" = "1" ]; then
+        say "[dry-run] would install python3-venv (python3 -m venv is missing)"
+        return 0
+    fi
+    ask_yes "Install python3-venv (needed to give the monitoring app its own virtualenv)?" \
+        || fail "python3-venv is required for the monitoring app; install it yourself, then rerun" 8
+    run_package_manager "$family" python3-venv || fail "could not install python3-venv" 8
+}
+
+# Structural sanity check: this is what stands in for "a real checkout of
+# the monitoring app" everywhere below, the same role
+# tools/catalog_conformance.py's own presence plays for --engine-root.
+looks_like_monitoring_app_checkout() { [ -f "$1/forge/app.py" ] && [ -f "$1/packaging/synos-forge.service" ]; }
+
+_install_forge_venv() {  # app_root
+    "$PYTHON_BIN" -m venv "$1/.venv" && "$1/.venv/bin/pip" install --quiet "$1"
+}
+
+# Renders the monitoring app's own config/forge.example.toml (read from its
+# checkout, never copied into this repository) into a real
+# /etc/synos-forge/forge.toml, wiring the one thing this installer is
+# actually responsible for connecting: [conformance].status_dir pointed at
+# the *same* workdir the conformance service it just configured writes
+# build-status.json/build-report.json into, and [engine].checkout pointed
+# at the same --engine-root. Forge reads those two files straight off disk,
+# read-only, on its own poll (forge/ingest.py in its checkout) -- there is
+# no upload/HTTP step to wire on this side at all.
+render_forge_config() {  # engine_root conformance_config_path conformance_workdir port service_user
+    local engine_root=$1 conformance_config=$2 workdir=$3 port=$4 service_user=$5
+    printf '# Written by packaging/install-test-engine.sh --monitoring-app. Safe to edit by\n'
+    printf '# hand; rerunning the installer only touches the keys it itself asks about.\n\n'
+    printf '[service]\n'
+    printf 'host = "127.0.0.1"\n'
+    printf 'port = %s\n' "$port"
+    printf 'owner_id = "local"\n\n'
+    printf '[engine]\n'
+    printf 'checkout = %s\n' "$(yaml_scalar "$engine_root")"
+    printf 'python = %s\n' "$(yaml_scalar "$PYTHON_BIN")"
+    printf 'pull = false\n\n'
+    printf '[queue]\n'
+    printf 'workers = 2\n'
+    printf 'max_attempts = 2\n'
+    printf 'poll_interval_s = 2.0\n\n'
+    printf '[artifacts]\n'
+    printf 'root = %s\n' "$(yaml_scalar "/var/lib/$service_user/artifacts")"
+    printf 'retention_days = 14\n\n'
+    printf '[database]\n'
+    printf 'path = %s\n\n' "$(yaml_scalar "/var/lib/$service_user/forge.db")"
+    printf '[conformance]\n'
+    printf '# Wired to the conformance service this same installer run configured --\n'
+    printf '# tools/catalog_conformance.py build writes build-status.json/build-report.json\n'
+    printf '# under its own workdir:, and this points Forge at the same place, read-only.\n'
+    printf 'config_path = %s\n' "$(yaml_scalar "$conformance_config")"
+    printf 'status_dir = %s\n' "$(yaml_scalar "$workdir")"
+    printf '\n# No [[schedule]] entries: this installer wires the read-only ingest path\n'
+    printf '# above only. Add [[schedule]] entries yourself (see this checkout'"'"'s own\n'
+    printf '# config/forge.example.toml) to have the app queue and run builds of its own.\n'
+}
+
+render_forge_unit_file() {  # src dest app_root config_path service_user port
+    awk -v root="$3" -v cfg="$4" -v user="$5" -v port="$6" '
+        /^WorkingDirectory=/ { print "WorkingDirectory=" root; next }
+        /^User=/ { print "User=" user; next }
+        /^Group=/ { print "Group=" user; next }
+        /^Environment=SYNOS_FORGE_CONFIG=/ { print "Environment=SYNOS_FORGE_CONFIG=" cfg; next }
+        /^ExecStart=/ {
+            line = $0
+            sub(/^ExecStart=[^ ]+/, "ExecStart=" root "/.venv/bin/uvicorn", line)
+            sub(/--port [0-9]+/, "--port " port, line)
+            print line
+            next
+        }
+        /^ReadWritePaths=/ { print "ReadWritePaths=/var/lib/" user; next }
+        { print }
+    ' "$1" > "$2"
+}
+
+# --------------------------------------------------- monitoring auth/nginx
+# The one rule every path below is built around: the app keeps binding
+# 127.0.0.1 only (its own systemd unit, rendered above, never changes
+# that); the nginx site in front of it is the only thing that ever reaches
+# a wider address, and it is always either authenticated or refused
+# outright -- never a default that quietly publishes an unauthenticated
+# console (the app's own README: "no login ... a real deployment ... needs
+# a reverse proxy with real authentication in front of this, which does
+# not exist yet").
+htpasswd_hash() {  # password -- an apr1 hash, via openssl (the honest
+                     # minimum this installer can generate without assuming
+                     # apache2-utils' own htpasswd binary is present)
+    openssl passwd -apr1 "$1"
+}
+
+# Writes an htpasswd file for a freshly generated credential. Never called
+# under --dry-run (the caller only announces what it would do); never
+# writes the plaintext password anywhere -- only its apr1 hash, and only to
+# `path`. Returns the plaintext password on stdout so the caller can show
+# it to the operator's terminal exactly once and never again.
+generate_monitor_credential() {  # path user
+    local path=$1 user=$2 password hash
+    command -v openssl >/dev/null 2>&1 \
+        || fail "no --monitor-auth-file given and 'openssl' is not on PATH to generate one; install openssl (or apache2-utils' htpasswd) or pass --monitor-auth-file=PATH -- this installer will not publish the monitoring console without authentication" 8
+    password=$(openssl rand -base64 18 | tr -dc 'A-Za-z0-9' | cut -c1-20)
+    [ -n "$password" ] || fail "could not generate a random password" 8
+    hash=$(htpasswd_hash "$password") || fail "could not hash the generated password" 8
+    mkdir -p "$(dirname "$path")" 2>/dev/null
+    printf '%s:%s\n' "$user" "$hash" > "$path.new.$$" \
+        && chmod 640 "$path.new.$$" && mv "$path.new.$$" "$path" \
+        || fail "could not write $path" 8
+    printf '%s\n' "$password"
+}
+
+# The nginx site: a separate, dedicated server block on its own port,
+# never a location spliced into a site the operator wrote (this script
+# never edits an existing site file, only ever writes its own, new one).
+# `location` inside that block can still be whatever path the operator
+# names (--monitoring-nginx-location) -- it is a location *of this new
+# block*, never a second location of theirs. TLS when a cert/key is given;
+# otherwise plain HTTP, `allow`/`deny`-restricted to loopback unless
+# --monitoring-allow-from named a wider range (main() already refused that
+# combination outright unless TLS or --monitoring-allow-insecure-http
+# also said so).
+render_monitor_nginx_site() {  # listen_addr nginx_port location auth_file upstream_port allow_cidr tls_cert tls_key
+    local addr=$1 port=$2 loc=$3 authfile=$4 upstream=$5 allow=$6 cert=$7 key=$8
+    printf '# Managed by packaging/install-test-engine.sh --monitoring-app.\n'
+    printf '# Additive only: a new, separate server block on its own port -- never an edit\n'
+    printf '# to any other site. Safe to remove this file on its own.\n'
+    printf 'server {\n'
+    if [ -n "$cert" ]; then
+        printf '    listen %s:%s ssl;\n' "$addr" "$port"
+        printf '    ssl_certificate %s;\n' "$cert"
+        printf '    ssl_certificate_key %s;\n' "$key"
+    else
+        printf '    listen %s:%s;\n' "$addr" "$port"
+    fi
+    printf '    server_name _;\n'
+    if [ -n "$allow" ]; then
+        printf '    allow %s;\n' "$allow"
+        printf '    allow 127.0.0.1;\n'
+        printf '    allow ::1;\n'
+        printf '    deny all;\n'
+    fi
+    printf '    location %s {\n' "$loc"
+    printf '        auth_basic "SynOS Forge";\n'
+    printf '        auth_basic_user_file %s;\n' "$authfile"
+    printf '        proxy_pass http://127.0.0.1:%s/;\n' "$upstream"
+    printf '        proxy_http_version 1.1;\n'
+    printf '        proxy_set_header Host $host;\n'
+    printf '        proxy_set_header X-Real-IP $remote_addr;\n'
+    printf '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n'
+    printf '        proxy_set_header X-Forwarded-Proto %s;\n' "$([ -n "$cert" ] && printf 'https' || printf 'http')"
+    printf '        proxy_set_header Connection "";\n'
+    printf '        proxy_buffering off;\n'  # /api/v1/runs/{id}/log/stream is Server-Sent Events; buffering it defeats the point
+    printf '    }\n'
+    printf '}\n'
+}
+
+# SYNOS_NGINX_ROOT overrides /etc/nginx -- test-only (same convention as
+# SYNOS_OS_RELEASE_FILE/SYNOS_MEMINFO_FILE above): never set for a real
+# install, and the one thing that lets a test prove the site-writing path
+# for real without ever touching this machine's actual nginx.
+NGINX_ROOT=${SYNOS_NGINX_ROOT:-/etc/nginx}
+
+nginx_site_dir() { [ -d "$NGINX_ROOT/sites-available" ] && printf 'sites-available\n' || printf 'conf.d\n'; }
+
+nginx_site_path() {  # name
+    if [ "$(nginx_site_dir)" = "sites-available" ]; then
+        printf '%s/sites-available/%s\n' "$NGINX_ROOT" "$1"
+    else
+        printf '%s/conf.d/%s.conf\n' "$NGINX_ROOT" "$1"
+    fi
+}
+
+# Writes the site, validates the *whole* nginx configuration with it in
+# place, and only reloads on a pass -- on a failure, removes exactly the
+# file (and sites-enabled symlink) this call itself just added and leaves
+# every other site precisely as it was: "must not disturb an existing
+# site" has to survive a bad certificate path or a typo here too, not only
+# a script that never writes anything wrong.
+write_and_validate_nginx_site() {  # name rendered
+    local name=$1 rendered=$2 path tlog
+    path=$(nginx_site_path "$name")
+    tlog=$(mktemp)
+    printf '%s\n' "$rendered" | sudo tee "$path.new.$$" >/dev/null && sudo mv "$path.new.$$" "$path"
+    if [ "$(nginx_site_dir)" = "sites-available" ]; then
+        sudo ln -sf "$path" "$NGINX_ROOT/sites-enabled/$name"
+    fi
+    if sudo nginx -t >"$tlog" 2>&1; then
+        rm -f "$tlog"
+        if command -v systemctl >/dev/null 2>&1; then
+            sudo systemctl reload nginx 2>/dev/null || sudo nginx -s reload 2>/dev/null || warn "wrote $path but could not reload nginx; reload it yourself"
+        else
+            sudo nginx -s reload 2>/dev/null || warn "wrote $path but could not reload nginx; reload it yourself"
+        fi
+        say "wrote $path and reloaded nginx"
+        return 0
+    fi
+    local reason
+    reason=$(cat "$tlog" 2>/dev/null)
+    rm -f "$tlog"
+    sudo rm -f "$path" "$NGINX_ROOT/sites-enabled/$name" 2>/dev/null
+    fail "nginx -t rejected the new site ($name); removed it again and reloaded nothing, so every other site is untouched. nginx said: $reason" 8
+}
+
 # ------------------------------------------------------------------- main
 default_engine_root() {
     local here
@@ -792,16 +1320,25 @@ default_engine_root() {
     printf '%s\n' "$here"
 }
 
-usage() { sed -n '2,43p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,161p' "$0" | sed 's/^# \{0,1\}//'; }
 
 main() {
-    local engine_root='' site_url='' catalog_url='' storage_path='' workdir='' \
-          entries_per_run=5 jobs='' config_path=/etc/synos/conformance.yml \
+    local engine_root='' engine_repo=${SYNOS_ENGINE_REPO:-https://github.com/Synthot/SynOS-Studio} engine_ref=main \
+          site_url='' catalog_url='' storage_path='' workdir='' \
+          entries_per_run=5 jobs='' config_path=/etc/synos/conformance.yml overwrite_config=0 \
+          dev_site_root='' dev_site_owner='' dev_site_mode='' \
           unit_dir=/etc/systemd/system skip_packages=0 arg
+    local monitoring_app='' monitoring_repo='' monitoring_ssh_key='' monitoring_ref=main \
+          monitoring_config=/etc/synos-forge/forge.toml monitoring_port=8420 monitoring_nginx_port=8421 \
+          monitoring_nginx_location=/ monitoring_allow_from='' monitoring_allow_insecure_http=0 \
+          monitoring_tls_cert='' monitoring_tls_key='' monitor_auth_file='' monitor_auth_user=admin
+    local -a SUMMARY=()
 
     for arg in "$@"; do
         case "$arg" in
             --engine-root=*)     engine_root=${arg#*=} ;;
+            --engine-repo=*)     engine_repo=${arg#*=} ;;
+            --engine-ref=*)      engine_ref=${arg#*=} ;;
             --site-url=*)        site_url=${arg#*=} ;;
             --catalog-url=*)     catalog_url=${arg#*=} ;;
             --storage-path=*)    storage_path=${arg#*=} ;;
@@ -809,9 +1346,28 @@ main() {
             --entries-per-run=*) entries_per_run=${arg#*=} ;;
             --jobs=*)            jobs=${arg#*=} ;;
             --config=*)          config_path=${arg#*=} ;;
+            --overwrite-config)  overwrite_config=1 ;;
+            --dev-site-root=*)   dev_site_root=${arg#*=} ;;
+            --dev-site-owner=*)  dev_site_owner=${arg#*=} ;;
+            --dev-site-mode=*)   dev_site_mode=${arg#*=} ;;
             --service-user=*)    SERVICE_USER=${arg#*=}; SERVICE_GROUP=${arg#*=} ;;
             --unit-dir=*)        unit_dir=${arg#*=} ;;
             --skip-packages)     skip_packages=1 ;;
+            --monitoring-app=*)              monitoring_app=${arg#*=} ;;
+            --monitoring-repo=*)             monitoring_repo=${arg#*=} ;;
+            --monitoring-ssh-key=*)          monitoring_ssh_key=${arg#*=} ;;
+            --monitoring-ref=*)              monitoring_ref=${arg#*=} ;;
+            --monitoring-config=*)           monitoring_config=${arg#*=} ;;
+            --monitoring-service-user=*)     MONITORING_SERVICE_USER=${arg#*=} ;;
+            --monitoring-port=*)             monitoring_port=${arg#*=} ;;
+            --monitoring-nginx-port=*)       monitoring_nginx_port=${arg#*=} ;;
+            --monitoring-nginx-location=*)   monitoring_nginx_location=${arg#*=} ;;
+            --monitoring-allow-from=*)       monitoring_allow_from=${arg#*=} ;;
+            --monitoring-allow-insecure-http) monitoring_allow_insecure_http=1 ;;
+            --monitoring-tls-cert=*)         monitoring_tls_cert=${arg#*=} ;;
+            --monitoring-tls-key=*)          monitoring_tls_key=${arg#*=} ;;
+            --monitor-auth-file=*)           monitor_auth_file=${arg#*=} ;;
+            --monitor-auth-user=*)           monitor_auth_user=${arg#*=} ;;
             -y|--yes)             ASSUME_YES=1 ;;
             --dry-run)             DRY_RUN=1 ;;
             -h|--help)             usage; return 0 ;;
@@ -821,13 +1377,7 @@ main() {
 
     [ "$(uname -s)" = "Linux" ] || fail "this installs a systemd service; run it on Linux" 2
 
-    if [ -z "$engine_root" ]; then
-        engine_root=$(default_engine_root) \
-            || fail "pass --engine-root=/path/to/a/checkout/of/this/repository (this script was not found under a checkout's packaging/ directory)" 2
-    fi
-    [ -f "$engine_root/tools/catalog_conformance.py" ] \
-        || fail "$engine_root does not look like a checkout of this engine (no tools/catalog_conformance.py)" 2
-    say "engine checkout: $engine_root"
+    say "boot acceleration: $(kvm_status)"
 
     local family=''
     if [ "$skip_packages" = "1" ]; then
@@ -837,6 +1387,19 @@ main() {
         say "distribution family: $family ($(pkg_manager_for "$family"))"
         install_requirements "$family"
     fi
+    command -v git >/dev/null 2>&1 \
+        || fail "git is required to create or update the engine checkout but is not on PATH (pass --skip-packages only when every dependency, including git, is already installed)" 7
+
+    if [ -z "$engine_root" ]; then
+        engine_root=$(default_engine_root) \
+            || fail "pass --engine-root=/path/to/clone/or/an/existing/checkout (this script was not found under a checkout's packaging/ directory, so it cannot infer one)" 2
+    fi
+    local engine_state
+    engine_state=$(sync_git_checkout "$engine_root" "$engine_repo" "$engine_ref" "" "engine checkout") || exit $?
+    [ -f "$engine_root/tools/catalog_conformance.py" ] \
+        || fail "$engine_root does not look like a checkout of this engine (no tools/catalog_conformance.py)" 2
+    say "engine checkout: $engine_root ($engine_state)"
+    SUMMARY+=("engine checkout ($engine_root): $engine_state")
 
     local runtime
     runtime=$(detect_runtime)
@@ -847,7 +1410,7 @@ main() {
     if [ "$DRY_RUN" = "1" ]; then
         say "[dry-run] would create system user $SERVICE_USER (home $service_home) and add it to the $(runtime_group "$runtime") group"
     else
-        create_service_user "$service_home" "$runtime"
+        create_service_user "$SERVICE_USER" "$SERVICE_GROUP" "$service_home" "$runtime"
     fi
     maybe "create /etc/synos" sudo install -d /etc/synos
 
@@ -924,35 +1487,213 @@ main() {
     fi
 
     local rendered
-    rendered=$(write_config "$catalog_url" "$site_url" "$workdir" "$config_container_root" "$entries_per_run" "$jobs" "$SERVICE_USER")
-    if [ "$DRY_RUN" = "1" ]; then
-        say "[dry-run] would write $config_path:"
-        printf '%s\n' "$rendered" | sed 's/^/  /'
-    elif [ -f "$config_path" ] && [ "$rendered" = "$(cat "$config_path")" ]; then
-        say "$config_path already matches these answers; leaving it alone."
-    elif [ -f "$config_path" ]; then
-        if ask_yes "$config_path already exists and differs; overwrite it?"; then
-            printf '%s\n' "$rendered" > "$config_path.new.$$" && mv "$config_path.new.$$" "$config_path"
-            say "wrote $config_path"
-        else
-            warn "leaving $config_path unchanged"
-        fi
-    else
-        printf '%s\n' "$rendered" > "$config_path.new.$$" && mv "$config_path.new.$$" "$config_path"
-        say "wrote $config_path"
-    fi
+    rendered=$(write_config "$catalog_url" "$site_url" "$workdir" "$config_container_root" "$entries_per_run" "$jobs" \
+                            "$SERVICE_USER" "$dev_site_root" "$dev_site_owner" "$dev_site_mode")
+    write_or_skip_config "conformance config" "$config_path" "$rendered" "$overwrite_config"
     if [ "$DRY_RUN" != "1" ]; then
         sudo install -d -o "$SERVICE_USER" -g "$SERVICE_GROUP" "$workdir" || warn "could not create/chown $workdir"
     fi
 
     install_service_units "$engine_root/packaging/catalog-conformance" "$unit_dir" "$engine_root" "$PYTHON_BIN"
+    SUMMARY+=("conformance systemd units: installed under $unit_dir (not enabled)")
+
+    # ------------------------------------------------------- monitoring app
+    # Entirely optional (this script's own header): only reachable when the
+    # operator actually named a checkout or a repository for it. Neither
+    # given at all -- the normal path for the test engine on its own --
+    # means nothing below runs and nothing below is even mentioned.
+    if [ -n "$monitoring_app" ] || [ -n "$monitoring_repo$monitoring_ssh_key" ]; then
+        if [ -z "$monitoring_app" ]; then
+            say "monitoring app: --monitoring-repo/--monitoring-ssh-key given without --monitoring-app=PATH (where to put or find the checkout); skipping. Add --monitoring-app=PATH to enable it."
+            SUMMARY+=("monitoring app: skipped (no --monitoring-app path given)")
+        else
+            install_monitoring_app "$monitoring_app" "$monitoring_repo" "$monitoring_ssh_key" "$monitoring_ref" \
+                "$engine_root" "$config_path" "$workdir" "$monitoring_config" "$monitoring_port" \
+                "$monitoring_nginx_port" "$monitoring_nginx_location" "$monitoring_allow_from" \
+                "$monitoring_allow_insecure_http" "$monitoring_tls_cert" "$monitoring_tls_key" \
+                "$monitor_auth_file" "$monitor_auth_user" "$runtime" "$family"
+        fi
+    fi
+
+    say ""
+    say "summary:"
+    local line
+    for line in "${SUMMARY[@]}"; do
+        say "  - $line"
+    done
+    say ""
+    say "not done by this script, on purpose:"
+    say "  - the Studio page itself (development or production) is deployed with the"
+    say "    Studio repository's own build.py/deploy.sh, never from here."
+    if [ -z "$site_url" ]; then
+        say "  - fill in site_url in $config_path before running \"build\" mode (\"check\" mode does not need it)."
+    fi
+    if [ -n "$dev_site_root" ]; then
+        say "  - fill in a real \"production\" upload destination in $config_path yourself (commented"
+        say "    out, credentials never written by this installer)."
+    fi
 
     if [ "$DRY_RUN" = "1" ]; then
+        say ""
         say "[dry-run] skipping verification (nothing was actually installed)."
         return 0
     fi
     verify_installation "$runtime" "$storage_path" "$engine_root" "$config_path" "$PYTHON_BIN" "$MIN_STORE_GB"
 }
+
+# install_monitoring_app app_path app_repo app_ssh_key app_ref engine_root
+#                        conformance_config conformance_workdir monitoring_config
+#                        port nginx_port nginx_location allow_from allow_insecure_http
+#                        tls_cert tls_key auth_file auth_user runtime family
+#
+# The whole optional half: sync-or-use the checkout, install it into its
+# own virtualenv, wire its config at the same conformance workdir/config
+# this same run just set up, install its systemd unit (loopback only,
+# always), and -- only when nginx is actually on this machine -- put an
+# authenticated site in front of it. Every refusal in here (a bad
+# checkout, no way to authenticate the site, plain HTTP beyond loopback
+# without the acknowledgement) uses exit code 8, distinct from every
+# other section's own codes above.
+install_monitoring_app() {
+    local app_path=$1 app_repo=$2 app_ssh_key=$3 app_ref=$4 engine_root=$5 \
+          conformance_config=$6 conformance_workdir=$7 monitoring_config=$8 port=$9 \
+          nginx_port=${10} nginx_location=${11} allow_from=${12} allow_insecure_http=${13} \
+          tls_cert=${14} tls_key=${15} auth_file=${16} auth_user=${17} runtime=${18} family=${19}
+
+    local app_root=$app_path
+    if [ -n "$app_repo" ]; then
+        if [ -z "$app_ssh_key" ]; then
+            if [ ! -e "$app_root" ]; then
+                fail "--monitoring-repo was given without --monitoring-ssh-key, and $app_root does not exist locally either -- a private repository needs a credential this installer will not prompt for. Pass --monitoring-ssh-key=PATH, or point --monitoring-app at an existing checkout." 8
+            fi
+            warn "monitoring app: --monitoring-repo was given without --monitoring-ssh-key; not syncing it (a private repository needs a credential this installer will not prompt for). Using $app_root as found."
+            SUMMARY+=("monitoring app ($app_root): not synced (repo given without ssh key)")
+        else
+            local app_state
+            app_state=$(sync_git_checkout "$app_root" "$app_repo" "$app_ref" "$app_ssh_key" "monitoring app") || exit $?
+            say "monitoring app: $app_root ($app_state)"
+            SUMMARY+=("monitoring app ($app_root): $app_state")
+        fi
+    elif [ ! -e "$app_root" ]; then
+        fail "--monitoring-app=$app_root does not exist and no --monitoring-repo was given to create it from" 8
+    else
+        say "monitoring app: using existing checkout at $app_root (pass --monitoring-repo to have this script keep it updated)."
+        SUMMARY+=("monitoring app ($app_root): used as-is (no --monitoring-repo given)")
+    fi
+
+    looks_like_monitoring_app_checkout "$app_root" \
+        || fail "$app_root does not look like a checkout of the monitoring app (no forge/app.py)" 8
+
+    if [ "$skip_packages" != "1" ]; then
+        ensure_python_venv_available "$family"
+    fi
+
+    local monitoring_home="/var/lib/$MONITORING_SERVICE_USER"
+    if [ "$DRY_RUN" = "1" ]; then
+        say "[dry-run] would create system user $MONITORING_SERVICE_USER (home $monitoring_home) and add it to the $(runtime_group "$runtime") group"
+        say "[dry-run] would create a virtualenv at $app_root/.venv and install the monitoring app into it"
+    else
+        create_service_user "$MONITORING_SERVICE_USER" "$MONITORING_SERVICE_USER" "$monitoring_home" "$runtime"
+        sudo install -d -o "$MONITORING_SERVICE_USER" -g "$MONITORING_SERVICE_USER" "$monitoring_home" \
+            || warn "could not create/chown $monitoring_home"
+        maybe "create a virtualenv at $app_root/.venv and install the monitoring app into it" \
+            _install_forge_venv "$app_root"
+    fi
+    SUMMARY+=("monitoring app virtualenv ($app_root/.venv): $([ "$DRY_RUN" = "1" ] && printf 'would create' || printf 'created/updated')")
+
+    local forge_rendered
+    forge_rendered=$(render_forge_config "$engine_root" "$conformance_config" "$conformance_workdir" "$port" "$MONITORING_SERVICE_USER")
+    write_or_skip_config "monitoring app config" "$monitoring_config" "$forge_rendered" "$overwrite_config"
+
+    if [ "$DRY_RUN" = "1" ]; then
+        say "[dry-run] would install $unit_dir/synos-forge.service (WorkingDirectory=$app_root, SYNOS_FORGE_CONFIG=$monitoring_config, port $port, loopback only)"
+        SUMMARY+=("monitoring app systemd unit: would install")
+    else
+        local forge_unit_tmp="$unit_dir/synos-forge.service.new.$$"
+        render_forge_unit_file "$app_root/packaging/synos-forge.service" "$forge_unit_tmp" \
+            "$app_root" "$monitoring_config" "$MONITORING_SERVICE_USER" "$port"
+        mv "$forge_unit_tmp" "$unit_dir/synos-forge.service"
+        sudo systemctl daemon-reload 2>/dev/null || warn "systemctl daemon-reload failed; is systemd running?"
+        say "installed $unit_dir/synos-forge.service (127.0.0.1:$port only; not enabled -- sudo systemctl enable --now synos-forge.service when ready)"
+        SUMMARY+=("monitoring app systemd unit: installed under $unit_dir (not enabled)")
+    fi
+
+    # ---- nginx: additive site, or a clean, honest "not now" ----
+    if ! command -v nginx >/dev/null 2>&1; then
+        say "monitoring app: nginx is not installed; the app is reachable only on 127.0.0.1:$port (an SSH tunnel, same as its own README's \"Exposing it safely\")."
+        if [ -n "$family" ]; then
+            say "  install nginx later, then rerun this installer with the same --monitoring-* flags to add the site: sudo $(run_package_manager_preview "$family") install nginx"
+        else
+            say "  install nginx for your distribution, then rerun this installer with the same --monitoring-* flags to add the site."
+        fi
+        SUMMARY+=("monitoring nginx site: skipped (nginx not installed)")
+        return 0
+    fi
+
+    local auth_user_file=''
+    if [ -n "$auth_file" ]; then
+        [ -f "$auth_file" ] || fail "--monitor-auth-file=$auth_file does not exist" 8
+        auth_user_file=$auth_file
+        say "monitoring nginx site: using the given htpasswd file ($auth_file)"
+        SUMMARY+=("monitoring auth: using existing file ($auth_file)")
+    else
+        # Whether this installer even *can* authenticate the site is a
+        # hard prerequisite, checked here regardless of --dry-run, the
+        # same as --catalog-url or an unrecognized distribution above --
+        # never only discovered on a real run.
+        command -v openssl >/dev/null 2>&1 \
+            || fail "no --monitor-auth-file given and 'openssl' is not on PATH to generate one; install openssl (or apache2-utils' htpasswd) or pass --monitor-auth-file=PATH -- this installer will not publish the monitoring console without authentication" 8
+        auth_user_file=${SYNOS_MONITOR_HTPASSWD_PATH:-/etc/synos/monitor.htpasswd}
+        if [ "$DRY_RUN" = "1" ]; then
+            say "[dry-run] would generate a random password for '$auth_user' and write its htpasswd hash to $auth_user_file (the plaintext password is shown once, on the terminal, at install time -- never written to a file, a log, or the systemd unit)"
+            SUMMARY+=("monitoring auth: would generate a credential")
+        else
+            local password
+            password=$(generate_monitor_credential "$auth_user_file" "$auth_user")
+            say ""
+            say "monitoring console credentials (shown once -- never written to a log or file besides the hash above):"
+            say "  user:     $auth_user"
+            say "  password: $password"
+            say ""
+            SUMMARY+=("monitoring auth: generated a credential for '$auth_user' ($auth_user_file)")
+        fi
+    fi
+
+    local listen_addr=127.0.0.1 allow_cidr=''
+    if [ -n "$allow_from" ]; then
+        listen_addr=0.0.0.0
+        allow_cidr=$allow_from
+    fi
+    local tls=0
+    if [ -n "$tls_cert" ] || [ -n "$tls_key" ]; then
+        [ -n "$tls_cert" ] && [ -n "$tls_key" ] || fail "both --monitoring-tls-cert and --monitoring-tls-key are required together" 8
+        [ -f "$tls_cert" ] || fail "--monitoring-tls-cert=$tls_cert does not exist" 8
+        [ -f "$tls_key" ] || fail "--monitoring-tls-key=$tls_key does not exist" 8
+        tls=1
+    fi
+    if [ "$listen_addr" != "127.0.0.1" ] && [ "$tls" != "1" ] && [ "$allow_insecure_http" != "1" ]; then
+        fail "--monitoring-allow-from=$allow_from would serve the monitoring console over plain HTTP beyond loopback; pass --monitoring-allow-insecure-http to accept that, or provide --monitoring-tls-cert and --monitoring-tls-key for TLS instead" 8
+    fi
+
+    local site_rendered
+    site_rendered=$(render_monitor_nginx_site "$listen_addr" "$nginx_port" "$nginx_location" "$auth_user_file" "$port" \
+                                              "$allow_cidr" "$([ "$tls" = 1 ] && printf '%s' "$tls_cert")" "$tls_key")
+    if [ "$DRY_RUN" = "1" ]; then
+        say "[dry-run] would write $(nginx_site_path synos-monitor):"
+        printf '%s\n' "$site_rendered" | sed 's/^/  /'
+        say "[dry-run] would validate with 'nginx -t' and reload nginx only on a pass"
+        SUMMARY+=("monitoring nginx site: would write $(nginx_site_path synos-monitor)")
+    else
+        write_and_validate_nginx_site synos-monitor "$site_rendered"
+        SUMMARY+=("monitoring nginx site: $(nginx_site_path synos-monitor) ($([ "$tls" = 1 ] && printf https || printf http), $([ -n "$allow_cidr" ] && printf "$allow_cidr" || printf loopback))")
+    fi
+}
+
+# Preview text only (never actually run): names the package manager
+# invocation the nginx-not-installed message shows so the operator has
+# the one real command to run later, without this function itself
+# installing anything.
+run_package_manager_preview() { pkg_manager_for "$1" 2>/dev/null; }
 
 # Only runs main when executed, never when sourced (as every test in
 # tests/unit/ does, to call the functions above directly against fakes).

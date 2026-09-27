@@ -1151,6 +1151,88 @@ class BuildStatusWiringTests(unittest.TestCase):
                                   upload_transport=always_fails, upload_sleeper=lambda s: None)
         self.assertNotIn(secret, json.dumps(report))
 
+    def test_a_list_of_destinations_publishes_local_rehearsal_then_production(self) -> None:
+        # item 197, wired all the way through run_build: a `protocol:
+        # local` destination alongside a network one -- the local copy is
+        # real (a real temp-dir file, no fake transport involved: see
+        # status_uploader.FanOutUploader's own design note), the network
+        # one goes through the fake transport this test suite always uses.
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        prod_calls: list = []
+        with tempfile.TemporaryDirectory() as tmp:
+            local_dest = Path(tmp) / "dev-site" / "build-status.json"
+            destinations = [
+                cc.status_uploader.UploadConfig(protocol="local", remote_path=str(local_dest), name="dev-site"),
+                cc.status_uploader.UploadConfig(protocol="sftp", host="h", remote_path="/p", retries=1, name="prod"),
+            ]
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  upload_config=destinations,
+                                  upload_transport=lambda c, p: prod_calls.append(c.protocol), upload_sleeper=lambda s: None)
+            self.assertTrue(local_dest.is_file())
+        self.assertNotIn("upload_warnings", report)
+        self.assertIn("sftp", prod_calls)
+        names = [r["name"] for r in report["upload_results"]]
+        self.assertIn("dev-site", names)
+        self.assertIn("prod", names)
+
+    def test_a_failed_local_rehearsal_blocks_production_and_is_a_warning_never_a_failed_build(self) -> None:
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        session = FakeSession(default_archive=make_bundle_archive(entry_id=entry_id))
+        prod_calls: list = []
+        with tempfile.TemporaryDirectory() as tmp:
+            blocker = Path(tmp) / "blocker"
+            blocker.write_text("x", encoding="utf-8")
+            destinations = [
+                cc.status_uploader.UploadConfig(protocol="local", remote_path=str(blocker / "sub" / "f"),
+                                                name="dev-site", retries=1),
+                cc.status_uploader.UploadConfig(protocol="sftp", host="h", remote_path="/p", retries=1, name="prod"),
+            ]
+            config = cc.Config(catalog_url="http://x", workdir=Path(tmp) / "work", site_url="http://fake", smoke=False)
+            report = cc.run_build(config, catalog=catalog, only=[entry_id], browser_factory=session,
+                                  upload_config=destinations,
+                                  upload_transport=lambda c, p: prod_calls.append(1), upload_sleeper=lambda s: None)
+        self.assertEqual([], prod_calls, "production must never be touched when the rehearsal publish failed")
+        self.assertEqual("success", report["targets"][entry_id]["status"])  # never a failed build
+        self.assertGreaterEqual(len(report["upload_warnings"]), 1)
+        by_name = {r["name"]: r for r in report["upload_results"]}
+        self.assertTrue(by_name["prod"]["skipped"])
+
+    def test_upload_verify_url_is_derived_from_site_url_and_gates_production_via_run(self) -> None:
+        # exercises _run() itself (not run_build directly), the actual
+        # entry point that derives upload_verify_url from config.site_url
+        # -- proving the wiring, not only the FanOutUploader unit behavior
+        # test_status_uploader.py already covers.
+        entry_id = "web-server-nginx"
+        catalog = real_catalog()
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp) / "work"
+            local_dest = work / "dev-site" / "build-status.json"
+            config_path = Path(tmp) / "conformance.yml"
+            config_path.write_text(
+                "catalog_url: http://x\n"
+                f"workdir: {work}\n"
+                "site_url: http://dev-site.example\n"
+                "smoke: false\n"
+                "upload:\n"
+                "  - name: dev-site\n"
+                f"    protocol: local\n    remote_path: {local_dest}\n",
+                encoding="utf-8")
+            config = cc.Config.load(config_path)
+            verify_calls: list = []
+            report = cc.run_build(
+                config, catalog=catalog, only=[entry_id],
+                browser_factory=FakeSession(default_archive=make_bundle_archive(entry_id=entry_id)),
+                upload_config=cc.status_uploader.parse_upload_destinations(config.upload),
+                upload_verify_url=f"{config.site_url}/data/{cc.STATUS_FILENAME}",
+                upload_verify_fetcher=lambda url, timeout: (verify_calls.append(url) or b'{"schema_version": 2, "entries": {}}'))
+            self.assertTrue(local_dest.is_file())
+            self.assertIn("http://dev-site.example/data/build-status.json", verify_calls)
+            self.assertNotIn("upload_warnings", report)
+
     def test_a_run_resolves_an_entry_left_testing_by_a_previous_interrupted_run(self) -> None:
         entry_id = "web-server-nginx"
         catalog = real_catalog()
