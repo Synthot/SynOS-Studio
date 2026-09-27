@@ -88,6 +88,31 @@ def build_closed_path(bindir: Path, *, fakes: dict[str, str], omit: set[str] = f
     return str(bindir)
 
 
+def fake_engine_root(tmp: str) -> Path:
+    """A plain, non-git directory carrying only the one file
+    default_engine_root()/main() actually check for
+    (tools/catalog_conformance.py) — used in place of this repository's own
+    checkout (`ROOT`) wherever a test does not itself care about git-sync
+    behavior. `ROOT` is deliberately never handed to --engine-root any more
+    outside GitSyncTests/BootstrapIdempotenceTests below: it is this
+    project's own live development checkout (or, running under a worktree,
+    a live development *worktree*), so it is routinely dirty and on a
+    branch other than "main" — exactly the two things sync_git_checkout is
+    now supposed to refuse, on purpose (see those two test classes). A
+    synthetic, non-git directory takes the "left-alone" path instead:
+    zero git calls beyond the one is-a-checkout probe, so it can never
+    accidentally depend on this repository's own, ever-changing state."""
+    root = Path(tmp) / "engine"
+    (root / "tools").mkdir(parents=True, exist_ok=True)
+    (root / "tools" / "catalog_conformance.py").write_text("# stub\n", encoding="utf-8")
+    (root / "packaging" / "catalog-conformance").mkdir(parents=True, exist_ok=True)
+    for unit in ("synos-conformance-build.service", "synos-conformance-build.timer",
+                "synos-conformance-check.service", "synos-conformance-check.timer"):
+        (root / "packaging" / "catalog-conformance" / unit).write_text(
+            "[Unit]\n[Service]\nWorkingDirectory=/opt/synos-engine\nExecStart=/usr/bin/python3 x\n", encoding="utf-8")
+    return root
+
+
 def run_snippet(body: str, env: dict | None = None) -> subprocess.CompletedProcess:
     """Sources the real script, then runs `body` — one function call or a
     short sequence of them — in a fresh bash subprocess."""
@@ -469,11 +494,12 @@ class DryRunTests(unittest.TestCase):
     def _run(self, tmp: str, extra_args: list[str] | None = None, runtime: str = "podman") -> tuple[subprocess.CompletedProcess, Path]:
         path, osr = self._fake_environment(tmp, runtime=runtime)
         config_path = Path(tmp) / "conformance.yml"
+        engine_root = fake_engine_root(tmp)
         env = dict(os.environ)
         env["PATH"] = path  # replaced, never prepended: see build_closed_path
         env["SYNOS_OS_RELEASE_FILE"] = str(osr)
         args = [BASH, str(SCRIPT), "--dry-run", "--yes",
-                f"--engine-root={ROOT}", "--site-url=https://studio.example",
+                f"--engine-root={engine_root}", "--site-url=https://studio.example",
                 f"--config={config_path}", f"--unit-dir={tmp}/units"] + (extra_args or [])
         result = subprocess.run(args, capture_output=True, text=True, env=env, cwd=str(ROOT), check=False)
         return result, config_path
@@ -510,8 +536,9 @@ class DryRunTests(unittest.TestCase):
             env["PATH"] = path
             env["SYNOS_OS_RELEASE_FILE"] = str(osr)
             config_path = Path(tmp) / "conformance.yml"
+            engine_root = fake_engine_root(tmp)
             result = subprocess.run(
-                [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={ROOT}",
+                [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={engine_root}",
                  "--site-url=https://studio.example", f"--config={config_path}", f"--unit-dir={tmp}/units"],
                 capture_output=True, text=True, env=env, cwd=str(ROOT), check=False,
             )
@@ -557,11 +584,12 @@ class DryRunTests(unittest.TestCase):
             bindir = Path(tmp) / "bin"
             fake_df_stat(bindir, [("/boot/efi", 500 * 1048576, "vfat")])  # nothing overlay-capable at all
             config_path = Path(tmp) / "conformance.yml"
+            engine_root = fake_engine_root(tmp)
             env = dict(os.environ)
             env["PATH"] = path
             env["SYNOS_OS_RELEASE_FILE"] = str(osr)
             result = subprocess.run(
-                [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={ROOT}",
+                [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={engine_root}",
                  "--site-url=https://studio.example", f"--config={config_path}", f"--unit-dir={tmp}/units"],
                 capture_output=True, text=True, env=env, cwd=str(ROOT), check=False,
             )
@@ -596,11 +624,12 @@ class RuntimeIsolationTests(unittest.TestCase):
         osr = Path(tmp) / "os-release"
         osr.write_text("ID=debian\n", encoding="utf-8")
         config_path = Path(tmp) / "conformance.yml"
+        engine_root = fake_engine_root(tmp)
         env = dict(os.environ)
         env["PATH"] = str(bindir)
         env["SYNOS_OS_RELEASE_FILE"] = str(osr)
         result = subprocess.run(
-            [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={ROOT}",
+            [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={engine_root}",
              "--site-url=https://studio.example", f"--config={config_path}", f"--unit-dir={tmp}/units"],
             capture_output=True, text=True, env=env, cwd=str(ROOT), check=False,
         )
@@ -737,7 +766,9 @@ class ServiceUserInvocationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             bindir, argv_log = self._harness(tmp)
             env = {"PATH": f"{bindir}:{os.environ['PATH']}", "ASSUME_YES": "1"}
-            result = run_snippet('create_service_user "/var/lib/synos-conformance" "/usr/bin/podman"', env=env)
+            result = run_snippet(
+                'create_service_user "synos-conformance" "synos-conformance" "/var/lib/synos-conformance" "/usr/bin/podman"',
+                env=env)
             self.assertEqual(0, result.returncode, result.stderr)
             argv = argv_log.read_text(encoding="utf-8").strip()
             self.assertIn("--home-dir /var/lib/synos-conformance", argv)
@@ -851,6 +882,679 @@ class BrowserVerificationTests(unittest.TestCase):
             self.assertNotEqual(0, result.returncode)
             self.assertIn("FAIL  headless browser starts", result.stdout)
             self.assertNotIn("chromium, chromium-browser, google-chrome or google-chrome-stable", result.stdout)
+
+
+GIT_ENV = {
+    "GIT_AUTHOR_NAME": "Test", "GIT_AUTHOR_EMAIL": "test@example.invalid",
+    "GIT_COMMITTER_NAME": "Test", "GIT_COMMITTER_EMAIL": "test@example.invalid",
+    "GIT_CONFIG_NOSYSTEM": "1",
+}
+
+
+def _git(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
+    env = dict(os.environ)
+    env.update(GIT_ENV)
+    return subprocess.run(["git"] + args, cwd=str(cwd) if cwd else None, env=env,
+                          capture_output=True, text=True, check=True)
+
+
+_REMOTE_COUNTER = [0]
+
+
+def make_seeded_remote(tmp: str, *, content: str = "# v1\n") -> Path:
+    """A real bare repo, seeded with one commit on "main" carrying
+    tools/catalog_conformance.py -- the smallest real thing
+    sync_git_checkout's own callers (main()'s engine-root check) need to
+    see after a clone. Real git throughout: this is what "a fake git" for
+    this function actually has to mean, since the behavior under test
+    (clean fetch/fast-forward, refusing a dirty tree or the wrong branch)
+    is real git plumbing a stub binary cannot reproduce faithfully."""
+    _REMOTE_COUNTER[0] += 1
+    n = _REMOTE_COUNTER[0]
+    remote = Path(tmp) / f"origin-{n}.git"
+    _git(["init", "--bare", "-b", "main", str(remote)])
+    seed = Path(tmp) / f"seed-{n}"
+    _git(["clone", str(remote), str(seed)])
+    (seed / "tools").mkdir()
+    (seed / "tools" / "catalog_conformance.py").write_text(content, encoding="utf-8")
+    _git(["add", "."], cwd=seed)
+    _git(["commit", "-m", "seed"], cwd=seed)
+    _git(["push", "origin", "main"], cwd=seed)
+    return remote
+
+
+def fake_monitoring_app_checkout(tmp: str, name: str = "forge-app") -> Path:
+    """The structural minimum looks_like_monitoring_app_checkout() and
+    render_forge_unit_file() actually read: forge/app.py (the presence
+    check) and packaging/synos-forge.service shaped enough (WorkingDirectory=/
+    User=/Group=/Environment=SYNOS_FORGE_CONFIG=/ExecStart=.../ReadWritePaths=)
+    for the awk substitution to have real lines to rewrite -- never a real
+    forge/ import, never the private repository's own code."""
+    root = Path(tmp) / name
+    (root / "forge").mkdir(parents=True)
+    (root / "forge" / "app.py").write_text("# stub\n", encoding="utf-8")
+    (root / "packaging").mkdir(parents=True, exist_ok=True)
+    (root / "packaging" / "synos-forge.service").write_text(
+        "[Unit]\nDescription=SynOS Forge build console\n\n"
+        "[Service]\nType=simple\nUser=synos-forge\nGroup=synos-forge\n"
+        "Environment=SYNOS_FORGE_CONFIG=/etc/synos-forge/forge.toml\n"
+        "WorkingDirectory=/opt/synos-forge\n"
+        "ExecStart=/opt/synos-forge/.venv/bin/uvicorn forge.app:build_app_from_config --factory "
+        "--host 127.0.0.1 --port 8420\n"
+        "Restart=on-failure\nReadWritePaths=/var/lib/synos-forge\n\n"
+        "[Install]\nWantedBy=multi-user.target\n",
+        encoding="utf-8")
+    return root
+
+
+def fake_python3_venv(bindir: Path) -> None:
+    """Stands in for python3 -m venv + pip install: creates a .venv/bin/pip
+    stub that itself just exits 0, so _install_forge_venv "succeeds"
+    without ever creating a real virtualenv or installing anything."""
+    _write_executable(bindir / "python3", textwrap.dedent('''
+        if [ "$1" = "-m" ] && [ "$2" = "venv" ]; then
+            mkdir -p "$3/bin"
+            printf '#!/bin/bash\\nexit 0\\n' > "$3/bin/pip"
+            chmod +x "$3/bin/pip"
+            exit 0
+        fi
+        exit 0
+    '''))
+
+
+def fake_nginx(bindir: Path, *, t_exit: int = 0, t_message: str = "") -> None:
+    _write_executable(bindir / "nginx", textwrap.dedent(f'''
+        case "$1" in
+            -t) [ -n "{t_message}" ] && echo "{t_message}" >&2; exit {t_exit} ;;
+            *) exit 0 ;;
+        esac
+    '''))
+
+
+class GitSyncTests(unittest.TestCase):
+    """sync_git_checkout: bootstraps a fresh machine (clone) and brings an
+    already-bootstrapped one up to date (fetch + fast-forward), never a
+    reset or a forced checkout, refusing outright -- with the reason -- a
+    checkout that is dirty, on the wrong branch, or pointed at a different
+    remote. Real git throughout (make_seeded_remote's own docstring)."""
+
+    def test_a_missing_root_is_cloned(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            remote = make_seeded_remote(tmp)
+            root = Path(tmp) / "engine"
+            result = run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("created", result.stdout.strip())
+            self.assertTrue((root / "tools" / "catalog_conformance.py").is_file())
+            self.assertIn("not present yet", result.stderr)
+
+    def test_a_clean_up_to_date_checkout_is_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            remote = make_seeded_remote(tmp)
+            root = Path(tmp) / "engine"
+            run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            result = run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("unchanged", result.stdout.strip())
+
+    def test_a_second_run_fetches_new_commits_and_reports_updated(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            remote = make_seeded_remote(tmp)
+            root = Path(tmp) / "engine"
+            run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            # a second push to the same remote, from a second clone (never
+            # touching `root` directly -- proving the update is a real
+            # fetch+merge, not this test reaching in)
+            second = Path(tmp) / "second-clone"
+            _git(["clone", str(remote), str(second)])
+            (second / "tools" / "catalog_conformance.py").write_text("# v2\n", encoding="utf-8")
+            _git(["commit", "-am", "v2"], cwd=second)
+            _git(["push", "origin", "main"], cwd=second)
+
+            result = run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("updated", result.stdout.strip())
+            self.assertEqual("# v2\n", (root / "tools" / "catalog_conformance.py").read_text(encoding="utf-8"))
+
+    def test_uncommitted_changes_are_refused_never_reset(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            remote = make_seeded_remote(tmp)
+            root = Path(tmp) / "engine"
+            run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            (root / "tools" / "catalog_conformance.py").write_text("# locally edited, never committed\n", encoding="utf-8")
+
+            result = run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("uncommitted changes", result.stderr)
+            # never touched: the edit survives exactly as made
+            self.assertEqual("# locally edited, never committed\n",
+                             (root / "tools" / "catalog_conformance.py").read_text(encoding="utf-8"))
+
+    def test_an_unexpected_branch_is_refused_never_switched(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            remote = make_seeded_remote(tmp)
+            root = Path(tmp) / "engine"
+            run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            _git(["checkout", "-b", "someone-elses-work"], cwd=root)
+
+            result = run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("someone-elses-work", result.stderr)
+            self.assertEqual("someone-elses-work", _git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=root).stdout.strip())
+
+    def test_a_different_remote_is_refused_never_repointed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            remote = make_seeded_remote(tmp)
+            other_remote = make_seeded_remote(tmp, content="# a different repo entirely\n")
+            root = Path(tmp) / "engine"
+            run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+
+            result = run_snippet(f'sync_git_checkout "{root}" "{other_remote}" main "" "engine checkout"', env=GIT_ENV)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("remote 'origin'", result.stderr)
+            self.assertEqual(str(remote), _git(["remote", "get-url", "origin"], cwd=root).stdout.strip())
+
+    def test_a_real_non_empty_non_git_directory_is_left_alone(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            remote = make_seeded_remote(tmp)
+            root = Path(tmp) / "engine"
+            root.mkdir()
+            (root / "tools").mkdir()
+            (root / "tools" / "catalog_conformance.py").write_text("# hand-placed, no git\n", encoding="utf-8")
+
+            result = run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("left-alone", result.stdout.strip())
+            self.assertFalse((root / ".git").exists())
+            self.assertEqual("# hand-placed, no git\n", (root / "tools" / "catalog_conformance.py").read_text(encoding="utf-8"))
+
+    def test_dry_run_clone_creates_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            remote = make_seeded_remote(tmp)
+            root = Path(tmp) / "engine"
+            env = dict(GIT_ENV)
+            env["DRY_RUN"] = "1"
+            result = run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("would-create", result.stdout.strip())
+            self.assertFalse(root.exists())
+
+    def test_dry_run_update_fetches_and_merges_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            remote = make_seeded_remote(tmp)
+            root = Path(tmp) / "engine"
+            run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=GIT_ENV)
+            before = _git(["rev-parse", "HEAD"], cwd=root).stdout.strip()
+            second = Path(tmp) / "second-clone"
+            _git(["clone", str(remote), str(second)])
+            (second / "tools" / "catalog_conformance.py").write_text("# v2\n", encoding="utf-8")
+            _git(["commit", "-am", "v2"], cwd=second)
+            _git(["push", "origin", "main"], cwd=second)
+
+            env = dict(GIT_ENV)
+            env["DRY_RUN"] = "1"
+            result = run_snippet(f'sync_git_checkout "{root}" "{remote}" main "" "engine checkout"', env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("would-update", result.stdout.strip())
+            self.assertEqual(before, _git(["rev-parse", "HEAD"], cwd=root).stdout.strip())
+
+
+class BootstrapConfigNeverClobberedTests(unittest.TestCase):
+    """write_or_skip_config: the single seam every config write in this
+    script goes through -- item 197-adjacent, but really the owner's own
+    "the single worst thing this script could do" rule. A second run must
+    not overwrite a config the operator has since filled in with real
+    credentials, even with -y/--yes, unless --overwrite-config says so."""
+
+    def test_a_missing_config_is_created(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "conformance.yml"
+            result = run_snippet(f'write_or_skip_config "conformance config" "{path}" "hello: 1" 0')
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("hello: 1\n", path.read_text(encoding="utf-8"))
+            self.assertIn("created", " ".join(run_snippet(
+                f'SUMMARY=(); write_or_skip_config "conformance config" "{path}.new" "hello: 1" 0; printf "%s\\n" "${{SUMMARY[@]}}"'
+            ).stdout.splitlines()))
+
+    def test_an_identical_existing_config_is_left_alone_byte_for_byte(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "conformance.yml"
+            path.write_text("hello: 1\n", encoding="utf-8")
+            mtime_before = path.stat().st_mtime_ns
+            result = run_snippet(f'write_or_skip_config "conformance config" "{path}" "hello: 1" 0')
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("hello: 1\n", path.read_text(encoding="utf-8"))
+            self.assertEqual(mtime_before, path.stat().st_mtime_ns)
+            self.assertIn("already matches", result.stdout)
+
+    def test_a_differing_existing_config_is_left_alone_even_with_dash_y(self) -> None:
+        # the actual behavior change: the *old* script would ask_yes and,
+        # under ASSUME_YES=1 (-y/--yes), silently overwrite. This must not
+        # happen any more, ever, without --overwrite-config saying so.
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "conformance.yml"
+            path.write_text("hello: 1\n# a real credential the operator filled in by hand\n", encoding="utf-8")
+            result = run_snippet(f'write_or_skip_config "conformance config" "{path}" "hello: 2" 0',
+                                 env={"ASSUME_YES": "1"})
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("hello: 1\n# a real credential the operator filled in by hand\n",
+                             path.read_text(encoding="utf-8"))
+            self.assertIn("differs", result.stderr)
+            self.assertIn("--overwrite-config", result.stderr)
+
+    def test_overwrite_config_flag_replaces_a_differing_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "conformance.yml"
+            path.write_text("hello: 1\n", encoding="utf-8")
+            result = run_snippet(f'write_or_skip_config "conformance config" "{path}" "hello: 2" 1')
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual("hello: 2\n", path.read_text(encoding="utf-8"))
+            self.assertIn("overwrote", result.stdout)
+
+    def test_dry_run_never_writes_and_still_shows_the_content(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "conformance.yml"
+            result = run_snippet(f'write_or_skip_config "conformance config" "{path}" "hello: 1" 0',
+                                 env={"DRY_RUN": "1"})
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertFalse(path.exists())
+            self.assertIn("hello: 1", result.stdout)
+
+
+class DevSiteUploadWiringTests(unittest.TestCase):
+    """write_config's --dev-site-root wiring: a `protocol: local` rehearsal
+    destination plus a commented "production" template, never a real
+    credential -- and, without --dev-site-root at all, exactly the
+    original, fully-commented single-mapping example (backward compatible
+    with every pre-existing ConfigWritingTests/NoCredentialIsEverWrittenTests
+    assertion above)."""
+
+    ANSWERS = (
+        '"https://studio.example/data/catalog.json" "https://studio.example" '
+        '"/mnt/big/synos-conformance" "/mnt/big/containers" 5 "1" "synos-conformance"'
+    )
+
+    def test_without_dev_site_root_the_upload_section_is_unchanged(self) -> None:
+        result = run_snippet(f"write_config {self.ANSWERS}")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("# upload:", result.stdout)
+        self.assertNotIn("protocol: local", result.stdout)
+
+    def test_with_dev_site_root_a_local_destination_is_written_uncommented(self) -> None:
+        result = run_snippet(f'write_config {self.ANSWERS} "/var/www/dev-studio" "www-data:www-data" "0644"')
+        self.assertEqual(0, result.returncode, result.stderr)
+        data = yaml.safe_load(result.stdout)
+        self.assertEqual(1, len(data["upload"]))
+        dest = data["upload"][0]
+        self.assertEqual("dev-site", dest["name"])
+        self.assertEqual("local", dest["protocol"])
+        self.assertEqual("/var/www/dev-studio/data/build-status.json", dest["remote_path"])
+        self.assertEqual("www-data:www-data", dest["owner"])
+        self.assertEqual("0644", dest["mode"])
+        # the production entry is a template, commented out, never live YAML
+        self.assertIn("# - name: production", result.stdout)
+        self.assertNotIn("password:", result.stdout)
+
+    def test_owner_and_mode_are_optional(self) -> None:
+        result = run_snippet(f'write_config {self.ANSWERS} "/var/www/dev-studio"')
+        data = yaml.safe_load(result.stdout)
+        dest = data["upload"][0]
+        self.assertNotIn("owner", dest)
+        self.assertNotIn("mode", dest)
+
+
+class MonitoringAppNginxRenderTests(unittest.TestCase):
+    """render_monitor_nginx_site: pure string rendering, no I/O -- the
+    shape every hard constraint in the task boils down to, checked
+    directly against the rendered text."""
+
+    def test_default_loopback_http_site_has_auth_and_upstream(self) -> None:
+        result = run_snippet(
+            'render_monitor_nginx_site "127.0.0.1" 8421 "/" "/etc/synos/monitor.htpasswd" 8420 "" "" ""')
+        self.assertEqual(0, result.returncode, result.stderr)
+        text = result.stdout
+        self.assertIn("listen 127.0.0.1:8421;", text)
+        self.assertIn("auth_basic_user_file /etc/synos/monitor.htpasswd;", text)
+        self.assertIn("proxy_pass http://127.0.0.1:8420/;", text)
+        self.assertNotIn("ssl_certificate", text)
+        self.assertNotIn("allow ", text)  # loopback-only: no allow/deny needed at all
+
+    def test_an_allowed_range_adds_allow_deny_and_binds_wide(self) -> None:
+        result = run_snippet(
+            'render_monitor_nginx_site "0.0.0.0" 8421 "/" "/etc/synos/monitor.htpasswd" 8420 "10.0.0.0/24" "" ""')
+        text = result.stdout
+        self.assertIn("listen 0.0.0.0:8421;", text)
+        self.assertIn("allow 10.0.0.0/24;", text)
+        self.assertIn("allow 127.0.0.1;", text)
+        self.assertIn("deny all;", text)
+
+    def test_tls_cert_and_key_produce_an_ssl_listener(self) -> None:
+        result = run_snippet(
+            'render_monitor_nginx_site "0.0.0.0" 8421 "/" "/etc/synos/monitor.htpasswd" 8420 "" '
+            '"/etc/ssl/site.crt" "/etc/ssl/site.key"')
+        text = result.stdout
+        self.assertIn("listen 0.0.0.0:8421 ssl;", text)
+        self.assertIn("ssl_certificate /etc/ssl/site.crt;", text)
+        self.assertIn("ssl_certificate_key /etc/ssl/site.key;", text)
+        self.assertIn("X-Forwarded-Proto https;", text)
+
+    def test_never_edits_an_existing_site_says_so_in_its_own_header(self) -> None:
+        result = run_snippet(
+            'render_monitor_nginx_site "127.0.0.1" 8421 "/" "/etc/synos/monitor.htpasswd" 8420 "" "" ""')
+        self.assertIn("Additive only", result.stdout)
+
+
+class GenerateMonitorCredentialTests(unittest.TestCase):
+    """Real openssl (present on this machine, and the honest minimum this
+    installer assumes) -- never a fake for this one, since what actually
+    needs proving is that a real apr1 hash lands in the file and the
+    plaintext never does."""
+
+    def test_generates_an_htpasswd_line_and_returns_the_plaintext_once(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "monitor.htpasswd"
+            result = run_snippet(f'generate_monitor_credential "{path}" admin')
+            self.assertEqual(0, result.returncode, result.stderr)
+            password = result.stdout.strip()
+            self.assertTrue(password)
+            content = path.read_text(encoding="utf-8").strip()
+            self.assertTrue(content.startswith("admin:$apr1$"), content)
+            self.assertNotIn(password, content)  # only the hash lands in the file
+            self.assertEqual(0o640, path.stat().st_mode & 0o777)
+
+    def test_missing_openssl_is_a_clean_refusal(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            real_bash = shutil.which("bash")
+            bindir.mkdir()
+            (bindir / "bash").symlink_to(real_bash)
+            path = Path(tmp) / "monitor.htpasswd"
+            result = run_snippet(f'command -v openssl >/dev/null 2>&1 || fail "no openssl" 8; generate_monitor_credential "{path}" admin',
+                                 env={"PATH": str(bindir)})
+            self.assertNotEqual(0, result.returncode)
+            self.assertFalse(path.exists())
+
+
+class NginxSiteWriteAndValidateTests(unittest.TestCase):
+    """write_and_validate_nginx_site: additive-only (writes a new file,
+    never edits one that exists), validated with a fake nginx -t before
+    anything is reloaded, and rolled all the way back -- the file it just
+    wrote removed again -- on a failing validation, so a bad certificate
+    path or a typo can never leave every other site broken."""
+
+    def _bindir(self, tmp: str, *, t_exit: int = 0, t_message: str = "") -> Path:
+        bindir = Path(tmp) / "bin"
+        bindir.mkdir()
+        fakes = {"sudo": 'exec "$@"\n', "systemctl": "exit 0\n"}
+        build_closed_path(bindir, fakes=fakes, omit={"nginx"})
+        fake_nginx(bindir, t_exit=t_exit, t_message=t_message)
+        return bindir
+
+    def test_conf_d_layout_writes_one_file_and_reloads_on_a_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            nginx_root = Path(tmp) / "nginx"
+            (nginx_root / "conf.d").mkdir(parents=True)
+            bindir = self._bindir(tmp)
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}", "SYNOS_NGINX_ROOT": str(nginx_root)}
+            result = run_snippet('write_and_validate_nginx_site synos-monitor "server { listen 127.0.0.1:8421; }"', env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            written = nginx_root / "conf.d" / "synos-monitor.conf"
+            self.assertTrue(written.is_file())
+            self.assertIn("listen 127.0.0.1:8421", written.read_text(encoding="utf-8"))
+            self.assertIn("reloaded nginx", result.stdout)
+
+    def test_sites_available_layout_symlinks_into_sites_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            nginx_root = Path(tmp) / "nginx"
+            (nginx_root / "sites-available").mkdir(parents=True)
+            (nginx_root / "sites-enabled").mkdir(parents=True)
+            bindir = self._bindir(tmp)
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}", "SYNOS_NGINX_ROOT": str(nginx_root)}
+            result = run_snippet('write_and_validate_nginx_site synos-monitor "server { listen 127.0.0.1:8421; }"', env=env)
+            self.assertEqual(0, result.returncode, result.stderr)
+            written = nginx_root / "sites-available" / "synos-monitor"
+            self.assertTrue(written.is_file())
+            link = nginx_root / "sites-enabled" / "synos-monitor"
+            self.assertTrue(link.is_symlink())
+
+    def test_a_failing_validation_removes_the_file_and_reloads_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            nginx_root = Path(tmp) / "nginx"
+            (nginx_root / "conf.d").mkdir(parents=True)
+            bindir = self._bindir(tmp, t_exit=1, t_message="nginx: [emerg] unexpected end of file")
+            env = {"PATH": f"{bindir}:{os.environ['PATH']}", "SYNOS_NGINX_ROOT": str(nginx_root)}
+            result = run_snippet('write_and_validate_nginx_site synos-monitor "server { broken"', env=env)
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("unexpected end of file", result.stderr)
+            written = nginx_root / "conf.d" / "synos-monitor.conf"
+            self.assertFalse(written.exists(), "a failed validation must remove exactly the file it just wrote")
+
+
+class RenderForgeConfigWiringTests(unittest.TestCase):
+    """render_forge_config: the one thing the public installer is actually
+    responsible for wiring on the monitoring app's behalf -- pointing its
+    own [conformance] section at the *same* engine checkout and the *same*
+    conformance workdir this same run just configured, so the app's own
+    read-only ingest (its own forge/ingest.py, never touched by this
+    repository) has something real to poll."""
+
+    def test_status_dir_and_config_path_match_the_conformance_service_just_configured(self) -> None:
+        result = run_snippet(
+            'render_forge_config "/opt/synos-engine" "/etc/synos/conformance.yml" "/var/lib/synos-conformance" 8420 synos-forge')
+        self.assertEqual(0, result.returncode, result.stderr)
+        text = result.stdout
+        self.assertIn('checkout = "/opt/synos-engine"', text)
+        self.assertIn('config_path = "/etc/synos/conformance.yml"', text)
+        self.assertIn('status_dir = "/var/lib/synos-conformance"', text)
+        self.assertIn('host = "127.0.0.1"', text)  # loopback, always
+        self.assertIn("port = 8420", text)
+        # this installer wires read-only ingest only, never a build schedule table -- the
+        # phrase may appear in an explanatory comment, but never as a real TOML section header
+        self.assertFalse(any(line.strip() == "[[schedule]]" for line in text.splitlines()))
+
+
+class MonitoringAppDryRunRefusalTests(unittest.TestCase):
+    """Full-script --dry-run scenarios (safe: nothing under --dry-run ever
+    touches the real filesystem or this machine's real nginx/systemd) --
+    the refusal paths the task asks for: a missing app checkout, plain
+    HTTP beyond loopback without the acknowledgement, no way to
+    authenticate at all, and nginx genuinely absent (not a refusal --
+    installs the app anyway, on loopback, with the one command to add the
+    site later)."""
+
+    RUNTIME_FAKES = dict(DryRunTests.RUNTIME_FAKES)
+
+    def _env_and_args(self, tmp: str, *, with_nginx: bool, extra_monitoring_args: list[str]) -> tuple[dict, list[str]]:
+        bindir = Path(tmp) / "bin"
+        fakes = dict(self.RUNTIME_FAKES)
+        # "nginx" always omitted from the auto-symlinked real tools (this
+        # machine has a real one at /usr/sbin/nginx) -- with_nginx decides
+        # only whether fake_nginx then puts a fake one back in its place.
+        path = build_closed_path(bindir, fakes=fakes, omit={"docker", "df", "stat", "nginx"})
+        fake_df_stat(bindir, [("/mnt/big", 5000 * 1048576, "ext4")])
+        if with_nginx:
+            fake_nginx(bindir)
+        osr = Path(tmp) / "os-release"
+        osr.write_text("ID=debian\n", encoding="utf-8")
+        engine_root = fake_engine_root(tmp)
+        env = dict(os.environ)
+        env["PATH"] = path
+        env["SYNOS_OS_RELEASE_FILE"] = str(osr)
+        args = [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={engine_root}",
+                "--site-url=https://studio.example", f"--config={tmp}/conformance.yml",
+                f"--unit-dir={tmp}/units"] + extra_monitoring_args
+        return env, args
+
+    def _run(self, tmp: str, *, with_nginx: bool = True, extra: list[str] | None = None) -> subprocess.CompletedProcess:
+        env, args = self._env_and_args(tmp, with_nginx=with_nginx, extra_monitoring_args=extra or [])
+        return subprocess.run(args, capture_output=True, text=True, env=env, cwd=str(ROOT), check=False)
+
+    def test_a_missing_app_checkout_is_refused_with_no_repo_given(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self._run(tmp, extra=[f"--monitoring-app={tmp}/does-not-exist"])
+            self.assertEqual(8, result.returncode)
+            self.assertIn("does not exist", result.stderr)
+
+    def test_a_checkout_missing_forge_app_py_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bogus = Path(tmp) / "not-forge"
+            bogus.mkdir()
+            result = self._run(tmp, extra=[f"--monitoring-app={bogus}"])
+            self.assertEqual(8, result.returncode)
+            self.assertIn("does not look like a checkout of the monitoring app", result.stderr)
+
+    def test_neither_monitoring_app_nor_repo_given_is_silent(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self._run(tmp)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertNotIn("monitoring", result.stdout.lower())
+
+    def test_repo_given_without_ssh_key_and_without_an_existing_checkout_skips_cleanly(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self._run(tmp, extra=["--monitoring-repo=git@example.invalid:org/forge.git",
+                                           f"--monitoring-app={tmp}/nope"])
+            self.assertEqual(8, result.returncode)
+            self.assertIn("without --monitoring-ssh-key", result.stderr)
+
+    def test_plain_http_beyond_loopback_without_acknowledgement_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            app = fake_monitoring_app_checkout(tmp)
+            result = self._run(tmp, extra=[f"--monitoring-app={app}", "--monitoring-allow-from=10.0.0.0/24"])
+            self.assertEqual(8, result.returncode)
+            self.assertIn("plain HTTP beyond loopback", result.stderr)
+            self.assertIn("--monitoring-allow-insecure-http", result.stderr)
+            self.assertIn("--monitoring-tls-cert", result.stderr)
+
+    def test_plain_http_beyond_loopback_with_acknowledgement_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            app = fake_monitoring_app_checkout(tmp)
+            result = self._run(tmp, extra=[f"--monitoring-app={app}", "--monitoring-allow-from=10.0.0.0/24",
+                                           "--monitoring-allow-insecure-http"])
+            self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+
+    def test_tls_cert_without_key_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            app = fake_monitoring_app_checkout(tmp)
+            result = self._run(tmp, extra=[f"--monitoring-app={app}", "--monitoring-tls-cert=/tmp/x.crt"])
+            self.assertEqual(8, result.returncode)
+            self.assertIn("required together", result.stderr)
+
+    def test_missing_openssl_and_no_auth_file_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            app = fake_monitoring_app_checkout(tmp)
+            env, args = self._env_and_args(tmp, with_nginx=True, extra_monitoring_args=[f"--monitoring-app={app}"])
+            # rebuild PATH without openssl: a closed path already excludes
+            # everything not explicitly faked or symlinked in except real
+            # system tools -- omit openssl specifically here.
+            bindir = Path(tmp) / "bin2"
+            fakes = dict(self.RUNTIME_FAKES)
+            path = build_closed_path(bindir, fakes=fakes, omit={"docker", "df", "stat", "openssl", "nginx"})
+            fake_df_stat(bindir, [("/mnt/big", 5000 * 1048576, "ext4")])
+            fake_nginx(bindir)
+            env["PATH"] = path
+            result = subprocess.run(args, capture_output=True, text=True, env=env, cwd=str(ROOT), check=False)
+            self.assertEqual(8, result.returncode)
+            self.assertIn("openssl", result.stderr)
+            self.assertIn("will not publish the monitoring console without authentication", result.stderr)
+
+    def test_an_existing_auth_file_skips_generation_entirely(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            app = fake_monitoring_app_checkout(tmp)
+            auth_file = Path(tmp) / "existing.htpasswd"
+            auth_file.write_text("admin:$apr1$x$y\n", encoding="utf-8")
+            result = self._run(tmp, extra=[f"--monitoring-app={app}", f"--monitor-auth-file={auth_file}"])
+            self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+            self.assertIn("using the given htpasswd file", result.stdout)
+            self.assertNotIn("would generate", result.stdout)
+
+    def test_a_missing_given_auth_file_is_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            app = fake_monitoring_app_checkout(tmp)
+            result = self._run(tmp, extra=[f"--monitoring-app={app}", f"--monitor-auth-file={tmp}/nope.htpasswd"])
+            self.assertEqual(8, result.returncode)
+            self.assertIn("does not exist", result.stderr)
+
+    def test_nginx_absent_is_not_a_refusal_installs_the_app_on_loopback_with_a_hint(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            app = fake_monitoring_app_checkout(tmp)
+            result = self._run(tmp, with_nginx=False, extra=[f"--monitoring-app={app}"])
+            self.assertEqual(0, result.returncode, result.stderr + result.stdout)
+            self.assertIn("nginx is not installed", result.stdout)
+            self.assertIn("127.0.0.1:8420", result.stdout)
+            self.assertIn("install nginx", result.stdout)
+            self.assertIn("apt-get", result.stdout)  # the one real command, for this (debian) family
+            # the app itself is still configured/would-be-installed
+            self.assertIn("would install", result.stdout.lower() + result.stderr.lower())
+
+    def test_the_app_never_binds_anywhere_but_loopback_regardless_of_the_site(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            app = fake_monitoring_app_checkout(tmp)
+            result = self._run(tmp, extra=[f"--monitoring-app={app}", "--monitoring-allow-from=0.0.0.0/0",
+                                           "--monitoring-allow-insecure-http"])
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("127.0.0.1:8420", result.stdout)
+            self.assertIn("loopback only", result.stdout)
+
+    def test_normal_engine_only_path_never_mentions_monitoring_at_all(self) -> None:
+        # hard constraint 1: the public installer must behave identically,
+        # with zero mention, when the operator never asked for the
+        # monitoring half.
+        with tempfile.TemporaryDirectory() as tmp:
+            result = self._run(tmp)
+            self.assertEqual(0, result.returncode, result.stderr)
+            for word in ("monitoring", "forge", "nginx", "htpasswd"):
+                self.assertNotIn(word, result.stdout.lower())
+
+
+class KvmStatusAndClosingSummaryTests(unittest.TestCase):
+    """Item: /dev/kvm is checked and reported (bare metal genuinely has it;
+    a nested build host often does not, and the difference is a fifteen-
+    minute boot check versus hours) and the closing summary says what was
+    created/updated/left alone/skipped plus what remains for the operator
+    to do by hand -- including, always, which command deploys the Studio
+    page itself, since this script never does that."""
+
+    def test_boot_acceleration_line_is_always_printed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            fakes = dict(DryRunTests.RUNTIME_FAKES)
+            path = build_closed_path(bindir, fakes=fakes, omit={"docker", "df", "stat"})
+            fake_df_stat(bindir, [("/mnt/big", 5000 * 1048576, "ext4")])
+            osr = Path(tmp) / "os-release"
+            osr.write_text("ID=debian\n", encoding="utf-8")
+            engine_root = fake_engine_root(tmp)
+            env = dict(os.environ)
+            env["PATH"] = path
+            env["SYNOS_OS_RELEASE_FILE"] = str(osr)
+            result = subprocess.run(
+                [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={engine_root}",
+                 "--site-url=https://studio.example", f"--config={tmp}/c.yml", f"--unit-dir={tmp}/units"],
+                capture_output=True, text=True, env=env, cwd=str(ROOT), check=False)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("boot acceleration:", result.stdout)
+
+    def test_closing_summary_names_the_studio_deploy_command_never_runs_it(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bindir = Path(tmp) / "bin"
+            fakes = dict(DryRunTests.RUNTIME_FAKES)
+            path = build_closed_path(bindir, fakes=fakes, omit={"docker", "df", "stat"})
+            fake_df_stat(bindir, [("/mnt/big", 5000 * 1048576, "ext4")])
+            osr = Path(tmp) / "os-release"
+            osr.write_text("ID=debian\n", encoding="utf-8")
+            engine_root = fake_engine_root(tmp)
+            env = dict(os.environ)
+            env["PATH"] = path
+            env["SYNOS_OS_RELEASE_FILE"] = str(osr)
+            result = subprocess.run(
+                [BASH, str(SCRIPT), "--dry-run", "--yes", f"--engine-root={engine_root}",
+                 "--catalog-url=https://studio.example/data/catalog.json",  # no --site-url this time
+                 f"--config={tmp}/c.yml", f"--unit-dir={tmp}/units"],
+                capture_output=True, text=True, env=env, cwd=str(ROOT), check=False)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("summary:", result.stdout)
+            self.assertIn("deploy.sh", result.stdout)
+            self.assertIn("fill in site_url", result.stdout)
+            self.assertNotIn("deploy.sh\ndeploy.sh", result.stdout)  # named once, not run
 
 
 if __name__ == "__main__":

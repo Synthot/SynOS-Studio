@@ -84,8 +84,10 @@ report_url: null
 # example that is committed anywhere; the real values belong only in the
 # private /etc/synos/conformance.yml a service user's process reads.
 #
+# One destination (a mapping, below) or several, in order (a list):
+#
 # upload:
-#   protocol: sftp                # sftp | scp | ftps | ftp (ftp refused unless allow_insecure_ftp: true)
+#   protocol: sftp                # sftp | scp | ftps | ftp | local (ftp refused unless allow_insecure_ftp: true)
 #   host: studio.example
 #   port: 22
 #   username: synos-conformance-upload
@@ -95,6 +97,34 @@ report_url: null
 #   allow_insecure_ftp: false
 #   retries: 3
 #   retry_backoff_s: 5
+#
+# Several destinations, in order, published under one rule: "protocol:
+# local" is a plain file copy (not a network at all -- for a development
+# copy of the Studio page served from this same machine) and is treated as
+# a rehearsal. It is published, then -- since site_url above already names
+# that same development site -- fetched back over HTTP from
+# <site_url>/data/build-status.json and checked to actually be a valid,
+# served build-status.json, before a single non-local ("production")
+# destination further down the list is even attempted. If the rehearsal
+# fails to publish, or comes back invalid when fetched, every production
+# destination is skipped -- with the reason -- and none of them is
+# touched: a bad publish never reaches a customer's own site, and a
+# production failure never leaves the rehearsal copy stale (production
+# was simply never tried). See tools/status_uploader.py's own module
+# docstring and docs/BUILD_MATRIX.md's "Publishing the build-status badge".
+#
+# upload:
+#   - name: dev-site
+#     protocol: local
+#     remote_path: /var/www/dev-studio/data/build-status.json
+#     owner: www-data:www-data      # optional; chown after copy, best-effort, never fatal
+#     mode: "0644"                   # optional; chmod after copy
+#   - name: production
+#     protocol: sftp
+#     host: studio.example
+#     username: synos-conformance-upload
+#     key_path: /etc/synos/conformance-upload-key
+#     remote_path: /var/www/studio/data/build-status.json
 
 # `build` only: free a successful entry's heavy directories (the unpacked
 # bundle, its build tree, the multi-GB ISO) as soon as that entry
