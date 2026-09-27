@@ -2,6 +2,7 @@
 
 from support import *  # noqa: F403
 
+import ast
 import builtins
 import dis
 import importlib
@@ -46,6 +47,37 @@ class TestSystemArchitectureTests(unittest.TestCase):
             len((ROOT / "README.md").read_text(encoding="utf-8").splitlines()),
             80,
         )
+
+    def test_no_test_module_imports_a_testcase_from_another_test_module(self):
+        """A file split in two to stay under the cap above shares the first
+        file's fixtures by importing them -- but importing a TestCase *class*
+        by name binds it in the importing module too, so unittest collects and
+        runs that class's tests a second time from there. The inflated count
+        then reads as new coverage that does not exist. Sharing helpers,
+        constants and fakes is fine; a TestCase stays behind its module
+        (`import other_module` and reference `other_module.TheTests`)."""
+        unit = ROOT / "unit"
+        classes = {}
+        for path in unit.glob("test_*.py"):
+            for node in ast.parse(path.read_text(encoding="utf-8")).body:
+                if isinstance(node, ast.ClassDef):
+                    bases = [
+                        base.id if isinstance(base, ast.Name) else getattr(base, "attr", "")
+                        for base in node.bases
+                    ]
+                    if any("TestCase" in base for base in bases):
+                        classes.setdefault(path.stem, set()).add(node.name)
+        double_collected = []
+        for path in unit.glob("test_*.py"):
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                if not isinstance(node, ast.ImportFrom) or not node.module:
+                    continue
+                for alias in node.names:
+                    if alias.name in classes.get(node.module, ()):
+                        double_collected.append(
+                            f"{path.name} imports TestCase {alias.name} from {node.module}"
+                        )
+        self.assertEqual([], double_collected)
 
     def test_framework_contains_mechanisms_not_product_workflows(self):
         self.assertFalse((ROOT / "framework/runner.py").exists())
