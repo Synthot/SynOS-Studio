@@ -1007,7 +1007,7 @@ class SerialTransportTests(unittest.TestCase):
                             "shell probe arrived before Bash owned serial"
                         )
                     writer.sendall(
-                        b"servicename=debug-shell.service;type=service\n"
+                        b"systemd[1]: Started debug-shell.service - Early root shell on /dev/ttyS0 FOR DEBUGGING ONLY.\n"
                     )
                     for _ in range(2):
                         command = bytearray()
@@ -1092,7 +1092,7 @@ class SerialTransportTests(unittest.TestCase):
             console._socket = reader
             console._log = transcript.open("ab", buffering=0)
             writer.sendall(
-                b"GNU GRUB 2.14\nservicename=debug-shell.service;type=service\n"
+                b"GNU GRUB 2.14\nsystemd[1]: Started debug-shell.service - Early root shell on /dev/ttyS0 FOR DEBUGGING ONLY.\n"
             )
             try:
                 console._wait_for_kernel_console(time.monotonic() + 1)
