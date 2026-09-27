@@ -67,7 +67,14 @@ ManifestError = render_manifest.ManifestError
 # that constraint does not apply here (and would be actively wrong if podman
 # happens to be installed and its unrelated store happens to be nearly full).
 PACKAGE_MIN_FREE_GB = 2.0            # scratch space per concurrent build under .build/packages-work
-PACKAGE_MIN_MEMORY_GB_PER_JOB = 1.0  # dpkg-deb, gpg, msgfmt and the vendored prebuild scripts are not memory-hungry
+# Most recipes are dpkg-deb, gpg and msgfmt, which need almost nothing — but a
+# handful compile Rust (the four GTK applications) or a large C++ tree, and rustc
+# alone can hold well over a gigabyte on a single crate. The measured speedup
+# saturates once the worker count passes about twenty, because wall time then
+# tracks the slowest single package rather than the total work, so budgeting two
+# gigabytes a job costs nothing on a large machine and keeps a laptop from
+# meeting the out-of-memory killer halfway through a build.
+PACKAGE_MIN_MEMORY_GB_PER_JOB = 2.0
 PACKAGE_CPUS_PER_JOB = 1             # a single package build rarely uses more than one core at a time
 # These low, per-job numbers are also why --jobs auto is the *default* (not
 # an opt-in): even a modest machine gets a sane handful of workers rather
