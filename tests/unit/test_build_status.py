@@ -279,6 +279,55 @@ class MigrationV1ToV2Tests(unittest.TestCase):
         self.assertEqual({}, loaded["entries"])
 
 
+class EngineTransitionTests(unittest.TestCase):
+    """The Studio page (web/js/open.js's catalogStatusIcon()) judges a result 'stale' by
+    comparing this record's own `engine` against the engine the page itself was built
+    against, so a re-test on a newer engine must actually move the *live* record's `engine`
+    field forward -- otherwise a genuinely fresh re-confirmation would still read as stale
+    forever. apply_result() already always writes `engine` from the new result
+    unconditionally (see EntryRecordViaApplyResultTests above); these tests pin that specific
+    behaviour across an engine *change*, not just a first result, and pin the two things a
+    re-test on a newer engine must NOT do: it must not erase the older attempt's own engine
+    from history, and it must not, on its own, reset `since` (that stays tied to the state's
+    own streak, not to which engine produced it - see SinceStreakTests)."""
+
+    def test_a_re_test_on_a_newer_engine_overwrites_the_live_records_engine_field(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu", success_result("x", engine="0.3.0"))
+        status, _ = bs.apply_result(status, "x", "ubuntu",
+                                    success_result("x", engine="0.4.0", end="2026-09-25T00:00:00+00:00"))
+        record = status["entries"]["x"]["bases"]["ubuntu"]
+        self.assertEqual("0.4.0", record["engine"],
+                         "the live record must claim the engine that actually produced its latest outcome")
+
+    def test_the_older_attempts_own_engine_survives_in_history_after_a_newer_retest(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu",
+                                    success_result("x", engine="0.3.0", end="2026-09-20T00:00:00+00:00"))
+        status, _ = bs.apply_result(status, "x", "ubuntu",
+                                    success_result("x", engine="0.4.0", end="2026-09-25T00:00:00+00:00"))
+        history = status["entries"]["x"]["bases"]["ubuntu"]["history"]
+        self.assertEqual(["0.3.0", "0.4.0"], [h["engine"] for h in history],
+                         "a person opening the history must still be able to see it passed on 0.3.0, not only today's 0.4.0")
+
+    def test_a_bare_engine_bump_with_the_same_outcome_does_not_reset_since(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu",
+                                    success_result("x", engine="0.3.0", end="2026-09-01T00:00:00+00:00"))
+        status, _ = bs.apply_result(status, "x", "ubuntu",
+                                    success_result("x", engine="0.4.0", end="2026-09-25T00:00:00+00:00"))
+        self.assertEqual("2026-09-01T00:00:00+00:00", status["entries"]["x"]["bases"]["ubuntu"]["since"],
+                         "since tracks the state's own streak, not which engine produced the latest confirmation of it")
+
+    def test_a_failure_that_persists_across_an_engine_bump_is_still_one_continuous_streak(self) -> None:
+        status, _ = bs.apply_result(bs.empty_status(), "x", "ubuntu",
+                                    failed_result("x", end="2026-09-01T00:00:00+00:00"))
+        result = failed_result("x", end="2026-09-25T00:00:00+00:00")
+        result["engine"] = "0.4.0"
+        status, _ = bs.apply_result(status, "x", "ubuntu", result)
+        record = status["entries"]["x"]["bases"]["ubuntu"]
+        self.assertEqual("0.4.0", record["engine"])
+        self.assertEqual("2026-09-01T00:00:00+00:00", record["since"],
+                         "still failing, now confirmed on a newer engine too -- one streak, not reset by the engine change alone")
+
+
 class LoadWriteStatusTests(unittest.TestCase):
     def test_missing_file_loads_as_empty(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
