@@ -566,6 +566,51 @@ class LauncherTests(unittest.TestCase):
         finally:
             shutil.rmtree(work, ignore_errors=True)
 
+    def test_the_build_speaks_while_it_runs_and_is_still_captured(self) -> None:
+        """The engine writes its own progress to stderr (tools/synos's run_step), so a
+        launcher that redirects stderr into a file to catch a storage-state mismatch
+        silences the whole forty-minute build: the container build prints, the operating
+        system build prints nothing at all, and nobody notices until someone watches a
+        real one. Both must happen — every line reaches the person, and the capture the
+        mismatch translation reads still gets it."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            bundle = write_bundle(tmp / "bundle", {"format": 1, "manifest": "manifests/x.yml", "engine": {"min": "0.1.0"}},
+                                  {"manifests/x.yml": MANIFEST})
+            shutil.copy(ROOT / "tools" / "bundle_launcher.sh", bundle / "build.sh")
+            fake = tmp / "bin"
+            fake.mkdir()
+            for tool in ("sh", "sed", "head", "awk", "df", "uname", "grep", "ls", "cat", "cp", "tr", "dirname",
+                         "printf", "mkdir", "rm", "tar", "date", "tee", "mv", "chmod", "cmp", "cksum", "stat", "du"):
+                found = shutil.which(tool)
+                if found:
+                    (fake / tool).symlink_to(found)
+            # A runtime whose "run" writes to stderr exactly as the engine does, and
+            # says something a person would look for in the terminal.
+            # Matched on the whole argument line, not $1: the launcher prepends
+            # --root/--runroot when a storage location is in effect.
+            write_executable(fake / "podman", "#!/bin/sh\n"
+                             "case \"$*\" in\n"
+                             "  *'synos build /bundle'*)\n"
+                             "       printf '%s\\n' 'Setting up synos-desktop (2.0.2-4+synos1) ...' >&2\n"
+                             "       printf '%s\\n' 'Mod 06-profile-software finished in 943s' >&2; exit 0 ;;\n"
+                             "  *info*) printf '%s\\n' '/var/lib/containers/storage' ;;\n"
+                             "esac\nexit 0\n")
+            write_executable(fake / "sudo", "#!/bin/sh\nshift\nexec \"$@\"\n")
+            self.write_root_id_into(fake)
+            env = {"PATH": str(fake), "HOME": str(tmp), "SYNOS_NO_UPDATE_CHECK": "1", "SYNOS_YES": "1",
+                   "SYNOS_ENGINE_SOURCE": str(ROOT)}
+            result = subprocess.run(["sh", "build.sh"], cwd=bundle, env=env, capture_output=True, text=True,
+                                    stdin=subprocess.DEVNULL)
+            printed = result.stdout + result.stderr
+            self.assertIn("Setting up synos-desktop", printed,
+                          "the build's own progress must reach the person while it runs")
+            self.assertIn("Mod 06-profile-software finished in 943s", printed)
+
+    def write_root_id_into(self, fake: Path) -> None:
+        """`id -u` must say 0 so the launcher does not decide it needs sudo for podman."""
+        write_executable(fake / "id", "#!/bin/sh\ncase \"$*\" in *-u*) echo 0 ;; *-g*) echo 0 ;; *) echo 0 ;; esac\n")
+
     def test_inside_the_image_build_runs_make_directly_and_collects_outputs(self) -> None:
         cli = load_cli()
         calls: list[list[str]] = []

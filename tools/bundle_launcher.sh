@@ -1429,11 +1429,16 @@ say "building $manifest with $image"
 say "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
 say "the full output is kept in dist/build.log"
 set +e
-# Only stderr is captured here (stdout keeps streaming live, unbuffered, the
-# way it always has): a real storage-state mismatch fails before "synos
-# build" ever gets to write anything to dist/build.log itself, so that log
-# alone cannot show it - this is the one place that failure can actually be
-# seen and translated.
+# Everything the build says goes to the terminal *and* to a file here, the
+# same shape the engine image build above uses. The engine writes its own
+# progress to stderr (tools/synos's run_step), so an earlier version of this
+# line - which redirected stderr straight into a file to catch a storage-state
+# mismatch - silenced the whole 40-minute build: the container build printed,
+# the operating system build printed nothing at all. The capture is still
+# needed, because a mismatch fails before "synos build" writes anything to
+# dist/build.log and that log alone cannot show it; it just must not be the
+# only place the output goes. The exit status comes back through a file, since
+# a pipe would otherwise report tee's.
 # --force on the apply inside the container: the engine at /opt/synos there is
 # a throwaway copy that exists for the length of this one build, so a bundle's
 # own files are simply the authority for the paths they cover. Without it a
@@ -1444,7 +1449,8 @@ set +e
 # is for `tools/synos build` on a checkout, where there is something to
 # protect; this is the one place where there is not.
 run_err_file=".build/build-run-stderr.$$"
-run_runtime run --rm --privileged --platform "linux/$arch" \
+run_status_file=".build/build-run-status.$$"
+( run_runtime run --rm --privileged --platform "linux/$arch" \
     -v "$PWD:/bundle:z" \
     -v "synos-cache-$base-$suite:/opt/synos/.build" \
     -v /opt/synos/new_building_os -v /opt/synos/image \
@@ -1452,8 +1458,10 @@ run_runtime run --rm --privileged --platform "linux/$arch" \
     -e "SYNOS_UID=$(id -u)" -e "SYNOS_GID=$(id -g)" \
     -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE \
     -e SYNOS_CHANNEL="$channel" \
-    "$image" synos build /bundle --force --output /bundle/dist --log /bundle/dist/build.log 2>"$run_err_file"
-status=$?
+    "$image" synos build /bundle --force --output /bundle/dist --log /bundle/dist/build.log 2>&1; st=$?; echo "$st" >"$run_status_file" ) \
+    | tee "$run_err_file"
+status=$(cat "$run_status_file" 2>/dev/null || echo 1)
+rm -f "$run_status_file"
 set -e
 if [ "$status" -ne 0 ]; then
     run_err=$(cat "$run_err_file" 2>/dev/null || true)
