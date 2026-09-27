@@ -28,6 +28,8 @@ listed in packages/_lib/brand-keep.txt are left alone.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures as cf
+import contextlib
 import importlib.util
 import json
 import os
@@ -36,6 +38,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -48,7 +51,123 @@ _TIMINGS_SPEC = importlib.util.spec_from_file_location("build_timings", ROOT / "
 build_timings = importlib.util.module_from_spec(_TIMINGS_SPEC)
 assert _TIMINGS_SPEC.loader is not None
 _TIMINGS_SPEC.loader.exec_module(build_timings)
+_HOST_RESOURCES_SPEC = importlib.util.spec_from_file_location("host_resources_for_build_packages", ROOT / "tools" / "host_resources.py")
+host_resources = importlib.util.module_from_spec(_HOST_RESOURCES_SPEC)
+assert _HOST_RESOURCES_SPEC.loader is not None
+_HOST_RESOURCES_SPEC.loader.exec_module(host_resources)
 ManifestError = render_manifest.ManifestError
+
+# Package builds are plain dpkg-deb packaging (copy files, run a small
+# prebuild script, run dpkg-deb) — nothing like the container-based OS image
+# builds tools/host_resources.py's own defaults are sized for (a debootstrap
+# chroot at MIN_FREE_GB=40, MIN_MEMORY_GB_PER_JOB=4). Same policy (disk,
+# memory, CPUs; never a second one), different, much lighter, numbers for
+# this workload; free_store_gb is fixed at None in resolve_jobs() below
+# because building .debs never touches a container runtime's storage, so
+# that constraint does not apply here (and would be actively wrong if podman
+# happens to be installed and its unrelated store happens to be nearly full).
+PACKAGE_MIN_FREE_GB = 2.0            # scratch space per concurrent build under .build/packages-work
+PACKAGE_MIN_MEMORY_GB_PER_JOB = 1.0  # dpkg-deb, gpg, msgfmt and the vendored prebuild scripts are not memory-hungry
+PACKAGE_CPUS_PER_JOB = 1             # a single package build rarely uses more than one core at a time
+
+
+def resolve_jobs(requested: str) -> tuple[int, list[str]]:
+    """--jobs "auto" derives the safe worker count from this machine's own
+    disk, memory and CPUs (tools/host_resources.py, the same formula
+    tools/build_matrix.py and tools/catalog_conformance.py use), sized for
+    plain package builds via PACKAGE_MIN_FREE_GB et al. above. An explicit
+    count above what the machine can safely feed is refused with the reason,
+    not silently capped; --jobs 1 always means today's plain serial loop."""
+    return host_resources.resolve_jobs(requested, ROOT, min_free_gb=PACKAGE_MIN_FREE_GB,
+                                       min_memory_gb_per_job=PACKAGE_MIN_MEMORY_GB_PER_JOB,
+                                       cpus_per_job=PACKAGE_CPUS_PER_JOB, free_store_gb=None)
+
+
+# ------------------------------------------------------- concurrency guards
+# Packages build independently (separate work/<name> trees, separate
+# fingerprint stamps, separate .deb outputs), so most of the loop below is
+# safe to run concurrently with no coordination at all. A few things are
+# not, because they are genuinely shared, mutable state a concurrent build
+# can race another one over; each gets a lock keyed by the resource itself
+# so unrelated packages never wait on each other:
+#   - stage_recipe()'s one copy of packages/_lib under work/src/_lib, shared
+#     by every package's staged tree;
+#   - fetch_fork()'s .build/forks/<distro-suite-component-arch>.Packages.gz
+#     index and cached .deb: two fork.json recipes for the same base/suite/
+#     component/arch (e.g. synos-software-properties-common and
+#     plymouth-synos, both following BASE=debian) share the same index file;
+#   - fetch_git_commit() (packages/_lib/build-guards.sh): its cache key is
+#     the pinned (url, commit), and it takes no lock of its own. Two recipes
+#     that vendor the same upstream commit — synos-fluent-gtk-theme and
+#     synos-gdm3-wallpaper both pin vinceliuice/Fluent-gtk-theme.git@
+#     7a49a464b0188c340101c52965c18190b1c694cf — would otherwise have one's
+#     `rm -rf "$cache"` racing the other's `git fetch` into the same
+#     directory;
+#   - resolve-gnome-ext.py (packages/_lib) --download: it always writes the
+#     fetched zip to the single hardcoded path /tmp/gnome-ext-poc.zip, for
+#     every one of the ~14 gnome-shell-extension-* recipes that call it, each
+#     several times over (once per GNOME target in its own loop). Confirmed
+#     by a real concurrent run: several of those recipes that build cleanly
+#     serially failed with zipfile.BadZipFile / EOFError / "invalid distance
+#     too far back" once run alongside each other — textbook corruption from
+#     two processes writing and reading the same file. It takes no lock of
+#     its own and has no per-package key to lock on (the path never varies),
+#     so every recipe that calls it shares one single lock.
+# source_cache_keys() finds both hazards by a static scan of the recipe's
+# own shell scripts, so a future recipe that repeats a commit, or gains
+# another call into resolve-gnome-ext.py, is covered too, not just today's
+# instances of each.
+_KEYED_LOCKS: dict[tuple, threading.Lock] = {}
+_KEYED_LOCKS_GUARD = threading.Lock()
+
+
+def _lock_for(key: tuple) -> threading.Lock:
+    with _KEYED_LOCKS_GUARD:
+        lock = _KEYED_LOCKS.get(key)
+        if lock is None:
+            lock = threading.Lock()
+            _KEYED_LOCKS[key] = lock
+        return lock
+
+
+_SHELL_VAR_ASSIGN_RE = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)=["\']?([^"\'\n]*)["\']?\s*$', re.MULTILINE)
+_FETCH_GIT_COMMIT_RE = re.compile(r'^\s*fetch_git_commit\s+(\S+)\s+(\S+)', re.MULTILINE)
+_GNOME_EXT_DOWNLOAD_RE = re.compile(r'resolve-gnome-ext\.py\b[^\n]*--download')
+
+
+def source_cache_keys(source: Path) -> set[tuple[str, ...]]:
+    """Best-effort static scan of a recipe's own shell scripts (prebuild.sh
+    and anything under upstream/) for the two known shared-resource hazards:
+    `fetch_git_commit <url> <commit>` calls (resolving simple VAR="value"
+    assignments made in the same file), and any call into
+    resolve-gnome-ext.py with --download. Two packages whose scan comes back
+    with the same (url, commit) pin the identical upstream commit; any
+    package that calls resolve-gnome-ext.py --download shares that call's
+    one hardcoded temp file with every other one that does. Either case
+    means those recipes must not run their prebuild.sh at the same time (see
+    the module-level comment above); everyone else's keys come back empty or
+    disjoint and are never locked against one another."""
+    scripts = []
+    prebuild = source / "prebuild.sh"
+    if prebuild.is_file():
+        scripts.append(prebuild)
+    upstream = source / "upstream"
+    if upstream.is_dir():
+        scripts.extend(p for p in upstream.rglob("*.sh") if p.is_file())
+    keys: set[tuple[str, ...]] = set()
+    for script in scripts:
+        try:
+            text = script.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        assigns = dict(_SHELL_VAR_ASSIGN_RE.findall(text))
+        for url, commit in _FETCH_GIT_COMMIT_RE.findall(text):
+            match = re.fullmatch(r'"?\$\{?(\w+)\}?"?', commit)
+            resolved = assigns.get(match.group(1), commit) if match else commit
+            keys.add(("git-commit", url, resolved))
+        if _GNOME_EXT_DOWNLOAD_RE.search(text):
+            keys.add(("gnome-ext-download",))
+    return keys
 
 # Signing key location. SYNOS_KEYS_DIR overrides the default keys/ (tests, CI).
 KEYS_DIR = Path(os.environ.get("SYNOS_KEYS_DIR", str(ROOT / "keys")))
@@ -341,7 +460,14 @@ def run_prebuild(source: Path, subs: dict[str, str], log: list[str]) -> None:
     # Upstream scripts compare sorted lists; glob order must not depend on the host locale.
     env = dict(os.environ, ARCH=subs["ARCH"], SUITE=subs["SUITE"], BASE=subs["BASE"], LC_ALL="C.UTF-8", LANG="C.UTF-8")
     env.setdefault("SYNOS_SOURCE_CACHE", str(ROOT / ".build" / "sources"))
-    result = subprocess.run(["bash", str(script)], cwd=source, env=env, capture_output=True, text=True, check=False)
+    # Hold a lock per (url, commit) this script fetches via fetch_git_commit,
+    # so two recipes pinning the same upstream commit never share that cache
+    # entry concurrently (see the module-level comment near _lock_for).
+    cache_locks = [_lock_for(("source-cache",) + key) for key in sorted(source_cache_keys(source))]
+    with contextlib.ExitStack() as stack:
+        for lock in cache_locks:
+            stack.enter_context(lock)
+        result = subprocess.run(["bash", str(script)], cwd=source, env=env, capture_output=True, text=True, check=False)
     log.append(result.stdout[-4000:] + result.stderr[-4000:])
     if result.returncode != 0:
         tail = [line for line in (result.stderr or result.stdout).strip().splitlines() if line.strip()][-8:]
@@ -439,7 +565,14 @@ def fetch_fork(source: Path, subs: dict[str, str], pkg: Path) -> dict[str, str]:
     cache = ROOT / ".build" / "forks"
     index = cache / f"{spec['distro']}-{suite}-{component}-{index_arch}.Packages.gz"
     if not index.is_file():
-        _fetch_index(base_url, suite, component, index_arch, index)
+        # Two fork.json recipes following the same base/suite/component/arch
+        # (e.g. synos-software-properties-common and plymouth-synos, both
+        # BASE=debian) share this exact index file; without a lock, two
+        # concurrent builds racing the same "not there yet, fetch it" check
+        # would both fetch and one's write could interleave with the other's.
+        with _lock_for(("fork-index", str(index))):
+            if not index.is_file():
+                _fetch_index(base_url, suite, component, index_arch, index)
     stanza = None
     with gzip.open(index, "rt", encoding="utf-8", errors="replace") as handle:
         for block in handle.read().split("\n\n"):
@@ -454,13 +587,15 @@ def fetch_fork(source: Path, subs: dict[str, str], pkg: Path) -> dict[str, str]:
             fields[k] = v.strip()
     deb = cache / Path(fields["Filename"]).name
     if not deb.is_file():
-        try:
-            _fetch(f"{base_url}/{fields['Filename']}", deb)
-        except Exception as exc:
-            raise SkipPackage(f"cannot download {fields['Filename']}: {exc}") from exc
-    subprocess.run(["dpkg-deb", "-x", str(deb), str(pkg)], check=True)
+        with _lock_for(("fork-deb", str(deb))):
+            if not deb.is_file():
+                try:
+                    _fetch(f"{base_url}/{fields['Filename']}", deb)
+                except Exception as exc:
+                    raise SkipPackage(f"cannot download {fields['Filename']}: {exc}") from exc
+    subprocess.run(["dpkg-deb", "-x", str(deb), str(pkg)], check=True, capture_output=True)
     if not spec.get("suppress_scripts"):
-        subprocess.run(["dpkg-deb", "-e", str(deb), str(pkg / "DEBIAN")], check=True)
+        subprocess.run(["dpkg-deb", "-e", str(deb), str(pkg / "DEBIAN")], check=True, capture_output=True)
     return fields
 
 
@@ -490,15 +625,26 @@ def rmtree_tolerant(path: Path) -> None:
                           "— run 'make clean' (uses sudo) and retry") from exc
 
 
+def _lib_needs_refresh(lib: Path) -> bool:
+    return not lib.is_dir() or any(f.stat().st_mtime > lib.stat().st_mtime for f in (ROOT / "packages" / "_lib").rglob("*"))
+
+
 def stage_recipe(source: Path, work: Path) -> Path:
     """Copy a recipe (inputs only) into the work tree, where prebuild.sh runs.
-    Keeps prebuild outputs and root-owned container leftovers out of packages/."""
+    Keeps prebuild outputs and root-owned container leftovers out of packages/.
+
+    work/src/_lib is one shared copy every package's staged tree reads from;
+    concurrent packages all call this, so the check-and-copy is guarded by a
+    lock (with the cheap check repeated outside and inside it, so only the
+    first caller that actually needs to refresh it pays for the lock)."""
     src_root = work / "src"
     lib = src_root / "_lib"
-    if not lib.is_dir() or any(f.stat().st_mtime > lib.stat().st_mtime for f in (ROOT / "packages" / "_lib").rglob("*")):
-        rmtree_tolerant(lib)
-        copy_tree(ROOT / "packages" / "_lib", lib)
-        lib.touch()
+    if _lib_needs_refresh(lib):
+        with _lock_for(("stage-lib", str(lib))):
+            if _lib_needs_refresh(lib):
+                rmtree_tolerant(lib)
+                copy_tree(ROOT / "packages" / "_lib", lib)
+                lib.touch()
     staged = src_root / source.name
     rmtree_tolerant(staged)
     for path in source.rglob("*"):
@@ -689,6 +835,32 @@ def build_repository(debs: list[Path], output: Path, subs: dict[str, str]) -> bo
     return signed
 
 
+# Outcome tuples _build_source returns, handled by the caller (never printed
+# or appended from inside a worker thread, so output stays in the same
+# sorted-by-name order --jobs 1 always printed in, however many packages
+# actually finish out of that order):
+#   ("reused", deb_path)
+#   ("built", deb_path)
+#   ("skipped", name, reason)
+# A PackageError is not caught here; it propagates to the caller (see main)
+# exactly as it did from the serial loop, where it was always immediately
+# fatal regardless of --strict.
+def _build_source(source: Path, work: Path, fingerprints: Path, subs: dict[str, str], rebuild: bool):
+    try:
+        fingerprint = recipe_fingerprint(source, subs)
+        stamp = fingerprints / source.name
+        cached = sorted(work.glob(f"{source.name}_*.deb"))
+        if not rebuild and cached and stamp.is_file() and stamp.read_text() == fingerprint:
+            return ("reused", cached[-1])
+        for old_deb in cached:
+            old_deb.unlink()
+        deb = build_package(source, work, subs)
+        stamp.write_text(fingerprint)
+        return ("built", deb)
+    except SkipPackage as why:
+        return ("skipped", source.name, str(why))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--manifest", default=str(ROOT / "manifest.yml"))
@@ -697,6 +869,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--strict", action="store_true", help="fail when any package is skipped (CI, container build)")
     parser.add_argument("--rebuild", action="store_true", help="ignore the recipe fingerprints and rebuild everything")
+    parser.add_argument("--jobs", default="1",
+                        help="packages to build at once: a number, or \"auto\" to derive the safe count from this "
+                             "machine's disk, memory and CPUs (tools/host_resources.py); default 1 (today's plain "
+                             "serial loop, unchanged)")
     args = parser.parse_args(argv)
     try:
         manifest = render_manifest.load_yaml(Path(args.manifest).resolve())
@@ -714,6 +890,11 @@ def main(argv: list[str] | None = None) -> int:
         for source in sources:
             print(source.name)
         return 0
+    jobs, problems = resolve_jobs(args.jobs)
+    if problems:
+        for problem in problems:
+            print(f"error: {problem}", file=sys.stderr)
+        return 1
     # The package-building step is always the first phase of a real build
     # (the makefile's `current` target runs packages before ./build.sh), so
     # this is where the shared ledger starts fresh; build.sh's own phases
@@ -739,31 +920,67 @@ def main(argv: list[str] | None = None) -> int:
     debs = []
     skipped = []
     not_for_base = []
+    # bases.txt is metadata (no build side effect), so this filter runs
+    # up front, sequentially, exactly as it did inline in the serial loop;
+    # only sources that actually build are handed to workers below.
+    build_sources = []
+    for source in sources:
+        bases_file = source / "bases.txt"
+        if bases_file.is_file() and subs["BASE"] not in bases_file.read_text(encoding="utf-8").split():
+            not_for_base.append(source.name)
+        else:
+            build_sources.append(source)
+
+    def handle_outcome(outcome) -> None:
+        if outcome[0] in ("reused", "built"):
+            deb = outcome[1]
+            debs.append(deb)
+            print(f"  {outcome[0]} {deb.name}", file=sys.stderr)
+        else:
+            _, name, why = outcome
+            skipped.append((name, why))
+            print(f"  skipped {name}: {why[:160]}", file=sys.stderr)
+
     try:
-        for source in sources:
-            bases_file = source / "bases.txt"
-            if bases_file.is_file() and subs["BASE"] not in bases_file.read_text(encoding="utf-8").split():
-                not_for_base.append(source.name)
-                continue
-            try:
-                fingerprint = recipe_fingerprint(source, subs)
-                stamp = fingerprints / source.name
-                cached = sorted(work.glob(f"{source.name}_*.deb"))
-                if not args.rebuild and cached and stamp.is_file() and stamp.read_text() == fingerprint:
-                    debs.append(cached[-1])
-                    print(f"  reused {cached[-1].name}", file=sys.stderr)
-                    continue
-                for old_deb in cached:
-                    old_deb.unlink()
-                debs.append(build_package(source, work, subs))
-                stamp.write_text(fingerprint)
-                print(f"  built {debs[-1].name}", file=sys.stderr)
-            except SkipPackage as why:
-                skipped.append((source.name, str(why)))
-                print(f"  skipped {source.name}: {str(why)[:160]}", file=sys.stderr)
+        if jobs == 1:
+            # Unchanged: one source at a time, in this same thread, in the
+            # order sources was sorted in. A PackageError here propagates
+            # immediately, exactly as it always has — no source after the
+            # failing one is ever attempted.
+            for source in build_sources:
+                handle_outcome(_build_source(source, work, fingerprints, subs, args.rebuild))
+        else:
+            with cf.ThreadPoolExecutor(max_workers=jobs) as executor:
+                futures = {source: executor.submit(_build_source, source, work, fingerprints, subs, args.rebuild)
+                           for source in build_sources}
+                first_error: PackageError | None = None
+                # Collected, and printed, in the same sorted-by-name order as
+                # --jobs 1 regardless of which finished first, so the
+                # repository index and the printed log both stay independent
+                # of real completion order.
+                for source in build_sources:
+                    future = futures[source]
+                    if first_error is not None:
+                        future.cancel()  # no-op once it has already started; it still runs to completion
+                        continue
+                    try:
+                        handle_outcome(future.result())
+                    except PackageError as exc:
+                        first_error = exc
+                # Exiting the `with` waits for whatever was already running
+                # to finish (subprocess builds are not killed mid-build);
+                # only then is the first failure, with its own message,
+                # raised — matching "one package's own error fails the run".
+            if first_error is not None:
+                raise first_error
         brand_dir = ROOT / ".build" / "branding" / brand["id"]
         for deb in sorted(brand_dir.glob(f"{brand['id']}-branding_*_all.deb")):
             debs.append(deb)          # rendered by tools/render_brand.py (make brand runs first)
+        # debs was assembled in build_sources' sorted order when serial, and
+        # in that same order when concurrent (see the loop above) — sorted
+        # again here so the repository's package order never depends on
+        # which build happened to finish first, belt and suspenders.
+        debs.sort(key=lambda d: d.name)
         signed = build_repository(debs, output, subs)
     except PackageError as exc:
         print(f"package error: {exc}", file=sys.stderr)
