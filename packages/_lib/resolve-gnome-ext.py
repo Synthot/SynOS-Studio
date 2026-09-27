@@ -141,22 +141,34 @@ def find_best_version(info: dict, target_gnome: int) -> dict:
 # ---------------------------------------------------------------------------
 
 def download_extension(uuid: str, shell_version: str, out_dir: str) -> str:
-    """Download extension zip and extract to out_dir. Returns the output path."""
-    url = f"{BASE_URL}/download-extension/{uuid}.shell-extension.zip?shell_version={shell_version}"
-    zip_path = "/tmp/gnome-ext-poc.zip"
+    """Download extension zip and extract to out_dir. Returns the output path.
 
-    print(f"  GET {url}")
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "SynOS-GnomeResolver/1.0")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        with open(zip_path, "wb") as f:
-            f.write(resp.read())
-
+    Each call gets its own temp file (tempfile.mkstemp, not a fixed name):
+    tools/build_packages.py can run several packages' prebuild.sh at once,
+    each looping over several GNOME targets and calling this in turn, so a
+    shared fixed path here was a real cross-process/cross-package race —
+    one invocation's write, read or unlink landing on another's file, seen
+    as zipfile.BadZipFile / EOFError / truncated archives once two of them
+    actually overlapped. A unique path per call needs no lock of its own."""
+    import tempfile
     import zipfile
-    os.makedirs(out_dir, exist_ok=True)
-    with zipfile.ZipFile(zip_path, "r") as zf:
-        zf.extractall(out_dir)
-    os.remove(zip_path)
+    url = f"{BASE_URL}/download-extension/{uuid}.shell-extension.zip?shell_version={shell_version}"
+    fd, zip_path = tempfile.mkstemp(prefix="gnome-ext-", suffix=".zip")
+    os.close(fd)  # reopened by path below; closing now avoids leaking it if the request fails
+
+    try:
+        print(f"  GET {url}")
+        req = urllib.request.Request(url)
+        req.add_header("User-Agent", "SynOS-GnomeResolver/1.0")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            with open(zip_path, "wb") as f:
+                f.write(resp.read())
+
+        os.makedirs(out_dir, exist_ok=True)
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            zf.extractall(out_dir)
+    finally:
+        os.remove(zip_path)
     return out_dir
 
 
