@@ -138,11 +138,23 @@ Honest as of engine 0.4.0 (September 2026):
   passwordless by design and a live boot should not stand up a web server, a
   container registry or a kubelet on someone's network. They stay enabled and
   start normally on the installed system.
+- **One image has now been built, booted, installed and started from its own
+  disk, end to end** (27 September 2026): a Debian 13 image described on the
+  Studio page, built on a workstation by the bundle's own launcher in 55
+  minutes, booted in a UEFI virtual machine, installed to an NVMe disk by the
+  installer in the live session, and booted from that disk afterwards. That is
+  the first complete run in this project's history, and it is one machine, one
+  base, one profile, in a virtual machine rather than on bare metal — every
+  other line in this section still stands.
 - Debian images could not be installed before 0.4.0: the installer planned
   `grub-install --no-extra-removable`, which Ubuntu's own packaging patch
   provides and Debian's GRUB does not, and its preflight correctly refused to
   run it. The option is now chosen by probing the target's own `grub-install`.
-  This was found by a person installing, not by a test.
+  Two more defects shipped in the same image and stopped the desktop coming up:
+  `auditd` failed on every boot because the build wiped `/var/log` and dpkg
+  never recreates a directory a maintainer script made once, which also cost
+  every appliance its own log directory. All three were found by a person
+  installing, not by a test.
 - The QEMU acceptance suite (`make test`: installs, regions, desktop
   behaviour) exists and has not yet been run end to end by this project.
   That is why the Debian install defect above shipped: nothing here has ever
