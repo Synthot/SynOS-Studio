@@ -150,6 +150,41 @@
 #                             perform none of them
 #   -h, --help                this text
 #
+# Running it with no arguments at all, on a terminal:
+#   an interactive menu, in this same script -- one thing to run, one thing
+#   to maintain. Each entry says where that thing stands on this machine
+#   (installed, out of date, half installed, not installed, not
+#   applicable), all of it read off the machine itself -- the unit files
+#   actually in --unit-dir, what git says about the checkout, whether the
+#   configuration's keys are filled in, the nginx site on disk, what
+#   systemctl says about the timers -- and never from a marker file this
+#   script wrote. Choosing an entry asks only for what that entry needs and
+#   does only that entry's work. One entry, "everything for a staging
+#   server", runs the sensible set in order; one entry does the single
+#   action no flag has ever had, enabling the timers.
+#
+#   Plain shell on purpose: a numbered list, a prompt, and a loop until you
+#   choose to finish. No whiptail, no dialog, no colour, no cursor tricks,
+#   so it reads the same over a slow ssh link as on a console and the only
+#   path that exists is the path that is tested.
+#
+#   The menu relaxes nothing. It collects answers and calls the same
+#   functions the flags call, so the never-overwrite rule for a filled-in
+#   configuration (still --overwrite-config only), the refusal to touch a
+#   dirty or unexpected checkout, "nginx -t" before any reload, and every
+#   exit code hold identically from either side. A secret typed at its one
+#   secret prompt is not echoed, never logged, never written into a systemd
+#   unit or a checkout (a configuration inside a git checkout is refused a
+#   password outright), and the configuration file it lands in keeps the
+#   mode it already had; decline it and the destination is written
+#   commented out with the one line to edit named in the closing report.
+#
+#   --dry-run on its own still opens the menu, and every choice then prints
+#   what it would do and changes nothing; so does --overwrite-config on its
+#   own, which is how a configuration that has since been edited gets
+#   replaced from here (and only then). -y/--yes, no terminal at all, or
+#   any other flag: no menu, exactly the behaviour this script always had.
+#
 # This script never deploys the Studio page itself (development or
 # production) — that stays the Studio repository's own build.py/deploy.sh,
 # named again in this script's own closing summary so the two jobs are
@@ -773,10 +808,38 @@ yaml_scalar() {  # value -- double-quoted YAML scalar, quotes/backslashes escape
     printf '"%s"' "$v"
 }
 
+# The production upload destination, rendered from the PROD_* answers the
+# menu collects (no flag sets them, so a flag-driven run renders exactly
+# the commented-out template it always did). `prefix` is "# " when no
+# credential was given: every answer is still written down, in full, as a
+# comment, so the one thing left to do by hand is the secret itself.
+#
+# PROD_PASSWORD, when there is one, is printed straight into the YAML this
+# returns -- never passed to sed, awk or any other process, so it cannot
+# appear in `ps`, and never anywhere but the configuration file
+# write_or_skip_config then writes.
+render_production_destination() {  # prefix
+    local prefix=${1:-}
+    printf '%s  - name: %s\n' "$prefix" "$PROD_NAME"
+    printf '%s    protocol: %s\n' "$prefix" "$PROD_PROTOCOL"
+    printf '%s    host: %s\n' "$prefix" "$(yaml_scalar "$PROD_HOST")"
+    [ -n "$PROD_PORT" ] && printf '%s    port: %s\n' "$prefix" "$PROD_PORT"
+    [ -n "$PROD_USERNAME" ] && printf '%s    username: %s\n' "$prefix" "$(yaml_scalar "$PROD_USERNAME")"
+    printf '%s    remote_path: %s\n' "$prefix" "$(yaml_scalar "$PROD_REMOTE_PATH")"
+    [ -n "$PROD_KEY_PATH" ] && printf '%s    key_path: %s   # mode 600, owned by the service user\n' "$prefix" "$(yaml_scalar "$PROD_KEY_PATH")"
+    [ -n "$PROD_PASSWORD" ] && printf '%s    password: %s\n' "$prefix" "$(yaml_scalar "$PROD_PASSWORD")"
+    printf '%s    retries: 3\n' "$prefix"
+    printf '%s    retry_backoff_s: 5\n' "$prefix"
+    return 0
+}
+
 # Writes the configuration from answers, never from a template left for a
-# person to edit blind, and never with a credential in it: the upload
-# section is always fully commented out, naming where the real secret goes
-# and what permissions it needs, never a value read from anywhere.
+# person to edit blind. A credential reaches this file from one place only
+# -- the menu's own secret prompt, which never echoes it -- and never from
+# a flag, an environment variable or a file read here: with no production
+# answers given, the upload section is the same fully commented-out
+# template it has always been, naming where a real secret goes and what
+# permissions it needs.
 write_config() {  # catalog_url site_url workdir container_root max_builds jobs service_user [dev_site_root] [dev_site_owner] [dev_site_mode]
     local catalog_url=$1 site_url=$2 workdir=$3 container_root=$4 max_builds=$5 jobs=$6 service_user=$7
     local dev_site_root=${8:-} dev_site_owner=${9:-} dev_site_mode=${10:-}
@@ -807,38 +870,68 @@ write_config() {  # catalog_url site_url workdir container_root max_builds jobs 
     printf 'report_url: null\n'
     printf 'cleanup: true\n'
     printf '\n'
-    if [ -n "$dev_site_root" ]; then
-        printf '# Rehearsal-then-production upload list (tools/status_uploader.py,\n'
-        printf '# docs/BUILD_MATRIX.md'"'"'s "Publishing the build-status badge"): "dev-site" below is a\n'
-        printf '# plain file copy to this machine'"'"'s own development Studio site -- not a network\n'
-        printf '# call at all -- published, then fetched back from site_url above and checked to\n'
-        printf '# actually be valid *as served* before anything further down this list is even\n'
-        printf '# attempted. A rehearsal failure is reported and never touches production.\n'
-        printf '#\n'
-        printf '# Fill in a real "production" destination yourself, outside any checkout, the same\n'
-        printf '# way the commented-out example below shows -- the actual secret (a password, or\n'
-        printf '# better, an unencrypted ssh private key) goes in its own file, owned by %s,\n' "$service_user"
-        printf '# mode 600 -- never in this file, and never written by this installer.\n'
+    if [ -n "$dev_site_root" ] || [ -n "$PROD_HOST" ]; then
+        if [ -n "$dev_site_root" ]; then
+            printf '# Rehearsal-then-production upload list (tools/status_uploader.py,\n'
+            printf '# docs/BUILD_MATRIX.md'"'"'s "Publishing the build-status badge"): "dev-site" below is a\n'
+            printf '# plain file copy to this machine'"'"'s own development Studio site -- not a network\n'
+            printf '# call at all -- published, then fetched back from site_url above and checked to\n'
+            printf '# actually be valid *as served* before anything further down this list is even\n'
+            printf '# attempted. A rehearsal failure is reported and never touches production.\n'
+            printf '#\n'
+        else
+            printf '# Upload list (tools/status_uploader.py). No rehearsal destination: name this\n'
+            printf '# machine'"'"'s own development site (--dev-site-root, or the menu'"'"'s choice 4) to have\n'
+            printf '# every publish rehearsed and fetched back there before production is touched.\n'
+            printf '#\n'
+        fi
+        if [ -n "$PROD_HOST" ]; then
+            if [ "$PROD_CREDENTIAL_GIVEN" = "1" ]; then
+                printf '# The "production" destination below was answered at install time. Its secret --\n'
+                printf '# a password here, or the key file named here -- is the one credential this\n'
+                printf '# installer ever writes, and only because it was typed at its own prompt:\n'
+                printf '# keep this file mode 600 and owned by %s.\n' "$service_user"
+            else
+                printf '# The "production" destination below was answered at install time, except for its\n'
+                printf '# credential, which was declined: uncomment it and add key_path: (a private key,\n'
+                printf '# mode 600, owned by %s) or password:. Nothing publishes to it until then.\n' "$service_user"
+            fi
+        else
+            printf '# Fill in a real "production" destination yourself, outside any checkout, the same\n'
+            printf '# way the commented-out example below shows -- the actual secret (a password, or\n'
+            printf '# better, an unencrypted ssh private key) goes in its own file, owned by %s,\n' "$service_user"
+            printf '# mode 600 -- never in this file, and never written by this installer.\n'
+        fi
         printf 'upload:\n'
-        printf '  - name: dev-site\n'
-        printf '    protocol: local\n'
-        printf '    remote_path: %s\n' "$(yaml_scalar "${dev_site_root%/}/data/build-status.json")"
-        if [ -n "$dev_site_owner" ]; then
-            printf '    owner: %s\n' "$(yaml_scalar "$dev_site_owner")"
+        if [ -n "$dev_site_root" ]; then
+            printf '  - name: dev-site\n'
+            printf '    protocol: local\n'
+            printf '    remote_path: %s\n' "$(yaml_scalar "${dev_site_root%/}/data/build-status.json")"
+            if [ -n "$dev_site_owner" ]; then
+                printf '    owner: %s\n' "$(yaml_scalar "$dev_site_owner")"
+            fi
+            if [ -n "$dev_site_mode" ]; then
+                printf '    mode: %s\n' "$(yaml_scalar "$dev_site_mode")"
+            fi
         fi
-        if [ -n "$dev_site_mode" ]; then
-            printf '    mode: %s\n' "$(yaml_scalar "$dev_site_mode")"
+        if [ -n "$PROD_HOST" ]; then
+            if [ "$PROD_CREDENTIAL_GIVEN" = "1" ]; then
+                render_production_destination ''
+            else
+                render_production_destination '# '
+            fi
+        else
+            printf '  # - name: production\n'
+            printf '  #   protocol: sftp\n'
+            printf '  #   host: <upload host>\n'
+            printf '  #   port: 22\n'
+            printf '  #   username: <upload username>\n'
+            printf '  #   key_path: /etc/synos/conformance-upload-key   # mode 600, owned by %s; the secret goes ONLY here\n' "$service_user"
+            printf '  #   remote_path: <remote path to build-status.json>\n'
+            printf '  #   allow_insecure_ftp: false\n'
+            printf '  #   retries: 3\n'
+            printf '  #   retry_backoff_s: 5\n'
         fi
-        printf '  # - name: production\n'
-        printf '  #   protocol: sftp\n'
-        printf '  #   host: <upload host>\n'
-        printf '  #   port: 22\n'
-        printf '  #   username: <upload username>\n'
-        printf '  #   key_path: /etc/synos/conformance-upload-key   # mode 600, owned by %s; the secret goes ONLY here\n' "$service_user"
-        printf '  #   remote_path: <remote path to build-status.json>\n'
-        printf '  #   allow_insecure_ftp: false\n'
-        printf '  #   retries: 3\n'
-        printf '  #   retry_backoff_s: 5\n'
     else
         printf '# Upload credentials are NEVER written by this installer. To enable uploading\n'
         printf '# the build-status badge, uncomment below and fill in the destination, then put\n'
@@ -871,7 +964,13 @@ write_or_skip_config() {  # description path rendered overwrite
     local desc=$1 path=$2 rendered=$3 overwrite=$4
     if [ "$DRY_RUN" = "1" ]; then
         say "[dry-run] would write $path:"
-        printf '%s\n' "$rendered" | sed 's/^/  /'
+        # A dry run prints the file it would write, so any password line in
+        # it is blanked here rather than echoed to a terminal (or a tee, or
+        # an ssh scrollback). The menu never even asks for a secret under
+        # --dry-run; this is the second lock on the same door.
+        printf '%s\n' "$rendered" \
+            | sed 's/^\([[:space:]]*#\{0,1\}[[:space:]]*password:\).*/\1 <not shown>/' \
+            | sed 's/^/  /'
         SUMMARY+=("$desc: would write $path")
         return 0
     fi
@@ -882,8 +981,16 @@ write_or_skip_config() {  # description path rendered overwrite
     fi
     if [ -f "$path" ]; then
         if [ "$overwrite" = "1" ]; then
-            printf '%s\n' "$rendered" > "$path.new.$$" && mv "$path.new.$$" "$path"
-            say "overwrote $path (--overwrite-config)"
+            # Written beside it and moved into place (never truncated in
+            # place, so a crash mid-write cannot leave a half-file), with
+            # the mode the file already has carried over: replacing a
+            # configuration must never loosen one an operator tightened to
+            # 600 because it holds a credential.
+            printf '%s\n' "$rendered" > "$path.new.$$" || { rm -f "$path.new.$$"; warn "could not write $path"; return 1; }
+            chmod --reference="$path" "$path.new.$$" 2>/dev/null \
+                || warn "could not copy $path's own mode onto its replacement; check it with 'ls -l $path'"
+            mv "$path.new.$$" "$path"
+            say "overwrote $path (--overwrite-config, keeping its mode)"
             SUMMARY+=("$desc: overwritten (--overwrite-config)")
         else
             warn "$path already exists and differs from what these answers would produce; leaving it unchanged (pass --overwrite-config to replace it -- never done automatically, even with -y/--yes, in case it holds real credentials or edits made by hand)."
@@ -1320,100 +1427,178 @@ default_engine_root() {
     printf '%s\n' "$here"
 }
 
-usage() { sed -n '2,161p' "$0" | sed 's/^# \{0,1\}//'; }
+# The header comment above, up to the first line that is not a comment --
+# never a hardcoded line range, which silently truncates --help the moment
+# anything is added to that header (it did).
+usage() { sed -n '2,/^[^#]/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; }
 
-main() {
-    local engine_root='' engine_repo=${SYNOS_ENGINE_REPO:-https://github.com/Synthot/SynOS-Studio} engine_ref=main \
-          site_url='' catalog_url='' storage_path='' workdir='' \
-          entries_per_run=5 jobs='' config_path=/etc/synos/conformance.yml overwrite_config=0 \
-          dev_site_root='' dev_site_owner='' dev_site_mode='' \
-          unit_dir=/etc/systemd/system skip_packages=0 arg
-    local monitoring_app='' monitoring_repo='' monitoring_ssh_key='' monitoring_ref=main \
-          monitoring_config=/etc/synos-forge/forge.toml monitoring_port=8420 monitoring_nginx_port=8421 \
-          monitoring_nginx_location=/ monitoring_allow_from='' monitoring_allow_insecure_http=0 \
-          monitoring_tls_cert='' monitoring_tls_key='' monitor_auth_file='' monitor_auth_user=admin
-    local -a SUMMARY=()
+# ------------------------------------------------------------- the answers
+# Every answer this script works from, in one place, because there are now
+# two ways to give them -- the flags (parse_args below) and the interactive
+# menu (further down) -- and exactly one set of step functions carries them
+# out. A step reads these; it never reads a flag or a prompt itself, so the
+# two front ends cannot drift apart in what they actually do.
+#
+# The SYNOS_* overrides are the same test-only convention as
+# SYNOS_NGINX_ROOT/SYNOS_OS_RELEASE_FILE above (a real install passes
+# --config/--unit-dir instead, and the menu asks for nothing it can read
+# off the machine): never set for a real run.
+ENGINE_ROOT=${SYNOS_ENGINE_ROOT:-}
+ENGINE_REPO=${SYNOS_ENGINE_REPO:-https://github.com/Synthot/SynOS-Studio}
+ENGINE_REF=main
+SITE_URL=''
+CATALOG_URL=''
+STORAGE_PATH=''
+CONFIG_CONTAINER_ROOT=''
+WORKDIR=''
+ENTRIES_PER_RUN=5
+JOBS=''
+CONFIG_PATH=${SYNOS_CONFIG_PATH:-/etc/synos/conformance.yml}
+OVERWRITE_CONFIG=0
+DEV_SITE_ROOT=''
+DEV_SITE_OWNER=''
+DEV_SITE_MODE=''
+UNIT_DIR=${SYNOS_UNIT_DIR:-/etc/systemd/system}
+SKIP_PACKAGES=0
+FAMILY=''
+RUNTIME=''
+SERVICE_HOME=''
 
+MONITORING_APP=''
+MONITORING_REPO=''
+MONITORING_SSH_KEY=''
+MONITORING_REF=main
+MONITORING_CONFIG=${SYNOS_MONITORING_CONFIG:-/etc/synos-forge/forge.toml}
+MONITORING_PORT=8420
+MONITORING_NGINX_PORT=8421
+MONITORING_NGINX_LOCATION=/
+MONITORING_ALLOW_FROM=''
+MONITORING_ALLOW_INSECURE_HTTP=0
+MONITORING_TLS_CERT=''
+MONITORING_TLS_KEY=''
+MONITOR_AUTH_FILE=''
+MONITOR_AUTH_USER=admin
+
+# The production upload destination: menu-only answers. No flag has ever
+# written a real destination and none does now -- write_config still emits
+# a commented-out template when these are empty, exactly as before.
+#
+# PROD_PASSWORD is the one secret this script ever holds. It is read with
+# `read -s` (never echoed), lives in this variable and in the rendered
+# configuration and nowhere else: never a command line (so never visible in
+# `ps`), never a log, never a systemd unit, never printed back, and never
+# accepted at all for a configuration that sits inside a git checkout.
+PROD_NAME=production
+PROD_PROTOCOL=sftp
+PROD_HOST=''
+PROD_PORT=22
+PROD_USERNAME=''
+PROD_REMOTE_PATH=''
+PROD_KEY_PATH=''
+PROD_PASSWORD=''
+PROD_CREDENTIAL_GIVEN=0
+PROD_PASSWORD_ALREADY_IN_CONFIG=0
+
+# What the closing report says happened, and what is left to do by hand.
+SUMMARY=()
+HANDWORK=()
+MENU_VERIFY=0
+
+parse_args() {
+    local arg
     for arg in "$@"; do
         case "$arg" in
-            --engine-root=*)     engine_root=${arg#*=} ;;
-            --engine-repo=*)     engine_repo=${arg#*=} ;;
-            --engine-ref=*)      engine_ref=${arg#*=} ;;
-            --site-url=*)        site_url=${arg#*=} ;;
-            --catalog-url=*)     catalog_url=${arg#*=} ;;
-            --storage-path=*)    storage_path=${arg#*=} ;;
-            --workdir=*)         workdir=${arg#*=} ;;
-            --entries-per-run=*) entries_per_run=${arg#*=} ;;
-            --jobs=*)            jobs=${arg#*=} ;;
-            --config=*)          config_path=${arg#*=} ;;
-            --overwrite-config)  overwrite_config=1 ;;
-            --dev-site-root=*)   dev_site_root=${arg#*=} ;;
-            --dev-site-owner=*)  dev_site_owner=${arg#*=} ;;
-            --dev-site-mode=*)   dev_site_mode=${arg#*=} ;;
+            --engine-root=*)     ENGINE_ROOT=${arg#*=} ;;
+            --engine-repo=*)     ENGINE_REPO=${arg#*=} ;;
+            --engine-ref=*)      ENGINE_REF=${arg#*=} ;;
+            --site-url=*)        SITE_URL=${arg#*=} ;;
+            --catalog-url=*)     CATALOG_URL=${arg#*=} ;;
+            --storage-path=*)    STORAGE_PATH=${arg#*=} ;;
+            --workdir=*)         WORKDIR=${arg#*=} ;;
+            --entries-per-run=*) ENTRIES_PER_RUN=${arg#*=} ;;
+            --jobs=*)            JOBS=${arg#*=} ;;
+            --config=*)          CONFIG_PATH=${arg#*=} ;;
+            --overwrite-config)  OVERWRITE_CONFIG=1 ;;
+            --dev-site-root=*)   DEV_SITE_ROOT=${arg#*=} ;;
+            --dev-site-owner=*)  DEV_SITE_OWNER=${arg#*=} ;;
+            --dev-site-mode=*)   DEV_SITE_MODE=${arg#*=} ;;
             --service-user=*)    SERVICE_USER=${arg#*=}; SERVICE_GROUP=${arg#*=} ;;
-            --unit-dir=*)        unit_dir=${arg#*=} ;;
-            --skip-packages)     skip_packages=1 ;;
-            --monitoring-app=*)              monitoring_app=${arg#*=} ;;
-            --monitoring-repo=*)             monitoring_repo=${arg#*=} ;;
-            --monitoring-ssh-key=*)          monitoring_ssh_key=${arg#*=} ;;
-            --monitoring-ref=*)              monitoring_ref=${arg#*=} ;;
-            --monitoring-config=*)           monitoring_config=${arg#*=} ;;
+            --unit-dir=*)        UNIT_DIR=${arg#*=} ;;
+            --skip-packages)     SKIP_PACKAGES=1 ;;
+            --monitoring-app=*)              MONITORING_APP=${arg#*=} ;;
+            --monitoring-repo=*)             MONITORING_REPO=${arg#*=} ;;
+            --monitoring-ssh-key=*)          MONITORING_SSH_KEY=${arg#*=} ;;
+            --monitoring-ref=*)              MONITORING_REF=${arg#*=} ;;
+            --monitoring-config=*)           MONITORING_CONFIG=${arg#*=} ;;
             --monitoring-service-user=*)     MONITORING_SERVICE_USER=${arg#*=} ;;
-            --monitoring-port=*)             monitoring_port=${arg#*=} ;;
-            --monitoring-nginx-port=*)       monitoring_nginx_port=${arg#*=} ;;
-            --monitoring-nginx-location=*)   monitoring_nginx_location=${arg#*=} ;;
-            --monitoring-allow-from=*)       monitoring_allow_from=${arg#*=} ;;
-            --monitoring-allow-insecure-http) monitoring_allow_insecure_http=1 ;;
-            --monitoring-tls-cert=*)         monitoring_tls_cert=${arg#*=} ;;
-            --monitoring-tls-key=*)          monitoring_tls_key=${arg#*=} ;;
-            --monitor-auth-file=*)           monitor_auth_file=${arg#*=} ;;
-            --monitor-auth-user=*)           monitor_auth_user=${arg#*=} ;;
+            --monitoring-port=*)             MONITORING_PORT=${arg#*=} ;;
+            --monitoring-nginx-port=*)       MONITORING_NGINX_PORT=${arg#*=} ;;
+            --monitoring-nginx-location=*)   MONITORING_NGINX_LOCATION=${arg#*=} ;;
+            --monitoring-allow-from=*)       MONITORING_ALLOW_FROM=${arg#*=} ;;
+            --monitoring-allow-insecure-http) MONITORING_ALLOW_INSECURE_HTTP=1 ;;
+            --monitoring-tls-cert=*)         MONITORING_TLS_CERT=${arg#*=} ;;
+            --monitoring-tls-key=*)          MONITORING_TLS_KEY=${arg#*=} ;;
+            --monitor-auth-file=*)           MONITOR_AUTH_FILE=${arg#*=} ;;
+            --monitor-auth-user=*)           MONITOR_AUTH_USER=${arg#*=} ;;
             -y|--yes)             ASSUME_YES=1 ;;
             --dry-run)             DRY_RUN=1 ;;
-            -h|--help)             usage; return 0 ;;
+            -h|--help)             usage; exit 0 ;;
             *) fail "unrecognized option: $arg (--help for usage)" 2 ;;
         esac
     done
+}
 
-    [ "$(uname -s)" = "Linux" ] || fail "this installs a systemd service; run it on Linux" 2
+# ------------------------------------------------------------- the steps
+# main()'s old body, cut along the seams it already had, so that one item
+# of the menu can run exactly one of them and the flags still run all of
+# them in the same order as before. Every one of them reads the answers
+# above and appends to SUMMARY; none of them prompts for anything (that is
+# the menu's job) and none of them relaxes a guard (`fail` still exits with
+# the same code from either front end).
+step_report_kvm() { say "boot acceleration: $(kvm_status)"; }
 
-    say "boot acceleration: $(kvm_status)"
-
-    local family=''
-    if [ "$skip_packages" = "1" ]; then
+step_packages() {
+    if [ "$SKIP_PACKAGES" = "1" ]; then
         say "--skip-packages: not detecting a distribution or installing anything."
     else
-        family=$(require_family) || exit $?
-        say "distribution family: $family ($(pkg_manager_for "$family"))"
-        install_requirements "$family"
+        FAMILY=$(require_family) || exit $?
+        say "distribution family: $FAMILY ($(pkg_manager_for "$FAMILY"))"
+        install_requirements "$FAMILY"
     fi
     command -v git >/dev/null 2>&1 \
         || fail "git is required to create or update the engine checkout but is not on PATH (pass --skip-packages only when every dependency, including git, is already installed)" 7
+}
 
-    if [ -z "$engine_root" ]; then
-        engine_root=$(default_engine_root) \
+step_engine_checkout() {
+    if [ -z "$ENGINE_ROOT" ]; then
+        ENGINE_ROOT=$(default_engine_root) \
             || fail "pass --engine-root=/path/to/clone/or/an/existing/checkout (this script was not found under a checkout's packaging/ directory, so it cannot infer one)" 2
     fi
     local engine_state
-    engine_state=$(sync_git_checkout "$engine_root" "$engine_repo" "$engine_ref" "" "engine checkout") || exit $?
-    [ -f "$engine_root/tools/catalog_conformance.py" ] \
-        || fail "$engine_root does not look like a checkout of this engine (no tools/catalog_conformance.py)" 2
-    say "engine checkout: $engine_root ($engine_state)"
-    SUMMARY+=("engine checkout ($engine_root): $engine_state")
+    engine_state=$(sync_git_checkout "$ENGINE_ROOT" "$ENGINE_REPO" "$ENGINE_REF" "" "engine checkout") || exit $?
+    [ -f "$ENGINE_ROOT/tools/catalog_conformance.py" ] \
+        || fail "$ENGINE_ROOT does not look like a checkout of this engine (no tools/catalog_conformance.py)" 2
+    say "engine checkout: $ENGINE_ROOT ($engine_state)"
+    SUMMARY+=("engine checkout ($ENGINE_ROOT): $engine_state")
+}
 
-    local runtime
-    runtime=$(detect_runtime)
-    [ -n "$runtime" ] || fail "no podman or docker on PATH even after the install step; install one and rerun" 4
-    say "container runtime: $runtime"
+step_runtime() {
+    RUNTIME=$(detect_runtime)
+    [ -n "$RUNTIME" ] || fail "no podman or docker on PATH even after the install step; install one and rerun" 4
+    say "container runtime: $RUNTIME"
+}
 
-    local service_home="/var/lib/$SERVICE_USER"
+step_service_user() {
+    SERVICE_HOME="/var/lib/$SERVICE_USER"
     if [ "$DRY_RUN" = "1" ]; then
-        say "[dry-run] would create system user $SERVICE_USER (home $service_home) and add it to the $(runtime_group "$runtime") group"
+        say "[dry-run] would create system user $SERVICE_USER (home $SERVICE_HOME) and add it to the $(runtime_group "$RUNTIME") group"
     else
-        create_service_user "$SERVICE_USER" "$SERVICE_GROUP" "$service_home" "$runtime"
+        create_service_user "$SERVICE_USER" "$SERVICE_GROUP" "$SERVICE_HOME" "$RUNTIME"
     fi
     maybe "create /etc/synos" sudo install -d /etc/synos
+}
 
+step_storage() {
     # select_storage_path's own mkdir -p, for an explicit path that does not
     # exist yet, is a real filesystem write — under --dry-run that must not
     # happen (item 131/"prints every action without performing it"), so a
@@ -1422,19 +1607,19 @@ main() {
     local create_storage=1
     [ "$DRY_RUN" = "1" ] && create_storage=0
 
-    if is_podman "$runtime"; then
-        if [ -z "$storage_path" ]; then
+    if is_podman "$RUNTIME"; then
+        if [ -z "$STORAGE_PATH" ]; then
             local picked
             picked=$(select_storage_path "$MIN_BUILD_GB" "" "$create_storage") || fail "could not find anywhere to put podman's storage" 5
-            storage_path=${picked% *}
+            STORAGE_PATH=${picked% *}
         else
-            select_storage_path "$MIN_BUILD_GB" "$storage_path" "$create_storage" >/dev/null \
-                || fail "$storage_path is not usable for podman's storage" 5
+            select_storage_path "$MIN_BUILD_GB" "$STORAGE_PATH" "$create_storage" >/dev/null \
+                || fail "$STORAGE_PATH is not usable for podman's storage" 5
         fi
         if [ "$DRY_RUN" = "1" ]; then
-            say "[dry-run] would configure podman's rootless storage.conf (graphroot) at $storage_path, owned by $SERVICE_USER"
+            say "[dry-run] would configure podman's rootless storage.conf (graphroot) at $STORAGE_PATH, owned by $SERVICE_USER"
         else
-            configure_podman_storage "$service_home" "$storage_path"
+            configure_podman_storage "$SERVICE_HOME" "$STORAGE_PATH"
         fi
     else
         docker_storage_note
@@ -1445,100 +1630,897 @@ main() {
         # working, if imperfectly placed, configuration even when nothing
         # qualifies: a warning and a fallback to the service user's home,
         # never a refusal (item 135) — a podman install still fails outright
-        # on the same case, above, because there storage_path is essential,
+        # on the same case, above, because there STORAGE_PATH is essential,
         # not merely a placement preference.
-        if [ -z "$storage_path" ]; then
+        if [ -z "$STORAGE_PATH" ]; then
             local picked_for_workdir
             if picked_for_workdir=$(select_storage_path "$MIN_BUILD_GB" "" "$create_storage"); then
-                storage_path=${picked_for_workdir% *}
+                STORAGE_PATH=${picked_for_workdir% *}
             else
-                warn "could not find a disk with enough room for the working directory; using $service_home instead (pass --workdir to choose one yourself)"
-                storage_path=$service_home
+                warn "could not find a disk with enough room for the working directory; using $SERVICE_HOME instead (pass --workdir to choose one yourself)"
+                STORAGE_PATH=$SERVICE_HOME
             fi
         else
-            select_storage_path "$MIN_BUILD_GB" "$storage_path" "$create_storage" >/dev/null \
-                || warn "could not validate $storage_path; using it anyway (only the working directory's placement depends on it under docker)"
+            select_storage_path "$MIN_BUILD_GB" "$STORAGE_PATH" "$create_storage" >/dev/null \
+                || warn "could not validate $STORAGE_PATH; using it anyway (only the working directory's placement depends on it under docker)"
         fi
     fi
 
     # container_root in the written config is meaningful for podman only —
     # tools/bundle_launcher.sh refuses it outright under docker (one
     # daemon-wide storage setting, docker_storage_note above) — so it is
-    # never written when docker is the runtime, even though storage_path
+    # never written when docker is the runtime, even though STORAGE_PATH
     # itself is still used, above and below, to place the working directory
     # on the biggest disk available.
-    local config_container_root=""
-    is_podman "$runtime" && config_container_root=$storage_path
+    CONFIG_CONTAINER_ROOT=''
+    is_podman "$RUNTIME" && CONFIG_CONTAINER_ROOT=$STORAGE_PATH
+    return 0
+}
 
-    if [ -z "$workdir" ]; then
-        workdir="$storage_path/synos-conformance"
+step_derive_answers() {
+    if [ -z "$WORKDIR" ]; then
+        WORKDIR="$STORAGE_PATH/synos-conformance"
     fi
-    if [ -z "$site_url" ]; then
-        say "no --site-url given; \"build\" mode will need one filled into $config_path before it can run (\"check\" mode does not need it)."
+    if [ -z "$SITE_URL" ]; then
+        say "no --site-url given; \"build\" mode will need one filled into $CONFIG_PATH before it can run (\"check\" mode does not need it)."
     fi
-    if [ -z "$catalog_url" ] && [ -n "$site_url" ]; then
-        catalog_url="${site_url%/}/data/catalog.json"
+    if [ -z "$CATALOG_URL" ] && [ -n "$SITE_URL" ]; then
+        CATALOG_URL="${SITE_URL%/}/data/catalog.json"
     fi
-    [ -n "$catalog_url" ] || fail "pass --catalog-url (or --site-url, which one is derived from) — the service cannot run without one" 2
+    [ -n "$CATALOG_URL" ] || fail "pass --catalog-url (or --site-url, which one is derived from) — the service cannot run without one" 2
 
-    if [ -z "$jobs" ]; then
-        jobs=$(derive_jobs "$engine_root" "$storage_path")
-        say "derived worker count: $jobs"
+    if [ -z "$JOBS" ]; then
+        JOBS=$(derive_jobs "$ENGINE_ROOT" "$STORAGE_PATH")
+        say "derived worker count: $JOBS"
     fi
+}
 
+step_write_config() {
     local rendered
-    rendered=$(write_config "$catalog_url" "$site_url" "$workdir" "$config_container_root" "$entries_per_run" "$jobs" \
-                            "$SERVICE_USER" "$dev_site_root" "$dev_site_owner" "$dev_site_mode")
-    write_or_skip_config "conformance config" "$config_path" "$rendered" "$overwrite_config"
+    rendered=$(write_config "$CATALOG_URL" "$SITE_URL" "$WORKDIR" "$CONFIG_CONTAINER_ROOT" "$ENTRIES_PER_RUN" "$JOBS" \
+                            "$SERVICE_USER" "$DEV_SITE_ROOT" "$DEV_SITE_OWNER" "$DEV_SITE_MODE")
+    write_or_skip_config "conformance config" "$CONFIG_PATH" "$rendered" "$OVERWRITE_CONFIG"
     if [ "$DRY_RUN" != "1" ]; then
-        sudo install -d -o "$SERVICE_USER" -g "$SERVICE_GROUP" "$workdir" || warn "could not create/chown $workdir"
+        sudo install -d -o "$SERVICE_USER" -g "$SERVICE_GROUP" "$WORKDIR" || warn "could not create/chown $WORKDIR"
     fi
+}
 
-    install_service_units "$engine_root/packaging/catalog-conformance" "$unit_dir" "$engine_root" "$PYTHON_BIN"
-    SUMMARY+=("conformance systemd units: installed under $unit_dir (not enabled)")
+step_units() {
+    install_service_units "$ENGINE_ROOT/packaging/catalog-conformance" "$UNIT_DIR" "$ENGINE_ROOT" "$PYTHON_BIN"
+    SUMMARY+=("conformance systemd units: installed under $UNIT_DIR (not enabled)")
+}
 
-    # ------------------------------------------------------- monitoring app
-    # Entirely optional (this script's own header): only reachable when the
-    # operator actually named a checkout or a repository for it. Neither
-    # given at all -- the normal path for the test engine on its own --
-    # means nothing below runs and nothing below is even mentioned.
-    if [ -n "$monitoring_app" ] || [ -n "$monitoring_repo$monitoring_ssh_key" ]; then
-        if [ -z "$monitoring_app" ]; then
+# Entirely optional (this script's own header): only reachable when the
+# operator actually named a checkout or a repository for it. Neither given
+# at all -- the normal path for the test engine on its own -- means nothing
+# below runs and nothing below is even mentioned.
+step_monitoring() {
+    if [ -n "$MONITORING_APP" ] || [ -n "$MONITORING_REPO$MONITORING_SSH_KEY" ]; then
+        if [ -z "$MONITORING_APP" ]; then
             say "monitoring app: --monitoring-repo/--monitoring-ssh-key given without --monitoring-app=PATH (where to put or find the checkout); skipping. Add --monitoring-app=PATH to enable it."
             SUMMARY+=("monitoring app: skipped (no --monitoring-app path given)")
         else
-            install_monitoring_app "$monitoring_app" "$monitoring_repo" "$monitoring_ssh_key" "$monitoring_ref" \
-                "$engine_root" "$config_path" "$workdir" "$monitoring_config" "$monitoring_port" \
-                "$monitoring_nginx_port" "$monitoring_nginx_location" "$monitoring_allow_from" \
-                "$monitoring_allow_insecure_http" "$monitoring_tls_cert" "$monitoring_tls_key" \
-                "$monitor_auth_file" "$monitor_auth_user" "$runtime" "$family"
+            install_monitoring_app "$MONITORING_APP" "$MONITORING_REPO" "$MONITORING_SSH_KEY" "$MONITORING_REF" \
+                "$ENGINE_ROOT" "$CONFIG_PATH" "$WORKDIR" "$MONITORING_CONFIG" "$MONITORING_PORT" \
+                "$MONITORING_NGINX_PORT" "$MONITORING_NGINX_LOCATION" "$MONITORING_ALLOW_FROM" \
+                "$MONITORING_ALLOW_INSECURE_HTTP" "$MONITORING_TLS_CERT" "$MONITORING_TLS_KEY" \
+                "$MONITOR_AUTH_FILE" "$MONITOR_AUTH_USER" "$RUNTIME" "$FAMILY"
         fi
     fi
+}
 
+step_summary() {
     say ""
     say "summary:"
     local line
-    for line in "${SUMMARY[@]}"; do
-        say "  - $line"
-    done
+    if [ "${#SUMMARY[@]}" -eq 0 ]; then
+        say "  - nothing was created, updated or changed."
+    else
+        for line in "${SUMMARY[@]}"; do
+            say "  - $line"
+        done
+    fi
     say ""
     say "not done by this script, on purpose:"
     say "  - the Studio page itself (development or production) is deployed with the"
     say "    Studio repository's own build.py/deploy.sh, never from here."
-    if [ -z "$site_url" ]; then
-        say "  - fill in site_url in $config_path before running \"build\" mode (\"check\" mode does not need it)."
+    if [ -z "$SITE_URL" ]; then
+        say "  - fill in site_url in $CONFIG_PATH before running \"build\" mode (\"check\" mode does not need it)."
     fi
-    if [ -n "$dev_site_root" ]; then
-        say "  - fill in a real \"production\" upload destination in $config_path yourself (commented"
+    # Named here only when no production destination was answered at all; a
+    # destination given without its credential gets the one precise line
+    # HANDWORK carries instead of this general one.
+    if [ -n "$DEV_SITE_ROOT" ] && [ -z "$PROD_HOST" ]; then
+        say "  - fill in a real \"production\" upload destination in $CONFIG_PATH yourself (commented"
         say "    out, credentials never written by this installer)."
     fi
+    for line in ${HANDWORK[@]+"${HANDWORK[@]}"}; do
+        say "  - $line"
+    done
+}
 
+step_verify() {
     if [ "$DRY_RUN" = "1" ]; then
         say ""
         say "[dry-run] skipping verification (nothing was actually installed)."
         return 0
     fi
-    verify_installation "$runtime" "$storage_path" "$engine_root" "$config_path" "$PYTHON_BIN" "$MIN_STORE_GB"
+    verify_installation "$RUNTIME" "$STORAGE_PATH" "$ENGINE_ROOT" "$CONFIG_PATH" "$PYTHON_BIN" "$MIN_STORE_GB"
+}
+
+# The flag-driven run, unchanged in order and in output from what this
+# script did before the menu existed.
+run_full_install() {
+    step_report_kvm
+    step_packages
+    step_engine_checkout
+    step_runtime
+    step_service_user
+    step_storage
+    step_derive_answers
+    step_write_config
+    step_units
+    step_monitoring
+    step_summary
+    step_verify
+}
+
+# =================================================================== menu
+# What happens when nobody passed any flags: a numbered list that says
+# where each thing stands on *this* machine, a prompt, and a loop until the
+# operator chooses to finish. Deliberately plain shell -- no whiptail, no
+# dialog, no colour, no cursor addressing -- so the one path that exists is
+# the one that is tested, and it reads the same over a slow ssh link as it
+# does on a console.
+#
+# The menu only ever collects answers and calls the step functions above.
+# It cannot relax a guard, because it does not contain one: the
+# never-overwrite rule for a filled-in config, the refusal to touch a
+# dirty or unexpected checkout, `nginx -t` before any reload and every
+# exit code all live in the functions both front ends call.
+
+# ---------------------------------------------------------- reading state
+# Everything the menu reports is derived from the machine itself: a unit
+# file that is really in UNIT_DIR, a checkout git itself answers for, a
+# configuration with its keys actually filled in, an nginx site on disk.
+# Never a marker file this script wrote -- a marker stays true long after
+# the thing it claims has been removed by hand.
+CONFORMANCE_UNITS='synos-conformance-build.service synos-conformance-build.timer synos-conformance-check.service synos-conformance-check.timer'
+CONFORMANCE_TIMERS='synos-conformance-check.timer synos-conformance-build.timer'
+
+# A top-level scalar out of the configuration this script writes. The key
+# is always a literal name from a call site below, never anything read off
+# the machine, so it is safe as part of sed's own program text.
+config_value() {  # key path
+    [ -f "$2" ] || return 1
+    sed -n "s/^$1:[[:space:]]*//p" "$2" | head -n1 | sed 's/^"//; s/"$//'
+}
+
+# One field of the `protocol: local` (rehearsal) destination, or of the
+# first destination that is not local (production), reading only
+# uncommented lines -- the shape write_config itself produces. A config
+# hand-rewritten into some other shape simply reads as "not configured",
+# which is honest: this is a report about what is there, never an edit.
+config_destination_field() {  # path field local|remote
+    [ -f "$1" ] || return 1
+    awk -v want="$2" -v which="$3" '
+        /^[[:space:]]*#/ { next }
+        /^[[:space:]]*-[[:space:]]*name:/ { inside = 0 }
+        /^[[:space:]]*protocol:[[:space:]]*local[[:space:]]*$/ { inside = (which == "local"); next }
+        /^[[:space:]]*protocol:[[:space:]]*(sftp|scp|ftps|ftp)[[:space:]]*$/ { inside = (which == "remote"); next }
+        inside {
+            key = $0
+            sub(/^[[:space:]]+/, "", key)
+            if (index(key, want ":") == 1) {
+                val = substr(key, length(want) + 2)
+                sub(/^[[:space:]]+/, "", val)
+                gsub(/^"|"$/, "", val)
+                print val
+                exit
+            }
+        }
+    ' "$1"
+}
+
+config_has_destination() {  # path local|remote
+    [ -n "$(config_destination_field "$1" protocol "$2")$(config_destination_field "$1" remote_path "$2")" ]
+}
+
+unit_installed() { [ -f "$UNIT_DIR/$1" ]; }
+unit_working_dir() { sed -n 's/^WorkingDirectory=//p' "$UNIT_DIR/$1" 2>/dev/null | head -n1; }
+unit_enabled() { command -v systemctl >/dev/null 2>&1 && systemctl is-enabled --quiet "$1" 2>/dev/null; }
+
+conformance_units_installed() {  # -> how many of the four are there
+    local unit count=0
+    for unit in $CONFORMANCE_UNITS; do
+        unit_installed "$unit" && count=$((count + 1))
+    done
+    printf '%s\n' "$count"
+}
+
+state_prerequisites() {
+    local missing runtime user='no service user yet'
+    missing=$(missing_requirements)
+    runtime=$(detect_runtime)
+    id "$SERVICE_USER" >/dev/null 2>&1 && user="service user $SERVICE_USER present"
+    if [ -z "$missing" ] && [ -n "$runtime" ]; then
+        printf 'installed -- every dependency present, runtime %s, %s\n' "$runtime" "$user"
+        return 0
+    fi
+    if [ -z "$missing" ]; then
+        printf 'out of date -- dependencies present but no container runtime on PATH; %s\n' "$user"
+        return 0
+    fi
+    printf 'not installed -- missing: %s(%s)\n' "$(printf '%s ' $missing)" "$user"
+}
+
+state_engine() {
+    local root=$ENGINE_ROOT
+    [ -n "$root" ] || root=$(default_engine_root 2>/dev/null) || root=''
+    if [ -z "$root" ]; then
+        printf 'not installed -- no checkout named yet\n'
+        return 0
+    fi
+    if [ ! -e "$root" ] || { [ -d "$root" ] && [ -z "$(ls -A "$root" 2>/dev/null)" ]; }; then
+        printf 'not installed -- nothing at %s yet (it would be cloned from %s)\n' "$root" "$ENGINE_REPO"
+        return 0
+    fi
+    if ! git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        printf 'not applicable -- %s exists but is not a git checkout; used exactly as it is\n' "$root"
+        return 0
+    fi
+    local rev branch behind
+    rev=$(git_rev "$root")
+    branch=$(git_branch "$root")
+    if ! git_is_clean "$root"; then
+        printf 'installed, untouchable -- %s (%s) has uncommitted changes; this script refuses to touch it\n' "$root" "${rev:-unknown}"
+        return 0
+    fi
+    behind=$(git -C "$root" rev-list --count "HEAD..origin/$ENGINE_REF" 2>/dev/null)
+    if is_number "$behind" && [ "$behind" -gt 0 ]; then
+        printf 'out of date -- %s at %s (%s), %s commit(s) behind origin/%s\n' \
+            "$root" "${rev:-unknown}" "${branch:-detached}" "$behind" "$ENGINE_REF"
+        return 0
+    fi
+    printf 'installed -- %s at %s (%s)\n' "$root" "${rev:-unknown}" "${branch:-detached}"
+}
+
+state_config_and_units() {
+    local units config='no' filled='' root
+    units=$(conformance_units_installed)
+    [ -f "$CONFIG_PATH" ] && config='yes'
+    if [ "$config" = "no" ] && [ "$units" = "0" ]; then
+        printf 'not installed -- no %s, none of the 4 units in %s\n' "$CONFIG_PATH" "$UNIT_DIR"
+        return 0
+    fi
+    if [ "$config" = "yes" ] && [ -z "$(config_value catalog_url "$CONFIG_PATH")" ]; then
+        filled=', not filled in (no catalog_url)'
+    fi
+    if [ "$config" = "no" ] || [ "$units" != "4" ]; then
+        printf 'half installed -- configuration: %s%s, %s of 4 units in %s\n' "$config" "$filled" "$units" "$UNIT_DIR"
+        return 0
+    fi
+    root=$(unit_working_dir synos-conformance-check.service)
+    if [ -n "$ENGINE_ROOT" ] && [ -n "$root" ] && [ "$root" != "$ENGINE_ROOT" ]; then
+        printf 'out of date -- 4 units in %s still point at %s, not %s\n' "$UNIT_DIR" "$root" "$ENGINE_ROOT"
+        return 0
+    fi
+    printf 'installed%s -- %s and 4 units in %s\n' "$filled" "$CONFIG_PATH" "$UNIT_DIR"
+}
+
+state_dev_site() {
+    local remote root
+    [ -f "$CONFIG_PATH" ] || { printf 'not applicable -- no configuration yet\n'; return 0; }
+    remote=$(config_destination_field "$CONFIG_PATH" remote_path local)
+    [ -n "$remote" ] || { printf 'not configured -- the configuration has no rehearsal ("protocol: local") destination\n'; return 0; }
+    root=${remote%/data/build-status.json}
+    if [ ! -d "$root" ]; then
+        printf 'out of date -- configured at %s, which does not exist on this machine yet\n' "$root"
+        return 0
+    fi
+    printf 'installed -- %s (nginx serves it; deploy.sh fills it)\n' "$root"
+}
+
+state_publish() {
+    local rehearsal production
+    [ -f "$CONFIG_PATH" ] || { printf 'not applicable -- no configuration yet\n'; return 0; }
+    rehearsal=$(config_destination_field "$CONFIG_PATH" remote_path local)
+    production=$(config_destination_field "$CONFIG_PATH" host remote)
+    if [ -n "$rehearsal" ] && [ -n "$production" ]; then
+        printf 'installed -- rehearsal onto this box, then production at %s\n' "$production"
+        return 0
+    fi
+    if [ -n "$rehearsal" ]; then
+        printf 'half installed -- rehearsal only; nothing is published to a production server yet\n'
+        return 0
+    fi
+    if [ -n "$production" ]; then
+        printf 'half installed -- production at %s with no rehearsal to publish first\n' "$production"
+        return 0
+    fi
+    printf 'not installed -- the build-status badge is published nowhere\n'
+}
+
+state_monitoring() {
+    local unit='no' config='no' site='no' enabled='' path
+    unit_installed synos-forge.service && unit='yes'
+    [ -f "$MONITORING_CONFIG" ] && config='yes'
+    path=$(nginx_site_path synos-monitor)
+    [ -f "$path" ] && site='yes'
+    if [ "$unit" = "no" ] && [ "$config" = "no" ] && [ "$site" = "no" ]; then
+        printf 'not installed -- no unit, no configuration, no nginx site\n'
+        return 0
+    fi
+    unit_enabled synos-forge.service && enabled=', enabled'
+    if [ "$unit" = "yes" ] && [ "$config" = "yes" ] && [ "$site" = "yes" ]; then
+        printf 'installed%s -- 127.0.0.1:%s behind %s\n' "$enabled" "$MONITORING_PORT" "$path"
+        return 0
+    fi
+    printf 'half installed -- unit: %s%s, configuration: %s, nginx site: %s\n' "$unit" "$enabled" "$config" "$site"
+}
+
+state_timers() {
+    local timer enabled=0 total=0
+    if [ "$(conformance_units_installed)" != "4" ]; then
+        printf 'not applicable -- the units are not installed yet\n'
+        return 0
+    fi
+    for timer in $CONFORMANCE_TIMERS; do
+        total=$((total + 1))
+        unit_enabled "$timer" && enabled=$((enabled + 1))
+    done
+    if [ "$enabled" = "$total" ]; then
+        printf 'installed -- both timers enabled\n'
+        return 0
+    fi
+    if [ "$enabled" = "0" ]; then
+        printf 'not installed -- units in place, both timers still disabled\n'
+        return 0
+    fi
+    printf 'half installed -- %s of %s timers enabled\n' "$enabled" "$total"
+}
+
+# ------------------------------------------------------------- the prompts
+# Every prompt in the menu goes through one of these five, so "shows the
+# default it would use", "never echoes a secret" and "end of input means
+# finish, never an endless loop" are each true in exactly one place.
+#
+# The prompt text is printed with printf to stderr rather than with
+# `read -p`, for two reasons: `read -p` prints nothing at all when input is
+# not a terminal (so a piped or scripted run, and every test of this menu,
+# would show a bare answer with no question), and stderr keeps the prompt
+# out of the $(...) capture these return their answer through.
+menu_prompt() { printf '%s' "$*" >&2; }
+
+menu_ask() {  # prompt default -> the answer (the default when nothing is typed)
+    local prompt=$1 default=${2:-} reply
+    while :; do
+        menu_prompt "  $prompt [$default]: "
+        read -r reply || { printf '\n' >&2; printf '%s\n' "$default"; return 0; }
+        [ -n "$reply" ] || reply=$default
+        if [ -z "$reply" ]; then
+            printf '  a value is needed here.\n' >&2
+            continue
+        fi
+        printf '%s\n' "$reply"
+        return 0
+    done
+}
+
+menu_ask_optional() {  # prompt default -> the answer, or nothing at all
+    local prompt=$1 default=${2:-} reply
+    menu_prompt "  $prompt [${default:-none}] (- for none): "
+    read -r reply || { printf '\n' >&2; reply=''; }
+    [ -n "$reply" ] || reply=$default
+    [ "$reply" = "-" ] && reply=''
+    printf '%s\n' "$reply"
+}
+
+menu_ask_number() {  # prompt default -> digits only
+    local prompt=$1 default=${2:-} reply
+    while :; do
+        reply=$(menu_ask "$prompt" "$default")
+        if is_number "$reply"; then
+            printf '%s\n' "$reply"
+            return 0
+        fi
+        printf '  that needs to be a number.\n' >&2
+        [ -t 0 ] || { printf '%s\n' "$default"; return 0; }
+    done
+}
+
+menu_ask_yes() {  # prompt -- end of input is "no", never a hang
+    local reply
+    menu_prompt "  $1 [y/N] "
+    read -r reply || { printf '\n' >&2; return 1; }
+    case "$reply" in
+        y|Y|yes|YES) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# The one function in this script that reads a secret. `read -s`: nothing
+# appears on the terminal, nothing reaches the scrollback of the ssh
+# session, and the value is only ever assigned to a variable -- never
+# passed as an argument to a command, where `ps` would show it.
+menu_ask_secret() {  # prompt -> the secret on stdout, never on the terminal
+    local reply
+    menu_prompt "  $1: "
+    read -r -s reply || reply=''
+    printf '\n' >&2
+    printf '%s\n' "$reply"
+}
+
+# A configuration inside a git checkout must never be handed a secret: the
+# next `git status` there would show it and one `git add -A` would publish
+# it. Checked before the password is even typed, not after it is written.
+path_inside_checkout() {  # path
+    local dir
+    dir=$(dirname "$1")
+    while [ -n "$dir" ] && [ "$dir" != "/" ] && [ "$dir" != "." ]; do
+        [ -e "$dir/.git" ] && return 0
+        dir=$(dirname "$dir")
+    done
+    return 1
+}
+
+# ------------------------------------------------------- prefilling answers
+# A second run is someone managing a machine, so the prompts start from
+# what is actually on it: the configuration already there, read back into
+# the same answers a first run wrote it from. A password already in that
+# file is deliberately *not* read back -- its presence is noted, so the
+# menu can leave the file alone instead of rewriting it without one.
+menu_load_config_answers() {
+    [ -f "$CONFIG_PATH" ] || return 0
+    local value
+    value=$(config_value catalog_url "$CONFIG_PATH");       [ -n "$value" ] && [ -z "$CATALOG_URL" ] && CATALOG_URL=$value
+    value=$(config_value site_url "$CONFIG_PATH");           [ -n "$value" ] && [ -z "$SITE_URL" ] && SITE_URL=$value
+    value=$(config_value workdir "$CONFIG_PATH");            [ -n "$value" ] && [ -z "$WORKDIR" ] && WORKDIR=$value
+    value=$(config_value jobs "$CONFIG_PATH");               [ -n "$value" ] && [ -z "$JOBS" ] && JOBS=$value
+    value=$(config_value max_builds_per_run "$CONFIG_PATH"); [ -n "$value" ] && ENTRIES_PER_RUN=$value
+    value=$(config_value container_root "$CONFIG_PATH")
+    if [ -n "$value" ] && [ "$value" != "null" ] && [ -z "$STORAGE_PATH" ]; then
+        STORAGE_PATH=$value
+    fi
+    value=$(config_destination_field "$CONFIG_PATH" remote_path local)
+    case "$value" in
+        */data/build-status.json) [ -n "$DEV_SITE_ROOT" ] || DEV_SITE_ROOT=${value%/data/build-status.json} ;;
+    esac
+    value=$(config_destination_field "$CONFIG_PATH" owner local);  [ -n "$value" ] && [ -z "$DEV_SITE_OWNER" ] && DEV_SITE_OWNER=$value
+    value=$(config_destination_field "$CONFIG_PATH" mode local);   [ -n "$value" ] && [ -z "$DEV_SITE_MODE" ] && DEV_SITE_MODE=$value
+
+    value=$(config_destination_field "$CONFIG_PATH" host remote);        [ -n "$value" ] && [ -z "$PROD_HOST" ] && PROD_HOST=$value
+    value=$(config_destination_field "$CONFIG_PATH" protocol remote);    [ -n "$value" ] && PROD_PROTOCOL=$value
+    value=$(config_destination_field "$CONFIG_PATH" port remote);        [ -n "$value" ] && PROD_PORT=$value
+    value=$(config_destination_field "$CONFIG_PATH" username remote);    [ -n "$value" ] && [ -z "$PROD_USERNAME" ] && PROD_USERNAME=$value
+    value=$(config_destination_field "$CONFIG_PATH" remote_path remote); [ -n "$value" ] && [ -z "$PROD_REMOTE_PATH" ] && PROD_REMOTE_PATH=$value
+    value=$(config_destination_field "$CONFIG_PATH" key_path remote)
+    if [ -n "$value" ] && [ -z "$PROD_KEY_PATH" ]; then
+        PROD_KEY_PATH=$value
+        PROD_CREDENTIAL_GIVEN=1
+    fi
+    [ -n "$(config_destination_field "$CONFIG_PATH" password remote)" ] && PROD_PASSWORD_ALREADY_IN_CONFIG=1
+    return 0
+}
+
+# ------------------------------------------------------------- the display
+menu_rule() { say '----------------------------------------------------------------------'; }
+
+menu_print() {
+    say ""
+    menu_rule
+    say " SynOS catalog test engine -- installer"
+    say " machine: $(uname -n)   configuration: $CONFIG_PATH"
+    if [ "$DRY_RUN" = "1" ]; then
+        say " --dry-run: every choice below prints what it would do and does nothing"
+    fi
+    menu_rule
+    say " 1) Prerequisites, container runtime, service user, runtime storage"
+    say "      $(state_prerequisites)"
+    say " 2) Engine checkout (clone or update, at a branch or tag)"
+    say "      $(state_engine)"
+    say " 3) Test engine configuration and systemd units"
+    say "      $(state_config_and_units)"
+    say " 4) Local development site nginx serves (the rehearsal copy)"
+    say "      $(state_dev_site)"
+    say " 5) Publish destinations (rehearsal here, then production)"
+    say "      $(state_publish)"
+    say " 6) Monitoring console (a private, separate repository)"
+    say "      $(state_monitoring)"
+    say " 7) Enable the timers"
+    say "      $(state_timers)"
+    say " 8) Everything for a staging server (1, 2, 4, 5, 3, then 6 and 7 if"
+    say "    you want them, then verification)"
+    say " 9) Show this again"
+    say " q) Finish"
+    menu_rule
+}
+
+# ------------------------------------------------------------- the choices
+# Soft prerequisites: a choice that needs the runtime or the storage
+# location works them out quietly if an earlier choice already did, and
+# otherwise says which choice to make first instead of failing the whole
+# menu.
+menu_need_runtime() {
+    [ -n "$RUNTIME" ] && return 0
+    RUNTIME=$(detect_runtime)
+    if [ -z "$RUNTIME" ]; then
+        warn "no podman or docker on PATH yet; choose 1 first -- it installs the container runtime."
+        return 1
+    fi
+    say "container runtime: $RUNTIME"
+    [ -n "$SERVICE_HOME" ] || SERVICE_HOME="/var/lib/$SERVICE_USER"
+    return 0
+}
+
+menu_need_storage() {
+    menu_need_runtime || return 1
+    [ -n "$STORAGE_PATH" ] && { is_podman "$RUNTIME" && CONFIG_CONTAINER_ROOT=$STORAGE_PATH; return 0; }
+    step_storage
+}
+
+menu_need_engine_root() {
+    [ -n "$ENGINE_ROOT" ] && return 0
+    ENGINE_ROOT=$(default_engine_root 2>/dev/null) || ENGINE_ROOT=''
+    [ -n "$ENGINE_ROOT" ] && return 0
+    warn "no engine checkout named yet; choose 2 first."
+    return 1
+}
+
+item_prerequisites() {
+    say ""
+    say "The dependencies this service needs, the container runtime, the dedicated"
+    say "system user it runs as, and where the runtime keeps its images and chroot."
+    STORAGE_PATH=$(menu_ask_optional "Runtime storage location (empty: the largest disk with room)" "$STORAGE_PATH")
+    step_packages
+    step_runtime
+    step_service_user
+    step_storage
+    SUMMARY+=("prerequisites: dependencies checked, runtime $RUNTIME, storage $STORAGE_PATH")
+}
+
+item_engine() {
+    say ""
+    say "The checkout this service runs against: cloned when it is not there yet,"
+    say "fetched and fast-forwarded when it is. Never reset, never force-checked-out,"
+    say "and refused outright if it has uncommitted changes or sits on another branch."
+    ENGINE_ROOT=$(menu_ask "Engine checkout path" "${ENGINE_ROOT:-$(default_engine_root 2>/dev/null)}")
+    ENGINE_REPO=$(menu_ask "Clone or fetch it from" "$ENGINE_REPO")
+    ENGINE_REF=$(menu_ask "Branch or tag to keep it on" "$ENGINE_REF")
+    command -v git >/dev/null 2>&1 || { warn "git is not on PATH; choose 1 first."; return 1; }
+    step_engine_checkout
+}
+
+item_config_and_units() {
+    say ""
+    say "The service's own configuration and its four systemd units. An existing"
+    say "configuration that differs from these answers is reported and left exactly"
+    say "as it is -- rerun with --overwrite-config to replace one on purpose."
+    SITE_URL=$(menu_ask_optional "Studio page this rig drives (the development copy on this box)" "$SITE_URL")
+    CATALOG_URL=$(menu_ask_optional "Catalog JSON URL (empty: derived from the page above)" "$CATALOG_URL")
+    ENTRIES_PER_RUN=$(menu_ask_number "Catalog entries per build run" "$ENTRIES_PER_RUN")
+    JOBS=$(menu_ask_optional "Worker count (empty: derived from this machine's disk, memory and CPUs)" "$JOBS")
+    WORKDIR=$(menu_ask_optional "Service working directory (empty: alongside the runtime storage)" "$WORKDIR")
+    if [ -z "$SITE_URL" ] && [ -z "$CATALOG_URL" ]; then
+        # step_derive_answers would refuse this outright, with exit 2 and a
+        # message about flags -- from the menu that means losing the whole
+        # session over one unanswered question.
+        warn "the service cannot run without the catalog JSON URL (or the Studio page it is derived from); nothing was written."
+        return 1
+    fi
+    menu_need_engine_root || return 1
+    menu_need_storage || return 1
+    step_derive_answers
+    step_write_config
+    step_units
+}
+
+item_dev_site() {  # apply|defer
+    say ""
+    say "The development copy of the Studio page: nginx serves it, and the Studio"
+    say "repository's own build.py/deploy.sh puts the page there -- this installer"
+    say "never deploys it. Naming its document root is what makes the rehearsal"
+    say "publish (a plain file copy into its data/ directory) possible."
+    DEV_SITE_ROOT=$(menu_ask_optional "Development site document root" "${DEV_SITE_ROOT:-/var/www/synos-studio-dev}")
+    if [ -n "$DEV_SITE_ROOT" ]; then
+        [ -d "$DEV_SITE_ROOT" ] \
+            || warn "$DEV_SITE_ROOT does not exist yet -- deploy the page there with the Studio repository's own deploy.sh, and point nginx at it."
+        DEV_SITE_OWNER=$(menu_ask_optional "Owner for the copied badge (empty: leave ownership alone)" "${DEV_SITE_OWNER:-www-data:www-data}")
+        DEV_SITE_MODE=$(menu_ask_optional "Mode for the copied badge (empty: leave the mode alone)" "${DEV_SITE_MODE:-0644}")
+    fi
+    [ "${1:-defer}" = "apply" ] && menu_apply_config
+    return 0
+}
+
+item_publish() {  # apply|defer
+    say ""
+    say "Two destinations, in this order: the rehearsal copy onto this machine's own"
+    say "development site, then the real production server -- and production is only"
+    say "attempted once the rehearsal has been published and fetched back, valid, as"
+    say "actually served."
+    if [ -n "$DEV_SITE_ROOT" ]; then
+        say "  rehearsal: ${DEV_SITE_ROOT%/}/data/build-status.json"
+    else
+        say "  rehearsal: none yet -- choose 4 to name the development site's root."
+    fi
+    if menu_ask_yes "Set up the production destination now?"; then
+        while :; do
+            PROD_PROTOCOL=$(menu_ask "Protocol (sftp, scp or ftps)" "$PROD_PROTOCOL")
+            case "$PROD_PROTOCOL" in
+                sftp|scp|ftps) break ;;
+            esac
+            warn "tools/status_uploader.py takes sftp, scp or ftps here (plain ftp travels in the clear and is refused outright unless a configuration says allow_insecure_ftp by hand)."
+            [ -t 0 ] || { PROD_PROTOCOL=sftp; break; }
+        done
+        PROD_HOST=$(menu_ask "Host" "$PROD_HOST")
+        PROD_PORT=$(menu_ask_number "Port" "$PROD_PORT")
+        PROD_USERNAME=$(menu_ask "Username" "$PROD_USERNAME")
+        PROD_REMOTE_PATH=$(menu_ask "Remote path to build-status.json" "${PROD_REMOTE_PATH:-/var/www/studio/data/build-status.json}")
+        menu_ask_credential
+    elif [ -n "$PROD_HOST" ]; then
+        say "  production: leaving $PROD_HOST exactly as the configuration has it."
+    fi
+    [ "${1:-defer}" = "apply" ] && menu_apply_config
+    return 0
+}
+
+# The only place a secret is ever asked for. An ssh key file is offered
+# first and is the default, because it keeps every secret out of the
+# configuration entirely; a typed password is never echoed, never logged,
+# never put in a unit, and is refused outright for a configuration that
+# lives inside a git checkout. Declining is a first-class answer: the
+# destination is written commented out, with the one thing to edit named.
+menu_ask_credential() {
+    PROD_KEY_PATH=''
+    PROD_PASSWORD=''
+    PROD_CREDENTIAL_GIVEN=0
+    say ""
+    say "  How does this machine authenticate to $PROD_HOST?"
+    say "    1) an ssh private key already on this machine (recommended: no secret"
+    say "       is written into $CONFIG_PATH at all)"
+    say "    2) a password, typed now -- not echoed, and stored in $CONFIG_PATH"
+    say "    3) not now -- leave the destination commented out and tell me what to edit"
+    local choice
+    choice=$(menu_ask "Choose 1, 2 or 3" 3)
+    case "$choice" in
+        1)
+            PROD_KEY_PATH=$(menu_ask "Path to the private key" "${PROD_KEY_PATH:-/etc/synos/conformance-upload-key}")
+            if [ -n "$PROD_KEY_PATH" ]; then
+                PROD_CREDENTIAL_GIVEN=1
+                [ -f "$PROD_KEY_PATH" ] \
+                    || HANDWORK+=("put the upload private key at $PROD_KEY_PATH, owned by $SERVICE_USER, mode 600 (this installer never creates one)")
+            fi
+            ;;
+        2)
+            if [ "$DRY_RUN" = "1" ]; then
+                say "  [dry-run] would ask for that password here, without echoing it; nothing is typed, and nothing is written, on a dry run."
+                return 0
+            fi
+            if path_inside_checkout "$CONFIG_PATH"; then
+                warn "$CONFIG_PATH is inside a git checkout; refusing to put a password there (one 'git add -A' would publish it). Use an ssh key file outside the checkout, or point --config somewhere outside it."
+                return 0
+            fi
+            local password confirm
+            password=$(menu_ask_secret "Password for $PROD_USERNAME@$PROD_HOST (not echoed)")
+            if [ -z "$password" ]; then
+                warn "nothing typed; leaving the production destination commented out."
+                return 0
+            fi
+            confirm=$(menu_ask_secret "The same again")
+            if [ "$password" != "$confirm" ]; then
+                warn "those two did not match; leaving the production destination commented out."
+                return 0
+            fi
+            PROD_PASSWORD=$password
+            PROD_CREDENTIAL_GIVEN=1
+            say "  password accepted; it goes into $CONFIG_PATH and nowhere else."
+            HANDWORK+=("$CONFIG_PATH now holds an upload password: chmod 600 and chown $SERVICE_USER on it (this installer does not change that file's mode)")
+            ;;
+        *)
+            say "  leaving the production destination commented out."
+            ;;
+    esac
+    if [ "$PROD_CREDENTIAL_GIVEN" != "1" ] && [ -n "$PROD_HOST" ]; then
+        HANDWORK+=("uncomment the \"production\" destination in $CONFIG_PATH and give it key_path: (a private key, mode 600, owned by $SERVICE_USER) or password: -- this installer never invents a credential")
+    fi
+    return 0
+}
+
+# Writes the configuration from whatever answers are known, for the two
+# choices whose whole job is one part of that file. Through
+# write_or_skip_config like every other config write in this script, so
+# "never clobber a filled-in config" holds from the menu too.
+menu_apply_config() {
+    menu_load_config_answers
+    if [ -z "$CATALOG_URL" ] && [ -z "$SITE_URL" ]; then
+        warn "no Studio page or catalog URL known yet, so there is nothing to write a configuration from. Your answers are remembered -- choose 3 (or 8) and they are used there."
+        return 1
+    fi
+    if [ "$PROD_PASSWORD_ALREADY_IN_CONFIG" = "1" ] && [ -z "$PROD_PASSWORD" ]; then
+        say "$CONFIG_PATH already holds this destination's password; leaving that file exactly as it is (type a new password in choice 5 to replace it)."
+        return 0
+    fi
+    menu_need_engine_root || return 1
+    menu_need_storage || return 1
+    step_derive_answers
+    step_write_config
+}
+
+item_monitoring() {
+    say ""
+    say "The monitoring console is a private, separate repository. It always binds"
+    say "127.0.0.1 only; the nginx site in front of it is always behind HTTP basic"
+    say "auth, and serving it beyond loopback over plain HTTP is refused unless you"
+    say "say so outright."
+    MONITORING_APP=$(menu_ask_optional "Checkout path for the monitoring app" "${MONITORING_APP:-/opt/synos-forge}")
+    if [ -z "$MONITORING_APP" ]; then
+        say "  skipped."
+        return 0
+    fi
+    MONITORING_REPO=$(menu_ask_optional "Clone or fetch it from (empty: use the checkout as found)" "$MONITORING_REPO")
+    if [ -n "$MONITORING_REPO" ]; then
+        MONITORING_SSH_KEY=$(menu_ask_optional "SSH private key for that private repository" "$MONITORING_SSH_KEY")
+        MONITORING_REF=$(menu_ask "Branch or tag to keep it on" "$MONITORING_REF")
+    fi
+    MONITORING_PORT=$(menu_ask_number "Loopback port the app itself binds" "$MONITORING_PORT")
+    MONITORING_NGINX_PORT=$(menu_ask_number "Port nginx publishes it on" "$MONITORING_NGINX_PORT")
+    MONITORING_ALLOW_FROM=$(menu_ask_optional "Address range allowed to reach it (empty: loopback only)" "$MONITORING_ALLOW_FROM")
+    if [ -n "$MONITORING_ALLOW_FROM" ]; then
+        MONITORING_TLS_CERT=$(menu_ask_optional "TLS certificate for that site (empty: none)" "$MONITORING_TLS_CERT")
+        if [ -n "$MONITORING_TLS_CERT" ]; then
+            MONITORING_TLS_KEY=$(menu_ask "TLS private key" "$MONITORING_TLS_KEY")
+        elif menu_ask_yes "Without a certificate that console is served over plain HTTP beyond loopback. Accept that?"; then
+            MONITORING_ALLOW_INSECURE_HTTP=1
+        else
+            say "  keeping it loopback-only."
+            MONITORING_ALLOW_FROM=''
+        fi
+    fi
+    MONITOR_AUTH_FILE=$(menu_ask_optional "Existing htpasswd file (empty: generate one and show the password once)" "$MONITOR_AUTH_FILE")
+    if [ -z "$MONITOR_AUTH_FILE" ]; then
+        MONITOR_AUTH_USER=$(menu_ask "User name for the generated credential" "$MONITOR_AUTH_USER")
+    fi
+    menu_need_engine_root || return 1
+    menu_need_runtime || return 1
+    menu_load_config_answers
+    if [ -z "$WORKDIR" ]; then
+        warn "the console reads its status files out of the service's working directory; choose 3 first so there is one."
+        return 1
+    fi
+    [ -n "$FAMILY" ] || FAMILY=$(detect_distro_family) || FAMILY=''
+    step_monitoring
+}
+
+# The one action the flags never had: they install the timers and print the
+# command that turns them on. Still through `maybe`, so --dry-run only ever
+# says what it would run.
+item_enable_timers() {
+    local timer
+    say ""
+    if [ "$(conformance_units_installed)" != "4" ]; then
+        if [ "$DRY_RUN" != "1" ]; then
+            warn "the four units are not all in $UNIT_DIR yet; choose 3 (or 8) first."
+            return 1
+        fi
+        # A dry run installed nothing, so the units genuinely are not there;
+        # refusing here would hide the one thing --dry-run is for -- saying
+        # what this choice would do.
+        say "[dry-run] nothing was installed by this run, so the units are not in $UNIT_DIR; what follows is what enabling them would do."
+    fi
+    say "The check timer looks for catalog entries to test; the build timer builds"
+    say "them. Both are ordinary systemd timers you can stop again at any time."
+    menu_ask_yes "Enable and start both conformance timers now?" || { say "  left disabled."; return 0; }
+    for timer in $CONFORMANCE_TIMERS; do
+        maybe "enable and start $timer" sudo systemctl enable --now "$timer" \
+            || warn "could not enable $timer; 'sudo systemctl enable --now $timer' by hand"
+    done
+    if [ "$DRY_RUN" = "1" ]; then
+        SUMMARY+=("conformance timers: would be enabled and started")
+    else
+        SUMMARY+=("conformance timers: enabled and started")
+    fi
+    return 0
+}
+
+item_everything() {
+    say ""
+    say "Everything for a staging server, in this order:"
+    say "  1. prerequisites, container runtime, service user, runtime storage"
+    say "  2. the engine checkout"
+    say "  3. the development site nginx serves (its document root)"
+    say "  4. the publish destinations (rehearsal here, then production)"
+    say "  5. the configuration and the four systemd units, with 3 and 4 in it"
+    say "  6. the monitoring console, if you want it"
+    say "  7. enabling the timers, if you want them on now"
+    say "  8. verification"
+    menu_ask_yes "Go through those now?" || { say "  nothing done."; return 0; }
+    item_prerequisites
+    item_engine
+    item_dev_site defer
+    item_publish defer
+    item_config_and_units
+    if menu_ask_yes "Set up the monitoring console too (a private, separate repository)?"; then
+        item_monitoring
+    else
+        SUMMARY+=("monitoring console: not chosen")
+    fi
+    item_enable_timers
+    MENU_VERIFY=1
+    return 0
+}
+
+# ------------------------------------------------------------- the loop
+menu_loop() {
+    say ""
+    say "Nothing on this machine has been changed yet. Every choice below says where"
+    say "it stands, asks for what it needs, and only then does its own one thing."
+    [ -n "$ENGINE_ROOT" ] || ENGINE_ROOT=$(default_engine_root 2>/dev/null) || ENGINE_ROOT=''
+    menu_load_config_answers
+    local choice
+    while :; do
+        menu_print
+        printf 'Choose 1-9, or q to finish: '
+        read -r choice || { say ""; break; }
+        case "$choice" in
+            1) item_prerequisites ;;
+            2) item_engine ;;
+            3) item_config_and_units ;;
+            4) item_dev_site apply ;;
+            5) item_publish apply ;;
+            6) item_monitoring ;;
+            7) item_enable_timers ;;
+            8) item_everything ;;
+            9) ;;
+            q|Q|quit|exit|'') break ;;
+            # Deliberately without echoing what was typed: a password
+            # meant for the secret prompt, mistyped here, must not end up
+            # in this terminal's scrollback or in a piped log.
+            *) warn "not one of the choices -- type 1-9, or q to finish." ;;
+        esac
+    done
+    step_summary
+    if [ "$MENU_VERIFY" = "1" ]; then
+        step_verify
+        return $?
+    fi
+    return 0
+}
+
+# The menu is what happens when nobody passed anything: an interactive
+# terminal, no arguments at all, and no -y/--yes (which by definition means
+# "do not ask me anything"). --dry-run and --overwrite-config still count as
+# nothing passed: they are modifiers, not actions -- "--dry-run plus the
+# menu" is how a person sees what each choice would do before choosing it,
+# and --overwrite-config is the only way to replace a configuration that
+# has since been edited, so it has to be reachable from here too (it still
+# never overwrites anything on its own: the choice that writes that file
+# has to be made). No terminal, or any other flag, and this script behaves
+# exactly as it always did. SYNOS_MENU_ASSUME_TTY is the unit tests' own
+# way in (the same convention as SYNOS_NGINX_ROOT above), never for a real
+# run.
+menu_should_run() {
+    [ "$ASSUME_YES" = "1" ] && return 1
+    local arg
+    for arg in "$@"; do
+        case "$arg" in
+            --dry-run|--overwrite-config) ;;
+            *) return 1 ;;
+        esac
+    done
+    [ -t 0 ] || [ "${SYNOS_MENU_ASSUME_TTY:-0}" = "1" ]
+}
+
+main() {
+    parse_args "$@"
+
+    [ "$(uname -s)" = "Linux" ] || fail "this installs a systemd service; run it on Linux" 2
+
+    if menu_should_run "$@"; then
+        menu_loop
+        return $?
+    fi
+
+    run_full_install
 }
 
 # install_monitoring_app app_path app_repo app_ssh_key app_ref engine_root
@@ -1584,7 +2566,7 @@ install_monitoring_app() {
     looks_like_monitoring_app_checkout "$app_root" \
         || fail "$app_root does not look like a checkout of the monitoring app (no forge/app.py)" 8
 
-    if [ "$skip_packages" != "1" ]; then
+    if [ "$SKIP_PACKAGES" != "1" ]; then
         ensure_python_venv_available "$family"
     fi
 
@@ -1603,19 +2585,19 @@ install_monitoring_app() {
 
     local forge_rendered
     forge_rendered=$(render_forge_config "$engine_root" "$conformance_config" "$conformance_workdir" "$port" "$MONITORING_SERVICE_USER")
-    write_or_skip_config "monitoring app config" "$monitoring_config" "$forge_rendered" "$overwrite_config"
+    write_or_skip_config "monitoring app config" "$monitoring_config" "$forge_rendered" "$OVERWRITE_CONFIG"
 
     if [ "$DRY_RUN" = "1" ]; then
-        say "[dry-run] would install $unit_dir/synos-forge.service (WorkingDirectory=$app_root, SYNOS_FORGE_CONFIG=$monitoring_config, port $port, loopback only)"
+        say "[dry-run] would install $UNIT_DIR/synos-forge.service (WorkingDirectory=$app_root, SYNOS_FORGE_CONFIG=$monitoring_config, port $port, loopback only)"
         SUMMARY+=("monitoring app systemd unit: would install")
     else
-        local forge_unit_tmp="$unit_dir/synos-forge.service.new.$$"
+        local forge_unit_tmp="$UNIT_DIR/synos-forge.service.new.$$"
         render_forge_unit_file "$app_root/packaging/synos-forge.service" "$forge_unit_tmp" \
             "$app_root" "$monitoring_config" "$MONITORING_SERVICE_USER" "$port"
-        mv "$forge_unit_tmp" "$unit_dir/synos-forge.service"
+        mv "$forge_unit_tmp" "$UNIT_DIR/synos-forge.service"
         sudo systemctl daemon-reload 2>/dev/null || warn "systemctl daemon-reload failed; is systemd running?"
-        say "installed $unit_dir/synos-forge.service (127.0.0.1:$port only; not enabled -- sudo systemctl enable --now synos-forge.service when ready)"
-        SUMMARY+=("monitoring app systemd unit: installed under $unit_dir (not enabled)")
+        say "installed $UNIT_DIR/synos-forge.service (127.0.0.1:$port only; not enabled -- sudo systemctl enable --now synos-forge.service when ready)"
+        SUMMARY+=("monitoring app systemd unit: installed under $UNIT_DIR (not enabled)")
     fi
 
     # ---- nginx: additive site, or a clean, honest "not now" ----
