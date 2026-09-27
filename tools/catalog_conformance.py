@@ -67,6 +67,28 @@ Config (YAML; see conformance.example.yml):
     cleanup: true                # build only: free a successful entry's heavy directories as it finishes; set
                                  # false (or --no-cleanup) to keep everything for a debugging run
 
+Exit codes (both modes; `check` never sets the third, since it has no
+upload: to publish at all):
+    0  everything this run attempted came back clean.
+    1  at least one catalogue entry failed or its boot check failed — the
+       real gate: non-zero means this catalogue would let somebody hit a
+       build that does not work.
+    2  the run could not even start (a bad config value, an unknown
+       --cover-bases base, a catalog fetch that failed) — never conflated
+       with 1: this is "nothing was proven", not "something is broken".
+    3  every catalogue entry built and tested clean, but build-status.json
+       never reached somewhere `upload:` said it should (a rehearsal
+       destination that failed to publish or came back invalid when
+       fetched back, or a production destination skipped because the
+       rehearsal ahead of it never passed, or a production destination
+       that itself failed after a good rehearsal) — distinct from 1 on
+       purpose: the catalogue itself is fine, but a badge fed from this
+       run is now stale, silently, unless something reads this exit code.
+       See "Publishing the build-status badge" in docs/BUILD_MATRIX.md and
+       tools/status_uploader.py's own module docstring for the mechanism;
+       this run's own printed and persisted summary (<mode>-summary.txt)
+       names exactly which destination and why.
+
 Never invents a shell command from a name read out of a catalog: every
 process here is started from an argument vector. Never runs a real browser,
 a real build, or hits a real network in its own test suite
@@ -121,6 +143,24 @@ STAGE_PAGE, STAGE_LAUNCHER, STAGE_ENGINE, STAGE_SMOKE = "page", "launcher", "eng
 # build_one()'s own STAGE_SMOKE branch) is treated the same way by all
 # three. "ok" is check mode's own clean result; "success" is build mode's.
 OK_STATUSES = {"success", "ok"}
+
+# Exit codes (item 198): 0/1 unchanged from before -- 1 is the real gate,
+# a catalogue entry itself failed, and always wins over everything else,
+# same as tools/catalog_apps_audit.py's own "missing" always outranking
+# "could not check". EXIT_PUBLISH_FAILED is new and distinct from both:
+# every entry built and tested fine, but build-status.json never reached
+# somewhere it was configured to (a rehearsal destination that failed to
+# publish or came back invalid when fetched back, or a production
+# destination the rehearsal never let through, or a production
+# destination that itself failed after a good rehearsal). This exists so
+# a systemd timer's own `systemctl status` shows a real failure --
+# "every entry passed, badges are stale" is exactly the crash the
+# rehearsal (docs/BUILD_MATRIX.md, "Publishing the build-status badge")
+# exists to catch, not something a green exit code should paper over.
+EXIT_OK = 0
+EXIT_ENTRIES_FAILED = 1
+EXIT_CONFIG_ERROR = 2
+EXIT_PUBLISH_FAILED = 3
 
 
 def _load(name: str, path: Path):
@@ -1088,17 +1128,25 @@ def run_build(config: Config, *, catalog: dict, max_builds: int | None = None, j
     # The end-of-run upload item 73 asks for regardless of whether the
     # last entry changed state — the same file every per-entry change
     # already sent, so this is a low-cost final sync, not a second file.
+    final_publish_outcomes: list = []
     if uploader.enabled:
-        uploader.maybe_upload(status_path)
+        final_publish_outcomes = uploader.maybe_upload(status_path)
     if uploader.outcomes:
-        # Full per-destination detail (item 197: what a partial failure
-        # reports) — every destination's own name, protocol, ok/skipped,
-        # and detail text, in the order FanOutUploader attempted (or
-        # skipped) them; upload_warnings below stays the flat list of
-        # strings existing callers already read.
+        # Full per-destination history (item 197: what a partial failure
+        # reports) — every call's own outcomes, in order, oldest first;
+        # upload_warnings below stays the flat list of strings existing
+        # callers already read.
         report["upload_results"] = [dataclasses.asdict(o) for o in uploader.outcomes]
     if uploader.warnings:
         report["upload_warnings"] = list(uploader.warnings)
+    if final_publish_outcomes:
+        # item 198: the run's *final* publish state only (this one call's
+        # outcomes, not the whole run's history above) — what the exit
+        # code and the summary line below are both based on, since
+        # "reached everywhere it should have, by the time the run ended"
+        # is the only question a systemd timer's own result should turn
+        # on, not how many times a live state changed along the way.
+        report["publish_outcomes"] = [dataclasses.asdict(o) for o in final_publish_outcomes]
 
     return report
 
@@ -1256,6 +1304,36 @@ def _http_post(url: str, body: bytes) -> None:
         response.read()
 
 
+def publish_summary_line(report: dict) -> str | None:
+    """One line naming every configured destination's *final* outcome
+    (report["publish_outcomes"], the run's last publish attempt only —
+    run_build's own comment explains why not the full history): which
+    succeeded, which failed and why, which were skipped because the
+    rehearsal ahead of them never passed. None when nothing was
+    configured at all — never an empty "publish:" line."""
+    outcomes = report.get("publish_outcomes")
+    if not outcomes:
+        return None
+    parts = []
+    for outcome in outcomes:
+        if outcome.get("skipped"):
+            parts.append(f"{outcome['name']} skipped ({outcome['detail']})")
+        elif outcome["ok"]:
+            parts.append(f"{outcome['name']} ok")
+        else:
+            parts.append(f"{outcome['name']} failed ({outcome['detail']})")
+    return "publish: " + ", ".join(parts)
+
+
+def publish_failed(report: dict) -> bool:
+    """True when at least one configured destination did not reach its
+    final, successful state this run — a failed publish or a production
+    destination skipped because the rehearsal ahead of it did not pass.
+    False when nothing was configured, same as "no entries failed" being
+    vacuously true for an empty catalogue."""
+    return any(not outcome["ok"] for outcome in report.get("publish_outcomes", []))
+
+
 def summary_text(report: dict, diff: dict) -> str:
     counts: dict[str, int] = {}
     for record in report["targets"].values():
@@ -1304,13 +1382,22 @@ def summary_text(report: dict, diff: dict) -> str:
             lines.append("pruned cache volume(s): " + ", ".join(sorted(reclaimed["cache_volumes_pruned"])))
         if reclaimed["cache_volumes_left_alone"]:
             lines.append("left cache volume(s) alone: " + "; ".join(sorted(reclaimed["cache_volumes_left_alone"])))
+    publish_line = publish_summary_line(report)
+    if publish_line:
+        lines.append(publish_line)
     return "\n".join(lines)
 
 
 # ---------------------------------------------------------------- CLI
 def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list[str] | None = None,
         dry_run_upload: bool = False, no_cleanup: bool = False,
-        cover_bases: list[str] | None = None, shared_workdir: bool = False) -> int:
+        cover_bases: list[str] | None = None, shared_workdir: bool = False,
+        upload_transport=None, upload_sleeper=None, upload_verify_fetcher=None) -> int:
+    # upload_transport/upload_sleeper/upload_verify_fetcher: test-only
+    # injection points (main()'s own CLI never sets any of the three,
+    # same as run_build's own equally-real production default) -- a real
+    # run always uses status_uploader's real scp/sftp/ftp transports and a
+    # real HTTP fetch for the rehearsal's fetch-back check.
     catalog = fetch_catalog(config.catalog_url)
     config.workdir.mkdir(parents=True, exist_ok=True)
     report_path = config.workdir / f"{mode}-report.json"
@@ -1319,7 +1406,7 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
     if mode == "build":
         if not config.site_url:
             _eprint("error: site_url is required to build (the real Studio page this tool drives)")
-            return 2
+            return EXIT_CONFIG_ERROR
         # Item 90: --no-cleanup only ever moves the effective setting
         # towards keeping more, never towards deleting more than the
         # config file itself already says.
@@ -1334,7 +1421,7 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
             if unknown_bases:
                 _eprint(f"error: --cover-bases names unknown base(s): {', '.join(sorted(unknown_bases))} "
                        f"(known: {', '.join(sorted(_known_bases()))})")
-                return 2
+                return EXIT_CONFIG_ERROR
             config = dataclasses.replace(config, cover_bases=cover_bases)
         # --shared-workdir on the command line only ever turns the mode on
         # for this run; conformance.yml's own shared_workdir: true already
@@ -1348,12 +1435,12 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
         if problems:
             for problem in problems:
                 _eprint(f"error: {problem}")
-            return 2
+            return EXIT_CONFIG_ERROR
         try:
             upload_destinations = status_uploader.parse_upload_destinations(config.upload)
         except status_uploader.UploadConfigError as exc:
             _eprint(f"error: {exc}")
-            return 2
+            return EXIT_CONFIG_ERROR
         # The rehearsal's own fetch-back check (item 197) reuses this run's
         # own site_url -- no second URL to keep in sync by hand -- at the
         # same "/data/<file>" path the Studio page's own build-status badge
@@ -1366,10 +1453,11 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
         try:
             report = run_build(config, catalog=catalog, max_builds=max_builds, jobs=jobs, only=only,
                                upload_config=upload_destinations, dry_run_upload=dry_run_upload,
-                               upload_verify_url=upload_verify_url)
+                               upload_verify_url=upload_verify_url, upload_transport=upload_transport,
+                               upload_sleeper=upload_sleeper, upload_verify_fetcher=upload_verify_fetcher)
         except ConformanceError as exc:
             _eprint(f"error: {exc}")
-            return 2
+            return EXIT_CONFIG_ERROR
     else:
         report = run_check(config, catalog=catalog)
 
@@ -1379,17 +1467,32 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
     (config.workdir / f"{mode}-summary.txt").write_text(text + "\n", encoding="utf-8")
     print(text)
 
-    # A failed upload is a warning, never a build failure (item 73) — said
-    # plainly here, same as a skipped entry's reason, never left to be dug
-    # out of report.json alone.
+    # A failed upload is never a *catalogue entry's own* failure (item 73)
+    # — it changes nothing about which entries this run reports built or
+    # tested clean — but it is no longer invisible to the process's own
+    # exit code either (item 198, below): said plainly here, the same way
+    # a skipped entry's reason is, never left to be dug out of
+    # report.json alone.
     for warning in report.get("upload_warnings", []):
         _eprint(f"warning: {warning}")
 
     if config.report_url:
         post_report({"report": report, "diff": diff}, config.report_url)
 
+    # item 198: entries failing is the real gate and always wins (a
+    # systemd timer's own failure must never be masked by a publish that
+    # happened to succeed); short of that, every entry built and tested
+    # clean but the status never reached somewhere it was configured to
+    # is its own, distinct, documented exit code — never a quiet 0 that
+    # leaves a stale badge looking current (docs/BUILD_MATRIX.md,
+    # "Publishing the build-status badge", and this run's own printed
+    # summary line, above, name exactly which destination).
     failed = [tid for tid, record in report["targets"].items() if record.get("status") not in OK_STATUSES]
-    return 0 if not failed else 1
+    if failed:
+        return EXIT_ENTRIES_FAILED
+    if publish_failed(report):
+        return EXIT_PUBLISH_FAILED
+    return EXIT_OK
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1425,7 +1528,7 @@ def main(argv: list[str] | None = None) -> int:
         config = Config.load(args.config)
     except ConformanceError as exc:
         _eprint(f"error: {exc}")
-        return 2
+        return EXIT_CONFIG_ERROR
 
     only = args.only.split(",") if getattr(args, "only", None) else None
 
@@ -1434,7 +1537,7 @@ def main(argv: list[str] | None = None) -> int:
             catalog = fetch_catalog(config.catalog_url)
         except ConformanceError as exc:
             _eprint(f"error: {exc}")
-            return 2
+            return EXIT_CONFIG_ERROR
         entries = catalog["bundle_catalog"]
         if only:
             entries = [e for e in entries if e["id"] in set(only)]
@@ -1444,7 +1547,7 @@ def main(argv: list[str] | None = None) -> int:
             print(entry["id"])
         print(f"\n{len(entries)} entr(y/ies) against {config.catalog_url}"
              + (f", site {config.site_url}" if args.mode == "build" and config.site_url else ""))
-        return 0
+        return EXIT_OK
 
     cover_bases = args.cover_bases.split(",") if getattr(args, "cover_bases", None) else None
     if cover_bases:
@@ -1456,7 +1559,7 @@ def main(argv: list[str] | None = None) -> int:
                    shared_workdir=getattr(args, "shared_workdir", False))
     except ConformanceError as exc:
         _eprint(f"error: {exc}")
-        return 2
+        return EXIT_CONFIG_ERROR
 
 
 if __name__ == "__main__":

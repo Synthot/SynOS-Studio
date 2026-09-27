@@ -854,16 +854,15 @@ The owner is willing to give the conformance service upload credentials
 rather than move the file by hand. An optional `upload:` section in
 `conformance.yml` (`tools/status_uploader.py`) drives that — see the
 commented example in
-`packaging/catalog-conformance/conformance.example.yml`. Filled in, `build`
-uploads `build-status.json` once for every entry whose `state` changed
+`packaging/catalog-conformance/conformance.example.yml`. It is one
+destination (a mapping) or several, in order (a list); filled in, `build`
+publishes `build-status.json` once for every entry whose `state` changed
 (not every entry — most re-builds of an already-`success` bundle do not
 change anything a badge shows) plus once, unconditionally, when the whole
-run finishes; each attempt retries a few times with a growing pause
-between tries, and a failed upload after all retries is a warning printed
-on stderr and listed in `build-report.json`'s own `upload_warnings`, never
-a failed build.
+run finishes; each destination's own attempt retries a few times with a
+growing pause between tries.
 
-Two transports are supported:
+Three transports are supported:
 
 - **SSH** (`protocol: sftp` or `scp`) — shells out to the system `sftp`/
   `scp` binary (this project's own rule against building a shell command
@@ -876,6 +875,10 @@ Two transports are supported:
   machine could read with `ps`.
 - **FTP over TLS** (`protocol: ftps`) — the standard library's own
   `ftplib.FTP_TLS`, nothing extra to install.
+- **Local** (`protocol: local`) — not a network at all: a plain, atomic
+  file copy, for a development copy of the Studio page served from this
+  same machine. See "Rehearsing a publish before production" below for
+  the one thing this protocol is actually for.
 
 Plain, unencrypted FTP (`protocol: ftp`) is refused with an explanation
 unless the config also sets `allow_insecure_ftp: true`: both the account's
@@ -889,6 +892,58 @@ tool, or included in a warning: every message a transport can raise is
 scrubbed of the configured password first
 (`status_uploader.describe_destination()` is the only representation of a
 destination anything here ever prints, and it never includes one).
+
+### Rehearsing a publish before production
+
+When `upload:` lists more than one destination, every `protocol: local`
+destination is treated as a rehearsal, never just another parallel
+target. It is published, then — since a `local` destination usually sits
+on the same machine as a development copy of the Studio page this run's
+own `site_url` already points at — fetched back over HTTP from
+`<site_url>/data/build-status.json` and checked to actually be a valid,
+served `schema_version: 2` document with an `entries` object, proving the
+*served* copy is good, not merely that the write to disk succeeded
+(`status_uploader.verify_published()`). Only once every rehearsal
+destination has published and verified does a single non-local
+("production") destination even get attempted; a rehearsal failure is
+reported against every configured destination — the one that actually
+failed with its own reason, every production one `"skipped"` with that
+reason — and no production destination is ever touched. This is what
+turns "we hope the upload works" into "the upload was rehearsed on a copy
+of the real thing before a customer saw it."
+
+### A failed publish is never a failed catalogue entry, but it is not invisible
+
+A failed upload (or a failed rehearsal, or a production destination
+skipped because the rehearsal ahead of it did not pass) never changes
+whether a *catalogue entry* is reported success or failure — that
+accounting is entirely about the entry's own build/smoke result, always.
+It is printed as a warning on stderr and listed in `build-report.json`'s
+own `upload_warnings` (plus, per destination, `upload_results` — the
+whole run's history — and `publish_outcomes` — the run's final state
+only, what the exit code below and the printed/persisted summary line are
+both based on).
+
+But this now runs unattended, from a systemd timer nobody is watching, and
+the entire reason the rehearsal above exists is to prevent a customer
+seeing a bad publish — so a run where every entry built beautifully and
+the status never reached either site must not look like a clean success.
+`catalog_conformance.py build` (and `main()`/`_run()`, its own CLI entry
+point) uses a distinct exit code for exactly that case:
+
+    0  everything this run attempted came back clean.
+    1  at least one catalogue entry failed or its boot check failed — the
+       real gate, and always wins over 3 below.
+    2  the run could not even start (a bad config value, an unknown
+       --cover-bases base, a catalog fetch that failed).
+    3  every catalogue entry built and tested clean, but build-status.json
+       never reached somewhere upload: said it should.
+
+`packaging/catalog-conformance/synos-conformance-build.service` sets no
+`SuccessExitStatus=` and pipes `ExecStart` through nothing that could
+swallow the code, so 1/2/3 all leave that unit `Result=exit-code` and
+visible in `systemctl status` — a timer failing this way needs nobody to
+read a JSON report first.
 
 ### Checking a config, or that a file arrived
 
