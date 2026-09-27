@@ -126,6 +126,26 @@ report_url: null
 #     key_path: /etc/synos/conformance-upload-key
 #     remote_path: /var/www/studio/data/build-status.json
 
+# `build`'s own exit code, distinct from the meaning of `upload:` above
+# only in that a failed publish is never a failed *catalogue entry* --
+# every entry's own build/smoke result is unaffected either way -- but it
+# is not invisible: this runs from a systemd timer nobody is watching, so
+# "every entry passed, the badge never reached anywhere" gets its own,
+# documented, nonzero code rather than looking like success.
+#   0  everything this run attempted came back clean.
+#   1  at least one catalogue entry failed or its boot check failed -- the
+#      real gate, and always wins over 3 below.
+#   2  the run could not even start (a bad config value, an unknown
+#      --cover-bases base, a catalog fetch that failed).
+#   3  every catalogue entry built and tested clean, but build-status.json
+#      never reached somewhere upload: above said it should (a rehearsal
+#      destination that failed or came back invalid when fetched back, a
+#      production destination skipped because the rehearsal ahead of it
+#      never passed, or a production destination that itself failed after
+#      a good rehearsal). See docs/BUILD_MATRIX.md's "Getting it to the
+#      web server" for the mechanism; the run's own printed and persisted
+#      summary (<mode>-summary.txt) names exactly which destination.
+
 # `build` only: free a successful entry's heavy directories (the unpacked
 # bundle, its build tree, the multi-GB ISO) as soon as that entry
 # finishes, keeping the small evidence (checksum, size, build log, smoke
