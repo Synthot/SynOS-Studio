@@ -2,7 +2,7 @@
 """Build the SynOS packages under packages/ into a local APT repository.
 
     python3 tools/build_packages.py [--manifest manifest.yml] [--output .build/repo]
-                                    [--only name ...] [--list]
+                                    [--only name ...] [--list] [--jobs auto|N]
 
 Each packages/<name>/ holds a `control` template, an `assets/` tree installed
 as-is, optional `templates/` rendered with the substitutions below, optional
@@ -69,15 +69,20 @@ ManifestError = render_manifest.ManifestError
 PACKAGE_MIN_FREE_GB = 2.0            # scratch space per concurrent build under .build/packages-work
 PACKAGE_MIN_MEMORY_GB_PER_JOB = 1.0  # dpkg-deb, gpg, msgfmt and the vendored prebuild scripts are not memory-hungry
 PACKAGE_CPUS_PER_JOB = 1             # a single package build rarely uses more than one core at a time
+# These low, per-job numbers are also why --jobs auto is the *default* (not
+# an opt-in): even a modest machine gets a sane handful of workers rather
+# than being refused or throttled to 1, so nobody has to remember to pass
+# the flag to get the speedup this module exists to provide.
 
 
 def resolve_jobs(requested: str) -> tuple[int, list[str]]:
-    """--jobs "auto" derives the safe worker count from this machine's own
-    disk, memory and CPUs (tools/host_resources.py, the same formula
-    tools/build_matrix.py and tools/catalog_conformance.py use), sized for
-    plain package builds via PACKAGE_MIN_FREE_GB et al. above. An explicit
-    count above what the machine can safely feed is refused with the reason,
-    not silently capped; --jobs 1 always means today's plain serial loop."""
+    """--jobs "auto" (the default) derives the safe worker count from this
+    machine's own disk, memory and CPUs (tools/host_resources.py, the same
+    formula tools/build_matrix.py and tools/catalog_conformance.py use),
+    sized for plain package builds via PACKAGE_MIN_FREE_GB et al. above. An
+    explicit count above what the machine can safely feed is refused with
+    the reason, not silently capped; --jobs 1 always means today's plain
+    serial loop, the explicit escape hatch when a build must force it."""
     return host_resources.resolve_jobs(requested, ROOT, min_free_gb=PACKAGE_MIN_FREE_GB,
                                        min_memory_gb_per_job=PACKAGE_MIN_MEMORY_GB_PER_JOB,
                                        cpus_per_job=PACKAGE_CPUS_PER_JOB, free_store_gb=None)
@@ -103,22 +108,40 @@ def resolve_jobs(requested: str) -> tuple[int, list[str]]:
 #     7a49a464b0188c340101c52965c18190b1c694cf — would otherwise have one's
 #     `rm -rf "$cache"` racing the other's `git fetch` into the same
 #     directory;
-#   - resolve-gnome-ext.py (packages/_lib) --download: it always writes the
-#     fetched zip to the single hardcoded path /tmp/gnome-ext-poc.zip, for
-#     every one of the ~14 gnome-shell-extension-* recipes that call it, each
-#     several times over (once per GNOME target in its own loop). Confirmed
-#     by a real concurrent run: several of those recipes that build cleanly
-#     serially failed with zipfile.BadZipFile / EOFError / "invalid distance
-#     too far back" once run alongside each other — textbook corruption from
-#     two processes writing and reading the same file. It takes no lock of
-#     its own and has no per-package key to lock on (the path never varies),
-#     so every recipe that calls it shares one single lock.
-# source_cache_keys() finds both hazards by a static scan of the recipe's
-# own shell scripts, so a future recipe that repeats a commit, or gains
-# another call into resolve-gnome-ext.py, is covered too, not just today's
-# instances of each.
+#   - resolve-gnome-ext.py (packages/_lib) --download: found by actually
+#     running a concurrent build and watching several of the ~14
+#     gnome-shell-extension-* recipes that call it fail with
+#     zipfile.BadZipFile / EOFError / "invalid distance too far back" —
+#     textbook corruption from two processes writing and reading the same
+#     file, because it wrote every download to one hardcoded path,
+#     /tmp/gnome-ext-poc.zip. Fixed at the source (it now uses
+#     tempfile.mkstemp, a unique path per call, so it needs no lock of its
+#     own), and the lock is kept anyway — belt and braces, since it also
+#     covers anything else that reaches that call, known or not;
+#   - any other absolute path under /tmp, /var/tmp or /dev/shm a recipe's
+#     own scripts reference that source_cache_keys() does not otherwise
+#     recognize. gnome-ext-poc.zip was found by running a build, not by
+#     reading the code — the next one won't be caught that way twice. A
+#     recipe that hardcodes a shared path outside its own work tree and
+#     isn't one of the patterns above is unknown, not proven safe, so it is
+#     locked by that exact path (see UNKNOWN_PATH_RE below) rather than let
+#     through: a little speed given up, never correctness. The lock's key is
+#     the path text, not the package, so two recipes that reference the
+#     identical unknown path are the ones actually serialized against each
+#     other; a recipe with its own distinct unknown path only waits on
+#     another recipe that shares that same literal path, never on the rest
+#     of the build. Either way, run_prebuild() prints a note naming the
+#     recipe and the path, because the point of locking it is not to hide
+#     the problem — it's to tell whoever added the recipe to fix it.
+# source_cache_keys() finds all of this by a static scan of the recipe's own
+# shell scripts, so a future recipe that repeats a commit, calls into
+# resolve-gnome-ext.py, or hardcodes some other shared path, is covered too,
+# not just today's instances of each.
 _KEYED_LOCKS: dict[tuple, threading.Lock] = {}
 _KEYED_LOCKS_GUARD = threading.Lock()
+
+
+_PRINT_LOCK = threading.Lock()  # guards the one direct-from-a-worker-thread print below (unknown-path notes)
 
 
 def _lock_for(key: tuple) -> threading.Lock:
@@ -130,23 +153,37 @@ def _lock_for(key: tuple) -> threading.Lock:
         return lock
 
 
-_SHELL_VAR_ASSIGN_RE = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)=["\']?([^"\'\n]*)["\']?\s*$', re.MULTILINE)
-_FETCH_GIT_COMMIT_RE = re.compile(r'^\s*fetch_git_commit\s+(\S+)\s+(\S+)', re.MULTILINE)
+_SHELL_VAR_ASSIGN_RE = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)=["\']?([^"\'\n]*)["\']?\s*(?:#.*)?$', re.MULTILINE)
+_FETCH_GIT_COMMIT_RE = re.compile(r'^\s*fetch_git_commit\s+(\S+)\s+(\S+)\s+(\S+)', re.MULTILINE)
 _GNOME_EXT_DOWNLOAD_RE = re.compile(r'resolve-gnome-ext\.py\b[^\n]*--download')
+# /tmp, /var/tmp, /dev/shm: the writable, host-wide scratch locations a
+# script can hardcode a shared path under (every real instance found in this
+# repository, including gnome-ext-poc.zip, was a literal /tmp/... path).
+# Not preceded by a word character, '.', '/' or ':' so this does not fire
+# inside a longer path (/opt/synos/tmp/x) or a URL's own path component.
+UNKNOWN_PATH_RE = re.compile(r'(?<![\w./:])/(?:var/tmp|dev/shm|tmp)/[\w./+-]+')
 
 
 def source_cache_keys(source: Path) -> set[tuple[str, ...]]:
-    """Best-effort static scan of a recipe's own shell scripts (prebuild.sh
-    and anything under upstream/) for the two known shared-resource hazards:
+    """Best-effort static scan of a recipe's own shell and Python scripts
+    (prebuild.sh and anything under upstream/) for shared-resource hazards:
     `fetch_git_commit <url> <commit>` calls (resolving simple VAR="value"
-    assignments made in the same file), and any call into
-    resolve-gnome-ext.py with --download. Two packages whose scan comes back
-    with the same (url, commit) pin the identical upstream commit; any
-    package that calls resolve-gnome-ext.py --download shares that call's
-    one hardcoded temp file with every other one that does. Either case
-    means those recipes must not run their prebuild.sh at the same time (see
-    the module-level comment above); everyone else's keys come back empty or
-    disjoint and are never locked against one another."""
+    assignments made in the same file), any call into resolve-gnome-ext.py
+    with --download, and — catching whatever the first two do not — any
+    other literal /tmp, /var/tmp or /dev/shm path (UNKNOWN_PATH_RE) that
+    is not part of one of those two recognized calls.
+
+    Two packages whose scan comes back with the same (url, commit) pin the
+    identical upstream commit; any package that calls resolve-gnome-ext.py
+    --download shares that call's one lock with every other one that does
+    (the underlying file is unique per call now — see resolve-gnome-ext.py —
+    but the lock stays, belt and braces). An "unknown-path" key is locked by
+    its exact path text, so only recipes that reference the identical
+    unrecognized path are serialized against each other, not the whole
+    build; run_prebuild() prints a note when it acquires one, naming the
+    recipe and the path, so this is visible rather than just silently safe.
+    Everyone else's keys come back empty or disjoint and are never locked
+    against one another."""
     scripts = []
     prebuild = source / "prebuild.sh"
     if prebuild.is_file():
@@ -154,6 +191,7 @@ def source_cache_keys(source: Path) -> set[tuple[str, ...]]:
     upstream = source / "upstream"
     if upstream.is_dir():
         scripts.extend(p for p in upstream.rglob("*.sh") if p.is_file())
+        scripts.extend(p for p in upstream.rglob("*.py") if p.is_file())
     keys: set[tuple[str, ...]] = set()
     for script in scripts:
         try:
@@ -161,12 +199,22 @@ def source_cache_keys(source: Path) -> set[tuple[str, ...]]:
         except OSError:
             continue
         assigns = dict(_SHELL_VAR_ASSIGN_RE.findall(text))
-        for url, commit in _FETCH_GIT_COMMIT_RE.findall(text):
-            match = re.fullmatch(r'"?\$\{?(\w+)\}?"?', commit)
-            resolved = assigns.get(match.group(1), commit) if match else commit
-            keys.add(("git-commit", url, resolved))
+
+        def resolve(token: str) -> str:
+            var = re.fullmatch(r'"?\$\{?(\w+)\}?"?', token)
+            return assigns.get(var.group(1), token) if var else token.strip('"\'')
+
+        recognized_dests = []  # fetch_git_commit's own <dest>, resolved: not just that call's line, the
+        for match in _FETCH_GIT_COMMIT_RE.finditer(text):  # whole path it hands back (cd/rm-ed elsewhere
+            url, commit, dest = match.group(1), match.group(2), match.group(3)  # in the same script) is its
+            keys.add(("git-commit", url, resolve(commit)))                     # cache, not a new hazard.
+            recognized_dests.append(resolve(dest))
         if _GNOME_EXT_DOWNLOAD_RE.search(text):
             keys.add(("gnome-ext-download",))
+        for match in UNKNOWN_PATH_RE.finditer(text):
+            path = match.group(0)
+            if not any(path == dest or path.startswith(dest + "/") for dest in recognized_dests):
+                keys.add(("unknown-path", path))
     return keys
 
 # Signing key location. SYNOS_KEYS_DIR overrides the default keys/ (tests, CI).
@@ -460,10 +508,22 @@ def run_prebuild(source: Path, subs: dict[str, str], log: list[str]) -> None:
     # Upstream scripts compare sorted lists; glob order must not depend on the host locale.
     env = dict(os.environ, ARCH=subs["ARCH"], SUITE=subs["SUITE"], BASE=subs["BASE"], LC_ALL="C.UTF-8", LANG="C.UTF-8")
     env.setdefault("SYNOS_SOURCE_CACHE", str(ROOT / ".build" / "sources"))
-    # Hold a lock per (url, commit) this script fetches via fetch_git_commit,
-    # so two recipes pinning the same upstream commit never share that cache
-    # entry concurrently (see the module-level comment near _lock_for).
-    cache_locks = [_lock_for(("source-cache",) + key) for key in sorted(source_cache_keys(source))]
+    # Hold a lock per shared resource this script's own scan turned up (see
+    # source_cache_keys and the module-level comment near _lock_for): known
+    # patterns get their specific lock silently, same as always; an
+    # unrecognized /tmp, /var/tmp or /dev/shm path gets a note naming the
+    # recipe and the path, because the lock keeps the build correct but the
+    # note is what gets the recipe itself fixed.
+    keys = sorted(source_cache_keys(source))
+    unknown_paths = [key[1] for key in keys if key[0] == "unknown-path"]
+    if unknown_paths:
+        with _PRINT_LOCK:
+            for path in unknown_paths:
+                print(f"note: {source.name} references {path} outside its own work tree; not a recognized "
+                      "shared-resource pattern, so it is built serially against any other recipe that "
+                      "references the same path — fix the recipe to use a per-invocation temp path instead",
+                      file=sys.stderr)
+    cache_locks = [_lock_for(("source-cache",) + key) for key in keys]
     with contextlib.ExitStack() as stack:
         for lock in cache_locks:
             stack.enter_context(lock)
@@ -869,10 +929,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--strict", action="store_true", help="fail when any package is skipped (CI, container build)")
     parser.add_argument("--rebuild", action="store_true", help="ignore the recipe fingerprints and rebuild everything")
-    parser.add_argument("--jobs", default="1",
-                        help="packages to build at once: a number, or \"auto\" to derive the safe count from this "
-                             "machine's disk, memory and CPUs (tools/host_resources.py); default 1 (today's plain "
-                             "serial loop, unchanged)")
+    parser.add_argument("--jobs", default="auto",
+                        help="packages to build at once: a number, or \"auto\" (default) to derive the safe count "
+                             "from this machine's disk, memory and CPUs (tools/host_resources.py, sized for this "
+                             "workload — see PACKAGE_MIN_FREE_GB et al.). --jobs 1 is today's plain serial loop, "
+                             "unchanged, and the explicit escape hatch if a build ever needs to force it")
     args = parser.parse_args(argv)
     try:
         manifest = render_manifest.load_yaml(Path(args.manifest).resolve())
