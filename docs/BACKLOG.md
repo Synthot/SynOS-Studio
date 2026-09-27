@@ -53,6 +53,21 @@ engine, never captivity (a company leaves with its bundle and builds alone).
 
 ## Quality and evidence
 
+**Deliberately deferred, 27 September 2026.** The two acceptance-suite items
+below (Secure Boot unreachable through the harness's GRUB typing, and that
+typing corrupting under load) are not oversights. The test engine already
+proves, unattended and per bundle, the chain that matters most: the page
+generates a bundle, its own launcher builds it, the image boots in QEMU, and
+the boot screen is read by OCR to certify the customer's own distribution
+reaching its own installer. The install itself was verified by hand on Debian
+13 the same day. Making the harness type reliably — or better, implementing
+`installer.unattended`, which the schema, `docs/BUNDLE.md` and the Studio's
+Advanced tab all offer and nothing in the engine reads — is an enhancement to
+take after the distro is otherwise steady, not a gate on it. Whoever picks it
+up: prefer the unattended-install route, because it removes the typing
+entirely, and it ships a feature customers are already being shown.
+
+
 - **Screenshots for the Studio gallery.** `screenshots/` in the Studio repo;
   the page embeds what it finds.
 - **Run the acceptance suite in QEMU** (`make test`). Never executed in this
