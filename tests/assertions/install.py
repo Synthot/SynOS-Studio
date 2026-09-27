@@ -230,7 +230,7 @@ modules=$(lsinitrd -m /cdrom/LiveOS/initrd)
 for module in dmsquash-live dmsquash-live-autooverlay overlayfs synos-live-layers; do
     grep -Eq "^[[:space:]]*$module[[:space:]]*$" <<< "$modules"
 done
-dpkg-query -S /usr/sbin/update-initramfs | grep -Fxq 'dracut: /usr/sbin/update-initramfs'
+test "$(readlink /usr/sbin/update-initramfs)" = /usr/libexec/synos-update-initramfs
 initrd_listing=$(lsinitrd /cdrom/LiveOS/initrd)
 for forbidden_path in \
     scripts/casper \
@@ -792,8 +792,8 @@ def _assert_boot_packages(
         "for forbidden in dmsquash-live dmsquash-live-autooverlay synos-live-layers; do\n"
         "  ! printf '%s\\n' \"$modules\" | grep -Eq \"^[[:space:]]*$forbidden[[:space:]]*$\"\n"
         "done\n"
-        "dpkg-query -S /usr/sbin/update-initramfs | "
-        "grep -Fxq 'dracut: /usr/sbin/update-initramfs'\n"
+        "test \"$(readlink /usr/sbin/update-initramfs)\" = "
+        "/usr/libexec/synos-update-initramfs\n"
         "printf 'kernel=%s\\ninitrd=%s\\n' \"$kernel\" \"initrd.img-$version\"",
         evidence / "installed-boot-packages.txt",
     )

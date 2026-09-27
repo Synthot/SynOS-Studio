@@ -57,6 +57,7 @@ def boot_iso_with_debug_shell(
     extra_kernel_arguments: tuple[str, ...] = (),
     spice_socket: Path | None = None,
     themed_menu: bool = False,
+    is_uefi: bool = False,
 ) -> None:
     """Edit and boot the ISO's real menuentry.
 
@@ -84,8 +85,25 @@ def boot_iso_with_debug_shell(
         else ""
     ) + debug_kernel_arguments(architecture)
     if uses_graphical_grub_synchronization(architecture) and themed_menu:
+        # OVMF's own boot manager (BdsDxe) runs before GRUB is even loaded,
+        # and takes measurably longer -- and more variably under host load --
+        # than SeaBIOS does to hand off. A real acceptance run against this
+        # ISO found every uefi-nosb-* scenario timing out here: screenshots
+        # showed keystrokes landing on OVMF's still-visible boot-manager
+        # screen ("Go Back To Main Page") or garbling the first typed GRUB
+        # command, because firmware_delay was measured from VM start rather
+        # than from firmware handoff. ARM64 (below) already synchronizes on
+        # this exact serial marker before touching the keyboard; do the same
+        # here rather than trusting a fixed sleep to outlast UEFI's slower,
+        # less predictable boot-manager phase.
+        started = time.monotonic()
+        if is_uefi:
+            console.wait_for_text("BdsDxe: starting Boot", timeout=120)
+        remaining_delay = (
+            firmware_delay - (time.monotonic() - started) if is_uefi else firmware_delay
+        )
         _boot_through_command_line(
-            qmp, console, architecture, firmware_delay=firmware_delay,
+            qmp, console, architecture, firmware_delay=remaining_delay,
             kernel_arguments=kernel_arguments, extra_kernel_arguments=extra_kernel_arguments,
             keyboard=_QmpBootKeys(qmp),
         )
@@ -285,6 +303,19 @@ class _ArmGraphicalGrubCommandLine:
         self.keyboard.send_boot_key("esc")
         self.keyboard.send_boot_key("c")
         self._wait_for_stable_prompt(timeout=timeout, changed_from=None)
+        # A real run against this ISO found the very first submitted command
+        # arrive as "clinux ..." instead of "linux ...": a real boot's own
+        # screenshot showed GRUB's prompt already holding a stray "c" by the
+        # time this method judged it stable, most likely from the same UEFI
+        # timing gap fixed above (the esc/c pair landing while OVMF or GRUB
+        # was still mid-transition rather than truly idle at the prompt).
+        # _wait_for_stable_prompt only proves the *screen* has stopped
+        # changing, not that the input buffer is empty, so clear it
+        # unconditionally before typing the real command; this is a no-op
+        # when the prompt genuinely was empty.
+        self.keyboard.send_boot_key("end")
+        for _ in range(64):
+            self.keyboard.send_boot_key("backspace")
 
     def submit(self, command: str, *, timeout: float) -> None:
         if self.current_frame is None:

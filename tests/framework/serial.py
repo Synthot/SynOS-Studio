@@ -41,12 +41,23 @@ _FATAL_DIAGNOSTIC_TERMINATORS = (
 _KERNEL_CONSOLE_MARKERS = (
     b"Kernel command line:",
     b"Command line:",
-    # ``quiet splash`` can suppress the kernel banner. Bash's systemd OSC
-    # prompt marker proves both that firmware/GRUB have left and that the
-    # debug shell itself is ready to consume input.
-    b"servicename=debug-shell.service",
+    # ``quiet splash`` can suppress the kernel banner. systemd's own status
+    # line for the unit the harness activates (``systemd.debug_shell=``,
+    # see framework/grub.py) proves both that firmware/GRUB have left and
+    # that the debug shell itself is ready to consume input. Verified
+    # against a real boot's serial transcript: systemd prints this as plain
+    # text (no colour codes between the words, unlike the bracketed "[ OK ]"
+    # status line for the same event, which does carry ANSI codes between
+    # "Started" and the unit name and would not match here) --
+    # "systemd[1]: Started debug-shell.service - Early root shell on
+    # /dev/ttyS0 FOR DEBUGGING ONLY." There is no "servicename=...;type=
+    # service" OSC sequence anywhere in a real boot; that was never anything
+    # but this file's own invented marker, exercised only by this file's own
+    # synthetic unit-test fixtures, and it made every acceptance run time out
+    # here the first time this suite was ever pointed at a real ISO.
+    b"Started debug-shell.service",
 )
-_DEBUG_SHELL_READY_MARKER = b"servicename=debug-shell.service"
+_DEBUG_SHELL_READY_MARKER = b"Started debug-shell.service"
 _DOWNLOAD_CHUNK_BYTES = 24 * 1024
 _DOWNLOAD_FRAME_ATTEMPTS = 8
 _DOWNLOAD_FILE_ATTEMPTS = 3

@@ -433,8 +433,8 @@ class BootContractTests(unittest.TestCase):
         )
         self.assertIn("initrd_listing=$(lsinitrd /cdrom/LiveOS/initrd)", script)
         self.assertIn(
-            "dpkg-query -S /usr/sbin/update-initramfs | "
-            "grep -Fxq 'dracut: /usr/sbin/update-initramfs'",
+            'test "$(readlink /usr/sbin/update-initramfs)" = '
+            "/usr/libexec/synos-update-initramfs",
             script,
         )
         for forbidden_path in (

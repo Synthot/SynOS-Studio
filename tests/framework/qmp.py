@@ -121,14 +121,26 @@ class QmpClient:
     def type_text(
         self,
         value: str,
-        interval: float = 0.12,
+        interval: float = 0.2,
     ) -> None:
         for character in value:
             key = _key_name(character)
             # The release must happen before the next key. This matters for
             # shifted characters: overlapping events otherwise turn the next
             # word uppercase and GRUB receives a corrupted command line.
-            self.send_key(key, hold_ms=5)
+            #
+            # A real acceptance run against this ISO found the previous
+            # hold_ms=5/interval=0.12 pairing insufficient under host load:
+            # screenshots of two separate BIOS live-boot attempts show the
+            # exact corruption this comment already warned about -- dropped,
+            # substituted and case-flipped characters spread through the
+            # whole typed kernel command line (e.g. "TIMEZONE" arriving as
+            # "IMEZONE" and "SSTEM", "=" arriving as ">"), not merely a
+            # leaked leading character. Both values are raised as a
+            # mitigation of the same documented risk, not a guaranteed fix;
+            # the 120s budget callers give each submitted command has ample
+            # headroom for either value.
+            self.send_key(key, hold_ms=20)
             if interval:
                 time.sleep(interval)
 

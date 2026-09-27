@@ -346,6 +346,19 @@ def _parse_live_entries(content: str, expected: int | None = None) -> tuple[Live
         }
         if not {"locale", "timezone", "rd.synos.keyboard"} <= values.keys():
             continue
+        # build.sh stamps the resolved default region's locale/timezone/keyboard
+        # onto the Safe Graphics and Integrity Check entries too (same
+        # $DEFAULT_LIVE_ARGS as the plain Try/Install entry), so that a user
+        # who needs one of those diagnostic modes still gets their own
+        # language rather than falling back to the kernel's C locale. That is
+        # a deliberate product decision, present since the engine's first
+        # commit (build.sh and this file were both added in a3beb54), not a
+        # second "region entry": the ADVANCED_LIVE_ENTRIES markers that
+        # `_validate_dracut_live_contract` already uses to recognise those
+        # two variants (`nomodeset`, `rd.live.check=1`) identify them here too,
+        # so only the one genuine region-declaring entry is returned.
+        if "nomodeset" in arguments or "rd.live.check=1" in arguments:
+            continue
         if values.get("systemd.timezone") != values["timezone"]:
             raise ConfigurationError(
                 f"GRUB entry {match['name']!r} has contradictory timezone arguments"

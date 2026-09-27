@@ -29,6 +29,7 @@ class InstallationPhases:
                 live_region,
                 persistent=persistent,
                 phase=("live-persistent-first" if persistent else "live-temporary"),
+                is_uefi=scenario.firmware.is_uefi,
             )
             wifi_state = None
             if wifi_lab is not None:
@@ -78,6 +79,7 @@ class InstallationPhases:
                     live_region,
                     persistent=True,
                     phase="live-persistent-second",
+                    is_uefi=scenario.firmware.is_uefi,
                 )
                 assert_live_environment(
                     vm.serial,
@@ -143,6 +145,7 @@ class InstallationPhases:
         *,
         persistent: bool,
         phase: str,
+        is_uefi: bool,
     ) -> None:
         entry = self.inspection.persistent_entry if persistent else regional_entry
         extra_arguments = (
@@ -172,6 +175,7 @@ class InstallationPhases:
             ),
             spice_socket=vm.spice_socket,
             themed_menu=self.inspection.themed_menu,
+            is_uefi=is_uefi,
         )
         vm.serial.timeout = self.options.command_timeout_seconds
         vm.serial.wait_for_shell(self.options.boot_timeout_seconds)
