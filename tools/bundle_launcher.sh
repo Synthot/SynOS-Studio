@@ -1426,7 +1426,13 @@ else
     printf 'channel: stable\n' > dist/build.log
 fi
 say "building $manifest with $image"
-say "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
+# Measured, not guessed: a real Debian trixie build of a workstation profile on a
+# fast machine (64 threads) took 60.7 minutes, of which installing packages was
+# 62% and downloading them about three minutes. So the cache volume saves the
+# downloads, not the hour - claiming later builds are much shorter was wrong, and
+# every build now writes its own phase times next to the ISO for whoever asks.
+say "about an hour on a fast machine, longer on a laptop: most of it is installing packages, and the cache volume synos-cache-$base-$suite saves their download, not their installation."
+say "when it finishes, dist/*.timings.json says where the time actually went."
 say "the full output is kept in dist/build.log"
 set +e
 # Everything the build says goes to the terminal *and* to a file here, the

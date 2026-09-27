@@ -834,7 +834,9 @@ if ($resolvedChannel -eq "development") {
     Set-Content -Path "dist\build.log" -Value "channel: stable"
 }
 Write-Host "building $manifest with $image"
-Write-Host "first build about 40 minutes; the cache volume synos-cache-$base-$suite makes the next ones shorter."
+# See bundle_launcher.sh for the measurement behind this wording.
+Write-Host "about an hour on a fast machine, longer on a laptop: most of it is installing packages, and the cache volume synos-cache-$base-$suite saves their download, not their installation."
+Write-Host "when it finishes, dist/*.timings.json says where the time actually went."
 Write-Host "the full output is kept in dist\build.log"
 & $runtime @runtimeRootArgs run --rm --privileged `
     -v "${PSScriptRoot}:/bundle" `

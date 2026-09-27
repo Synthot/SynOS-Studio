@@ -53,7 +53,11 @@ Fedora Media Writer, GNOME Disks' "Restore Disk Image", or `dd`. A tool that
 copies the ISO's *files* onto the stick instead, as Ubuntu's Startup Disk
 Creator, Rufus in ISO mode, UNetbootin and Ventoy do, makes a stick that
 starts and then fails with squashfs read errors; the boot menu's "Check
-installation media for defects" entry says so in one minute. The first build takes about 40 minutes; later ones reuse a cache.
+installation media for defects" entry says so in one minute. A build takes about an hour on a fast
+machine and longer on a laptop: installing the packages is most of it, so the
+cache a later build reuses saves their download (a few minutes) rather than
+the hour. Each build writes its own phase times to
+`dist/<name>.timings.json` and prints them, longest first, when it finishes.
 `./build.sh check` only verifies your machine. The complete output is kept
 in `dist/build.log`.
 
