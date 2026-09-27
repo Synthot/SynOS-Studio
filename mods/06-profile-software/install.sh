@@ -12,18 +12,56 @@ set -u                  # treat unset variable as error
 print_ok "Profile ${PROFILE_ID} (${PROFILE_CHAIN}) bundles: ${PROFILE_BUNDLES:-none}"
 
 #--- install -------------------------------------------------------------
+# One simulated transaction answers "can every one of these install
+# together" far more cheaply than asking apt about each name in its own
+# process: measured against a real archive, ~8s for 39 packages asked
+# about together against ~109s asking apt about each of the 39
+# individually — every apt invocation repays the same archive-index load
+# the previous one already paid for, so batching pays that cost once
+# instead of once per package. That is also the expected case: packages.map
+# (see below) is supposed to have already dropped names this suite's
+# archive cannot supply, so the candidate list should resolve as one unit
+# on a healthy build.
+#
+# A single "apt install pkg-a pkg-b" transaction aborts entirely the
+# instant one name cannot be resolved, though, and cannot say *which* one
+# — so a failed batch falls back to asking apt about each candidate on its
+# own, exactly as this whole check used to work name-by-name, every time.
+# A cache lookup per name (no solver) was measured too, to catch a name
+# the archive simply lacks before ever risking the batch: on the same
+# archive it did correctly avoid a name-by-name fallback for that failure
+# alone, but the lookup itself is not actually cheap in wall time — 39 of
+# them cost more (~47s) than the one batched transaction they were meant
+# to protect (~8s), because each one repays that same index load. It is
+# not used here for that reason: it made the expected case slower to make
+# an unexpected case somewhat faster.
+resolve_installable_profile_packages() {
+    local candidates=("$@")
+    [ "${#candidates[@]}" -eq 0 ] && return 0
+    if apt-get install -s -y "${candidates[@]}" >/dev/null 2>&1; then
+        INSTALL+=("${candidates[@]}")
+        return 0
+    fi
+    local pkg
+    for pkg in "${candidates[@]}"; do
+        if apt-get install -s -y "$pkg" >/dev/null 2>&1; then
+            INSTALL+=("$pkg")
+        else
+            SKIPPED+=("$pkg")
+        fi
+    done
+}
+
 INSTALL=()
 SKIPPED=()
+CANDIDATES=()
 for pkg in ${PROFILE_INSTALL_PACKAGES:-}; do
     if dpkg -s "$pkg" >/dev/null 2>&1; then
         continue
     fi
-    if apt-get install -s -y "$pkg" >/dev/null 2>&1; then
-        INSTALL+=("$pkg")
-    else
-        SKIPPED+=("$pkg")
-    fi
+    CANDIDATES+=("$pkg")
 done
+resolve_installable_profile_packages "${CANDIDATES[@]}"
 
 if [ "${#SKIPPED[@]}" -gt 0 ]; then
     # Every name here was asked for by name — resolved by tools/render_manifest.py
