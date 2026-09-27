@@ -110,3 +110,49 @@ engine, never captivity (a company leaves with its bundle and builds alone).
   Disable automatic update checks for the live user only (synos-live-settings).
 - **Regenerate the application catalog** whenever a suite changes
   (`make catalog`), and consider Intel's GPU repository for Debian.
+- **Verify what QMP actually typed into GRUB, not just that GRUB's screen
+  went stable afterward.** The acceptance suite's first real run found its
+  own keystroke injection (`QmpClient.type_text`, used to edit the boot
+  command line under a themed GRUB menu) corrupting characters under host
+  load -- caught only because the corrupted command then failed to boot
+  and a screenshot happened to be captured. `_wait_for_stable_prompt`
+  proves the framebuffer stopped changing, not that the typed text matches
+  what was sent; a command that GRUB accepts syntactically but that types
+  wrong (a flipped locale code, a dropped argument) would currently pass
+  silently. Read back the command line (GRUB's `echo` or a screenshot OCR
+  of the prompt) and retry the specific keystrokes that do not match
+  before treating a submission as done, rather than only pacing keystrokes
+  more slowly and hoping.
+
+  A cheaper mitigation, worth trying before or alongside read-back: the
+  themed-menu path retypes the *entire* ~250-character kernel command line
+  from scratch through the raw GRUB command line, because "the menu cannot
+  be read from screenshots" so the existing entry can't be visually
+  selected. But the *default* entry needs no selection -- GRUB's own
+  `set default="0"` already highlights it on boot. The untimed (non-themed)
+  path already does the cheaper thing for exactly this reason: open the
+  existing, already-correct entry's editor (`e`), move down to its `linux`
+  line, and type only the short suffix (`debug_kernel_arguments`, ~70
+  characters) that needs appending. Every character not typed is a
+  character that cannot be corrupted. Only entries other than the default
+  (Safe Graphics, To Go, Integrity Check, or a non-default region) still
+  need the full raw-command-line reconstruction, since those cannot be
+  reached by selection alone on a themed menu.
+
+- **uefi-sb-* cannot boot at all through this suite's current GRUB
+  automation.** Confirmed on a real run: shim/GRUB's Secure Boot lockdown
+  rejects the `linux`/`initrd` commands the themed command-line path types
+  from scratch, with GRUB's own real "error: prohibited by secure boot
+  policy" -- by design, lockdown disables loading an arbitrary unverified
+  kernel from the command line, precisely to prevent what this automation
+  does. Every uefi-sb-offline-btrfs and uefi-sb-online-btrfs attempt in
+  the first real run failed this way; no uefi-sb-* scenario has ever
+  reached Linux. The same "edit the existing signed entry instead of
+  retyping it" redesign above is very likely also the fix here: appending
+  arguments to an already-verified menu entry via `e` is the standard,
+  widely-used way real users pass one-off kernel arguments under Secure
+  Boot, and normal lockdown policy permits it while blocking the raw
+  command line. Needs a decision and real engineering, not a quick patch:
+  building and validating GRUB automation that only ever edits the
+  existing entry (default and non-default) rather than reconstructing one,
+  themed menu or not.
