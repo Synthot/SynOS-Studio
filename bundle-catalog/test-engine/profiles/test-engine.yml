@@ -3,7 +3,8 @@ extends: yocto-builder
 description: >-
   The Yocto build host (profiles/yocto-builder.yml) plus everything this
   engine's own catalog-conformance test service needs
-  (packaging/install-test-engine.sh; profiles/bundles.yml, "test-engine"):
+  (profiles/bundles.yml, "test-engine"; docs/BUILD_MATRIX.md,
+  "Installing it as a service"):
   a container runtime, QEMU, xorriso, Tesseract OCR, Pillow, PyYAML and a
   headless Chromium, to build a catalogued bundle, boot the resulting
   image under QEMU and read its boot screen with OCR. Pinned to Debian
