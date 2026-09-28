@@ -1126,57 +1126,22 @@ not fit this repository's `packages/` recipe pipeline (which builds
 packages for images this engine produces, not for the machine that drives
 the build).
 
-`packaging/install-test-engine.sh` automates steps 2-5 below on a single
-machine already holding a checkout (step 1): it detects the distribution
-(Debian/Ubuntu, Fedora/RHEL, openSUSE, Arch or Alpine; anything else is
-refused rather than guessed), installs whichever of podman, QEMU, xorriso,
-tesseract, Pillow and a headless browser is actually missing, points
-podman's rootless storage at whichever disk has room for a build (an
-explicit `--storage-path`, or the largest suitable filesystem it finds),
-writes `/etc/synos/conformance.yml` from the answers given on the command
-line or interactively (never a template left to edit blind, and never with
-a credential in it), installs the four units with a dedicated user, and
-then runs the cheap checks below for real. `--dry-run` prints every step
-without doing any of it; `--help` lists every option.
-
-Run it on a terminal with no arguments at all and it shows a menu instead:
-a numbered list where every entry says where that thing stands on *this*
-machine — installed, out of date, half installed, not installed, not
-applicable — read off the machine itself (the units actually in
-`/etc/systemd/system`, what `git` says about the checkout, whether
-`/etc/synos/conformance.yml`'s keys are filled in, the nginx site on disk,
-what `systemctl` says about the timers), never from anything the installer
-wrote to remember what it did. Choosing an entry asks only for what that
-entry needs and does only that entry's work; one entry, "everything for a
-staging server", runs the sensible set in order (prerequisites, the
-checkout, the development site's document root, the publish destinations,
-then the configuration and units written once with both of those in them,
-then optionally the monitoring console and enabling the timers, then
-verification); one entry does the single thing no flag has ever done,
-enabling the timers. It is plain shell — a list, a prompt and a loop — with
-no whiptail, no dialog and no cursor tricks, so it reads the same over a
-slow ssh link as on a console. Every flag still behaves exactly as it
-always did, and the menu relaxes nothing: it collects answers and calls the
-same functions the flags call, so the never-overwrite rule for a filled-in
-configuration (still `--overwrite-config` only, which is why that flag and
-`--dry-run` are the two that keep the menu open rather than suppressing
-it), the refusal to touch a dirty or unexpected checkout, `nginx -t` before
-any reload, and every exit code hold identically from either side. A
-production upload password typed at its one secret prompt is not echoed,
-never logged, never written into a unit, refused outright for a
-configuration that lives inside a git checkout, and does not change that
-file's mode; decline it and the destination is written commented out with
-the one line to edit named in the closing report.
+Setting one up is five steps, below. A private installer that does them
+all on one machine — and that also wires up the development site, the
+publish destinations and a monitoring console — lives with the Studio
+rather than here, because what it encodes is one particular deployment;
+these steps are the whole of what this engine needs.
 
 Building a machine to run this, rather than adding it to one that already
 exists? `profiles/bundles.yml`'s `test-engine` group installs the same
-list (minus the distribution-detection step, since a profile already pins
-its base) into the SynOS image itself, so it comes up with everything but
-this script; the bundle catalog's "Test Engine Build Machine" entry
+list (minus the distribution detection a script would need, since a profile
+already pins its base) into the SynOS image itself, so it comes up with
+everything but the units below; the bundle catalog's "Test Engine Build
+Machine" entry
 (`bundle-catalog/test-engine/`) pairs it with the Yocto build host, the
 combination this section assumes.
 
-By hand:
+The steps:
 
 1. Clone this repository somewhere stable, e.g. `/opt/synos-engine`
    (`git clone … /opt/synos-engine && cd /opt/synos-engine && make check`

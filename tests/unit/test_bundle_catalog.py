@@ -289,9 +289,9 @@ class PackageResolutionTests(unittest.TestCase):
                 self.assertIn("texlive-latex-extra", docs_concrete)
 
     def test_test_engine_group_is_mapped_on_both_bases(self) -> None:
-        """profiles/bundles.yml "test-engine": everything
-        packaging/install-test-engine.sh's REQUIREMENTS list needs, resolved
-        the same way every other group is. Debian gets a real headless
+        """profiles/bundles.yml "test-engine": everything the catalog
+        conformance service needs (docs/BUILD_MATRIX.md, "Installing it as a
+        service"), resolved the same way every other group is. Debian gets a real headless
         browser too (its own native, BSD-licensed chromium); Ubuntu's own
         "chromium"/"chromium-browser" only installs the Chromium snap
         (which this engine ships no snapd for) and there is no free-software
@@ -1307,10 +1307,18 @@ class TestEngineBundleTests(unittest.TestCase):
         self.assertEqual("debian", manifest["base"])
         self.assertEqual("trixie", manifest["suite"])
 
-    def test_first_boot_points_at_the_installer(self) -> None:
+    def test_first_boot_points_at_the_service_install_steps(self) -> None:
+        """This entry's first_boot has to name something a buyer can actually
+        follow with nothing but this repository: the section that spells the
+        five steps out. It used to name a script that has since moved to the
+        private Studio repository, where the rest of that deployment lives --
+        exactly the kind of dangling instruction this asserts against."""
         entry = next(e for e in index_entries() if e["id"] == "test-engine")
         combined = " ".join(entry["first_boot"])
-        self.assertIn("install-test-engine.sh", combined)
+        self.assertIn("docs/BUILD_MATRIX.md", combined)
+        self.assertIn("conformance.example.yml", combined)
+        self.assertNotIn("install-test-engine.sh", combined)
+        self.assertTrue((ROOT / "packaging" / "catalog-conformance" / "conformance.example.yml").is_file())
 
     def test_reaching_the_group_on_ubuntu_refuses_to_render(self) -> None:
         """The concrete, real-world case UnavailablePackageTests
