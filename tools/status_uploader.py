@@ -48,13 +48,18 @@ Every `protocol: local` destination is the rehearsal: it is published, and
 -- when the run gave FanOutUploader a `verify_url` (tools/catalog_conformance.py
 derives this from the same `site_url` the run already has, the page's own
 `/data/build-status.json`) -- fetched back over HTTP and checked to
-actually be a valid, schema_version 2 document, proving the *served* copy
-is good, not merely that the write to disk succeeded. Every non-local
-("production") destination is attempted only once every local destination
-has passed both steps; a rehearsal failure is reported against every
-configured destination (the one that actually failed with its own reason,
-every production one "skipped" with that reason) and never touches a
-network destination at all.
+actually be a valid, schema_version 2 document *whose bytes are the exact
+file this run just published* (verify_published(), item 201), proving the
+*served* copy is good and is genuinely this run's own, not merely that a
+write to disk succeeded somewhere, and not merely that whatever answered
+that URL happened to parse as a plausible build-status.json (a second web
+server or vhost quietly answering the same Host header with a different,
+older, but still schema-valid file passed the old check and must not pass
+this one). Every non-local ("production") destination is attempted only
+once every local destination has passed both steps; a rehearsal failure is
+reported against every configured destination (the one that actually
+failed with its own reason, every production one "skipped" with that
+reason) and never touches a network destination at all.
 
 SSH transport shells out to the system `scp`/`sftp` binaries (this
 project's own rule: never build a shell command from a name read out of a
@@ -96,6 +101,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import ftplib
+import hashlib
 import json
 import os
 import shutil
@@ -429,13 +435,34 @@ def _default_fetcher(url: str, timeout: float) -> bytes:
         return response.read()
 
 
-def verify_published(url: str, *, fetcher=None, timeout: float = DEFAULT_TIMEOUT_S) -> UploadResult:
+def verify_published(url: str, local_path: Path, *, fetcher=None, timeout: float = DEFAULT_TIMEOUT_S) -> UploadResult:
     """Fetches `url` back over HTTP -- the *served* copy, proving the web
-    server is actually handing it out correctly, not merely that a file
-    landed on disk -- and checks it is a schema_version 2 document with an
-    `entries` object: exactly the shape tools/build_status.py's own
-    StatusUpdater writes, and the shape a console refuses to render
-    otherwise. Never raises: a fetch, JSON, or shape problem all come back
+    server is actually handing out something for this run to check, not
+    merely that a file landed on disk somewhere -- and checks, in order:
+    the fetch itself succeeds; the body is valid JSON; it is a
+    schema_version 2 object with an `entries` mapping (the shape
+    tools/build_status.py's own StatusUpdater writes, and the shape a
+    console refuses to render otherwise -- unchanged from before, a
+    malformed or wrong-shape body still fails exactly the way it always
+    has); and, new (item 201), that its bytes are byte-for-byte identical
+    to `local_path` -- the exact file this same run just published to
+    every `protocol: local` destination.
+
+    That last check exists because a schema-valid document is not
+    necessarily *this run's own* document: on a host where the deployed
+    site and some other site both answer on the address this fetch uses
+    (a second nginx vhost matching the same Host header, a stale reverse
+    proxy route, anything that means the bytes verify_url actually serves
+    did not come from the write this run just did), the old checks above
+    all passed against a different, older, but still perfectly
+    schema-valid build-status.json -- and the rehearsal reported "ok" for
+    a file nobody had just published. Comparing bytes (reported as a
+    SHA-256 of each side, so a person can tell the two apart without
+    fetching the served copy themselves) is the only way to catch that;
+    the misconfiguration causing it is never this tool's to fix, but
+    reporting "ok" for someone else's file is.
+
+    Never raises: a fetch, JSON, shape, or mismatch problem all come back
     as UploadResult(False, ...), the same contract as upload_file, so a
     caller can treat "could not verify" and "could not upload" the same
     way."""
@@ -455,7 +482,17 @@ def verify_published(url: str, *, fetcher=None, timeout: float = DEFAULT_TIMEOUT
                                     f"(got {data.get('schema_version')!r})")
     if not isinstance(data.get("entries"), dict):
         return UploadResult(False, f"{url} did not come back with an 'entries' object")
-    return UploadResult(True, f"verified {url} (schema_version {STATUS_SCHEMA_VERSION}, {len(data['entries'])} entrie(s))")
+    served_digest = hashlib.sha256(raw).hexdigest()
+    try:
+        local_digest = hashlib.sha256(local_path.read_bytes()).hexdigest()
+    except OSError as exc:
+        return UploadResult(False, f"could not read {local_path} back to compare against {url}: {exc}")
+    if served_digest != local_digest:
+        return UploadResult(False,
+            f"{url} is schema-valid but is NOT the file this run just published -- served sha256 "
+            f"{served_digest} != published sha256 {local_digest}")
+    return UploadResult(True, f"verified {url} is this run's own file (sha256 {local_digest}, "
+                              f"schema_version {STATUS_SCHEMA_VERSION}, {len(data['entries'])} entrie(s))")
 
 
 @dataclasses.dataclass
@@ -539,7 +576,7 @@ class FanOutUploader:
             if not result.ok:
                 rehearsal_ok = False
         if rehearsal_ok and self.local and self.verify_url and not self.dry_run:
-            verify_result = verify_published(self.verify_url, fetcher=self.verify_fetcher)
+            verify_result = verify_published(self.verify_url, local_path, fetcher=self.verify_fetcher)
             outcomes.append(DestinationOutcome("rehearsal-verify", "verify", verify_result.ok, verify_result.detail))
             if not verify_result.ok:
                 rehearsal_ok = False

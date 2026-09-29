@@ -9,6 +9,9 @@ import base64
 import importlib.util
 import json
 import struct
+import tempfile
+import threading
+import time
 import unittest
 from pathlib import Path
 
@@ -210,6 +213,158 @@ class WaitForDebugPortTests(unittest.TestCase):
                 db._wait_for_debug_port(9333, timeout=0.5)
         finally:
             db.http.client.HTTPConnection = original
+
+
+class WaitForActivePortTests(unittest.TestCase):
+    """item 200: `_wait_for_active_port` is what lets a session launched
+    with `--remote-debugging-port=0` learn which port Chrome actually
+    picked, by polling for the `DevToolsActivePort` file Chrome itself
+    writes into the (already per-session) profile directory."""
+
+    def test_reads_the_port_from_the_files_first_line_once_it_appears(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            def write_soon() -> None:
+                time.sleep(0.1)
+                (Path(tmp) / "DevToolsActivePort").write_text("54321\n/devtools/browser/abc-def\n")
+
+            writer = threading.Thread(target=write_soon)
+            writer.start()
+            try:
+                port = db._wait_for_active_port(tmp, timeout=5)
+            finally:
+                writer.join()
+        self.assertEqual(54321, port)
+
+    def test_raises_browser_unavailable_when_the_file_never_appears(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(db.BrowserUnavailable):
+                db._wait_for_active_port(tmp, timeout=0.3)
+
+    def test_a_half_written_file_is_retried_not_raised_immediately(self) -> None:
+        """Chrome creates the file and writes its two lines in two
+        separate operations -- a reader that happens to poll in between
+        must retry, not treat an empty or partial file as final."""
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "DevToolsActivePort"
+            target.write_text("")  # exists, but empty: IndexError on splitlines()[0] if read right now
+
+            def finish_soon() -> None:
+                time.sleep(0.15)
+                target.write_text("9999\n/devtools/browser/xyz\n")
+
+            writer = threading.Thread(target=finish_soon)
+            writer.start()
+            try:
+                port = db._wait_for_active_port(tmp, timeout=5)
+            finally:
+                writer.join()
+        self.assertEqual(9999, port)
+
+
+class _FakePopen:
+    """subprocess.Popen's own shape, enough for StudioSession.__enter__/
+    __exit__: __init__ (with an on_launch hook to simulate whatever the
+    real Chrome process would have done -- namely, writing
+    DevToolsActivePort), terminate, wait, kill."""
+
+    def __init__(self, argv: list[str], on_launch=None, **kwargs) -> None:
+        self.argv = argv
+        if on_launch is not None:
+            on_launch(argv)
+
+    def terminate(self) -> None:
+        pass
+
+    def wait(self, timeout: float | None = None) -> None:
+        pass
+
+    def kill(self) -> None:
+        pass
+
+
+class _FakeWS:
+    def __init__(self, url: str) -> None:
+        self.url = url
+
+    def send(self, method: str, **params) -> dict:
+        return {"result": {}}
+
+    def close(self) -> None:
+        pass
+
+
+class StudioSessionPortResolutionTests(unittest.TestCase):
+    """item 200: __init__'s own port defaulting (None unless a caller asks
+    for a specific one) and __enter__'s own port-resolution branch,
+    exercised against a fake subprocess and a fake debugging-port
+    responder -- no real Chrome. tests/unit/test_real_browser.py's own
+    two-real-browser test proves the same fix against a real one."""
+
+    def setUp(self) -> None:
+        self._original_which = db.shutil.which
+        self._original_popen = db.subprocess.Popen
+        self._original_wait_debug = db._wait_for_debug_port
+        self._original_ws = db._WS
+        db.shutil.which = lambda name: "/usr/bin/google-chrome" if name == "google-chrome" else None
+        self.seen_debug_ports: list[int] = []
+        db._wait_for_debug_port = self._fake_wait_for_debug_port
+        db._WS = _FakeWS
+
+    def tearDown(self) -> None:
+        db.shutil.which = self._original_which
+        db.subprocess.Popen = self._original_popen
+        db._wait_for_debug_port = self._original_wait_debug
+        db._WS = self._original_ws
+
+    def _fake_wait_for_debug_port(self, port: int, timeout: float = 15.0) -> list[dict]:
+        self.seen_debug_ports.append(port)
+        return [{"type": "page", "webSocketDebuggerUrl": "ws://fake/devtools/page/1"}]
+
+    def test_default_port_is_none_until_the_session_is_entered(self) -> None:
+        session = db.StudioSession("http://fake-studio")
+        self.assertIsNone(session.requested_port)
+        self.assertIsNone(session.port)
+
+    def test_no_explicit_port_asks_chrome_to_choose_and_reads_the_file_it_writes(self) -> None:
+        def on_launch(argv: list[str]) -> None:
+            profile_dir = next(a.split("=", 1)[1] for a in argv if a.startswith("--user-data-dir="))
+            (Path(profile_dir) / "DevToolsActivePort").write_text("54321\n/devtools/browser/abc\n")
+
+        db.subprocess.Popen = lambda argv, **kwargs: _FakePopen(argv, on_launch=on_launch, **kwargs)
+
+        session = db.StudioSession("http://fake-studio")
+        with session:
+            self.assertEqual(54321, session.port)
+        self.assertEqual([54321], self.seen_debug_ports)
+
+    def test_an_explicit_port_is_used_directly_and_the_file_is_never_needed(self) -> None:
+        launch_argv: list[list[str]] = []
+        db.subprocess.Popen = lambda argv, **kwargs: (launch_argv.append(argv), _FakePopen(argv))[1]
+
+        session = db.StudioSession("http://fake-studio", port=9999)
+        with session:
+            self.assertEqual(9999, session.port)
+        self.assertIn("--remote-debugging-port=9999", launch_argv[0])
+        self.assertEqual([9999], self.seen_debug_ports)
+
+    def test_two_sessions_with_no_explicit_port_each_get_their_own_profile_dir_and_port(self) -> None:
+        """The actual bug (item 200): concurrent sessions must never be
+        steered onto the same port just because neither one asked for a
+        specific one."""
+        ports = iter([11111, 22222])
+
+        def on_launch(argv: list[str]) -> None:
+            profile_dir = next(a.split("=", 1)[1] for a in argv if a.startswith("--user-data-dir="))
+            (Path(profile_dir) / "DevToolsActivePort").write_text(f"{next(ports)}\n/devtools/browser/x\n")
+
+        db.subprocess.Popen = lambda argv, **kwargs: _FakePopen(argv, on_launch=on_launch, **kwargs)
+
+        first = db.StudioSession("http://fake-studio")
+        second = db.StudioSession("http://fake-studio")
+        with first, second:
+            self.assertNotEqual(first.port, second.port)
+            self.assertNotEqual(first._profile_dir, second._profile_dir)
+            self.assertEqual({11111, 22222}, {first.port, second.port})
 
 
 class ScriptedWS:

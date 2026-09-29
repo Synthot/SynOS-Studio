@@ -104,9 +104,13 @@ report_url: null
 # a rehearsal. It is published, then -- since site_url above already names
 # that same development site -- fetched back over HTTP from
 # <site_url>/data/build-status.json and checked to actually be a valid,
-# served build-status.json, before a single non-local ("production")
-# destination further down the list is even attempted. If the rehearsal
-# fails to publish, or comes back invalid when fetched, every production
+# served build-status.json AND byte-for-byte the same file this run just
+# published (compared by SHA-256; a schema-valid but different file, e.g.
+# from a second web server or vhost quietly answering the same address,
+# fails this the same as any other bad rehearsal -- it is not this run's
+# own file), before a single non-local ("production") destination further
+# down the list is even attempted. If the rehearsal fails to publish, or
+# comes back invalid or mismatched when fetched, every production
 # destination is skipped -- with the reason -- and none of them is
 # touched: a bad publish never reaches a customer's own site, and a
 # production failure never leaves the rehearsal copy stale (production
@@ -134,7 +138,7 @@ report_url: null
 # documented, nonzero code rather than looking like success.
 #   0  everything this run attempted came back clean.
 #   1  at least one catalogue entry failed or its boot check failed -- the
-#      real gate, and always wins over 3 below.
+#      real gate, and always wins over 3 and 4 below.
 #   2  the run could not even start (a bad config value, an unknown
 #      --cover-bases base, a catalog fetch that failed).
 #   3  every catalogue entry built and tested clean, but build-status.json
@@ -144,7 +148,17 @@ report_url: null
 #      never passed, or a production destination that itself failed after
 #      a good rehearsal). See docs/BUILD_MATRIX.md's "Getting it to the
 #      web server" for the mechanism; the run's own printed and persisted
-#      summary (<mode>-summary.txt) names exactly which destination.
+#      summary (<mode>-summary.txt) names exactly which destination. Still
+#      wins over 4 below.
+#   4  no catalogue entry failed and the publish (if any) was clean, but at
+#      least one entry could not be attempted at all -- today, only "no
+#      google-chrome/chromium binary found on PATH" does this (`build`
+#      skips that entry with a printed reason rather than failing it; see
+#      site_url above). Not a failure -- nothing was tried and found
+#      wanting -- but this run still verified less than it was asked to,
+#      which a systemd timer that is silently green every week on a
+#      browserless host would otherwise hide. The weakest of the four: it
+#      only fires when 1 and 3 do not.
 
 # `build` only: free a successful entry's heavy directories (the unpacked
 # bundle, its build tree, the multi-GB ISO) as soon as that entry

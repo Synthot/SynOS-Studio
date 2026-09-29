@@ -175,6 +175,68 @@ class RealBrowserTests(unittest.TestCase):
         self.assertGreater(len(raw), 1000)
         self.assertTrue(filename.startswith(far_entry))
 
+    def test_two_concurrent_sessions_never_collide_on_one_port_or_one_page(self) -> None:
+        """item 200: two real Chrome processes, alive at the same time,
+        launched the way run_build()'s own parallel workers (jobs > 1)
+        launch them -- StudioSession(site_url), no port given. Before this
+        fix both defaulted to DEFAULT_PORT=9333; whichever one actually
+        bound it worked, and the other either drove *that* browser's page
+        out from under it or, if Chrome itself refused the second bind,
+        never came up at all -- exactly the failure signature the owner's
+        real run hit (four of five concurrent entries timing out waiting
+        for S.name on what turned out to be one shared page). This test
+        proves each of two live sessions gets its own port and can drive
+        its own page to a different, distinguishable state without the
+        other ever seeing it."""
+        first = db.StudioSession(self._site_url())
+        second = db.StudioSession(self._site_url())
+        with first, second:
+            self.assertIsNotNone(first.port)
+            self.assertIsNotNone(second.port)
+            self.assertNotEqual(first.port, second.port,
+                                "two concurrent sessions must never share one Chrome debugging port")
+            self.assertNotEqual(first._profile_dir, second._profile_dir)
+
+            catalog = self._real_catalog_ids()
+            self.assertGreaterEqual(len(catalog), 2, "this test needs at least two real catalog entries")
+            entry_a, entry_b = catalog[0], catalog[1]
+
+            # Drive each session to a different, checkable point in the
+            # same wizard flow real download_bundle() uses -- choosing a
+            # *different* catalog entry on each -- and interleave the two
+            # sessions' own steps (never finish one session's whole flow
+            # before starting the other's) so a collision would show up as
+            # one session's page reflecting the other's entry, exactly the
+            # "several sessions driving one page" bug this item fixes.
+            for session, entry_id in ((first, entry_a), (second, entry_b)):
+                session.navigate()
+                session._clear_storage()
+                session.wait_for(db.CATALOG_READY_EXPR)
+            for session, entry_id in ((first, entry_a), (second, entry_b)):
+                session.eval(f"""(() => {{
+                    const entry = (D.bundle_catalog || []).find(e => e && e.id === {json.dumps(entry_id)});
+                    if (!entry || typeof chooseCatalogEntry !== 'function') return false;
+                    chooseCatalogEntry(entry);
+                    return true;
+                }})()""")
+            for session in (first, second):
+                session.wait_for("document.querySelector('.step.active')?.dataset.step === '1'")
+            for session, entry_id in ((first, entry_a), (second, entry_b)):
+                session.set_input_value("#b-name", entry_id)
+
+            first.wait_for(f"typeof S!=='undefined' && S.name === {json.dumps(entry_a)}")
+            second.wait_for(f"typeof S!=='undefined' && S.name === {json.dumps(entry_b)}")
+            self.assertEqual(entry_a, first.eval("S.name"))
+            self.assertEqual(entry_b, second.eval("S.name"))
+            self.assertNotEqual(first.eval("S.name"), second.eval("S.name"))
+
+    def _real_catalog_ids(self) -> list[str]:
+        with db.StudioSession(self._site_url()) as session:
+            session.navigate()
+            session.wait_for(db.CATALOG_READY_EXPR)
+            ids = session.eval("(D && Array.isArray(D.bundle_catalog)) ? D.bundle_catalog.map(e => e.id) : []")
+        return ids or []
+
 
 if __name__ == "__main__":
     unittest.main()

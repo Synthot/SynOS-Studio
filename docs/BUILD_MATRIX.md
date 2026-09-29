@@ -287,6 +287,22 @@ workers: above `jobs: "1"`, each worker that was not given an explicit
 workers that happen to build the same base and suite never share that
 volume's name.
 
+The same shape of collision existed one stage earlier, in the "page" stage
+itself, until item 200: every worker's own `devtools_browser.StudioSession`
+used to launch Chrome on one fixed debugging port, so above `jobs: "1"`
+every concurrent entry's browser fought over the same port — whichever one
+actually bound it worked, and the rest either drove *that* browser's page
+out from under it (several sessions calling `navigate()` on one shared
+page — the signature that reached a real run: one entry's page stage
+finishing in seconds while every other concurrent one timed out waiting
+for a page state that entry never actually reached) or, on a host where
+Chrome refused the second bind outright, never came up at all. Each
+session now launches with `--remote-debugging-port=0` — Chrome picks a
+free port itself — and reads the port back from `DevToolsActivePort` in
+its own, already per-worker (`tempfile.mkdtemp`) profile directory, so no
+coordination between workers is needed at all; an explicit port still
+works for anyone who has a reason to pin one.
+
 `--jobs auto` derives the safe count from this machine rather than
 guessing: free disk under the checkout (40 GB/build), free space in the
 container runtime's own storage (30 GB/build), memory (4 GB/build — a
@@ -561,6 +577,16 @@ file's plain `"failed"` — the finer distinction, and `boot_passed` on
 whichever earlier attempt still had one, are what `build-report.json` and
 `error`/`history` are for). `stage` is `null` on a genuine success. An
 engine-stage failure, real:
+
+`"skipped"` is kept apart from both `OK_STATUSES` and every genuine
+failure status above (item 199): it means this entry was never attempted
+at all — today, only "no browser available to drive the page" produces
+it — so it is neither a pass nor a fail. `diff_reports()` tracks it in its
+own `newly_skipped` bucket, never `newly_failed`; `_run()`'s own exit code
+(above) never treats it as the `1` "an entry itself failed" case; and
+`tools/build_status.py`'s `map_state()` keeps its own, separate,
+already-honest `"skipped"` state in the public file (never folded into
+`"failed"` there either — only the finer statuses above are).
 
 ```json
 {
@@ -900,15 +926,23 @@ destination is treated as a rehearsal, never just another parallel
 target. It is published, then — since a `local` destination usually sits
 on the same machine as a development copy of the Studio page this run's
 own `site_url` already points at — fetched back over HTTP from
-`<site_url>/data/build-status.json` and checked to actually be a valid,
-served `schema_version: 2` document with an `entries` object, proving the
-*served* copy is good, not merely that the write to disk succeeded
-(`status_uploader.verify_published()`). Only once every rehearsal
-destination has published and verified does a single non-local
-("production") destination even get attempted; a rehearsal failure is
-reported against every configured destination — the one that actually
-failed with its own reason, every production one `"skipped"` with that
-reason — and no production destination is ever touched. This is what
+`<site_url>/data/build-status.json` and checked, in order: that it is a
+valid, served `schema_version: 2` document with an `entries` object, and
+that its bytes are byte-for-byte the file this same run just published,
+compared by SHA-256 (`status_uploader.verify_published()`, item 201).
+That last check matters on its own: a host where more than one web server
+or vhost answers the address `site_url` points at can serve back a
+different, older `build-status.json` that is still perfectly
+schema-valid — the shape check alone passed against someone else's file,
+proving nothing about what this run actually published. Comparing bytes
+is what makes "served" mean *this run's own* copy, not merely "something
+that parses". Only once every rehearsal destination has published and
+verified — both checks — does a single non-local ("production")
+destination even get attempted; a rehearsal failure is reported against
+every configured destination — the one that actually failed with its own
+reason (a shape mismatch, or a byte mismatch naming both SHA-256 digests),
+every production one `"skipped"` with that reason — and no production
+destination is ever touched. This is what
 turns "we hope the upload works" into "the upload was rehearsed on a copy
 of the real thing before a customer saw it."
 
@@ -933,15 +967,27 @@ point) uses a distinct exit code for exactly that case:
 
     0  everything this run attempted came back clean.
     1  at least one catalogue entry failed or its boot check failed — the
-       real gate, and always wins over 3 below.
+       real gate, and always wins over 3 and 4 below.
     2  the run could not even start (a bad config value, an unknown
        --cover-bases base, a catalog fetch that failed).
     3  every catalogue entry built and tested clean, but build-status.json
-       never reached somewhere upload: said it should.
+       never reached somewhere upload: said it should — still wins over 4.
+    4  no catalogue entry failed and the publish (if any) was clean, but at
+       least one entry could not be attempted at all — today, only "no
+       browser available to drive the page" (bases/ubuntu/packages.map's
+       own documented `browser-headless = unavailable:`) does this. This is
+       not a failure — nothing was tried and found wanting — but a run that
+       skips an entry proved less than it was asked to, and the weakest of
+       the four: it only fires when 1 and 3 do not.
+
+An entry that could not be attempted is `"skipped"`, never folded into
+`"failed"` — `diff_reports()`'s own `newly_skipped` is kept apart from
+`newly_failed` for the same reason, and the printed summary says "newly
+skipped", not "newly failing", for exactly that entry.
 
 `packaging/catalog-conformance/synos-conformance-build.service` sets no
 `SuccessExitStatus=` and pipes `ExecStart` through nothing that could
-swallow the code, so 1/2/3 all leave that unit `Result=exit-code` and
+swallow the code, so 1/2/3/4 all leave that unit `Result=exit-code` and
 visible in `systemctl status` — a timer failing this way needs nobody to
 read a JSON report first.
 

@@ -15,12 +15,19 @@ Group=synos-conformance
 # Deliberately no SuccessExitStatus= here: catalog_conformance.py's own
 # exit codes are documented at the top of that file and beside upload: in
 # conformance.example.yml (0 clean, 1 an entry itself failed, 2 the run
-# could not even start, 3 -- new -- every entry passed but build-status.json
-# never reached somewhere upload: said it should). ExecStart is a plain
-# python3 invocation with no pipe to swallow that code, so any of 1/2/3
+# could not even start, 3 every entry passed but build-status.json never
+# reached somewhere upload: said it should, 4 -- new -- no entry failed and
+# the publish was clean but at least one entry could not even be attempted,
+# e.g. no google-chrome/chromium on this host's PATH). ExecStart is a plain
+# python3 invocation with no pipe to swallow that code, so any of 1/2/3/4
 # leaves this unit Result=exit-code and visible in `systemctl status` --
 # an unattended timer's own result must stay honest even when every
-# catalogue entry passed.
+# catalogue entry passed. A host that will never have a browser installed
+# (and so will always end a `build` run at 4) can add
+# `SuccessExitStatus=4` here deliberately, once that tradeoff is chosen --
+# this unit does not choose it by default, since silently swallowing 4
+# would be exactly the "permanently green for a reason nobody can fix"
+# blindness this exit code exists to end.
 # 40+ GB per entry, tens of minutes each: give this a long leash before
 # systemd decides it hung. tools/catalog_conformance.py enforces its own,
 # shorter per-entry timeout from the config (build_timeout_minutes).
@@ -28,12 +35,34 @@ TimeoutStartSec=1day
 
 # This mode downloads through a real browser and drives a container runtime
 # (podman/docker, the launcher's own --privileged, same as a person's own
-# ./build.sh) — it needs the runtime's own socket/group access (add
-# synos-conformance to the podman or docker group) — but, unlike the old
-# tools/synos-based design, never writes into the engine checkout itself
-# any more: every downloaded bundle is unpacked and built entirely under
-# workdir, so the checkout can stay read-only.
-NoNewPrivileges=true
+# ./build.sh) — but, unlike the old tools/synos-based design, never writes
+# into the engine checkout itself any more: every downloaded bundle is
+# unpacked and built entirely under workdir, so the checkout can stay
+# read-only.
+#
+# NoNewPrivileges= is deliberately NOT set here, and the check unit still
+# sets it. An image build needs real root inside the container runtime —
+# debootstrap, mknod, the mounts — and tools/bundle_launcher.sh, which is
+# what actually performs the build, is written for exactly that: it runs
+# as an ordinary user and escalates only the runtime ("id -u" is not 0, so
+# sudo). NoNewPrivileges=true blocks sudo outright, so with it set every
+# build ends at the launcher with "sudo is required to run podman with
+# root privileges" — measured on a real server, for every entry, not
+# theorised.
+#
+# The alternative was User=root on this unit. That was rejected: it would
+# also run the Python runner, a headless Chrome, and the unpacking of a
+# bundle downloaded through a web page — the untrusted input in this
+# system — as root, to solve a problem only the runtime has. Granting the
+# service user passwordless sudo for the runtime alone (packaging/
+# install-test-engine.sh writes that rule) keeps all of those
+# unprivileged. Be clear about the limit of that: podman as root can mount
+# host filesystems and run privileged containers, so the grant is
+# root-equivalent in principle; what it buys is confining which process
+# can reach it.
+#
+# Everything else that constrains this unit still applies, and matters
+# more for it than for check:
 PrivateTmp=true
 ProtectSystem=strict
 ReadWritePaths=/var/lib/synos-conformance

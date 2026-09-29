@@ -144,6 +144,18 @@ STAGE_PAGE, STAGE_LAUNCHER, STAGE_ENGINE, STAGE_SMOKE = "page", "launcher", "eng
 # three. "ok" is check mode's own clean result; "success" is build mode's.
 OK_STATUSES = {"success", "ok"}
 
+# Item 199: the equally single definition of "never even attempted" —
+# not ok, but not a failure either. Today only build_one()'s own
+# BrowserUnavailable branch produces "skipped" (no google-chrome/chromium
+# on PATH to drive the real Studio page — see bases/ubuntu/packages.map's
+# `browser-headless = unavailable:`), but every reader below treats
+# whatever is in this set, not the one literal string, as "could not be
+# attempted" — diff_reports() (its own newly_skipped, kept apart from
+# newly_failed), _run()'s own exit code (EXIT_ENTRIES_SKIPPED, weaker than
+# an entry actually failing), and the summary line. Deliberately disjoint
+# from OK_STATUSES: a skip is never counted as a pass either.
+SKIPPED_STATUSES = {"skipped"}
+
 # Exit codes (item 198): 0/1 unchanged from before -- 1 is the real gate,
 # a catalogue entry itself failed, and always wins over everything else,
 # same as tools/catalog_apps_audit.py's own "missing" always outranking
@@ -157,10 +169,34 @@ OK_STATUSES = {"success", "ok"}
 # "every entry passed, badges are stale" is exactly the crash the
 # rehearsal (docs/BUILD_MATRIX.md, "Publishing the build-status badge")
 # exists to catch, not something a green exit code should paper over.
+#
+# EXIT_ENTRIES_SKIPPED (item 199) is the fourth and weakest: at least one
+# entry could not be attempted at all -- today, only "no browser available
+# to drive the page" produces that (bases/ubuntu/packages.map's own
+# documented `browser-headless = unavailable:` -- a headless machine with
+# neither google-chrome nor chromium on PATH) -- while every entry that
+# *was* attempted built and tested clean and the publish (if any) was
+# clean too. A skip is not a failure (build_one() returns status
+# "skipped", deliberately, rather than raising or failing the entry) and
+# must never be counted as one -- that is exactly the bug this item
+# fixes: a run with nothing but skips used to print "newly failing" for
+# entries that were never even tried, and exit 1, the same code a real
+# build_failed does, so a permanently browserless host turned a weekly
+# systemd timer permanently, meaninglessly red. But a run that skipped
+# something still verified less than it was asked to, so it does not
+# quietly exit 0 either. Precedence, most to least urgent, and it is a
+# strict chain -- each one only applies when nothing earlier in the list
+# does: EXIT_ENTRIES_FAILED (1) always wins, a real failure must never be
+# masked by "well, something else only skipped"; EXIT_PUBLISH_FAILED (3)
+# next, a stale badge is still worse than an unproven entry; then, only
+# once neither of those applies, EXIT_ENTRIES_SKIPPED (4) if anything at
+# all was skipped; EXIT_OK (0) only when nothing failed, nothing was
+# skipped, and the publish (if any) was clean.
 EXIT_OK = 0
 EXIT_ENTRIES_FAILED = 1
 EXIT_CONFIG_ERROR = 2
 EXIT_PUBLISH_FAILED = 3
+EXIT_ENTRIES_SKIPPED = 4
 
 
 def _load(name: str, path: Path):
@@ -1257,6 +1293,21 @@ def run_check(config: Config, *, catalog: dict, fetcher=_http_get, inspector=_sk
     return report
 
 
+def _outcome_category(status: str | None) -> str:
+    """The three-way (plus "absent") classification diff_reports() diffs
+    on: "ok" (OK_STATUSES), "skipped" (SKIPPED_STATUSES, item 199 — never
+    attempted, not a failure), "absent" (no record at all — no previous
+    report, or this target simply did not exist in it), and "failed" —
+    everything else, i.e. genuinely attempted and not clean."""
+    if status in OK_STATUSES:
+        return "ok"
+    if status in SKIPPED_STATUSES:
+        return "skipped"
+    if status is None:
+        return "absent"
+    return "failed"
+
+
 # ------------------------------------------------------------ reporting
 def diff_reports(previous: dict | None, current: dict) -> dict:
     """What a person acts on: not the whole report again, just what changed.
@@ -1269,23 +1320,52 @@ def diff_reports(previous: dict | None, current: dict) -> dict:
     report is now treated exactly like a previous report with zero
     entries in it: the per-entry logic below already handles "not seen
     before" correctly (newly_failed only if it is not ok now, unchanged
-    otherwise) — there is no longer a separate, wrong, unconditional path."""
+    otherwise) — there is no longer a separate, wrong, unconditional path.
+
+    Item 199 adds a fourth bucket, "newly_skipped", kept apart from
+    "newly_failed" for exactly the same reason "skipped" is kept apart
+    from every failure status in OK_STATUSES/SKIPPED_STATUSES themselves
+    (see build_one()'s own BrowserUnavailable branch): an entry that could
+    not even be attempted this run is not "newly failing", and must never
+    read as one. The previous/current state matrix, worked through in
+    full (both "ok" and "failed" collapse the old was_ok/is_ok pair into
+    one of four categories, _outcome_category() above; "absent" only ever
+    occurs as a *previous* category — a current record always has a real
+    status):
+
+      previous \\ current |  ok        skipped        failed
+      --------------------+---------------------------------------
+      absent              |  unchanged  newly_skipped  newly_failed
+      ok                  |  unchanged  newly_skipped  newly_failed
+      skipped             |  recovered  unchanged       newly_failed
+      failed              |  recovered  newly_skipped  still_failing
+
+    Read down the "skipped" column: only a previous "skipped" leaves a
+    current "skipped" as merely "unchanged" (not newly anything) — every
+    other previous state newly entering "skipped" is itself news, exactly
+    as newly *failing* is. Read the "skipped" row: previously-skipped and
+    now genuinely failing is "newly_failed" (never "still_failing" — it
+    was never actually failing before, it was untested), while
+    previously-skipped and now "ok" is "recovered", the same word already
+    used for a genuine failure turning clean."""
     previous = previous or {"targets": {}}
-    newly_failed, recovered, still_failing, unchanged = [], [], [], []
+    newly_failed, newly_skipped, recovered, still_failing, unchanged = [], [], [], [], []
     for target_id, record in current["targets"].items():
-        was_ok = previous.get("targets", {}).get(target_id, {}).get("status") in OK_STATUSES
-        is_ok = record.get("status") in OK_STATUSES
-        if target_id not in previous.get("targets", {}):
-            (newly_failed if not is_ok else unchanged).append(target_id)
-        elif was_ok and not is_ok:
+        prev_status = previous.get("targets", {}).get(target_id, {}).get("status")
+        prev_cat = _outcome_category(prev_status)
+        cur_cat = _outcome_category(record.get("status"))
+        if cur_cat == "skipped" and prev_cat != "skipped":
+            newly_skipped.append(target_id)
+        elif cur_cat == "failed" and prev_cat in ("absent", "ok", "skipped"):
             newly_failed.append(target_id)
-        elif not was_ok and is_ok:
+        elif cur_cat == "ok" and prev_cat in ("skipped", "failed"):
             recovered.append(target_id)
-        elif not was_ok and not is_ok:
+        elif cur_cat == "failed" and prev_cat == "failed":
             still_failing.append(target_id)
         else:
             unchanged.append(target_id)
-    return {"newly_failed": newly_failed, "recovered": recovered, "still_failing": still_failing, "unchanged": unchanged}
+    return {"newly_failed": newly_failed, "newly_skipped": newly_skipped, "recovered": recovered,
+            "still_failing": still_failing, "unchanged": unchanged}
 
 
 def post_report(report: dict, url: str, poster=None) -> None:
@@ -1342,6 +1422,14 @@ def summary_text(report: dict, diff: dict) -> str:
     lines.append(", ".join(f"{count} {status}" for status, count in sorted(counts.items())))
     if diff["newly_failed"]:
         lines.append(f"newly failing: {', '.join(sorted(diff['newly_failed']))}")
+    # Item 199: its own line, its own words — never folded into "newly
+    # failing" above, which is exactly the bug a browserless host hit
+    # (five entries that were never attempted printed as "newly failing").
+    # The reason for each is already printed below, in the per-entry
+    # "skipped <id>: <reason>" loop — this line only says which ones are
+    # new since the last run.
+    if diff.get("newly_skipped"):
+        lines.append(f"newly skipped: {', '.join(sorted(diff['newly_skipped']))}")
     if diff["recovered"]:
         lines.append(f"recovered: {', '.join(sorted(diff['recovered']))}")
     if report.get("resolved_interrupted"):
@@ -1487,11 +1575,23 @@ def _run(mode: str, config: Config, *, max_builds: int | None = None, only: list
     # leaves a stale badge looking current (docs/BUILD_MATRIX.md,
     # "Publishing the build-status badge", and this run's own printed
     # summary line, above, name exactly which destination).
-    failed = [tid for tid, record in report["targets"].items() if record.get("status") not in OK_STATUSES]
+    #
+    # item 199: "failed" here means genuinely attempted and not clean --
+    # SKIPPED_STATUSES is carved out explicitly, not just "not ok", or
+    # every skip (no browser available) would read as exactly the same
+    # exit code as a real build_failed, which is the bug this item fixes.
+    # EXIT_ENTRIES_SKIPPED only follows *after* the publish check, per the
+    # documented precedence above: a stale badge (3) still outranks a
+    # mere skip (4).
+    failed = [tid for tid, record in report["targets"].items()
+             if record.get("status") not in OK_STATUSES and record.get("status") not in SKIPPED_STATUSES]
+    skipped = [tid for tid, record in report["targets"].items() if record.get("status") in SKIPPED_STATUSES]
     if failed:
         return EXIT_ENTRIES_FAILED
     if publish_failed(report):
         return EXIT_PUBLISH_FAILED
+    if skipped:
+        return EXIT_ENTRIES_SKIPPED
     return EXIT_OK
 
 

@@ -1228,7 +1228,11 @@ class BuildStatusWiringTests(unittest.TestCase):
                 browser_factory=FakeSession(default_archive=make_bundle_archive(entry_id=entry_id)),
                 upload_config=cc.status_uploader.parse_upload_destinations(config.upload),
                 upload_verify_url=f"{config.site_url}/data/{cc.STATUS_FILENAME}",
-                upload_verify_fetcher=lambda url, timeout: (verify_calls.append(url) or b'{"schema_version": 2, "entries": {}}'))
+                # item 201: verify_published() compares bytes now, so the
+                # fetch-back stub must actually return what "local" just
+                # wrote (the same thing a real HTTP GET of a correctly
+                # configured host would) for the rehearsal to pass.
+                upload_verify_fetcher=lambda url, timeout: (verify_calls.append(url) or local_dest.read_bytes()))
             self.assertTrue(local_dest.is_file())
             self.assertIn("http://dev-site.example/data/build-status.json", verify_calls)
             self.assertNotIn("upload_warnings", report)
