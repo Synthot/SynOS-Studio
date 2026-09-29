@@ -35,12 +35,34 @@ TimeoutStartSec=1day
 
 # This mode downloads through a real browser and drives a container runtime
 # (podman/docker, the launcher's own --privileged, same as a person's own
-# ./build.sh) — it needs the runtime's own socket/group access (add
-# synos-conformance to the podman or docker group) — but, unlike the old
-# tools/synos-based design, never writes into the engine checkout itself
-# any more: every downloaded bundle is unpacked and built entirely under
-# workdir, so the checkout can stay read-only.
-NoNewPrivileges=true
+# ./build.sh) — but, unlike the old tools/synos-based design, never writes
+# into the engine checkout itself any more: every downloaded bundle is
+# unpacked and built entirely under workdir, so the checkout can stay
+# read-only.
+#
+# NoNewPrivileges= is deliberately NOT set here, and the check unit still
+# sets it. An image build needs real root inside the container runtime —
+# debootstrap, mknod, the mounts — and tools/bundle_launcher.sh, which is
+# what actually performs the build, is written for exactly that: it runs
+# as an ordinary user and escalates only the runtime ("id -u" is not 0, so
+# sudo). NoNewPrivileges=true blocks sudo outright, so with it set every
+# build ends at the launcher with "sudo is required to run podman with
+# root privileges" — measured on a real server, for every entry, not
+# theorised.
+#
+# The alternative was User=root on this unit. That was rejected: it would
+# also run the Python runner, a headless Chrome, and the unpacking of a
+# bundle downloaded through a web page — the untrusted input in this
+# system — as root, to solve a problem only the runtime has. Granting the
+# service user passwordless sudo for the runtime alone (packaging/
+# install-test-engine.sh writes that rule) keeps all of those
+# unprivileged. Be clear about the limit of that: podman as root can mount
+# host filesystems and run privileged containers, so the grant is
+# root-equivalent in principle; what it buys is confining which process
+# can reach it.
+#
+# Everything else that constrains this unit still applies, and matters
+# more for it than for check:
 PrivateTmp=true
 ProtectSystem=strict
 ReadWritePaths=/var/lib/synos-conformance
