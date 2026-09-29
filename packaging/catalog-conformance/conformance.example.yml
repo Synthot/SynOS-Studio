@@ -104,9 +104,13 @@ report_url: null
 # a rehearsal. It is published, then -- since site_url above already names
 # that same development site -- fetched back over HTTP from
 # <site_url>/data/build-status.json and checked to actually be a valid,
-# served build-status.json, before a single non-local ("production")
-# destination further down the list is even attempted. If the rehearsal
-# fails to publish, or comes back invalid when fetched, every production
+# served build-status.json AND byte-for-byte the same file this run just
+# published (compared by SHA-256; a schema-valid but different file, e.g.
+# from a second web server or vhost quietly answering the same address,
+# fails this the same as any other bad rehearsal -- it is not this run's
+# own file), before a single non-local ("production") destination further
+# down the list is even attempted. If the rehearsal fails to publish, or
+# comes back invalid or mismatched when fetched, every production
 # destination is skipped -- with the reason -- and none of them is
 # touched: a bad publish never reaches a customer's own site, and a
 # production failure never leaves the rehearsal copy stale (production

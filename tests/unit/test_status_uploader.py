@@ -7,6 +7,7 @@ and that no credential ever appears in anything printed, logged, or
 raised."""
 from __future__ import annotations
 
+import hashlib
 import sys
 import tempfile
 import unittest
@@ -397,32 +398,81 @@ class ParseUploadDestinationsTests(unittest.TestCase):
 
 
 class VerifyPublishedTests(unittest.TestCase):
-    def test_a_valid_schema_version_2_document_verifies(self) -> None:
-        result = su.verify_published("http://site/data/build-status.json",
-                                     fetcher=lambda url, timeout: b'{"schema_version": 2, "entries": {"a": {}}}')
+    """item 201: verify_published() must confirm the served bytes ARE the
+    file this run just published, not just that something schema-valid
+    answered the URL — a second web server or vhost quietly serving a
+    different, older, but still schema-valid build-status.json used to
+    pass the old shape-only check."""
+
+    def _local(self, tmp: str, content: bytes) -> Path:
+        path = Path(tmp) / "build-status.json"
+        path.write_bytes(content)
+        return path
+
+    def test_identical_bytes_verify(self) -> None:
+        content = b'{"schema_version": 2, "entries": {"a": {}}}'
+        with tempfile.TemporaryDirectory() as tmp:
+            result = su.verify_published("http://site/data/build-status.json", self._local(tmp, content),
+                                         fetcher=lambda url, timeout: content)
         self.assertTrue(result.ok, result.detail)
         self.assertIn("1 entrie(s)", result.detail)
 
-    def test_a_schema_version_1_document_fails_verification(self) -> None:
-        result = su.verify_published("http://site/x", fetcher=lambda url, timeout: b'{"schema_version": 1}')
+    def test_different_bytes_fail_and_name_the_url_and_both_digests(self) -> None:
+        """The exact bug this item fixes: the server answers with a
+        DIFFERENT, but still schema-valid, build-status.json (e.g. a
+        second site listening on the same address) — this must fail, and
+        the failure must be specific enough to diagnose without a manual
+        `curl`: the URL, and both SHA-256 digests, so a person can tell
+        the two files apart."""
+        published = b'{"schema_version": 2, "entries": {"a": {}}}'
+        served_stale = b'{"schema_version": 2, "entries": {"b": {}}}'  # a different, older file -- also valid
+        with tempfile.TemporaryDirectory() as tmp:
+            local_path = self._local(tmp, published)
+            result = su.verify_published("http://site/data/build-status.json", local_path,
+                                         fetcher=lambda url, timeout: served_stale)
+        self.assertFalse(result.ok)
+        self.assertIn("http://site/data/build-status.json", result.detail)
+        self.assertIn(hashlib.sha256(published).hexdigest(), result.detail)
+        self.assertIn(hashlib.sha256(served_stale).hexdigest(), result.detail)
+
+    def test_a_schema_version_1_document_fails_verification_as_before(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            local_path = self._local(tmp, b'{"schema_version": 1}')
+            result = su.verify_published("http://site/x", local_path,
+                                         fetcher=lambda url, timeout: b'{"schema_version": 1}')
         self.assertFalse(result.ok)
         self.assertIn("schema_version", result.detail)
 
-    def test_missing_entries_object_fails(self) -> None:
-        result = su.verify_published("http://site/x", fetcher=lambda url, timeout: b'{"schema_version": 2}')
+    def test_missing_entries_object_fails_as_before(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            local_path = self._local(tmp, b'{"schema_version": 2}')
+            result = su.verify_published("http://site/x", local_path,
+                                         fetcher=lambda url, timeout: b'{"schema_version": 2}')
         self.assertFalse(result.ok)
         self.assertIn("entries", result.detail)
 
-    def test_invalid_json_fails_without_raising(self) -> None:
-        result = su.verify_published("http://site/x", fetcher=lambda url, timeout: b"not json")
+    def test_invalid_json_fails_without_raising_as_before(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            local_path = self._local(tmp, b"not json")
+            result = su.verify_published("http://site/x", local_path, fetcher=lambda url, timeout: b"not json")
         self.assertFalse(result.ok)
 
     def test_a_fetch_that_raises_is_reported_not_raised(self) -> None:
         def boom(url, timeout):
             raise OSError("connection refused")
-        result = su.verify_published("http://site/x", fetcher=boom)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            local_path = self._local(tmp, b'{"schema_version": 2, "entries": {}}')
+            result = su.verify_published("http://site/x", local_path, fetcher=boom)
         self.assertFalse(result.ok)
         self.assertIn("connection refused", result.detail)
+
+    def test_local_path_itself_unreadable_is_reported_not_raised(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "does-not-exist.json"
+            result = su.verify_published("http://site/x", missing,
+                                         fetcher=lambda url, timeout: b'{"schema_version": 2, "entries": {}}')
+        self.assertFalse(result.ok)
 
 
 class FanOutUploaderTests(unittest.TestCase):
@@ -500,6 +550,32 @@ class FanOutUploaderTests(unittest.TestCase):
             by_name = {o.name: o for o in outcomes}
             self.assertFalse(by_name["rehearsal-verify"].ok)
             self.assertTrue(by_name["prod"].skipped)
+
+    def test_a_verify_byte_mismatch_blocks_production_even_though_shape_is_valid(self) -> None:
+        """item 201's own scenario, end to end through FanOutUploader: the
+        rehearsal write itself succeeds and the fetch-back is schema-valid
+        JSON, but its bytes are a different file (e.g. a second web server
+        or vhost answering the same address with someone else's, older,
+        also-valid build-status.json) -- must still block production, the
+        same as any other failed verification, never "ok" because the
+        shape happened to look right."""
+        with tempfile.TemporaryDirectory() as tmp:
+            local_dest = Path(tmp) / "site" / "build-status.json"
+            local_cfg = su.UploadConfig(protocol="local", remote_path=str(local_dest), name="dev-site")
+            prod_calls = []
+            prod_cfg = su.UploadConfig(protocol="sftp", host="h", remote_path="/p", retries=1, name="prod")
+            uploader = su.FanOutUploader(
+                [local_cfg, prod_cfg], transport=lambda c, p: prod_calls.append(1), sleeper=lambda s: None,
+                verify_url="http://dev-site/data/build-status.json",
+                verify_fetcher=lambda url, timeout: b'{"schema_version": 2, "entries": {"stale-site-entry": {}}}')
+            outcomes = uploader.maybe_upload(self._write_source(tmp))
+            self.assertTrue(local_dest.is_file(), "the write itself still happened")
+            self.assertEqual([], prod_calls)
+            by_name = {o.name: o for o in outcomes}
+            self.assertFalse(by_name["rehearsal-verify"].ok)
+            self.assertIn("sha256", by_name["rehearsal-verify"].detail)
+            self.assertTrue(by_name["prod"].skipped)
+            self.assertFalse(by_name["prod"].ok)
 
     def test_a_passing_verify_lets_production_proceed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

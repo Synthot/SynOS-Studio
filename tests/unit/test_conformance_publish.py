@@ -118,7 +118,13 @@ class PublishExitCodeTests(unittest.TestCase):
 
             code, report = self._run(
                 tmp, destinations_yaml=destinations_yaml, upload_transport=transport,
-                upload_verify_fetcher=lambda url, timeout: b'{"schema_version": 2, "entries": {}}')
+                # item 201: verify_published() now compares bytes, so a real
+                # rehearsal pass needs the fetch-back to actually return what
+                # was just published -- reading local_dest back, the same
+                # file the "local" destination just wrote, is what a real
+                # HTTP GET of the served copy would return on a correctly
+                # configured host.
+                upload_verify_fetcher=lambda url, timeout: local_dest.read_bytes())
             self.assertEqual(cc.EXIT_PUBLISH_FAILED, code)
             self.assertTrue(local_dest.is_file())  # the rehearsal itself genuinely passed
             by_name = {o["name"]: o for o in report["publish_outcomes"]}
@@ -142,7 +148,7 @@ class PublishExitCodeTests(unittest.TestCase):
             )
             code, report = self._run(
                 tmp, destinations_yaml=destinations_yaml, upload_transport=lambda c, p: None,
-                upload_verify_fetcher=lambda url, timeout: b'{"schema_version": 2, "entries": {}}')
+                upload_verify_fetcher=lambda url, timeout: local_dest.read_bytes())
         self.assertEqual(cc.EXIT_OK, code)
         self.assertEqual(0, code)
         self.assertTrue(all(o["ok"] for o in report["publish_outcomes"]))

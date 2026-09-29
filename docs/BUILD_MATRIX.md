@@ -926,15 +926,23 @@ destination is treated as a rehearsal, never just another parallel
 target. It is published, then — since a `local` destination usually sits
 on the same machine as a development copy of the Studio page this run's
 own `site_url` already points at — fetched back over HTTP from
-`<site_url>/data/build-status.json` and checked to actually be a valid,
-served `schema_version: 2` document with an `entries` object, proving the
-*served* copy is good, not merely that the write to disk succeeded
-(`status_uploader.verify_published()`). Only once every rehearsal
-destination has published and verified does a single non-local
-("production") destination even get attempted; a rehearsal failure is
-reported against every configured destination — the one that actually
-failed with its own reason, every production one `"skipped"` with that
-reason — and no production destination is ever touched. This is what
+`<site_url>/data/build-status.json` and checked, in order: that it is a
+valid, served `schema_version: 2` document with an `entries` object, and
+that its bytes are byte-for-byte the file this same run just published,
+compared by SHA-256 (`status_uploader.verify_published()`, item 201).
+That last check matters on its own: a host where more than one web server
+or vhost answers the address `site_url` points at can serve back a
+different, older `build-status.json` that is still perfectly
+schema-valid — the shape check alone passed against someone else's file,
+proving nothing about what this run actually published. Comparing bytes
+is what makes "served" mean *this run's own* copy, not merely "something
+that parses". Only once every rehearsal destination has published and
+verified — both checks — does a single non-local ("production")
+destination even get attempted; a rehearsal failure is reported against
+every configured destination — the one that actually failed with its own
+reason (a shape mismatch, or a byte mismatch naming both SHA-256 digests),
+every production one `"skipped"` with that reason — and no production
+destination is ever touched. This is what
 turns "we hope the upload works" into "the upload was rehearsed on a copy
 of the real thing before a customer saw it."
 
