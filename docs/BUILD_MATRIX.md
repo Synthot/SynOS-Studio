@@ -287,6 +287,22 @@ workers: above `jobs: "1"`, each worker that was not given an explicit
 workers that happen to build the same base and suite never share that
 volume's name.
 
+The same shape of collision existed one stage earlier, in the "page" stage
+itself, until item 200: every worker's own `devtools_browser.StudioSession`
+used to launch Chrome on one fixed debugging port, so above `jobs: "1"`
+every concurrent entry's browser fought over the same port — whichever one
+actually bound it worked, and the rest either drove *that* browser's page
+out from under it (several sessions calling `navigate()` on one shared
+page — the signature that reached a real run: one entry's page stage
+finishing in seconds while every other concurrent one timed out waiting
+for a page state that entry never actually reached) or, on a host where
+Chrome refused the second bind outright, never came up at all. Each
+session now launches with `--remote-debugging-port=0` — Chrome picks a
+free port itself — and reads the port back from `DevToolsActivePort` in
+its own, already per-worker (`tempfile.mkdtemp`) profile directory, so no
+coordination between workers is needed at all; an explicit port still
+works for anyone who has a reason to pin one.
+
 `--jobs auto` derives the safe count from this machine rather than
 guessing: free disk under the checkout (40 GB/build), free space in the
 container runtime's own storage (30 GB/build), memory (4 GB/build — a

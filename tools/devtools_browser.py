@@ -47,7 +47,6 @@ import tempfile
 import time
 from pathlib import Path
 
-DEFAULT_PORT = 9333
 DEFAULT_NAV_TIMEOUT = 30.0
 DEFAULT_DOWNLOAD_TIMEOUT = 30.0
 # The scripts (JSZip/jsyaml) and the wizard's own DOM exist as soon as the
@@ -173,19 +172,54 @@ def _wait_for_debug_port(port: int, timeout: float = 15.0) -> list[dict]:
     raise BrowserUnavailable(f"chrome never opened a debugging port on {port}: {last_error}")
 
 
+def _wait_for_active_port(profile_dir: str, timeout: float = 15.0) -> int:
+    """Chrome writes `<user-data-dir>/DevToolsActivePort` itself, once its
+    debugging port is actually listening: the first line is the port, the
+    second an endpoint path (unused here). This is the only way to learn
+    which port Chrome picked when it was launched with
+    `--remote-debugging-port=0` and asked to choose one itself (item
+    200) — the file appears asynchronously, same as the port itself
+    accepting connections, so this polls exactly like
+    `_wait_for_debug_port` does, against the same kind of deadline."""
+    path = Path(profile_dir) / "DevToolsActivePort"
+    deadline = time.monotonic() + timeout
+    last_error: Exception | None = None
+    while time.monotonic() < deadline:
+        try:
+            first_line = path.read_text(encoding="utf-8").splitlines()[0].strip()
+            return int(first_line)
+        except (OSError, IndexError, ValueError) as exc:
+            last_error = exc
+            time.sleep(0.1)
+    raise BrowserUnavailable(f"chrome never wrote {path} to report the debugging port it chose: {last_error}")
+
+
 # ------------------------------------------------------------- the session
 class StudioSession:
     """One headless Chrome instance, one page, against `site_url` (the
     deployed Studio site or a locally served release — this class does not
     care which, it only ever connects to a URL already given to it)."""
 
-    def __init__(self, site_url: str, *, browser_binary: str | None = None, port: int = DEFAULT_PORT,
+    def __init__(self, site_url: str, *, browser_binary: str | None = None, port: int | None = None,
                  nav_timeout: float = DEFAULT_NAV_TIMEOUT):
         self.site_url = site_url.rstrip("/")
         self.browser_binary = find_browser(browser_binary)
         if not self.browser_binary:
             raise BrowserUnavailable("no google-chrome/chromium binary found on PATH")
-        self.port = port
+        # None (the default) means "let Chrome pick a free port itself" —
+        # item 200: two or more StudioSessions alive at once (run_build()'s
+        # own parallel workers, jobs > 1) used to all launch Chrome on the
+        # same fixed DEFAULT_PORT, so only whichever one actually bound it
+        # worked; the rest either drove *that* browser's page out from
+        # under it (several sessions calling navigate()/_clear_storage()
+        # on one shared page) or, if Chrome itself refused the clash,
+        # never came up at all. An explicit port still works exactly as
+        # before, for anyone who has a reason to pin one (e.g. a fixed
+        # port already forwarded through something else) — it is simply no
+        # longer the default. self.port is None until __enter__ resolves
+        # it to whatever Chrome actually used.
+        self.requested_port = port
+        self.port: int | None = port
         self.nav_timeout = nav_timeout
         self._proc: subprocess.Popen | None = None
         self._profile_dir: str | None = None
@@ -193,12 +227,22 @@ class StudioSession:
 
     def __enter__(self) -> "StudioSession":
         self._profile_dir = tempfile.mkdtemp(prefix="synos-studio-browser-")
+        listen_port = self.requested_port if self.requested_port is not None else 0
         self._proc = subprocess.Popen(
             [self.browser_binary, "--headless=new", "--no-sandbox", "--disable-gpu",
-             f"--remote-debugging-port={self.port}", f"--user-data-dir={self._profile_dir}", "about:blank"],
+             f"--remote-debugging-port={listen_port}", f"--user-data-dir={self._profile_dir}", "about:blank"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         try:
+            if self.requested_port is not None:
+                self.port = self.requested_port
+            else:
+                # Chrome was asked to choose (--remote-debugging-port=0)
+                # and reports which port it picked by writing
+                # DevToolsActivePort into this session's own, already
+                # per-session (mkdtemp) profile directory — never guessed,
+                # never shared between concurrent sessions.
+                self.port = _wait_for_active_port(self._profile_dir)
             pages = _wait_for_debug_port(self.port)
             page = next((p for p in pages if p.get("type") == "page"), None)
             if page is None:
