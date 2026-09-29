@@ -562,6 +562,16 @@ whichever earlier attempt still had one, are what `build-report.json` and
 `error`/`history` are for). `stage` is `null` on a genuine success. An
 engine-stage failure, real:
 
+`"skipped"` is kept apart from both `OK_STATUSES` and every genuine
+failure status above (item 199): it means this entry was never attempted
+at all — today, only "no browser available to drive the page" produces
+it — so it is neither a pass nor a fail. `diff_reports()` tracks it in its
+own `newly_skipped` bucket, never `newly_failed`; `_run()`'s own exit code
+(above) never treats it as the `1` "an entry itself failed" case; and
+`tools/build_status.py`'s `map_state()` keeps its own, separate,
+already-honest `"skipped"` state in the public file (never folded into
+`"failed"` there either — only the finer statuses above are).
+
 ```json
 {
   "id": "web-server-nginx", "kind": "catalog", "base": "ubuntu", "suite": "noble",
@@ -933,15 +943,27 @@ point) uses a distinct exit code for exactly that case:
 
     0  everything this run attempted came back clean.
     1  at least one catalogue entry failed or its boot check failed — the
-       real gate, and always wins over 3 below.
+       real gate, and always wins over 3 and 4 below.
     2  the run could not even start (a bad config value, an unknown
        --cover-bases base, a catalog fetch that failed).
     3  every catalogue entry built and tested clean, but build-status.json
-       never reached somewhere upload: said it should.
+       never reached somewhere upload: said it should — still wins over 4.
+    4  no catalogue entry failed and the publish (if any) was clean, but at
+       least one entry could not be attempted at all — today, only "no
+       browser available to drive the page" (bases/ubuntu/packages.map's
+       own documented `browser-headless = unavailable:`) does this. This is
+       not a failure — nothing was tried and found wanting — but a run that
+       skips an entry proved less than it was asked to, and the weakest of
+       the four: it only fires when 1 and 3 do not.
+
+An entry that could not be attempted is `"skipped"`, never folded into
+`"failed"` — `diff_reports()`'s own `newly_skipped` is kept apart from
+`newly_failed` for the same reason, and the printed summary says "newly
+skipped", not "newly failing", for exactly that entry.
 
 `packaging/catalog-conformance/synos-conformance-build.service` sets no
 `SuccessExitStatus=` and pipes `ExecStart` through nothing that could
-swallow the code, so 1/2/3 all leave that unit `Result=exit-code` and
+swallow the code, so 1/2/3/4 all leave that unit `Result=exit-code` and
 visible in `systemctl status` — a timer failing this way needs nobody to
 read a JSON report first.
 
