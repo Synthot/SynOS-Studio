@@ -462,11 +462,22 @@ class LauncherTests(unittest.TestCase):
                        "--yes", "SYNOS_YES", "synos-cache-$base-$suite", "-v /opt/synos/new_building_os -v /opt/synos/image",
                        "--log /bundle/dist/build.log", "dd if=", "podman machine init --rootful", "brew install podman",
                        '--platform "linux/$arch"', "Use Rosetta", "archive/refs/heads/main.tar.gz", "SYNOS_ENGINE_SOURCE",
-                       "synos-builder:$base-$suite-$source_id", "dist/image-build.log"):
+                       "synos-builder:$base-$suite-$source_id", "dist/image-build.log",
+                       # podman mounts anonymous volumes nosuid,nodev and debootstrap cannot
+                       # create its device nodes there; docker rejects this --mount form, so
+                       # it is chosen per runtime (measured on podman 4.9 and docker)
+                       "--mount type=volume,dst=/opt/synos/new_building_os,dev,exec,suid",
+                       "--mount type=volume,dst=/opt/synos/image,dev,exec,suid"):
             self.assertIn(needle, text, needle)
+        # the podman form must sit behind is_podman, never reach docker
+        podman_branch = text.split("( if is_podman; then", 1)[1].split("  else", 1)[0]
+        self.assertIn("type=volume,dst=/opt/synos/new_building_os,dev,exec,suid", podman_branch)
+        docker_branch = text.split("( if is_podman; then", 1)[1].split("  else", 1)[1].split("  fi", 1)[0]
+        self.assertNotIn("--mount", docker_branch)
         windows = (ROOT / "tools" / "bundle_launcher.ps1").read_text(encoding="utf-8")
         for needle in ("winget install -e --id Docker.DockerDesktop", "SYNOS_YES", "--log /bundle/dist/build.log", "Rufus",
-                       "archive/refs/heads/main.zip", "Expand-Archive", "Build-EngineImage", "SYNOS_ENGINE_SOURCE"):
+                       "archive/refs/heads/main.zip", "Expand-Archive", "Build-EngineImage", "SYNOS_ENGINE_SOURCE",
+                       "type=volume,dst=/opt/synos/new_building_os,dev,exec,suid", "@scratchVolumes"):
             self.assertIn(needle, windows, needle)
 
     def test_launcher_without_a_runtime_explains_and_exits_2(self) -> None:

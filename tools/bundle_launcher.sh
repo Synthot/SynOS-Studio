@@ -1456,10 +1456,27 @@ set +e
 # protect; this is the one place where there is not.
 run_err_file=".build/build-run-stderr.$$"
 run_status_file=".build/build-run-status.$$"
-( run_runtime run --rm --privileged --platform "linux/$arch" \
+# The two scratch volumes the build writes its root filesystem and image
+# into. debootstrap creates device nodes inside new_building_os and the
+# result is chrooted into, so both must be mounted dev,exec,suid. Docker's
+# anonymous volumes already are. Podman's are not: it mounts an anonymous
+# volume nosuid,nodev by default, whatever the filesystem underneath
+# allows, and --privileged does not change that -- the build then dies at
+# debootstrap with "cannot create .../test-dev-null: Permission denied /
+# E: Cannot install into target ... mounted with noexec or nodev". Podman
+# accepts the options on --mount; docker rejects that form outright, so
+# each runtime gets its own spelling. `set --` keeps every word its own
+# argument without arrays, which this POSIX script does not have.
+( if is_podman; then
+      set -- --mount type=volume,dst=/opt/synos/new_building_os,dev,exec,suid \
+             --mount type=volume,dst=/opt/synos/image,dev,exec,suid
+  else
+      set -- -v /opt/synos/new_building_os -v /opt/synos/image
+  fi
+  run_runtime run --rm --privileged --platform "linux/$arch" \
     -v "$PWD:/bundle:z" \
     -v "synos-cache-$base-$suite:/opt/synos/.build" \
-    -v /opt/synos/new_building_os -v /opt/synos/image \
+    "$@" \
     -e SYNOS_KEYS_DIR=.build/keys \
     -e "SYNOS_UID=$(id -u)" -e "SYNOS_GID=$(id -g)" \
     -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE \

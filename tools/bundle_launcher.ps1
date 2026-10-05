@@ -838,10 +838,21 @@ Write-Host "building $manifest with $image"
 Write-Host "about an hour on a fast machine, longer on a laptop: most of it is installing packages, and the cache volume synos-cache-$base-$suite saves their download, not their installation."
 Write-Host "when it finishes, dist/*.timings.json says where the time actually went."
 Write-Host "the full output is kept in dist\build.log"
+# The build's two scratch volumes must be mounted dev,exec,suid
+# (debootstrap creates device nodes in new_building_os). Podman mounts an
+# anonymous volume nosuid,nodev by default and docker rejects the --mount
+# form that fixes it, so each runtime gets its own spelling -- see the same
+# call in bundle_launcher.sh for the failure this prevents.
+if (Test-IsPodman) {
+    $scratchVolumes = @("--mount", "type=volume,dst=/opt/synos/new_building_os,dev,exec,suid",
+                        "--mount", "type=volume,dst=/opt/synos/image,dev,exec,suid")
+} else {
+    $scratchVolumes = @("-v", "/opt/synos/new_building_os", "-v", "/opt/synos/image")
+}
 & $runtime @runtimeRootArgs run --rm --privileged `
     -v "${PSScriptRoot}:/bundle" `
     -v "synos-cache-$base-${suite}:/opt/synos/.build" `
-    -v /opt/synos/new_building_os -v /opt/synos/image `
+    @scratchVolumes `
     -e SYNOS_KEYS_DIR=.build/keys `
     -e SYNOS_SIGNING_KEY -e SYNOS_SIGNING_KEY_FILE `
     -e SYNOS_CHANNEL="$resolvedChannel" `
