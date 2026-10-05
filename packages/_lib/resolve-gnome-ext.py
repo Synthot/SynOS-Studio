@@ -25,14 +25,105 @@ Usage:
 """
 
 import argparse
+import email.utils
+import http.client
 import json
 import os
+import socket
 import sys
+import time
 import urllib.request
 import urllib.error
 from typing import Optional
 
 BASE_URL = "https://extensions.gnome.org"
+
+# Retry policy for both requests to extensions.gnome.org (see fetch_with_retry).
+# The service is volunteer-run; tools/build_packages.py already serializes
+# every recipe that calls this script with --download behind one lock, so
+# at most one of these requests is in flight per build. On top of that:
+# at most 4 attempts per URL, waiting 5, 10 and 20 s between them, so a
+# struggling server sees one extra request every few seconds at most, never
+# a burst. A 429's Retry-After is honoured but capped at 60 s per wait, and
+# the waits for one URL never add up to more than 120 s, so a server that
+# stays down fails the package in about two minutes rather than hanging it.
+RETRY_ATTEMPTS = 4
+RETRY_BASE_DELAY = 5.0
+RETRY_AFTER_CAP = 60.0
+RETRY_TOTAL_WAIT_CAP = 120.0
+
+
+# ---------------------------------------------------------------------------
+# HTTP with bounded retry
+# ---------------------------------------------------------------------------
+
+def _retry_after_seconds(error: urllib.error.HTTPError) -> Optional[float]:
+    """A 429's Retry-After header in seconds (delta-seconds or HTTP-date
+    form), or None when it is absent or unreadable."""
+    value = error.headers.get("Retry-After") if error.headers is not None else None
+    if not value:
+        return None
+    value = value.strip()
+    if value.isdigit():
+        return float(value)
+    try:
+        when = email.utils.parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return None
+    if when is None:
+        return None
+    return max(0.0, when.timestamp() - time.time())
+
+
+def _transient(error: BaseException) -> bool:
+    """Worth another attempt: the remote side or the path to it failed, not
+    the request. HTTP 5xx and 429, a connection-level URLError, a timeout,
+    a reset or an incomplete read. Any other 4xx (404, 403, ...) is the
+    answer, and asking again would get the same one."""
+    if isinstance(error, urllib.error.HTTPError):
+        return error.code >= 500 or error.code == 429
+    return isinstance(error, (urllib.error.URLError, socket.timeout, TimeoutError,
+                              ConnectionError, http.client.IncompleteRead,
+                              http.client.RemoteDisconnected))
+
+
+def fetch_with_retry(url: str, timeout: float) -> bytes:
+    """GET url and return the whole body, retrying transient failures (see
+    _transient) up to RETRY_ATTEMPTS times with exponential backoff.
+
+    The body is read inside the retried block, so a connection reset halfway
+    through a download is retried like any other. Each retry prints one line
+    to stderr naming the attempt, the error and the wait. A non-transient
+    HTTPError (404, 403, ...) is raised unchanged on the first attempt, so
+    callers keep their own handling of it. When every attempt fails, exits
+    with a message naming the URL, the last error and the attempt count."""
+    waited = 0.0
+    last: BaseException | None = None
+    for attempt in range(1, RETRY_ATTEMPTS + 1):
+        req = urllib.request.Request(url)
+        req.add_header("User-Agent", "SynOS-GnomeResolver/1.0")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.read()
+        except Exception as error:  # noqa: BLE001 — classified just below
+            if not _transient(error):
+                raise
+            last = error
+        if attempt == RETRY_ATTEMPTS:
+            break
+        delay = RETRY_BASE_DELAY * 2 ** (attempt - 1)
+        if isinstance(last, urllib.error.HTTPError) and last.code == 429:
+            hinted = _retry_after_seconds(last)
+            if hinted is not None:
+                delay = min(hinted, RETRY_AFTER_CAP)
+        delay = min(delay, RETRY_TOTAL_WAIT_CAP - waited)
+        if delay <= 0:
+            break
+        print(f"  attempt {attempt}/{RETRY_ATTEMPTS} for {url} failed ({last}); retrying in {delay:g}s",
+              file=sys.stderr, flush=True)
+        time.sleep(delay)
+        waited += delay
+    sys.exit(f"giving up on {url} after {attempt} attempt(s): {last}")
 
 
 # ---------------------------------------------------------------------------
@@ -47,11 +138,8 @@ def fetch_extension_info(uuid: str, shell_version: Optional[str] = None) -> dict
     qs = "&".join(f"{k}={v}" for k, v in params.items())
     url = f"{BASE_URL}/extension-info/?{qs}"
 
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "SynOS-GnomeResolver/1.0")
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return json.loads(resp.read())
+        return json.loads(fetch_with_retry(url, timeout=15))
     except urllib.error.HTTPError as e:
         if e.code == 404:
             sys.exit(f"Extension '{uuid}' not found on extensions.gnome.org")
@@ -158,11 +246,9 @@ def download_extension(uuid: str, shell_version: str, out_dir: str) -> str:
 
     try:
         print(f"  GET {url}")
-        req = urllib.request.Request(url)
-        req.add_header("User-Agent", "SynOS-GnomeResolver/1.0")
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            with open(zip_path, "wb") as f:
-                f.write(resp.read())
+        body = fetch_with_retry(url, timeout=30)
+        with open(zip_path, "wb") as f:
+            f.write(body)
 
         os.makedirs(out_dir, exist_ok=True)
         with zipfile.ZipFile(zip_path, "r") as zf:
