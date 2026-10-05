@@ -111,3 +111,40 @@ class DconfLocalTemplateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DconfDirectoriesExistBeforeTheyAreWrittenTests(unittest.TestCase):
+    """template and copy never create a destination's parent directory, and
+    nothing in the image creates /etc/dconf/db/local.d or its locks/. A
+    profile whose only dconf key is "locked" (kiosk.yml, and every bundle
+    extending it) skipped 50-policy and then failed writing locks/50-policy.
+    Read from the role itself, so reordering or deleting the directory task
+    fails here rather than forty minutes into a real build."""
+
+    TASKS = ROOT / "ansible/collections/ansible_collections/synos/workstation/roles/desktop_policy/tasks/main.yml"
+
+    def _tasks(self):
+        import yaml
+        return yaml.safe_load(self.TASKS.read_text(encoding="utf-8"))
+
+    def test_both_directories_are_created_before_anything_writes_into_them(self) -> None:
+        tasks = self._tasks()
+        made_at = None
+        for index, task in enumerate(tasks):
+            module = task.get("ansible.builtin.file")
+            if module and module.get("state") == "directory":
+                made = set(task.get("loop") or [module.get("path")])
+                if {"/etc/dconf/db/local.d", "/etc/dconf/db/local.d/locks"} <= made:
+                    made_at = index
+        self.assertIsNotNone(made_at, "no task creates both dconf directories")
+        for index, task in enumerate(tasks):
+            for name in ("ansible.builtin.template", "ansible.builtin.copy"):
+                dest = (task.get(name) or {}).get("dest", "")
+                if dest.startswith("/etc/dconf/db/local.d/"):
+                    self.assertLess(made_at, index, f"{task['name']!r} writes {dest} before its directory exists")
+
+    def test_the_directories_follow_the_same_condition_as_their_writers(self) -> None:
+        directory_task = next(t for t in self._tasks() if (t.get("ansible.builtin.file") or {}).get("state") == "directory")
+        when = directory_task.get("when", "")
+        self.assertIn("desktop_policy_dconf", when)
+        self.assertIn("desktop_policy_locks", when)

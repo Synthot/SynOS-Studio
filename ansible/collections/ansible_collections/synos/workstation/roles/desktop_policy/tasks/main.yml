@@ -18,6 +18,24 @@
   loop: "{{ desktop_policy_dconf.keys() | list }}"
   when: "'/' not in item and '.' not in item"
 
+# The template and copy modules below never create their destination's parent
+# directory, and nothing installed into the image creates local.d/ or
+# local.d/locks/ either. Each task used to assume the other's directory: a
+# profile whose only dconf key carries the "locked" sentinel (kiosk.yml's
+# disable-command-line, so every bundle extending kiosk) skips 50-policy, then
+# the locks task fails with "Destination directory
+# /etc/dconf/db/local.d/locks does not exist". Created only when the profile
+# asks for a policy, so an image with none is left exactly as it was.
+- name: dconf system database directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /etc/dconf/db/local.d
+    - /etc/dconf/db/local.d/locks
+  when: desktop_policy_dconf | length > 0 or desktop_policy_locks | length > 0
+
 - name: /etc/dconf/db/local.d/50-policy from the profile's policy.dconf
   ansible.builtin.template:
     src: dconf-local.j2
