@@ -286,7 +286,9 @@ class NetworkCheckTests(unittest.TestCase):
         self.assertEqual("address", result["lost_at"])
         self.assertEqual("ens3", result["device"])
 
-    def test_fails_at_route_when_addressed_but_unrouted(self) -> None:
+    def test_passes_when_addressed_but_unrouted(self) -> None:
+        # spawn_qemu's restrict=on: slirp's DHCP reply carries no gateway,
+        # so no image can get a default route on the test network.
         session = FakeSession({
             "nmcli -t -f DEVICE,TYPE,STATE device": ("ens3:ethernet:connected\n", 0),
             "ip -o -4 addr show dev ens3": (
@@ -294,10 +296,11 @@ class NetworkCheckTests(unittest.TestCase):
             "ip route show default": ("", 0),
         })
         result = smoke_test.check_network(session, timeout=0.05, poll_interval=0.01)
-        self.assertFalse(result["passed"])
-        self.assertEqual("route", result["lost_at"])
-        self.assertEqual("ens3", result["device"])
+        self.assertTrue(result["passed"], result)
+        self.assertNotIn("lost_at", result)
+        self.assertIsNone(result["route"])
         self.assertEqual("10.0.2.15", result["address"])
+        self.assertIn("offers no gateway", result["note"])
 
 
 class ProfileResolutionTests(unittest.TestCase):

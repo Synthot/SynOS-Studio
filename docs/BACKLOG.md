@@ -90,7 +90,7 @@ entirely, and it ships a feature customers are already being shown.
   GNOME Shell has its own NetworkManager integration
   (`gir1.2-nm-1.0`, via `synos-installer-beta`) independent of the absent
   `network-manager-gnome` tray applet. The device reached `connected`,
-  got a real DHCP lease and a default route, and systemd reached
+  got a real DHCP lease, and systemd reached
   `network-online.target` — all proven by `tools/smoke_test.py`'s new
   `check_network` (see `docs/BUILD_MATRIX.md`), which now runs on every
   smoke-tested image specifically so a future regression here cannot ship

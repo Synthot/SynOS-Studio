@@ -25,10 +25,11 @@ entry. Either way, the result records which source was used.
 
 What it asserts, over a root shell on the serial console (the headless boot):
   - the live system reaches its default systemd target
-  - the live session has a working network: a managed device, a global
-    IPv4 address and a default route, all from a real DHCP handshake
-    against the virtio NIC QEMU's own user-mode networking gives this
-    boot for free (see check_network and spawn_qemu's `restrict=on`)
+  - the live session has a working network: a managed device and a
+    global IPv4 address, both from a real DHCP handshake against the
+    virtio NIC QEMU's own user-mode networking gives this boot for free
+    (see check_network and spawn_qemu's `restrict=on`, which is why a
+    default route is recorded but never required)
   - the ports opened by the shipped first-boot firewall script
     (/usr/libexec/synos-first-boot-services) match the profile's
     security.open_ports exactly
@@ -74,13 +75,16 @@ it directly, without a viewer or a window); it also has no NIC at all
 The headless boot alone gets a virtio NIC (spawn_qemu's `-netdev
 user,...,restrict=on`): QEMU's own user-mode networking ("slirp") runs a
 complete virtual router and DHCP server inside the qemu process itself,
-so the guest can do a real DHCP handshake — get a managed device, a
-lease, a default route — with no host privileges, no host network setup
+so the guest can do a real DHCP handshake — get a managed device and a
+lease — with no host privileges, no host network setup
 and no dependency on whatever the host itself can reach. `restrict=on`
 keeps this fully hermetic in the other direction too: the guest can talk
 to that virtual router and nothing past it, so it can never reach a real
 container registry or the real internet, on any host, with or without
-its own connectivity. A unit that tries to pull an image at boot (a
+its own connectivity. The price: with `restrict=on`, slirp's DHCP reply
+carries no gateway and no DNS server (libslirp's bootp_reply adds both
+only `if (!slirp->restricted)`), so the guest never gets a default route,
+whatever its own configuration. A unit that tries to pull an image at boot (a
 software.services quadlet) still fails exactly as it always did — see
 check_service_unit's own note — this only gives check_network something
 real to measure. What it does not and cannot prove is covered in
@@ -315,12 +319,14 @@ def spawn_qemu(iso_path: Path, kernel: Path, initrd: Path, label: str, memory_mb
         "-monitor", "none",
         # A virtio NIC against QEMU's own user-mode networking ("slirp"):
         # a real DHCP server and virtual router live inside the qemu
-        # process itself, so check_network gets a real device/lease/route
+        # process itself, so check_network gets a real device and lease
         # to assert on with no host privileges and no host network setup
         # at all. restrict=on keeps the guest talking only to that virtual
         # router -- it can never reach a real registry or the real
         # internet, on any host, so this stays exactly as hermetic as
         # `-net none` was for every check that isn't check_network itself.
+        # It also means slirp's DHCP offers no gateway, so no default
+        # route ever appears -- check_network records one, never needs it.
         "-netdev", "user,id=net0,restrict=on",
         "-device", "virtio-net-pci,netdev=net0",
         "-machine", "accel=kvm:tcg",
@@ -650,16 +656,21 @@ def check_network(session: SerialSession, timeout: float, poll_interval: float =
     just that the packages for one are installed (software.services'
     checks above prove translation and enablement the same limited way).
     Checked in the order a real bring-up actually happens -- a managed,
-    connected device; then a global IPv4 address on it; then a default
-    route -- so a failure names exactly which stage was never reached
-    ("lost_at": "device" / "address" / "route"), never just a bare "no
-    network".
+    connected device; then a global IPv4 address on it -- so a failure
+    names exactly which stage was never reached ("lost_at": "device" /
+    "address"), never just a bare "no network".
+
+    A default route is recorded ("route", None when absent) but never
+    required: spawn_qemu's `restrict=on` makes slirp's DHCP reply carry no
+    gateway at all (libslirp's bootp_reply adds it only when the network is
+    not restricted), so no image can ever get one here. Requiring it failed
+    every bundle on a property of the test network, not of the image.
 
     This is answerable at all only because spawn_qemu gives this boot a
     virtio NIC against QEMU's own user-mode DHCP server (see the module
     docstring for why that is still fully hermetic). A passing result
     proves this image's own NetworkManager/netplan/ufw/systemd wiring can
-    take a device from cold to managed, addressed and routed. It proves
+    take a device from cold to managed and addressed. It proves
     nothing about whether a real Wi-Fi or Ethernet adapter is recognized
     and bound to a driver on real hardware: a virtio device needs no
     firmware blob, no vendor driver and no probe delay, and it never
@@ -709,22 +720,15 @@ def check_network(session: SerialSession, timeout: float, poll_interval: float =
 
     route_raw, _ = session.run("ip route show default 2>/dev/null", DEFAULT_COMMAND_TIMEOUT)
     route = parse_default_route(route_raw)
+    note = ("a real DHCP handshake against QEMU's own user-mode DHCP server gave the live session a "
+            "managed device and a global IPv4 address -- proving this image's own "
+            "NetworkManager/netplan/ufw/systemd wiring works, not that a real Wi-Fi or Ethernet adapter "
+            "is recognized on real hardware, which needs none of that wiring to fail")
     if route is None:
-        return {
-            "name": "network", "passed": False, "lost_at": "route", "device": device, "address": address,
-            "ip_route": route_raw.strip(),
-            "note": (f"{device!r} has address {address} but no default route -- an address with no route "
-                     "is still not a working network for anything that talks off-host, even though the "
-                     "device and its DHCP client both worked"),
-        }
-
-    return {
-        "name": "network", "passed": True, "device": device, "address": address, "route": route,
-        "note": ("a real DHCP handshake against QEMU's own user-mode DHCP server gave the live session a "
-                 "managed device, a global IPv4 address and a default route -- proving this image's own "
-                 "NetworkManager/netplan/ufw/systemd wiring works, not that a real Wi-Fi or Ethernet adapter "
-                 "is recognized on real hardware, which needs none of that wiring to fail"),
-    }
+        note += ("; no default route, as expected: the isolated test network (restrict=on) offers "
+                 "no gateway")
+    return {"name": "network", "passed": True, "device": device, "address": address, "route": route,
+            "note": note}
 
 
 # --------------------------------------------------------- graphical check

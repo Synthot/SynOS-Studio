@@ -391,9 +391,12 @@ no disk) and, over a root shell on the serial console, checks:
 - the live system reaches its default systemd target (`systemctl get-default`,
   then polls `systemctl is-active` on it);
 - the live session has a *working* network: a managed, connected device
-  (`nmcli`), a global IPv4 address on it (`ip addr`) and a default route
-  (`ip route`) — in that order, so a failure names exactly which stage was
-  never reached (`"lost_at": "device"/"address"/"route"`). This is checkable
+  (`nmcli`), then a global IPv4 address on it (`ip addr`) — in that order,
+  so a failure names exactly which stage was never reached
+  (`"lost_at": "device"/"address"`). The default route (`ip route`) is
+  recorded but never required: with `restrict=on`, QEMU's DHCP reply
+  carries no gateway (libslirp adds one only on an unrestricted network),
+  so no image can ever get a default route on this test network. This is checkable
   at all only because this one boot (not the graphical boot below) is given
   a virtio NIC against QEMU's own user-mode networking: a full DHCP server
   and virtual router that live inside the qemu process itself, so a real
@@ -403,7 +406,7 @@ no disk) and, over a root shell on the serial console, checks:
   at boot still cannot reach a real registry, on any host, exactly as
   before this check existed. What a pass here proves is that this image's
   own NetworkManager/netplan/ufw/systemd wiring can take a device from cold
-  to managed-and-routed; what it *cannot* prove is that a real Wi-Fi or
+  to managed-and-addressed; what it *cannot* prove is that a real Wi-Fi or
   Ethernet adapter is recognized and bound to a driver on real hardware —
   a virtio device needs no firmware blob, no vendor driver and no probe
   delay, and never fails to appear the way a real one can. A build whose
