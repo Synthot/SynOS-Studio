@@ -132,6 +132,63 @@ class KnownPatternsStillGetTheirLocksTests(unittest.TestCase):
             self.assertEqual(keys, {("gnome-ext-download",)})
 
 
+class SharedRustupHomeTests(unittest.TestCase):
+    """The second class of bug found by running a real build: two Rust
+    recipes both downloading one rustup component wrote the same
+    $HOME/.rustup/downloads/<hash>.partial and one lost the rename. No
+    recipe spells .rustup, so the literal-path scan cannot see it; the
+    signal is the recipe invoking rustup or cargo at all."""
+
+    def test_a_recipe_that_runs_rustup_gets_the_shared_key(self) -> None:
+        builder = load_builder()
+        with tempfile.TemporaryDirectory() as directory:
+            pkg = _write_recipe(directory, "synos-rs", (
+                "#!/bin/bash\nset -e\n"
+                "rustup target add aarch64-unknown-linux-gnu\n"))
+            self.assertIn(("rustup-home",), builder.source_cache_keys(pkg))
+
+    def test_a_recipe_that_only_runs_cargo_gets_the_same_shared_key(self) -> None:
+        # cargo is the rustup proxy on these images (bases/*/Containerfile
+        # puts /root/.cargo/bin on PATH), so `cargo build` alone can fetch a
+        # component into $HOME/.rustup — which is how the real failure
+        # happened: neither recipe called rustup directly.
+        builder = load_builder()
+        with tempfile.TemporaryDirectory() as directory:
+            a = _write_recipe(directory, "synos-a", "#!/bin/bash\nset -e\ncargo build --release\n")
+            b = _write_recipe(directory, "synos-b", (
+                "#!/bin/bash\nset -e\nneed_cmd rustup\n"
+                "rustup target add aarch64-unknown-linux-gnu\n"
+                "cargo build --release --target aarch64-unknown-linux-gnu\n"))
+            key_a = next(k for k in builder.source_cache_keys(a) if k[0] == "rustup-home")
+            key_b = next(k for k in builder.source_cache_keys(b) if k[0] == "rustup-home")
+            # one key for all of them: the hazard is one shared directory,
+            # not one shared file, so any two Rust recipes serialize.
+            self.assertEqual(key_a, key_b)
+            self.assertIs(builder._lock_for(("source-cache",) + key_a),
+                          builder._lock_for(("source-cache",) + key_b))
+
+    def test_a_recipe_that_runs_neither_gets_no_rustup_key(self) -> None:
+        # The lock must serialize Rust recipes against each other, never the
+        # whole build; prose mentioning cargo is not an invocation either.
+        builder = load_builder()
+        with tempfile.TemporaryDirectory() as directory:
+            pkg = _write_recipe(directory, "synos-plain", (
+                "#!/bin/bash\nset -e\n"
+                "# the image's own cargo/rustup are apt packages, not used here\n"
+                "make -C src all\n"))
+            self.assertNotIn(("rustup-home",), builder.source_cache_keys(pkg))
+            self.assertEqual(set(), builder.source_cache_keys(pkg))
+
+    def test_the_real_rust_recipes_are_the_ones_that_share_it(self) -> None:
+        builder = load_builder()
+        locked = sorted(p.name for p in sorted((ROOT / "packages").iterdir())
+                        if p.is_dir() and ("rustup-home",) in builder.source_cache_keys(p))
+        self.assertIn("synos-swapcontrol-gtk", locked)   # the two that actually collided
+        self.assertIn("synos-yubikey-manager", locked)
+        # and not every recipe in the repository
+        self.assertLess(len(locked), len([p for p in (ROOT / "packages").iterdir() if p.is_dir()]) // 2)
+
+
 class JobsOneIsStillPlainSerialTests(unittest.TestCase):
     """--jobs 1 must be the same code path as before this feature existed:
     no thread pool, not even one of size 1. SYNOS_KEYS_DIR is pointed at a

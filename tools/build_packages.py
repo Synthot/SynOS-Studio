@@ -125,6 +125,24 @@ def resolve_jobs(requested: str) -> tuple[int, list[str]]:
 #     tempfile.mkstemp, a unique path per call, so it needs no lock of its
 #     own), and the lock is kept anyway — belt and braces, since it also
 #     covers anything else that reaches that call, known or not;
+#   - $HOME/.rustup, the one rustup home every Rust recipe shares. rustup
+#     names its download for the *file* and not the caller, so two recipes
+#     fetching the same component both write the same
+#     ~/.rustup/downloads/<hash>.partial and one loses the rename: a real
+#     amd64 build of synos-swapcontrol-gtk and synos-yubikey-manager failed
+#     with "could not rename downloaded file", at the identical hash in
+#     both messages. Nothing in either recipe spells .rustup, so the
+#     literal-path scan below cannot see this hazard; the signal is the
+#     recipe invoking rustup or cargo at all (on these images cargo *is* a
+#     rustup shim — see bases/*/Containerfile — so a plain `cargo build`
+#     can trigger the download by itself, which is exactly what happened:
+#     neither recipe called rustup directly). Dropping the unnecessary
+#     targets = [...] from those recipes' rust-toolchain.toml files (and
+#     check_rust_toolchain_pin refusing it from now on) takes away the only
+#     reason two recipes collide here today, so this lock is belt and
+#     braces like the gnome-ext one: one shared key for every Rust recipe,
+#     because the hazard is one shared directory rather than one shared
+#     file, kept so the next pair of Rust recipes cannot reintroduce it;
 #   - any other absolute path under /tmp, /var/tmp or /dev/shm a recipe's
 #     own scripts reference that source_cache_keys() does not otherwise
 #     recognize. gnome-ext-poc.zip was found by running a build, not by
@@ -163,6 +181,13 @@ def _lock_for(key: tuple) -> threading.Lock:
 _SHELL_VAR_ASSIGN_RE = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)=["\']?([^"\'\n]*)["\']?\s*(?:#.*)?$', re.MULTILINE)
 _FETCH_GIT_COMMIT_RE = re.compile(r'^\s*fetch_git_commit\s+(\S+)\s+(\S+)\s+(\S+)', re.MULTILINE)
 _GNOME_EXT_DOWNLOAD_RE = re.compile(r'resolve-gnome-ext\.py\b[^\n]*--download')
+# rustup or cargo named as a word on a line that is not a comment: either one
+# goes through the rustup proxy and can write $HOME/.rustup (`need_cmd cargo`
+# counts — a recipe that checks for cargo is about to run it). Case-sensitive
+# and lowercase, so CARGO_TARGET_*_LINKER and Cargo.toml do not match; the
+# comment skip is what keeps prose about cargo from locking a recipe that
+# never runs it (synos-whisper-worker's build-state-metrics.sh).
+_RUSTUP_HOME_RE = re.compile(r'(?<![-\w/.])(?:rustup|cargo)(?![-\w.])')
 # /tmp, /var/tmp, /dev/shm: the writable, host-wide scratch locations a
 # script can hardcode a shared path under (every real instance found in this
 # repository, including gnome-ext-poc.zip, was a literal /tmp/... path).
@@ -176,19 +201,28 @@ def source_cache_keys(source: Path) -> set[tuple[str, ...]]:
     (prebuild.sh and anything under upstream/) for shared-resource hazards:
     `fetch_git_commit <url> <commit>` calls (resolving simple VAR="value"
     assignments made in the same file), any call into resolve-gnome-ext.py
-    with --download, and — catching whatever the first two do not — any
-    other literal /tmp, /var/tmp or /dev/shm path (UNKNOWN_PATH_RE) that
-    is not part of one of those two recognized calls.
+    with --download, any invocation of rustup or cargo, and — catching
+    whatever the first three do not — any other literal /tmp, /var/tmp or
+    /dev/shm path (UNKNOWN_PATH_RE) that is not part of one of the two
+    recognized call patterns.
 
     Two packages whose scan comes back with the same (url, commit) pin the
     identical upstream commit; any package that calls resolve-gnome-ext.py
     --download shares that call's one lock with every other one that does
     (the underlying file is unique per call now — see resolve-gnome-ext.py —
-    but the lock stays, belt and braces). An "unknown-path" key is locked by
-    its exact path text, so only recipes that reference the identical
-    unrecognized path are serialized against each other, not the whole
-    build; run_prebuild() prints a note when it acquires one, naming the
-    recipe and the path, so this is visible rather than just silently safe.
+    but the lock stays, belt and braces). A "rustup-home" key works the same
+    way and for the same reason: the shared resource is the whole of
+    $HOME/.rustup, which no recipe names in so many words — rustup's
+    toolchain and component downloads land there whichever recipe asked, and
+    two recipes fetching one component race over a single .partial file — so
+    every recipe that runs rustup, or runs cargo (the rustup proxy, which
+    can fetch a component by itself), gets that one key and they are
+    serialized against each other, not against the rest of the build. An
+    "unknown-path" key is locked by its exact path text, so only recipes
+    that reference the identical unrecognized path are serialized against
+    each other, not the whole build; run_prebuild() prints a note when it
+    acquires one, naming the recipe and the path, so this is visible rather
+    than just silently safe.
     Everyone else's keys come back empty or disjoint and are never locked
     against one another."""
     scripts = []
@@ -218,6 +252,9 @@ def source_cache_keys(source: Path) -> set[tuple[str, ...]]:
             recognized_dests.append(resolve(dest))
         if _GNOME_EXT_DOWNLOAD_RE.search(text):
             keys.add(("gnome-ext-download",))
+        if any(_RUSTUP_HOME_RE.search(line) for line in text.splitlines()
+               if not line.lstrip().startswith("#")):
+            keys.add(("rustup-home",))
         for match in UNKNOWN_PATH_RE.finditer(text):
             path = match.group(0)
             if not any(path == dest or path.startswith(dest + "/") for dest in recognized_dests):
