@@ -1,7 +1,9 @@
 """tools/build_packages.py's --jobs support: the static scan that decides
 which recipes must be locked against which others (source_cache_keys), the
 note it prints for a path that scan does not recognize, and that --jobs 1
-still takes the plain, unchanged serial path with no thread pool at all."""
+still takes the plain, unchanged serial path with no thread pool at all —
+and that the one shared work/src/_lib is staged before any package starts
+and never touched again while prebuilds may be reading it."""
 from __future__ import annotations
 
 import contextlib
@@ -9,6 +11,7 @@ import importlib.util
 import io
 import os
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -187,6 +190,137 @@ class SharedRustupHomeTests(unittest.TestCase):
         self.assertIn("synos-yubikey-manager", locked)
         # and not every recipe in the repository
         self.assertLess(len(locked), len([p for p in (ROOT / "packages").iterdir() if p.is_dir()]) // 2)
+
+
+def _snapshot(directory: Path) -> dict[str, bytes]:
+    return {str(p.relative_to(directory)): (p.read_bytes() if p.is_file() else b"")
+            for p in sorted(directory.rglob("*"))}
+
+
+class SharedLibIsNeverRewrittenMidBuildTests(unittest.TestCase):
+    """A real build lost gnome-shell-extension-accent-icons-theme to "can't
+    open file .../lib/resolve-gnome-ext.py": stage_recipe() refreshed the
+    shared work/src/_lib in place (rmtree, then copy) while another
+    package's prebuild.sh was reading it. Now main() stages it once before
+    the first package and stage_recipe() never writes it."""
+
+    def _recipe(self, directory: str, name: str) -> Path:
+        pkg = Path(directory) / "recipes" / name
+        pkg.mkdir(parents=True)
+        (pkg / "prebuild.sh").write_text("#!/bin/bash\n")
+        (pkg / "lib").symlink_to("../_lib")
+        return pkg
+
+    def test_stage_recipe_never_removes_or_rewrites_the_shared_lib(self) -> None:
+        builder = load_builder()
+        expected = _snapshot(ROOT / "packages" / "_lib")
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory) / "work"
+            lib = builder.stage_shared_lib(work)
+            self.assertEqual(expected, _snapshot(lib))
+            touched: list[Path] = []
+            real_rmtree, real_copy = builder.rmtree_tolerant, builder.copy_tree
+
+            def spy_rmtree(path: Path) -> None:
+                touched.append(Path(path))
+                real_rmtree(path)
+
+            def spy_copy(source: Path, destination: Path) -> None:
+                touched.append(Path(destination))
+                real_copy(source, destination)
+
+            # A reader standing in for a running prebuild.sh: it looks at
+            # _lib over and over while many recipes are staged around it,
+            # and records anything other than the complete, current copy.
+            stop = threading.Event()
+            seen_bad: list[str] = []
+
+            def reader() -> None:
+                while not stop.is_set():
+                    try:
+                        if _snapshot(lib) != expected:
+                            seen_bad.append("partial")
+                    except OSError as exc:
+                        seen_bad.append(repr(exc))
+
+            recipes = [self._recipe(directory, f"pkg-{i}") for i in range(24)]
+            with mock.patch.object(builder, "rmtree_tolerant", spy_rmtree), \
+                    mock.patch.object(builder, "copy_tree", spy_copy):
+                thread = threading.Thread(target=reader)
+                thread.start()
+                try:
+                    stagers = [threading.Thread(target=builder.stage_recipe, args=(r, work)) for r in recipes]
+                    for t in stagers:
+                        t.start()
+                    for t in stagers:
+                        t.join()
+                finally:
+                    stop.set()
+                    thread.join()
+            self.assertEqual([], seen_bad)
+            self.assertEqual([], [p for p in touched if p == lib or lib in p.parents])
+            self.assertEqual(expected, _snapshot(lib))
+            self.assertTrue((work / "src" / "pkg-0" / "lib" / "resolve-gnome-ext.py").is_file())
+
+    def test_stage_recipe_refuses_to_run_before_the_lib_is_staged(self) -> None:
+        builder = load_builder()
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(builder.PackageError) as ctx:
+                builder.stage_recipe(self._recipe(directory, "pkg"), Path(directory) / "work")
+            self.assertIn("stage_shared_lib", str(ctx.exception))
+
+    def test_a_stale_lib_from_a_resumed_cache_is_replaced_exactly(self) -> None:
+        # A resumed .build volume can hold an older _lib whose mtimes look
+        # newer than the source's: staging must not trust them.
+        builder = load_builder()
+        expected = _snapshot(ROOT / "packages" / "_lib")
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory) / "work"
+            lib = work / "src" / "_lib"
+            lib.mkdir(parents=True)
+            (lib / "leftover-from-an-old-run.sh").write_text("old\n")
+            (lib / "resolve-gnome-ext.py").write_text("stale\n")
+            future = 4102444800  # 2100-01-01: "newer" than any source file
+            for path in [lib, *lib.iterdir()]:
+                os.utime(path, (future, future))
+            builder.stage_shared_lib(work)
+            self.assertEqual(expected, _snapshot(lib))
+
+    def test_main_stages_the_lib_once_before_the_pool_and_never_during_it(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with mock.patch.dict(os.environ, {"SYNOS_KEYS_DIR": str(Path(directory) / "keys")}):
+                builder = load_builder()
+                expected = _snapshot(ROOT / "packages" / "_lib")
+                events: list[str] = []
+                lock = threading.Lock()
+                real_stage = builder.stage_shared_lib
+                real_pool = builder.cf.ThreadPoolExecutor
+
+                def spy_stage(work: Path) -> Path:
+                    with lock:
+                        events.append("stage-lib")
+                    return real_stage(work)
+
+                def spy_pool(*a, **kw):
+                    with lock:
+                        events.append("pool")
+                    return real_pool(*a, **kw)
+
+                def fake_build_source(source, work, fingerprints, subs, rebuild):
+                    complete = _snapshot(work / "src" / "_lib") == expected
+                    with lock:
+                        events.append("build-complete-lib" if complete else "build-partial-lib")
+                    return ("skipped", source.name, "stubbed")
+
+                with mock.patch.object(builder, "stage_shared_lib", spy_stage), \
+                        mock.patch.object(builder.cf, "ThreadPoolExecutor", spy_pool), \
+                        mock.patch.object(builder, "_build_source", fake_build_source), \
+                        contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+                    rc = builder.main(["--only", "synos-appstore", "synos-swapcontrol-gtk", "--jobs", "2",
+                                       "--output", str(Path(directory) / "repo")])
+            self.assertEqual(0, rc)
+            self.assertEqual(["stage-lib", "pool"], events[:2])
+            self.assertEqual(["build-complete-lib"] * 2, events[2:])
 
 
 class JobsOneIsStillPlainSerialTests(unittest.TestCase):

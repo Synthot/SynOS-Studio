@@ -102,8 +102,15 @@ def resolve_jobs(requested: str) -> tuple[int, list[str]]:
 # not, because they are genuinely shared, mutable state a concurrent build
 # can race another one over; each gets a lock keyed by the resource itself
 # so unrelated packages never wait on each other:
-#   - stage_recipe()'s one copy of packages/_lib under work/src/_lib, shared
-#     by every package's staged tree;
+#   (work/src/_lib, the one copy of packages/_lib every package's staged
+#   tree reads through its lib -> ../_lib symlink, is not on this list: it
+#   is not locked, it is never written while a build runs. main() stages it
+#   once, before the first package starts, and nothing after that point
+#   removes or rewrites it — see stage_shared_lib(). It used to be refreshed
+#   in place from stage_recipe() under a "stage-lib" lock, which serialized
+#   refresh against refresh but not against a prebuild.sh already reading
+#   it: a real build lost gnome-shell-extension-accent-icons-theme to
+#   "can't open file .../lib/resolve-gnome-ext.py" that way.)
 #   - fetch_fork()'s .build/forks/<distro-suite-component-arch>.Packages.gz
 #     index and cached .deb: two fork.json recipes for the same base/suite/
 #     component/arch (e.g. synos-software-properties-common and
@@ -747,26 +754,47 @@ def rmtree_tolerant(path: Path) -> None:
                           "— run 'make clean' (uses sudo) and retry") from exc
 
 
-def _lib_needs_refresh(lib: Path) -> bool:
-    return not lib.is_dir() or any(f.stat().st_mtime > lib.stat().st_mtime for f in (ROOT / "packages" / "_lib").rglob("*"))
+def stage_shared_lib(work: Path) -> Path:
+    """Stage packages/_lib as work/src/_lib, replacing whatever is there.
+
+    Called exactly once per run, by main(), before any package is built —
+    on the serial path and before the thread pool exists on the --jobs
+    path — and never again during the run. That ordering is the whole
+    guarantee: every prebuild.sh reads _lib through its lib -> ../_lib
+    symlink, and from the moment the first package starts until the run
+    ends nothing removes, rewrites or partially copies it, so no reader can
+    ever see it absent or half-present. No lock is needed or taken.
+
+    It is replaced unconditionally rather than "refreshed if stale": the
+    old check compared source mtimes against the staged directory's mtime,
+    which a resumed .build cache volume or an mtime-preserving rsync can
+    fool in either direction (a stale copy that looks new, or a source in
+    the host's future that makes every call look stale and re-copy). The
+    directory is a handful of small files, so copying it every run is cheaper
+    than any check honest enough to trust, and the staged copy is always
+    exactly the current packages/_lib — no leftovers from an earlier run."""
+    lib = work / "src" / "_lib"
+    rmtree_tolerant(lib)
+    copy_tree(ROOT / "packages" / "_lib", lib)
+    lib.mkdir(parents=True, exist_ok=True)  # an empty packages/_lib still yields the directory
+    return lib
 
 
 def stage_recipe(source: Path, work: Path) -> Path:
     """Copy a recipe (inputs only) into the work tree, where prebuild.sh runs.
     Keeps prebuild outputs and root-owned container leftovers out of packages/.
 
-    work/src/_lib is one shared copy every package's staged tree reads from;
-    concurrent packages all call this, so the check-and-copy is guarded by a
-    lock (with the cheap check repeated outside and inside it, so only the
-    first caller that actually needs to refresh it pays for the lock)."""
+    Touches only work/src/<recipe>. The shared work/src/_lib its lib symlink
+    points at is staged once by main() before any package starts (see
+    stage_shared_lib) and is deliberately never written here: concurrent
+    packages all call this, and other packages' prebuild.sh may be reading
+    _lib at that moment. A missing _lib means the caller skipped that step,
+    which is a bug in the caller, so it is refused rather than papered over
+    by staging it here, mid-build."""
     src_root = work / "src"
     lib = src_root / "_lib"
-    if _lib_needs_refresh(lib):
-        with _lock_for(("stage-lib", str(lib))):
-            if _lib_needs_refresh(lib):
-                rmtree_tolerant(lib)
-                copy_tree(ROOT / "packages" / "_lib", lib)
-                lib.touch()
+    if not lib.is_dir():
+        raise PackageError(f"{lib} is not staged; stage_shared_lib() must run once before any package is built")
     staged = src_root / source.name
     rmtree_tolerant(staged)
     for path in source.rglob("*"):
@@ -1040,6 +1068,16 @@ def main(argv: list[str] | None = None) -> int:
     work.mkdir(parents=True, exist_ok=True)
     fingerprints = work / "fingerprints"
     fingerprints.mkdir(exist_ok=True)
+    # The one shared copy of packages/_lib, staged here, before any package
+    # (serial or pooled) starts, and never touched again this run: see
+    # stage_shared_lib for why that ordering, not a lock, is what keeps a
+    # running prebuild.sh from ever seeing it absent or partial.
+    try:
+        stage_shared_lib(work)
+    except SkipPackage as exc:
+        print(f"package error: {exc}", file=sys.stderr)
+        build_timings.append_phase(timings_path, "Build packages", time.monotonic() - phase_start)
+        return 1
     debs = []
     skipped = []
     not_for_base = []
