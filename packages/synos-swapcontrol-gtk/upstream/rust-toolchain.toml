@@ -1,3 +1,7 @@
+# No `targets` key on purpose: rustup acts on that list the moment any cargo
+# call in this package reads this file, so declaring the aarch64 cross target
+# here makes every build on every architecture download its rust-std before
+# anything checks whether the build needs it. upstream/build.sh installs the
+# target in the branch that actually cross-compiles instead.
 [toolchain]
 channel = "1.98.1"
-targets = ["aarch64-unknown-linux-gnu"]

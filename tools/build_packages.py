@@ -453,6 +453,7 @@ def apply_base_fields(control: str, base: str) -> str:
 
 RUST_TOOLCHAIN_VERSION_FILE = ROOT / "bases" / "rust-toolchain.txt"
 RUST_TOOLCHAIN_CHANNEL_RE = re.compile(r'^\s*channel\s*=\s*"([^"]*)"\s*$', re.MULTILINE)
+RUST_TOOLCHAIN_TARGETS_RE = re.compile(r'^\s*targets\s*=\s*(.*)$', re.MULTILINE)
 
 
 def _relpath(path: Path) -> str:
@@ -468,7 +469,14 @@ def check_rust_toolchain_pin(source: Path) -> None:
     "stable": that channel is resolved by rustup on whatever day the build
     happens to run, needs a network fetch inside the package build, and can
     break the image without a single line of this repository changing (see
-    bases/rust-toolchain.txt)."""
+    bases/rust-toolchain.txt).
+
+    It must not carry a `targets` list either, for the same reason: rustup
+    acts on that list the moment any cargo call in the package reads the
+    file, so one cross target named there is a rust-std download on every
+    build on every architecture, before anything checks whether the build
+    needs it. The target belongs in the branch of upstream/build.sh that
+    actually cross-compiles, which is the only place it gets used."""
     toolchain_file = source / "upstream" / "rust-toolchain.toml"
     if not toolchain_file.is_file():
         return
@@ -481,6 +489,16 @@ def check_rust_toolchain_pin(source: Path) -> None:
             f"{_relpath(toolchain_file)} pins channel \"{channel}\", but "
             f"{_relpath(RUST_TOOLCHAIN_VERSION_FILE)} pins \"{pinned}\"; set "
             f"channel = \"{pinned}\" in {_relpath(toolchain_file)}"
+        )
+    targets = RUST_TOOLCHAIN_TARGETS_RE.search(text)
+    if targets:
+        raise PackageError(
+            f"{_relpath(toolchain_file)} declares targets = "
+            f"{targets.group(1).strip()}; rustup downloads every target listed "
+            f"there on the first cargo call, on every architecture, before "
+            f"anything checks whether the build needs it. Drop the targets key "
+            f"and run `rustup target add <triple>` in the branch of "
+            f"upstream/build.sh that cross-compiles"
         )
 
 

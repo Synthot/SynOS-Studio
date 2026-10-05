@@ -117,6 +117,75 @@ class VendoredPackageToolchainPinTests(unittest.TestCase):
                 self.assertIn(f'"{pinned}"', message, floating)                # what it must say
 
 
+class VendoredPackageCrossTargetTests(unittest.TestCase):
+    """A vendored rust-toolchain.toml must not declare `targets` either.
+    rustup acts on that list the first time any cargo call in the package
+    reads the file, so an amd64 build downloads an aarch64 rust-std it never
+    links — and two recipes doing that at once raced over the one
+    $HOME/.rustup/downloads/*.partial on a real build (see
+    tools/build_packages.py's source_cache_keys). The cross target belongs in
+    the branch of upstream/build.sh that actually cross-compiles, the only
+    place it is used."""
+
+    CROSS_TARGET = "aarch64-unknown-linux-gnu"
+
+    def _package(self, directory: str, body: str) -> Path:
+        package = Path(directory) / "some-package"
+        upstream = package / "upstream"
+        upstream.mkdir(parents=True)
+        (upstream / "rust-toolchain.toml").write_text(body, encoding="utf-8")
+        return package
+
+    def test_no_vendored_toolchain_file_declares_a_targets_list(self) -> None:
+        # Globbed, not listed: a recipe added later cannot reintroduce this.
+        toolchain_files = sorted(ROOT.glob("packages/*/upstream/rust-toolchain.toml"))
+        self.assertTrue(toolchain_files, "no packages/*/upstream/rust-toolchain.toml found")
+        for toolchain_file in toolchain_files:
+            self.assertNotRegex(
+                toolchain_file.read_text(encoding="utf-8"), r"(?m)^\s*targets\s*=",
+                f"{toolchain_file.relative_to(ROOT)} declares targets; install the cross "
+                f"target in the arm64 branch of upstream/build.sh instead")
+
+    def test_a_targets_list_is_refused_and_says_to_install_it_in_the_build_script(self) -> None:
+        build_packages = _load_build_packages()
+        pinned = VERSION_FILE.read_text(encoding="utf-8").strip()
+        with tempfile.TemporaryDirectory() as directory:
+            # the channel is the correct pin, so only the targets key can fail this
+            package = self._package(
+                directory, f'[toolchain]\nchannel = "{pinned}"\ntargets = ["{self.CROSS_TARGET}"]\n')
+            with self.assertRaises(build_packages.PackageError) as ctx:
+                build_packages.check_rust_toolchain_pin(package)
+            message = str(ctx.exception)
+            self.assertIn(str(package / "upstream" / "rust-toolchain.toml"), message)  # which file
+            self.assertIn("targets", message)                                          # what is wrong
+            self.assertIn("rustup target add", message)                                # what to do instead
+            self.assertIn("build.sh", message)                                         # and where
+
+    def test_the_same_file_without_a_targets_list_passes(self) -> None:
+        build_packages = _load_build_packages()
+        pinned = VERSION_FILE.read_text(encoding="utf-8").strip()
+        with tempfile.TemporaryDirectory() as directory:
+            package = self._package(
+                directory, f'[toolchain]\nchannel = "{pinned}"\nprofile = "minimal"\n')
+            build_packages.check_rust_toolchain_pin(package)   # must not raise
+
+    def test_every_cross_compiling_recipe_installs_the_target_in_its_arm64_branch(self) -> None:
+        # Every upstream/build.sh with an `if arm64 / else` split that names
+        # the triple outright; globbed so a later recipe is covered too.
+        scripts = sorted(p for p in ROOT.glob("packages/*/upstream/build.sh")
+                         if f"--target {self.CROSS_TARGET}" in p.read_text(encoding="utf-8"))
+        self.assertTrue(scripts, "no cross-compiling upstream/build.sh found")
+        for script in scripts:
+            name = str(script.relative_to(ROOT))
+            arm64, separator, native = script.read_text(encoding="utf-8").partition("\nelse\n")
+            self.assertTrue(separator, f"{name}: expected an `if arm64 ... else ... fi` split")
+            self.assertIn("arm64", arm64, name)
+            self.assertIn(f"rustup target add {self.CROSS_TARGET}", arm64, name)
+            self.assertIn("need_cmd rustup", arm64, name)   # a loud error, not "command not found"
+            # the native branch must not pay for a target it never links
+            self.assertNotIn("rustup target add", native, name)
+
+
 class WhisperWorkerToolchainTests(unittest.TestCase):
     SCRIPT = ROOT / "packages/synos-whisper-worker/upstream/scripts/build-state-metrics.sh"
 

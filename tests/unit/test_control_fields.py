@@ -63,7 +63,7 @@ class RustToolchainPinCheckTests(unittest.TestCase):
         upstream.mkdir(parents=True)
         if channel is not None:
             (upstream / "rust-toolchain.toml").write_text(
-                f'[toolchain]\nchannel = "{channel}"\ntargets = ["aarch64-unknown-linux-gnu"]\nprofile = "minimal"\n',
+                f'[toolchain]\nchannel = "{channel}"\nprofile = "minimal"\n',
                 encoding="utf-8")
         return package
 

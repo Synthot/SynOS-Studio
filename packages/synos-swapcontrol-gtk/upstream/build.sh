@@ -20,6 +20,15 @@ if [ "$ARCH" == "arm64" ]; then
     need_cmd cargo
     need_cmd aarch64-linux-gnu-gcc
 
+    # The cross target is installed here, not declared in
+    # rust-toolchain.toml: declaring it there makes every build on every
+    # architecture fetch its rust-std before anything checks whether the
+    # build needs it, and two recipes doing that at once raced over one
+    # file in $HOME/.rustup. need_cmd first, so a host without rustup says
+    # which tool to install rather than "command not found" mid-build.
+    need_cmd rustup
+    rustup target add aarch64-unknown-linux-gnu
+
     # Set up pkg-config for cross-compiling GTK4 and Libadwaita
     export PKG_CONFIG_ALLOW_CROSS=1
     export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
