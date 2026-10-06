@@ -452,11 +452,11 @@ def wait_for_settled_screen(qmp: QmpSession, proc: subprocess.Popen, workdir: Pa
     (check_graphical_boot passes "OCR reads some text"): the black screen
     between Plymouth and GDM, or a greeter background before its widgets
     draw, can hold still far longer than stable_samples -- a measured run
-    settled on exactly that and reported a blank screen while the session
-    was still coming up. A rejected frame is waited past: the next real
+    settled on the boot splash (logo, static dots) and reported it as the
+    final screen. A rejected frame is waited past: the next real
     change starts the count again. If the timeout arrives while the screen
     still sits on that rejected frame, it is reported settled (it did stop
-    changing) so the verdict names a blank screen, not "still loading".
+    changing) so the verdict names a screen with no text, not "still loading".
 
     Returns (path to the last PPM captured, whether it actually settled,
     seconds elapsed) -- never raises for an ordinary timeout, only if QEMU
@@ -785,9 +785,10 @@ def evaluate_graphical_screenshot(ocr_output: str, expected_name: str | None, se
         note = (f"the screen never stopped changing within {settle_timeout:.0f}s; the session may still be "
                 "loading (try a longer --graphical-timeout), or the boot is hung -- see the screenshot")
     elif not has_visible_content:
-        outcome = "blank-or-unreadable-screen"
-        note = (f"the screen stopped changing but tesseract read no text at all off it, and it was still "
-                f"that way when the {settle_timeout:.0f}s wait ran out; check the screenshot directly")
+        outcome = "no-text-on-screen"
+        note = (f"the boot stopped on a screen with no readable text -- typically the boot splash (logo and "
+                f"dots) or a blank screen -- and was still there when the {settle_timeout:.0f}s wait ran out, "
+                "so the session never got past it to the installer; see the screenshot")
     elif expected_name is None:
         outcome = "no-expected-name"
         note = ("no distribution name was available (no resolved configuration and no --brand); only checked "

@@ -511,7 +511,7 @@ class GraphicalScreenshotMatchingTests(unittest.TestCase):
             Image.new("RGB", (900, 240), "white").save(path, "PNG")  # no text at all
             text = smoke_test.ocr_text(path)
         result = smoke_test.evaluate_graphical_screenshot(text, "SynOS NGINX", settled=True, settle_timeout=240)
-        self.assertEqual("blank-or-unreadable-screen", result["outcome"])
+        self.assertEqual("no-text-on-screen", result["outcome"])
         self.assertFalse(result["passed"])
         # name_found/installer_found are computed honestly either way (there is
         # genuinely no match in empty text); "outcome" is what says *why* this
