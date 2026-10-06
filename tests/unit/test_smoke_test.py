@@ -632,7 +632,10 @@ class SettleAcceptTests(unittest.TestCase):
     """wait_for_settled_screen's `accept`: a still frame with nothing to
     read (the black gap between Plymouth and GDM) is not the end of the
     boot -- a real run settled on one and reported a blank screen while
-    the session was still coming up."""
+    the session was still coming up.
+
+    Timeouts here are a second, not a few milliseconds: these need four
+    samples before the deadline, and a loaded machine missed that in 0.05s."""
 
     def test_waits_past_a_rejected_still_frame_to_the_next_one(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -653,7 +656,7 @@ class SettleAcceptTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             qmp = FakeQmp([b"boot", b"black"])
             smoke_test.wait_for_settled_screen(
-                qmp, FakeProc(), Path(d), timeout=0.05, poll_interval=0.001, stable_samples=3, accept=accept)
+                qmp, FakeProc(), Path(d), timeout=1.0, poll_interval=0.001, stable_samples=3, accept=accept)
         self.assertEqual([b"black"], calls)
 
     def test_timing_out_on_a_rejected_frame_reports_it_settled(self) -> None:
@@ -661,7 +664,7 @@ class SettleAcceptTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             qmp = FakeQmp([b"boot", b"black"])
             path, settled, _elapsed = smoke_test.wait_for_settled_screen(
-                qmp, FakeProc(), Path(d), timeout=0.05, poll_interval=0.001, stable_samples=3,
+                qmp, FakeProc(), Path(d), timeout=1.0, poll_interval=0.001, stable_samples=3,
                 accept=lambda frame: False)
             self.assertTrue(settled)
             self.assertEqual(b"black", path.read_bytes())
