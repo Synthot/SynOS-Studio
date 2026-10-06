@@ -107,6 +107,7 @@ import tempfile
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -434,7 +435,8 @@ class QmpSession:
 
 def wait_for_settled_screen(qmp: QmpSession, proc: subprocess.Popen, workdir: Path, timeout: float,
                              poll_interval: float = GRAPHICAL_POLL_INTERVAL,
-                             stable_samples: int = GRAPHICAL_STABLE_SAMPLES) -> tuple[Path, bool, float]:
+                             stable_samples: int = GRAPHICAL_STABLE_SAMPLES,
+                             accept: Callable[[Path], bool] | None = None) -> tuple[Path, bool, float]:
     """Poll screendump instead of sleeping a fixed time: hash each capture,
     and once `stable_samples` consecutive captures hash identically, the
     screen has stopped changing -- boot messages, a splash animation or a
@@ -446,6 +448,16 @@ def wait_for_settled_screen(qmp: QmpSession, proc: subprocess.Popen, workdir: Pa
     mistaken for a session that settled after loading. settled therefore
     also requires at least one real change from the very first capture.
 
+    A still frame is also not the end of the boot when `accept` rejects it
+    (check_graphical_boot passes "OCR reads some text"): the black screen
+    between Plymouth and GDM, or a greeter background before its widgets
+    draw, can hold still far longer than stable_samples -- a measured run
+    settled on exactly that and reported a blank screen while the session
+    was still coming up. A rejected frame is waited past: the next real
+    change starts the count again. If the timeout arrives while the screen
+    still sits on that rejected frame, it is reported settled (it did stop
+    changing) so the verdict names a blank screen, not "still loading".
+
     Returns (path to the last PPM captured, whether it actually settled,
     seconds elapsed) -- never raises for an ordinary timeout, only if QEMU
     itself dies or the QMP link breaks."""
@@ -455,6 +467,7 @@ def wait_for_settled_screen(qmp: QmpSession, proc: subprocess.Popen, workdir: Pa
     changed_since_start = False
     last_digest: str | None = None
     stable_count = 0
+    rejected_digest: str | None = None
     while True:
         if proc.poll() is not None:
             raise QemuBootTimeout(f"qemu exited (code {proc.returncode}) before the screen settled")
@@ -467,10 +480,16 @@ def wait_for_settled_screen(qmp: QmpSession, proc: subprocess.Popen, workdir: Pa
         stable_count = stable_count + 1 if digest == last_digest else 1
         last_digest = digest
         elapsed = time.monotonic() - start
-        if changed_since_start and stable_count >= stable_samples:
-            return ppm_path, True, elapsed
+        if changed_since_start and stable_count >= stable_samples and digest != rejected_digest:
+            if accept is None or accept(ppm_path):
+                return ppm_path, True, elapsed
+            # Stopped changing on a frame with nothing to read: wait for the
+            # next real change rather than calling the boot finished.
+            rejected_digest = digest
+            first_digest = digest
+            changed_since_start = False
         if elapsed >= timeout:
-            return ppm_path, False, elapsed
+            return ppm_path, digest == rejected_digest, elapsed
         time.sleep(poll_interval)
 
 
@@ -767,7 +786,8 @@ def evaluate_graphical_screenshot(ocr_output: str, expected_name: str | None, se
                 "loading (try a longer --graphical-timeout), or the boot is hung -- see the screenshot")
     elif not has_visible_content:
         outcome = "blank-or-unreadable-screen"
-        note = "the screen stopped changing but tesseract read no text at all off it; check the screenshot directly"
+        note = (f"the screen stopped changing but tesseract read no text at all off it, and it was still "
+                f"that way when the {settle_timeout:.0f}s wait ran out; check the screenshot directly")
     elif expected_name is None:
         outcome = "no-expected-name"
         note = ("no distribution name was available (no resolved configuration and no --brand); only checked "
@@ -823,7 +843,8 @@ def check_graphical_boot(iso_path: Path, kernel: Path, initrd: Path, label: str,
             proc = spawn_qemu_graphical(iso_path, kernel, initrd, label, memory_mb, qmp_sock)
             qmp = QmpSession(qmp_sock, timeout=30)
             ppm_path, settled, elapsed = wait_for_settled_screen(
-                qmp, proc, tmp, settle_timeout, poll_interval, stable_samples)
+                qmp, proc, tmp, settle_timeout, poll_interval, stable_samples,
+                accept=lambda frame: bool(normalize_for_match(ocr_text(frame))))
             Image.open(ppm_path).save(screenshot_path, "PNG")
     except QemuBootTimeout as exc:
         return {"name": "graphical-boot", "passed": False, "outcome": "error", "note": str(exc)}
