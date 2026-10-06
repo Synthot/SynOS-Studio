@@ -17,9 +17,17 @@ for SUITE in "${!GNOME_TARGETS[@]}"; do
     echo "[$SUITE] Resolving $UUID for GNOME $TARGET..."
     python3 "$SCRIPT_DIR/../lib/resolve-gnome-ext.py" "$UUID" --target "$TARGET" --download --out "$DEPLOY_DIR"
 
-    # Apply Dash to Panel panel blur geometry fix (from a maintained fork of the extension)
-    echo "[$SUITE] Applying Dash to Panel panel blur geometry fix..."
-    patch -d "$DEPLOY_DIR" -p1 < "$SCRIPT_DIR/fix-dtp-panel-blur.patch"
+    # Dash to Panel panel blur geometry fix (from a maintained fork of the
+    # extension). Upstream merged its own version of it (release 74 sizes
+    # the blur from a geometry_actor, as the patch does), and the patch no
+    # longer applies to that code -- so it is only applied to a release
+    # that does not have the fix yet, where it must apply cleanly.
+    if grep -q 'geometry_actor' "$DEPLOY_DIR/components/panel.js"; then
+        echo "[$SUITE] Dash to Panel panel blur geometry fix: already in this release, not patching."
+    else
+        echo "[$SUITE] Applying Dash to Panel panel blur geometry fix..."
+        patch -d "$DEPLOY_DIR" -p1 --forward < "$SCRIPT_DIR/fix-dtp-panel-blur.patch"
+    fi
 done
 
 echo "Done."
